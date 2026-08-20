@@ -31,3 +31,9 @@
   **autosuficiente**. Si un hecho verificado (estructura del repo, versiones del SBOM, falsos
   positivos conocidos) no está escrito en su `.md`, para él no existe — y rellenará el hueco con la
   regla genérica, que es justo como reaparecen los falsos positivos ya descartados.
+- I-010 · Una allowlist de permisos con **glob final** sobre un comando que acepta flags de salida
+  equivale a escritura arbitraria de ficheros: `Bash(curl -s https://host/path/*)` autoriza
+  `curl -s https://host/path/x -o ~/.zshrc`, y `Bash(git diff:*)` autoriza `git diff --output=<fichero>`.
+  Regla: comandos exactos, nunca `*` como token final, y **jamás allowlistar un directorio cuyo
+  contenido todavía no existe** (`tests/bin/*` con la carpeta vacía autoriza scripts que aún no se
+  han escrito ni revisado). Detectado por revisión de seguridad automática, 2026-08-20.
