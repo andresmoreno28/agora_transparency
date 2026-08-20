@@ -1,0 +1,32 @@
+# Ágora · .gitignore
+# Base tomada de `.gitignore.example` del Drupal CMS Site Template Starter Kit (1.x),
+# más artefactos de entorno local. El repo ES la receta: no versionamos el sitio de trabajo.
+
+# --- Starter kit ---
+# Drupal coloca un .htaccess junto a la config exportada; irrelevante en una receta.
+/config/.htaccess
+
+# --- Entorno local / DDEV ---
+/web/
+/vendor/
+/.ddev/
+.env
+.env.*
+!.env.example
+
+# --- Tooling JS (pnpm exclusivo · CLAUDE.md regla 5) ---
+node_modules/
+/package-lock.json
+/yarn.lock
+
+# --- Test artifacts ---
+/test-results/
+/playwright-report/
+/.phpunit.cache/
+.phpunit.result.cache
+
+# --- Basura del SO / editores ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
