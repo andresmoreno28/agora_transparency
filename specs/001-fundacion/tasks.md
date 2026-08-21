@@ -248,10 +248,22 @@ Sign here: `[ ]`
       findings; the `[unclosed` injection produces a loud failure instead of a green;
       `gate-a-wave3.sh` still reports 0 failures on a clean tree.
 - [ ] **T-317** · Determine whether the `-Fin` abort, and the toolchain assumptions generally, hold
-      on the platform the canonical gate runs on — Docker was unavailable on 2026-08-21, so this is
-      **unverified in both directions** and must not be assumed either way.
-      *Success:* `grep --version` and the `-IFin` return code recorded for the CI/DDEV image;
-      minimum versions for `grep`, `jq`, `python3` recorded in the README as a toolchain floor.
+      on **every platform this project is developed or gated on** — Docker was unavailable on
+      2026-08-21, so this is **unverified in every direction** and must not be assumed either way.
+      Three platforms are in play, not two:
+      1. **Windows dev host** — measured 2026-08-21: GNU grep 3.0 aborts on `-Fin` (rc 134);
+         jq 1.8.2 and python 3.12.6 emit CRLF on stdout. Both defects are repaired at the
+         call site (T-311, T-315), not worked around at the tool level.
+      2. **CI / DDEV image** — unmeasured.
+      3. **macOS dev host** — unmeasured, and it is a *different* question, not the same one:
+         macOS ships **BSD grep**, not GNU grep, so its `-Fin` behaviour, its exit-status
+         semantics and its handling of the BRE patterns T-315 introduced are all open. A Homebrew
+         `ggrep` earlier on `PATH` changes the answer again. **Measure it; do not reason about it**
+         — the whole point of I-027 is that this class of defect fails green.
+      *Success:* `grep --version` and the `-IFin` return code recorded for all three; minimum
+      versions for `grep`, `jq`, `python3` recorded in the README as a toolchain floor; the
+      dirty-case matrix (T-312) re-run in full on each platform declared first-class by D-019 —
+      a no-op on one platform is a no-op nobody sees.
       **Blocked by D-019.**
 
 **Gate A wave 3**
@@ -324,7 +336,8 @@ Sign here: `[ ]`
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
 | **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants execute only when a human types them; `no-boilerplate` was a no-op for two commits and only a hand-dispatched injection caught it. **T-202's criterion "no job is defined by hand" forbids the fix** — needs an amendment to that signed criterion. Unfixable today (no drupalcode project, T-205); automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | 👤 Andrés (criterion amendment) |
 | T-316 grep rc-blindness | 🔴 **OPEN** · no scanner inspects grep's exit status, so rc ≥ 2 reads as "no match". A **false green**, reproduced in the repaired `no-boilerplate` with an invalid-BRE deny term. Debt with an owner and an exit gate (I-020) | wave 4 | — |
-| T-317 toolchain floor | 🟡 **OPEN** · whether GNU grep aborts on `-Fin` on the canonical platform is **unverified in both directions** (Docker down 2026-08-21). Do not assume CI covered for it | — | blocked by D-019 |
+| T-317 toolchain floor | 🟡 **OPEN** · `-Fin` and the CRLF assumptions are measured **only on the Windows dev host**. The CI/DDEV image and the **macOS dev host** are both unmeasured, and macOS is a different question (BSD grep, not GNU). Do not assume either covers for the other | — | blocked by D-019 |
+| **second dev host (macOS)** | 🟡 **OPEN** · a second agent works this repo from a Mac. The wave 3 gate is certified on the Windows host **only** (see the closure note): its toolchain floor, its `grep` flavour and its line endings are all unverified there. First action on that host is T-317's measurement, before trusting any invariant's green | T-317 | — |
 | T-314 packaged `recipe.yml` boilerplate | 🟡 **OPEN** · commented starter-kit strings inside a shipped file, not on the deny list (I-024 shape) | wave 4 | — |
 | `.gitattributes` `text eol=lf` | 🟡 **OPEN** · fresh clones check out `tests/bin/*` CRLF (`i/lf w/crlf`, system-scope `core.autocrlf`). Harmless under MSYS2 bash, cheap to close. Touches a **packaged** file carrying D-015.2 semantics → its own reviewed commit | — | 👤 Andrés |
 | PHP 8.4 **ZTS** on the dev host | 🟡 **OPEN** · `gitlab_templates` and the Drupal CLI assume NTS. Inert today (no invariant executes PHP; `composer validate --strict` exit 0); surfaces at **T-406** | T-406 | — |
