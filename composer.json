@@ -1,15 +1,6 @@
 {
-    "_comment": [
-        "How to customize this file:",
-        "- Change the 'name' field to your own package name. If you want to publish this site template on drupal.org, the package name MUST start with 'drupal/' and only contain letters, numbers, and underscores.",
-        "- Change the 'description' field to a brief description of your site template. It's common to repeat the description in recipe.yml.",
-        "- 'type' MUST be 'drupal-recipe, so leave that as-is.",
-        "- 'license' should generally be left as GPL-2.0-or-later unless you have a specific reason to change it. Which license you choose may affect your ability to publish the site template.",
-        "- Add any modules, themes, or recipes that your site template depends on to the 'require' section. This is automatically done by the Drush 'site:export' command.",
-        "- When this file looks right to you, delete this _comment section."
-    ],
-    "name": "drupal/drupal_cms_site_template_base",
-    "description": "A blank template with the foundational features of Drupal CMS, for those who truly want to start from scratch.",
+    "name": "drupal/agora_transparency",
+    "description": "Ágora: a transparency and open government portal for Drupal CMS. Publishes documents, officials, contracts and budgets in accessible pages, handles freedom-of-information requests, and ships WCAG 2.2 AA compliance out of the box.",
     "type": "drupal-recipe",
     "license": "GPL-2.0-or-later",
     "require": {
@@ -35,10 +26,6 @@
             }
         },
         "drupal-site-template": {
-            "_comment": [
-                "This section contains configuration used by drupal/site_template_helper to assist developers in creating site templates.",
-                "It will be automatically removed by `drush site:export`, but you should be sure to delete this section before publishing your site template."
-            ],
             "generate-theme": {
                 "info": {
                     "name": "Blank",
