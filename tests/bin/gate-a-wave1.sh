@@ -3,8 +3,8 @@
 # gate-a-wave1.sh - Agora - Unit 001, wave 1 gate A verification.
 #
 # Verifies the skeleton and identity of the site template package (T-101..T-105,
-# T-107) against the hard structural rules recorded in CLAUDE.md and IDIOMS.md
-# (I-004, I-007, I-014, I-015).
+# T-107, T-111, T-112) against the hard structural rules recorded in CLAUDE.md and
+# IDIOMS.md (I-004, I-007, I-014, I-015, I-020).
 #
 # Contract:
 #   - every check prints:  obtained | expected | OK/FALLO
@@ -112,7 +112,9 @@ printf '========================================================================
 # Missing tooling is a FAILURE of the gate, not a reason to skip it.
 group 'G0 - Preflight (herramientas requeridas)'
 MISSING=0
-for tool in jq composer git find grep; do
+# `tar` is required by G8 (packaging): it reads the tarball produced by
+# `git archive`. If it is missing, G8 cannot be evaluated -> that is a FALLO.
+for tool in jq composer git find grep tar; do
   if command -v "$tool" >/dev/null 2>&1; then
     got='disponible'
   else
@@ -159,7 +161,43 @@ check 'lineas "^description:"'         "$(grep_count '^description:' recipe.yml)
 # -------------------------------------------- G3 andamiaje del kit borrado ---
 group 'G3 - Andamiaje del starter kit eliminado (T-103, T-104)'
 check 'ocurrencias de _comment'    "$(grep_count_fixed '_comment' composer.json)" '0'
-check '.extra["drupal-site-template"]' "$(jq_raw '.extra["drupal-site-template"] // "ausente" | if . == "ausente" then . else "presente" end' composer.json)" 'ausente'
+# ---------------------------------------------------------------------------
+# DEUDA CON DUENO Y GATE DE SALIDA - NO ES UNA COMPROBACION RELAJADA.
+#
+# Esperado = PRESENTE, a proposito. Rider del tema `blank`, firmado por [andres]
+# el 2026-08-21 (specs/000-proyecto/DECISIONES.md, "Riders on wave 1"):
+#
+#   "`blank` and the `extra.drupal-site-template` block are kept until unit 002.
+#    T-103 deletes the three `_comment` arrays and `GET-STARTED.md`, but NOT the
+#    `extra` block. [...] the affected check is adjusted to the specification in
+#    force for unit 001 (`blank` and the `extra` block are expected to be
+#    PRESENT, with a reference to this rider)."
+#
+# Por que es la especificacion vigente y no una excusa: `recipe.yml` instala hoy
+# el tema `blank` (`install: - blank`) y lo fija como tema por defecto
+# (`system.theme.default: 'blank'`). Ese tema NO se versiona: lo FABRICA
+# drupal/site_template_helper leyendo exactamente este bloque `extra`. Borrarlo
+# hoy dejaria `recipe.yml` apuntando a un tema inexistente y la plantilla NO
+# instalaria. El bloque es, en la unidad 001, un requisito duro; esperar
+# 'ausente' era describir el estado final de la unidad 002, no el contrato
+# vigente.
+#
+# QUIEN LA REVIERTE: la tarea de la UNIDAD 002 que hace el cambio atomico
+# `drupal/agora_theme` (D-014, opcion B) en UN SOLO COMMIT:
+#     borrar .extra["drupal-site-template"] de composer.json
+#   + anadir "drupal/agora_theme" a .require
+#   + cambiar `- blank` por `- agora_theme` en `install:` de recipe.yml
+#   + cambiar system.theme.default a 'agora_theme'
+# Esa misma tarea DEBE volver a poner 'ausente' aqui. Esta linea es el tripwire:
+# en cuanto alguien borre el bloque `extra` sin tocar el gate, esta comprobacion
+# se pone en ROJO y el cambio no pasa. Es deliberado (I-020: "la deuda conocida
+# es una tarea con dueno y un gate de salida, nunca un rojo tolerado").
+#
+# PROHIBIDO: cambiar este esperado a 'ausente' -- o borrar la comprobacion --
+# sin ejecutar en el mismo commit los cuatro pasos de arriba.
+# ---------------------------------------------------------------------------
+check '.extra["drupal-site-template"]' "$(jq_raw '.extra["drupal-site-template"] // "ausente" | if . == "ausente" then . else "presente" end' composer.json)" 'presente'
+note 'esperado PRESENTE por el rider de `blank` [andres] 2026-08-21; lo revierte la tarea del tema de la unidad 002 (cambio atomico)'
 check 'GET-STARTED.md'             "$(exists_file GET-STARTED.md)" 'ausente'
 # NOTA: se usa find, no el glob `*.example` del dispatch: el glob del shell NO
 # casa con dotfiles y el kit trae `.gitignore.example` / `.gitattributes.example`.
@@ -202,7 +240,11 @@ check 'ficheros que DEFINEN CI_ALLOW_DEV' "$CIALLOW" '0'
 [ "$CIALLOW" != "0" ] && scan_files | xargs grep -lIE 'CI_ALLOW_DEV[[:space:]]*[:=]' 2>/dev/null | sed 's/^/      | /'
 
 # ------------------------------------- G6 ficheros del kit presentes ---------
-group 'G6 - Ficheros del starter kit presentes (T-101) - 12/12'
+# `ValidationTest.php` entra aqui por el rider de correcciones de especificacion
+# [andres] 2026-08-21: "ValidationTest.php is added to the set of kit files
+# watched by the gate." Son los tres tests que trae el kit: T-406 prohibe
+# modificarlos, asi que el gate vigila que sigan existiendo.
+group 'G6 - Ficheros del starter kit presentes (T-101) - 13/13'
 for f in \
   recipe.yml \
   composer.json \
@@ -215,6 +257,7 @@ for f in \
   .tugboat/config.yml \
   .gitattributes \
   tests/src/Functional/InstallTest.php \
+  tests/src/Functional/ValidationTest.php \
   tests/src/Kernel/RequirementsTest.php
 do
   check "$f" "$(exists_file "$f")" 'presente'
@@ -226,6 +269,73 @@ D011=$(grep_count_fixed 'D-011' specs/000-proyecto/DECISIONES.md)
 check 'D-011 en DECISIONES.md (>=1)' "$([ "${D011:-0}" -ge 1 ] 2>/dev/null && echo 'si' || echo 'no')" 'si'
 NAME_REF=$(grep_count_fixed 'agora_transparency' composer.json)
 check 'agora_transparency en composer.json (>=1)' "$([ "${NAME_REF:-0}" -ge 1 ] 2>/dev/null && echo 'si' || echo 'no')" 'si'
+
+# --------------------------------------------------- G8 packaging (D-015.2) --
+# El unico muro que impide que la capa de proceso (specs/, .claude/, CLAUDE.md)
+# viaje dentro del release publicado en Drupal.org es el `export-ignore` de
+# `.gitattributes` (D-015.2). Si alguien se lleva una linea por delante, nadie se
+# entera hasta la revision del marketplace.
+#
+# Por eso este grupo NO hace grep sobre `.gitattributes`: EJECUTA `git archive` y
+# mira el tarball resultante, que es literalmente lo que empaqueta Drupal.org.
+# Un grep verificaria el texto de la regla; esto verifica su efecto.
+#
+# AMBITO: el arbol de HEAD. `git archive <commit>` lee los atributos del propio
+# commit, no del working tree -- igual que el empaquetador de Drupal.org, que
+# archiva un tag. Consecuencia conocida: una edicion de `.gitattributes` aun sin
+# commitear no la ve este grupo; se caza en el commit siguiente (y en CI).
+group 'G8 - Packaging: contenido real de `git archive` (D-015.2)'
+
+ARCHIVE_LIST=""
+ARCHIVE_RC=1
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  ARCHIVE_LIST=$(git archive --format=tar HEAD 2>/dev/null | tar -tf - 2>/dev/null)
+  ARCHIVE_RC=$?
+fi
+if [ "$ARCHIVE_RC" -eq 0 ] && [ -n "$ARCHIVE_LIST" ]; then
+  ENTRIES=$(printf '%s\n' "$ARCHIVE_LIST" | wc -l | tr -d ' ')
+else
+  # Fallo al archivar = FALLO del gate, jamas un skip. I-007: un archivo vacio
+  # pasaria todas las comprobaciones de "no contiene" por la puerta de atras.
+  ENTRIES=0
+fi
+note "HEAD: $(git rev-parse --short HEAD 2>/dev/null || echo '<sin git>') - entradas en el tarball: $ENTRIES"
+check 'git archive ejecutable (exit)'  "$ARCHIVE_RC" '0'
+check 'entradas en el tarball > 0'     "$([ "$ENTRIES" -gt 0 ] && echo 'si' || echo 'no')" 'si'
+
+# --- NO debe viajar: capa de proceso, CI, tests y tooling de desarrollo -------
+for excluded in \
+  'specs/' \
+  '.claude/' \
+  'CLAUDE.md' \
+  'tests/' \
+  '.github/' \
+  '.gitlab-ci.yml' \
+  '.tugboat/' \
+  '.eslintrc.json'
+do
+  # Prefijo anclado al inicio: 'tests/' casa 'tests/...' y la entrada de
+  # directorio 'tests/'; 'CLAUDE.md' casa la entrada exacta del fichero.
+  HITS=$(printf '%s\n' "$ARCHIVE_LIST" | grep -c "^$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')" 2>/dev/null || true)
+  check "NO empaquetado: $excluded" "${HITS:-0}" '0'
+  if [ "${HITS:-0}" != "0" ]; then
+    printf '%s\n' "$ARCHIVE_LIST" | grep "^$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')" | sed 's/^/      | SE CUELA EN EL RELEASE: /'
+  fi
+done
+
+# --- SI debe viajar: el producto que instala el usuario final -----------------
+# AGENTS.md esta aqui a proposito (D-015.1): es producto, no proceso.
+for included in \
+  AGENTS.md \
+  recipe.yml \
+  composer.json \
+  recommended.yml \
+  screenshot.webp \
+  LICENSE.txt
+do
+  FOUND=$(printf '%s\n' "$ARCHIVE_LIST" | grep -cx -F "$included" 2>/dev/null || true)
+  check "empaquetado: $included" "$([ "${FOUND:-0}" -ge 1 ] && echo 'presente' || echo 'ausente')" 'presente'
+done
 
 # ----------------------------------------------------------------- resumen ---
 printf '\n=========================================================================================================\n'
