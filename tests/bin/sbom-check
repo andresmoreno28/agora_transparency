@@ -30,6 +30,15 @@
 #           (Python 3.13 from python.org, no CA bundle). Hence: DOWNLOAD with
 #           `curl`, PARSE with `python3` + `xml.etree` reading from stdin.
 #
+# PORTABILITY (I-025): on Windows builds of `jq` and `python`, stdout is opened
+# in text mode and translates every `\n` to `\r\n`. Bash's `$( )` strips only
+# the trailing newline of a command substitution, so every line but the last
+# keeps a trailing `\r` - which breaks a URL built from it (`curl: (3) URL
+# rejected`) and desyncs string comparisons against clean literals. Fixed at
+# both ends: the embedded parser forces LF stdout, and `PROJECTS`/`LOCK_NAMES`
+# strip any stray `\r` from jq's output. This is a portability correction, not
+# a relaxed check: the SBOM conditions themselves are untouched.
+#
 # AMENDMENT TO T-306(f), applied deliberately: T-306 asks for
 # <core_compatibility> to be checked. Verified 2026-08-21 against the real SBOM:
 # only `drupal_cms_helper` publishes that element (`^11.3`); the other eight
@@ -150,6 +159,14 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 
+# I-025: on Windows, stdout defaults to text mode and rewrites `\n` as `\r\n`.
+# Force LF so the shell reader on the other end of the pipe never sees a
+# trailing `\r` baked into a value.
+try:
+    sys.stdout.reconfigure(newline='\n')
+except AttributeError:
+    pass
+
 # A version is unstable if it carries any pre-release or branch marker.
 UNSTABLE = re.compile(r'(-dev([^0-9A-Za-z]|$)|-alpha|-beta|-rc|\.x-dev)', re.IGNORECASE)
 
@@ -239,7 +256,7 @@ if [ -z "$PREFLIGHT_TITLE" ]; then
 fi
 
 # --------------------------------------------------- packages to be checked --
-PROJECTS=$(jq -r '(.require // {}) | keys[] | select(startswith("drupal/")) | sub("^drupal/"; "")' "$MANIFEST")
+PROJECTS=$(jq -r '(.require // {}) | keys[] | select(startswith("drupal/")) | sub("^drupal/"; "")' "$MANIFEST" | tr -d '\r')
 PROJECT_COUNT=$(printf '%s\n' "$PROJECTS" | grep -c '[^[:space:]]')
 
 if [ "$PROJECT_COUNT" -eq 0 ]; then
@@ -370,7 +387,7 @@ if [ -f "$LOCK" ]; then
   jq -e . "$LOCK" >/dev/null 2>&1 || fatal "$LOCK is not valid JSON"
   LOCK_STATE="present"
   SCANNED=$((SCANNED + 1))
-  LOCK_NAMES=$(jq -r '((.packages // []) + (.["packages-dev"] // []))[] | .name | select(startswith("drupal/")) | sub("^drupal/"; "")' "$LOCK")
+  LOCK_NAMES=$(jq -r '((.packages // []) + (.["packages-dev"] // []))[] | .name | select(startswith("drupal/")) | sub("^drupal/"; "")' "$LOCK" | tr -d '\r')
   if [ -n "$LOCK_NAMES" ]; then
     while IFS= read -r lname; do
       [ -n "$lname" ] || continue
