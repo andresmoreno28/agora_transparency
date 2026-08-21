@@ -116,7 +116,18 @@ scan_one() {
   fi
   SCANNED=$((SCANNED + 1))
   printf '%s\n' "$DENY_TERMS" | grep -ve '^$' | while IFS= read -r _term; do
-    grep -Iin -F -- "$_term" "$_file" 2>/dev/null | while IFS= read -r _hit; do
+    # No `-F` here (I-027): GNU grep 3.0, which ships with Git for Windows/MSYS2,
+    # SIGABRTs whenever `-F` and `-i` are combined - bisected on this host as
+    # `-Fin`/`-IFin` -> rc=134, `-Iin` -> rc=0 with the correct hit. `-i` itself
+    # is not optional: the deny list is matched case-insensitively by design
+    # ("WCAG AAA" must also catch "wcag aaa"). Consequence: terms are now BRE,
+    # not fixed strings, so a future deny term containing a regex metacharacter
+    # (`.`, `*`, `[`, `\`) would over-match instead of matching literally - a
+    # false positive, i.e. the safe direction, and one that announces itself
+    # loudly instead of hiding a boilerplate string. None of the seven terms
+    # above contains one; whoever adds an eighth term must keep that true, or
+    # escape it.
+    grep -Iin -- "$_term" "$_file" 2>/dev/null | while IFS= read -r _hit; do
       printf '%s|%s|%s\n' "$_label" "$_term" "$_hit"
     done
   done
