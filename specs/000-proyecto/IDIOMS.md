@@ -108,3 +108,40 @@
   "electricians" and "WCAG AAA" sailed through the gate without the gate lying. Rule: when importing
   third-party scaffolding, do **a full sweep of the original's strings** across every published
   artefact, not file-by-file according to whoever happens to touch it.
+- I-025 · Windows builds of `jq` and `python` translate `
+` to `
+` on **stdout**. A shell
+  invariant that reads tool output into a `while read` loop and compares it against clean literals
+  then fails on the *good* case — and, far worse, stops discriminating: `sbom-check` returned exit 1
+  for a clean SBOM, for an injected non-existent project and for a severed network alike, so all
+  three of its dirty-case criteria would have "passed" for the wrong reason. Bash's `$( )` strips
+  only the trailing `
+`, so the corruption hits **every line but the last** — which is exactly why
+  8 of 9 projects failed and the 9th, last in the list, did not. Rule: normalise at the boundary
+  (`| tr -d ''`, or `sys.stdout.reconfigure(newline='
+')`), and **never read a dirty-case result
+  off an already-red gate** — a red gate answers "fail" to every question, including the ones you
+  did not ask. Verified 2026-08-21.
+- I-026 · A preflight that checks tool **presence** is not checking tool **usability**.
+  `for tool in jq curl python3; do command -v "$tool"; done` passed on the Microsoft Store `python3`
+  stub, which prints *"no se encontró Python"* and exits non-zero at first real use; the failure
+  surfaced later, at parse time, disguised as a data problem. Same shape as I-013 one level up: the
+  cheap oracle answers "yes" for the broken case. Preflight must **exercise** the tool
+  (`jq -n 1`, `python3 -c 'pass'`), never merely locate it. Corollary: I-022's stated cause
+  (Python 3.13.7 from python.org, no CA bundle) no longer reproduces — the interpreter on PATH is
+  now 3.12.6 behind a shim. A machine-specific idiom expires with the machine: record the **rule**,
+  not the **machine**. Verified 2026-08-21.
+- I-027 · `grep` has **three** exit states — 0 match, 1 no match, **≥2 error** — and a scanner that
+  collapses "≥2" into "no match" converts every one of its own crashes into a clean bill of health.
+  Origin: GNU grep 3.0 (shipped by Git for Windows/MSYS2) **SIGABRTs whenever `-F` and `-i` are
+  combined**; bisected as `-Fin`/`-IFin` → rc 134, while `-n`, `-in`, `-Fn`, `-In`, `-Iin`, `-IFn`
+  all behave; `LC_ALL=C` does not avoid it. `no-boilerplate` therefore shipped as a **total no-op**:
+  all seven deny terms appended verbatim to `README.md` still gave `findings: 0`, exit 0. Note what
+  did *not* hide it: grep emits **nothing on stderr** when it aborts, so `2>/dev/null` was innocent
+  and removing it would not have helped — what hid it was **discarding the exit code**. The trigger
+  is one grep flag; the class is every scanner in `tests/bin/`. Two consequences that outlive the
+  bug: (a) a **false green survives commit, review and gate** where a false red cannot, so the
+  dirty-case injection is not optional polish, it is the only thing that distinguishes an invariant
+  from a decoration; (b) **any criterion of the form "invariant X reports 0 findings" is worth
+  exactly as much as X's most recent dirty-case run** — cite that date when signing, not the clean
+  run. Found by the `tester`, wave 3, 2026-08-21.

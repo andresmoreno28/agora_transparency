@@ -7,6 +7,17 @@
 > 12 tasks signed, 2 deferred with an owner (T-106 → unit 002, T-114 → unit 003).
 > **Waves 2 and 3 are now open** and are parallelizable (disjoint files).
 > D-009 remains open → T-206. See the "Active blockers" table at the end for the current state.
+>
+> ✅ **WAVE 3 CLOSED 2026-08-21**: gate A **`gate-a-wave1.sh` 61 checks · 0 failures** +
+> **`gate-a-wave3.sh` 28 checks · 0 failures** + a 12-injection dirty-case matrix, all reverted.
+> **16 tasks signed** (T-115, T-209, T-301…T-313, T-315 — the verdict text said 14; the list it
+> certified holds 16, counted on disk). Independent verdict by `orquestador`, which re-ran every count and closed the
+> last open matrix row itself. Gate B: none required (wave 3 enters the unit closure verdict).
+> Debt carried forward with owners: **T-314** (packaged `recipe.yml` boilerplate),
+> **T-316** (grep rc-blindness across all scanners), **T-317** (toolchain floor, blocked by D-019).
+> ⚠️ This gate is certified **on the development host** (grep 3.0 · jq 1.8.2 · python 3.12.6 ·
+> PHP 8.4.24 ZTS · Composer 2.10.2). It is **not** a claim about the drupalcode runners: no CI
+> executes `tests/bin/` today. See the blockers table.
 
 Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
 `[⏸ …]` deferred to a later unit, with owner · 👤 requires the human
@@ -68,7 +79,7 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       repository root; `shasum -a 256 screenshot.webp` differs from
       `98363dd5a77e8374d33666d2bbf905f15229a7c1aca9e82fc7c37542b3e02f1c` (the placeholder);
       the blockers table records this debt as closed. Signed off visually by 👤 [andres].
-- [ ] **T-115** · Amend D-008 in `DECISIONES.md` with the real `Plugin.php` code, and record D-009
+- [✓ 2026-08-21] **T-115** · Amend D-008 in `DECISIONES.md` with the real `Plugin.php` code, and record D-009
       and D-018. *Success:* `grep -c 'D-018' specs/000-proyecto/DECISIONES.md` >= 1;
       `grep -c 'onPackageInstall' specs/000-proyecto/DECISIONES.md` >= 1.
       > **Note:** added after wave 1's gate A closed (61 checks / 0 failures). It is a
@@ -112,10 +123,14 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
 - [ ] **T-208** · Pin DDEV ≥ 1.25.0 and **version `.ddev/config.yaml`** (today `.gitignore` ignores
       `/.ddev/`, which makes the T-201 criterion unreachable).
       *Success:* `git ls-files .ddev/config.yaml | wc -l` = 1; requirement documented in the README.
-- [ ] **T-209** · Invariant: `CI_ALLOW_DEV` is not defined in any versioned file.
+- [✓ 2026-08-21] **T-209** · Invariant: `CI_ALLOW_DEV` is not defined in any versioned file.
       *Success:* 0 matches, printing the number of files scanned (> 0).
       > **Note (rider [andres] 2026-08-21):** *"specified as 'not DEFINED', never 'not mentioned' —
       > see I-018."*
+      > **Rider [ejecutor] 2026-08-21:** signed **out of order** — T-209 is a wave 2 task closed
+      > inside wave 3. The tick is NOT wave 2 progress: wave 2 remains blocked by the
+      > T-201/T-207/T-208 conflict. Dirty case run 2026-08-21 (T-312): mentions 7→8,
+      > definitions 0→1, `RequirementsTest.php` correctly remaining a mention.
 
 **Gate A wave 2**
 ```bash
@@ -129,16 +144,16 @@ Sign here: `[ ]`
 
 ## Wave 3 · Invariants (parallelizable with wave 2 — disjoint files)
 
-- [ ] **T-301** · `tests/bin/no-unstable-deps` according to the spec in `plan.md` §6.
+- [✓ 2026-08-21] **T-301** · `tests/bin/no-unstable-deps` according to the spec in `plan.md` §6.
       *Success:* it detects a deliberately injected `-beta` and does **not** flag the starter kit.
-- [ ] **T-302** · `tests/bin/no-patches`. *Success:* it detects an injected `patches` section.
-- [ ] **T-303** · `tests/bin/no-secrets` over the whole repo except `.git/`.
+- [✓ 2026-08-21] **T-302** · `tests/bin/no-patches`. *Success:* it detects an injected `patches` section.
+- [✓ 2026-08-21] **T-303** · `tests/bin/no-secrets` over the whole repo except `.git/`.
       *Success:* it detects a fake key injected in `config/` and another in `content/`.
-- [ ] **T-304** · `tests/bin/sbom-check` against `updates.drupal.org` (method in research §10.4).
+- [✓ 2026-08-21] **T-304** · `tests/bin/sbom-check` against `updates.drupal.org` (method in research §10.4).
       *Success:* it requires stable + `<security covered="1">` + a line in `DECISIONES.md`; it fails if one is missing.
-- [ ] **T-305** · All four print scope, number of files scanned and number of findings.
+- [✓ 2026-08-21] **T-305** · All four print scope, number of files scanned and number of findings.
       *Success:* none reports "0 files scanned".
-- [ ] **T-306** · **Amendment to the T-304 method** (`sbom-check`): the endpoint returns **HTTP 200
+- [✓ 2026-08-21] **T-306** · **Amendment to the T-304 method** (`sbom-check`): the endpoint returns **HTTP 200
       with an `<error>` body** for non-existent projects → a `curl -f` gives a false green. It must:
       (a) check the network at startup and **fail loudly if there is none** — "skip" forbidden;
       (b) parse the XML; (c) require `<title>` and the absence of `<error>`; (d) take as stable the
@@ -149,17 +164,17 @@ Sign here: `[ ]`
       `N projects queried · N with coverage · 0 findings`; with a non-existent project
       injected → exit 1; with the network cut off (`https_proxy=http://127.0.0.1:1`) → **exit 1**,
       never exit 0.
-- [ ] **T-307** · `tests/bin/no-code-in-template`: mirrors the `RequirementsTest` assert locally.
+- [✓ 2026-08-21] **T-307** · `tests/bin/no-code-in-template`: mirrors the `RequirementsTest` assert locally.
       *Success:* it prints `N files scanned · 0 *.info.yml files`, N > 0; it detects an injected
       `themes/x/x.info.yml`; clean tree after reverting.
-- [ ] **T-308** · Translate `tests/bin/gate-a-wave1.sh` to English. It is code, and D-017 covers
+- [✓ 2026-08-21] **T-308** · Translate `tests/bin/gate-a-wave1.sh` to English. It is code, and D-017 covers
       code; T-113 enumerated `CLAUDE.md`, `.claude/*` and `specs/` and left it out.
       **This blocks T-204:** the cspell job is on by default in `gitlab_templates`, and the
       shortcut to green would be dumping Spanish words into `.cspell-project-words.txt` — which is
       adding a file to an ignore list to turn a gate green, an automatic 🔴.
       *Success:* 0 matches for the Spanish token list, **and the gate still reports
       `61 checks · 0 failures`** — same N, same M: it is a translation, not a change of checks.
-- [ ] **T-309** · `tests/bin/no-boilerplate` — a deny-list invariant over **every published
+- [✓ 2026-08-21] **T-309** · `tests/bin/no-boilerplate` — a deny-list invariant over **every published
       artefact** (what `git archive` ships), for strings inherited from the starter kit:
       `electrician`, `WCAG AAA`, `GET-STARTED`, `MY_SITE_TEMPLATE_NAME`,
       `Site Template Starter Kit`, `my amazing site template`.
@@ -167,12 +182,77 @@ Sign here: `[ ]`
       > content and descriptions — not just the README."*
       *Success:* it prints scope and the number of files scanned (> 0) and 0 findings; it detects an
       injected string; clean tree after reverting.
-- [ ] **T-310** · 🔒 **T-403 is brought forward to wave 3** (rider of [andres] 2026-08-21):
+- [✓ 2026-08-21] **T-310** · 🔒 **T-403 is brought forward to wave 3** (rider of [andres] 2026-08-21):
       rewrite `README.md` in English describing Ágora, and resolve `recommended.yml`.
       > **Rider of [andres] 2026-08-21:** *"the README declares **WCAG 2.2 AA, verified — never
       > AAA** (I-023)."*
       *Success:* 0 findings from `tests/bin/no-boilerplate`; the "Development process" section from
       T-112 survives; no broken links.
+      > **Note [ejecutor] 2026-08-21:** signed on **post-T-315 evidence**. The original 0 findings
+      > were produced by `no-boilerplate` while it was a no-op (see T-315 / I-027). Re-verified
+      > after the repair: 18 scanned, 7 deny terms, 0 findings. The four relative links
+      > (`LICENSE.txt`, `screenshot.webp`, `specs/`, `specs/000-proyecto/DECISIONES.md`) were
+      > resolved on disk; 2 external links (`ddev.com`) were not fetched.
+
+- [✓ 2026-08-21] **T-311** · `tests/bin/sbom-check`: normalise CRLF at the three tool-output
+      boundaries (`sys.stdout.reconfigure(newline='\n')` in the embedded parser; `| tr -d '\r'` on
+      the `PROJECTS` and `LOCK_NAMES` jq pipelines). Portability only — no check, threshold,
+      exclusion or finding condition altered.
+      *Success:* exit 0 and `9 projects queried - 9 with coverage - 0 findings`, with
+      `with stable release: 9`, `with a D-NNN line: 9`,
+      `core_compatibility declared: 1 (8 n/a)`, `exclusions: none`. Verified deterministic over
+      3 consecutive runs. See I-025.
+- [✓ 2026-08-21] **T-312** · Dirty-case matrix for every invariant: 12 injections, each reverted,
+      `git status --porcelain` empty after each.
+      *Success:* every invariant fails with garbage inside and returns to exit 0 after the revert.
+      Recorded: sbom-check clean → exit 0 9/9/9; non-existent project → exit 1 rejected on the
+      `<error>` body (I-013 proven caught); `drupal/token` with no D-NNN → exit 1 while showing the
+      package stable **and** covered, the sole finding being the missing justification; severed
+      network → exit 1 `NETWORK UNAVAILABLE`. `no-secrets` hit **both** `config/` and `content/`,
+      values never echoed. `no-ci-allow-dev`: mentions 7→8, definitions 0→1, with
+      `RequirementsTest.php` correctly remaining a mention (I-018).
+      > **Note:** this matrix **found T-315**. It is the task that earned its keep.
+- [✓ 2026-08-21] **T-313** · `tests/bin/gate-a-wave3.sh`: single runner over all eight invariants,
+      two checks each (exit 0 + non-zero parsed scope), `gate-a-wave1.sh` conventions. Preflight
+      **exercises** 14 tools (`jq -n 1`, `python3 -c 'pass'`, …) rather than locating them (I-026).
+      Parses each invariant's summary individually, as their wordings differ;
+      `no-code-in-template` never prints "scanned", so its metric is `packaged: N entries`.
+      *Success:* **28 checks - 0 failures**, exit 0 — **and proven falsifiable**: pointed at a
+      non-existent invariant path in a throwaway copy it reported 28 checks - 2 failures, exit 1.
+      > **Note:** supersedes the four-script loop in this file's "Gate A wave 3" block, which
+      > enumerated only `no-unstable-deps no-patches no-secrets sbom-check` and left three
+      > invariants in no gate at all. That block is left unedited as the historical record of what
+      > the gate was when it was written; `gate-a-wave3.sh` is what it is now.
+- [ ] **T-314** · 🔒 RESERVED → wave 4. `recipe.yml` ships commented starter-kit boilerplate
+      (`https://www.example.com/my-site-template/demo`, `my-site-template`) inside a **packaged**
+      file, and `no-boilerplate`'s deny list does not carry that string (I-024 shape).
+      *Success:* the commented block is resolved or removed; `my-site-template` is added to the
+      deny list; `no-boilerplate` still reports 0 findings; `gate-a-wave3.sh` still 0 failures.
+- [✓ 2026-08-21] **T-315** · 🔴 `tests/bin/no-boilerplate` was a **total no-op**: line 119 used
+      `grep -Iin -F`, and GNU grep 3.0 on this host SIGABRTs on `-F` combined with `-i`. Repair:
+      drop `-F`, keep `-Iin`. See I-027.
+      *Success:* clean tree → exit 0, `scanned: 18 · deny-list terms: 7 · findings: 0`;
+      `electrician` appended → exit 1, 1 finding at `README.md:161`; **all seven terms appended →
+      exit 1, 7 findings, lines 161-167**; reverted → exit 0.
+      > **Note:** this invalidates the *original* evidence for **T-310**, whose criterion is
+      > "0 findings from `tests/bin/no-boilerplate`" — that zero was produced by the no-op.
+      > T-310 is signed on **post-T-315 evidence**, re-verified 2026-08-21.
+- [ ] **T-316** · The class behind T-315: **no scanner in `tests/bin/` inspects grep's exit
+      status**, so any grep error (≥2) is silently read as "no match". Demonstrated live in the
+      *repaired* `no-boilerplate`: with an eighth deny term `[unclosed` (an invalid BRE) and a
+      matching line present in a scanned file, it reports `deny-list terms: 8 · findings: 0`,
+      exit 0. Also **correct the comment added by T-315**, which states that a metacharacter term
+      "would over-match … a false positive, i.e. the safe direction": that is true for a *valid*
+      BRE and **false for an invalid one**, which fails in the unsafe direction.
+      *Success:* every scanning grep in `tests/bin/` treats rc ≥ 2 as a FATAL, not as zero
+      findings; the `[unclosed` injection produces a loud failure instead of a green;
+      `gate-a-wave3.sh` still reports 0 failures on a clean tree.
+- [ ] **T-317** · Determine whether the `-Fin` abort, and the toolchain assumptions generally, hold
+      on the platform the canonical gate runs on — Docker was unavailable on 2026-08-21, so this is
+      **unverified in both directions** and must not be assumed either way.
+      *Success:* `grep --version` and the `-IFin` return code recorded for the CI/DDEV image;
+      minimum versions for `grep`, `jq`, `python3` recorded in the README as a toolchain floor.
+      **Blocked by D-019.**
 
 **Gate A wave 3**
 ```bash
@@ -222,7 +302,7 @@ Sign here: `[ ]`
 ## Active blockers
 
 > A table of **state**, not of signed tasks: it is rewritten on each update.
-> Last updated: 2026-08-21, after the D-009 / D-018 signature batch.
+> Last updated: 2026-08-21, after the wave 3 closure.
 
 | Blocker | State | Blocks | Who resolves |
 |---|---|---|---|
@@ -238,7 +318,13 @@ Sign here: `[ ]`
 | D-009 test split | ✅ **SIGNED 2026-08-21 · option C** — axe inside the existing `gitlab_templates` Nightwatch job on drupalcode (canonical, mandatory); visual regression on GitHub Actions, non-blocking | — unblocks **T-206**, but it cannot be *applied* until the drupalcode project exists; the axe↔Nightwatch integration is verified in unit 002 | — |
 | D-018 baseline SBOM | ✅ **SIGNED 2026-08-21** — the 9 packages in `require`, all stable and `covered="1"`, verified against `updates.drupal.org`. Baseline **CLOSED**: any later change needs its own D-NNN | — gives `sbom-check` (T-304/T-306) its `D-NNN` oracle | — |
 | D-010 v1 demo content scope | 🔴 **OPEN** | unit 003 | 👤 Andrés |
-| **Wave 2 substantially BLOCKED** | 🔴 **OPEN** · **T-201, T-207 and T-208 are mutually incompatible**: T-201 assumes `ddev start` inside this repo, T-207 replaces that with the path-repository flow (Drupal set up separately), and T-208 versions `.ddev/config.yaml` in a repo that today `.gitignore`s `/.ddev/`. A recipe package is not a site: it cannot be `ddev start`ed on its own. **Pending a decision on where the development environment lives** — no D-NNN assigned yet | T-201, T-207, T-208 | 👤 Andrés |
+| **Wave 2 substantially BLOCKED** | 🔴 **OPEN** · **T-201, T-207 and T-208 are mutually incompatible**: T-201 assumes `ddev start` inside this repo, T-207 replaces that with the path-repository flow (Drupal set up separately), and T-208 versions `.ddev/config.yaml` in a repo that today `.gitignore`s `/.ddev/`. A recipe package is not a site: it cannot be `ddev start`ed on its own. **Pending a decision on where the development environment lives** — now framed as **D-019**, unsigned (`orquestador` ★ option B: the Windows host is a first-class gate environment, with a pinned toolchain floor and the dirty-case matrix run on every platform declared first-class) | T-201, T-207, T-208, T-317 | 👤 Andrés |
 | T-205 first green pipeline | 🔴 **OPEN** · **there is no project on drupalcode** (`git.drupalcode.org/api/v4/projects/project%2Fagora_transparency` → **404**, verified 2026-08-21). Without a project there is no pipeline, no canary MR (D-009 rider b) and nothing to apply D-009 to | T-205, and the application of T-206 | 👤 Andrés (creates the project) |
 | T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
+| **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants execute only when a human types them; `no-boilerplate` was a no-op for two commits and only a hand-dispatched injection caught it. **T-202's criterion "no job is defined by hand" forbids the fix** — needs an amendment to that signed criterion. Unfixable today (no drupalcode project, T-205); automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | 👤 Andrés (criterion amendment) |
+| T-316 grep rc-blindness | 🔴 **OPEN** · no scanner inspects grep's exit status, so rc ≥ 2 reads as "no match". A **false green**, reproduced in the repaired `no-boilerplate` with an invalid-BRE deny term. Debt with an owner and an exit gate (I-020) | wave 4 | — |
+| T-317 toolchain floor | 🟡 **OPEN** · whether GNU grep aborts on `-Fin` on the canonical platform is **unverified in both directions** (Docker down 2026-08-21). Do not assume CI covered for it | — | blocked by D-019 |
+| T-314 packaged `recipe.yml` boilerplate | 🟡 **OPEN** · commented starter-kit strings inside a shipped file, not on the deny list (I-024 shape) | wave 4 | — |
+| `.gitattributes` `text eol=lf` | 🟡 **OPEN** · fresh clones check out `tests/bin/*` CRLF (`i/lf w/crlf`, system-scope `core.autocrlf`). Harmless under MSYS2 bash, cheap to close. Touches a **packaged** file carrying D-015.2 semantics → its own reviewed commit | — | 👤 Andrés |
+| PHP 8.4 **ZTS** on the dev host | 🟡 **OPEN** · `gitlab_templates` and the Drupal CLI assume NTS. Inert today (no invariant executes PHP; `composer validate --strict` exit 0); surfaces at **T-406** | T-406 | — |
