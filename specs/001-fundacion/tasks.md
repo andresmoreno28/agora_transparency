@@ -55,6 +55,17 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[✓ AAAA-MM-DD]` firmada · 👤
       `.claude/agents/*` (3), `.claude/commands/*` (3), `.claude/skills/*` (7), `specs/`. Own commit,
       no semantic changes; ambiguities escalated. *Success:* zero semantic diffs reported; a restart
       of the session after translating `.claude/agents/` (I-008).
+- [ ] **T-114** · 🔒 The **definitive `screenshot.webp` is DEFERRED to unit 003**, where the demo
+      content it must depict exists. T-103 shipped a **provisional placeholder** instead: a 632×363
+      WebP (the starter kit's own dimensions, therefore known-compatible with the installer), neutral,
+      hatched, and labelled *"PLACEHOLDER — NOT A SCREENSHOT OF A REAL SITE"*, rendered with DejaVu
+      Sans (Bitstream Vera / DejaVu licence, redistributable). It deliberately does **not** imitate a
+      site: fabricating a screenshot of a site that does not exist would misrepresent the template to
+      anyone browsing the installer. This task owns the replacement.
+      *Success:* `screenshot.webp` is a real capture of the installed demo site, WebP, at the
+      repository root; `shasum -a 256 screenshot.webp` differs from
+      `98363dd5a77e8374d33666d2bbf905f15229a7c1aca9e82fc7c37542b3e02f1c` (the placeholder);
+      the blockers table records this debt as closed. Signed off visually by 👤 [andres].
 
 **Gate A wave 1**
 ```bash
@@ -190,3 +201,4 @@ Firma aquí: `[ ]`
 | D-009 reparto de tests | 🔴 ABIERTA | T-206 | 👤 Andrés |
 | D-010 alcance del contenido demo v1 | 🔴 ABIERTA | unidad 003 | 👤 Andrés |
 | T-106 enfoque del tema | ⏸️ DIFERIDA a la unidad 002 (ver T-110) | — | — |
+| `screenshot.webp` definitivo | ⏸️ DIFERIDA a la unidad 003 (ver T-114) · placeholder provisional en su lugar, deliberadamente no imita un sitio real | — | — |
