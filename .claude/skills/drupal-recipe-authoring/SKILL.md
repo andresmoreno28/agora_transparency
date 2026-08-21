@@ -3,79 +3,80 @@ name: drupal-recipe-authoring
 description: Use when writing or editing a Drupal recipe.yml — adding config actions, choosing between the recipes/install/config keys, setting strict mode, making config optional, disabling Canvas components, or debugging a recipe that fails to apply or conflicts with existing configuration.
 ---
 
-# Escribir `recipe.yml`
+# Writing `recipe.yml`
 
-## Principio nuclear
+## Core principle
 
-Una receta es **declarativa e idempotente-por-diseño**: describe el estado deseado, no pasos.
-Si falla al aplicarse, casi siempre es por **config que ya existe** o **config que no existe todavía**.
+A recipe is **declarative and idempotent-by-design**: it describes the desired state, not steps.
+If it fails to apply, it is almost always because of **config that already exists** or **config that
+does not exist yet**.
 
-## Anatomía
+## Anatomy
 
 ```yaml
-name: Nombre visible
-description: 'Texto que ve el usuario en el instalador.'
-type: Site          # 'Site' solo para site templates; otras recetas lo omiten
+name: Visible name
+description: 'Text the user sees in the installer.'
+type: Site          # 'Site' only for site templates; other recipes omit it
 
-recipes:            # recetas que se aplican ANTES que ésta
+recipes:            # recipes applied BEFORE this one
   - core/recipes/administrator_role
   - drupal_cms_media
 
-install:            # módulos y temas a instalar
+install:            # modules and themes to install
   - pathauto
-  - mi_tema
+  - my_theme
 
 config:
-  strict: false     # ver abajo — casi siempre false en site templates
+  strict: false     # see below — almost always false in site templates
   actions:
-    nombre.del.config:
-      accionQueSea: valor
+    some.config.name:
+      whicheverAction: value
 
 extra:
   recipe_installer_kit:
     finish_url: '/admin/dashboard/welcome'
 ```
 
-## `recipes:` vs `install:` — la confusión más frecuente
+## `recipes:` vs `install:` — the most frequent confusion
 
-| Clave | Qué acepta | Cuándo |
+| Key | What it accepts | When |
 |---|---|---|
-| `recipes:` | Otras **recetas** (por ruta de core o por nombre) | Quieres su config y su modelo completo |
-| `install:` | **Módulos y temas** sueltos | Solo necesitas que el módulo esté activo |
+| `recipes:` | Other **recipes** (by core path or by name) | You want their config and their complete model |
+| `install:` | Standalone **modules and themes** | You only need the module to be enabled |
 
-Las recetas listadas en `recipes:` **no deben ser site templates**. Componer sobre recetas pequeñas
-es correcto; sobre otro site template, no.
+The recipes listed in `recipes:` **must not be site templates**. Composing on top of small recipes
+is correct; on top of another site template, it is not.
 
-## `strict: false` — qué significa realmente
+## `strict: false` — what it really means
 
-- `strict: false` → si el sitio **ya tiene** un config que la receta aporta, **gana el existente** y
-  la receta no falla.
-- `strict: true` → conflicto = error al aplicar.
+- `strict: false` → if the site **already has** a config that the recipe provides, **the existing one
+  wins** and the recipe does not fail.
+- `strict: true` → conflict = error when applying.
 
-En site templates se usa **`false`**. Comentario textual del starter kit: *"most site templates
+In site templates **`false`** is used. Literal comment from the starter kit: *"most site templates
 provide configuration that will break at install time if you change this"*.
 
-## El prefijo `?` — config opcional
+## The `?` prefix — optional config
 
 ```yaml
 config:
   actions:
-    ?canvas.component.block.navigation_user:   # con ? → si no existe, se ignora
+    ?canvas.component.block.navigation_user:   # with ? → if it does not exist, it is ignored
       disable: []
-    canvas.component.block.system_messages_block:   # sin ? → si no existe, ERROR
+    canvas.component.block.system_messages_block:   # without ? → if it does not exist, ERROR
       disable: []
 ```
 
-**Regla:** si el config lo aporta un módulo que puede no estar instalado, ponle `?`.
-Un `?` de más es inocuo; uno de menos rompe la instalación en limpio.
+**Rule:** if the config is provided by a module that may not be installed, put a `?` on it.
+One `?` too many is harmless; one too few breaks the clean installation.
 
-## Acciones habituales
+## Common actions
 
-| Acción | Uso |
+| Action | Use |
 |---|---|
-| `simpleConfigUpdate` | Cambiar claves de config simple (`system.site`, `system.theme`) |
-| `disable: []` | Ocultar un componente de Canvas de la UI (no lo borra) |
-| `setComponentList` / `grantPermissions` | Según entidad; depende del tipo de config |
+| `simpleConfigUpdate` | Change keys of simple config (`system.site`, `system.theme`) |
+| `disable: []` | Hide a Canvas component from the UI (does not delete it) |
+| `setComponentList` / `grantPermissions` | Depending on the entity; depends on the config type |
 
 ```yaml
 system.site:
@@ -83,25 +84,25 @@ system.site:
     page.front: '/home'
 system.theme:
   simpleConfigUpdate:
-    default: 'mi_tema'
+    default: 'my_theme'
 ```
 
-## Errores comunes
+## Common mistakes
 
-- **Olvidar `?`** en config de un módulo opcional → rompe el install smoke en limpio.
-- **Poner un módulo en `recipes:`** (o una receta en `install:`) → no resuelve.
-- **Cambiar `strict` a `true`** para "ser más riguroso" → rompe la instalación.
-- **`type: site`** en minúscula → el template no aparece en el instalador (es case-sensitive).
-- **Asumir orden**: `recipes:` se aplica antes; si tu acción toca config que aporta otra receta,
-  esa receta debe estar listada antes.
+- **Forgetting `?`** on config from an optional module → breaks the clean install smoke.
+- **Putting a module in `recipes:`** (or a recipe in `install:`) → it does not resolve.
+- **Changing `strict` to `true`** to "be more rigorous" → breaks the installation.
+- **`type: site`** in lowercase → the template does not appear in the installer (it is case-sensitive).
+- **Assuming order**: `recipes:` is applied first; if your action touches config provided by another
+  recipe, that recipe must be listed first.
 
-## Verificación
+## Verification
 
-Aplicar sobre un Drupal **limpio**, nunca sobre el entorno sucio de desarrollo:
+Apply on a **clean** Drupal, never on the dirty development environment:
 
 ```bash
 ddev drush sql:drop --yes
-# reinstalar y comprobar que el template aparece en el selector
+# reinstall and check that the template appears in the selector
 ```
 
-Un `?` que falta solo se manifiesta en limpio. Probar sobre el entorno de trabajo da falsos verdes.
+A missing `?` only shows up on a clean install. Testing on the working environment gives false greens.

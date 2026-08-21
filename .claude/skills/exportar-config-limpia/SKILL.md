@@ -3,42 +3,42 @@ name: exportar-config-limpia
 description: Use when exporting a Drupal site into a recipe with drush site:export, or when reviewing exported YAML under config/ — checking for site UUIDs, _core hashes, unstable ordering, leaked secrets or environment-specific values before committing the export.
 ---
 
-# Exportar el sitio a receta, limpio
+# Exporting the site into a recipe, cleanly
 
-## Principio nuclear
+## Core principle
 
-`drush site:export` convierte el sitio de trabajo en receta. **Lo que exporta es lo que hay** — si el
-entorno estaba sucio, la receta sale sucia. La limpieza se hace **antes** de exportar y se **verifica**
-después, en el diff.
+`drush site:export` turns the working site into a recipe. **What it exports is what is there** — if
+the environment was dirty, the recipe comes out dirty. The cleanup is done **before** exporting and
+is **verified** afterwards, in the diff.
 
-## Flujo
+## Flow
 
 ```bash
-# 1. Deja el sitio exactamente como quieres que lo reciba el usuario
-# 2. Exporta
+# 1. Leave the site exactly as you want the user to receive it
+# 2. Export
 ddev drush site:export
-# 3. Prueba en LIMPIO (no en el entorno de trabajo)
+# 3. Test on a CLEAN install (not on the working environment)
 ddev drush sql:drop --yes
-#    reinstala y comprueba que el template aparece en el selector
+#    reinstall and check that the template appears in the selector
 ```
 
-`site:export` hace por su cuenta dos cosas que conviene conocer:
-- **Añade al `require`** de `composer.json` los módulos/temas/recetas que el sitio usa.
-- **Elimina el bloque `extra.drupal-site-template`** (el de `generate-theme`).
+`site:export` does two things on its own that are worth knowing about:
+- **It adds to the `require`** of `composer.json` the modules/themes/recipes the site uses.
+- **It removes the `extra.drupal-site-template` block** (the `generate-theme` one).
 
-## Qué revisar SIEMPRE en el diff
+## What to ALWAYS review in the diff
 
-| Buscar | Por qué | Acción |
+| Look for | Why | Action |
 |---|---|---|
-| `uuid:` a nivel raíz de un config | Es el UUID **del sitio origen** | Quitar |
-| `_core:` / `default_config_hash` | Atado a la instalación origen | Quitar salvo que toque |
-| Rutas absolutas (`/var/www`, `/home/...`) | Específicas del entorno | Quitar |
-| Claves de API, tokens, contraseñas, DSNs | **Nunca en el repo** | Quitar y mover a entorno |
-| `mail`, dominios reales, IDs de analítica | Datos del entorno de desarrollo | Neutralizar |
-| Módulos de desarrollo (`devel`, `webprofiler`) | No van al usuario final | Desinstalar y re-exportar |
-| Orden inestable entre exports | Genera diffs de ruido | Re-exportar y comparar |
+| `uuid:` at the root level of a config | It is the UUID **of the origin site** | Remove |
+| `_core:` / `default_config_hash` | Tied to the origin installation | Remove unless it belongs |
+| Absolute paths (`/var/www`, `/home/...`) | Environment-specific | Remove |
+| API keys, tokens, passwords, DSNs | **Never in the repo** | Remove and move to the environment |
+| `mail`, real domains, analytics IDs | Development environment data | Neutralise |
+| Development modules (`devel`, `webprofiler`) | They do not go to the end user | Uninstall and re-export |
+| Unstable ordering between exports | Generates noise diffs | Re-export and compare |
 
-## Comprobación rápida antes de commitear
+## Quick check before committing
 
 ```bash
 grep -rn "_core\|default_config_hash" config/ | head
@@ -46,24 +46,24 @@ grep -rniE "api[_-]?key|secret|token|passwd|password" config/ content/ | head
 grep -rn "/var/www\|/home/" config/ | head
 ```
 
-Cualquier acierto → **parar y limpiar**, no commitear "y ya lo arreglo".
+Any hit → **stop and clean**, do not commit "and I'll fix it later".
 
-## Contenido demo
+## Demo content
 
-Sale a `content/<entity_type>/<uuid>.yml`. Reglas:
-- Solo contenido sobre el que se tienen **derechos legales** (imágenes, fuentes, textos).
-- Sin datos personales reales: nombres, emails y teléfonos inventados y evidentes.
-- Los ficheros binarios referenciados deben viajar con el template.
+It comes out to `content/<entity_type>/<uuid>.yml`. Rules:
+- Only content over which **legal rights** are held (images, fonts, texts).
+- No real personal data: names, emails and phone numbers made up and obviously so.
+- The referenced binary files must travel with the template.
 
-## Errores comunes
+## Common mistakes
 
-- **Exportar desde el entorno sucio** con módulos de dev instalados → viajan al usuario.
-- **Probar la receta sobre el mismo sitio del que se exportó** → siempre pasa; no prueba nada.
-- **Commitear el export sin leer el diff** → así entran UUIDs y secretos.
-- **Dejar `extra.drupal-site-template`** si se editó el composer.json después de exportar.
+- **Exporting from the dirty environment** with dev modules installed → they travel to the user.
+- **Testing the recipe on the same site it was exported from** → it always passes; it proves nothing.
+- **Committing the export without reading the diff** → this is how UUIDs and secrets get in.
+- **Leaving `extra.drupal-site-template`** if the composer.json was edited after exporting.
 
-## Red flags — PARA
+## Red flags — STOP
 
-- "El secreto es de un entorno de pruebas, no pasa nada" → **no**, sale del repo.
-- "El diff es enorme, lo reviso por encima" → es justo cuando entran las fugas.
-- "Ya lo probé en mi sitio y funciona" → prueba en limpio o no has probado.
+- "The secret is from a test environment, it's fine" → **no**, it leaves the repo.
+- "The diff is huge, I'll skim it" → that is exactly when leaks get in.
+- "I already tested it on my site and it works" → test on a clean install or you have not tested.

@@ -1,70 +1,75 @@
-# Ágora · Idioms y lecciones (append-only)
+# Ágora · Idioms and lessons (append-only)
 
-> Gotchas y lecciones del proyecto. Se promueven al cerrar cada unidad. No confundir con ADRs/decisiones.
+> **Translation note — 2026-08-21.** This file was mechanically translated from Spanish into English
+> under D-017(b), which authorizes it explicitly. **The semantic content is unchanged:** no idiom was
+> added, removed, renumbered or altered in meaning. The Spanish original is preserved in the git
+> history as the signed record. New entries are written directly in English.
 
-- I-001 · Este proyecto construye sobre tecnología joven (Drupal CMS, Canvas, site templates): toda
-  research caduca. Cualquier afirmación sobre el estado del arte lleva fecha y fuente, y se re-verifica
-  antes de construir encima (prior-is-not-disk).
-- I-002 · El requisito "sin releases inestables ni parches" del marketplace convierte cada dependencia
-  en una decisión, no en un `composer require` casual.
-- I-003 · El CI de instalación corre SIN claves de IA: cualquier feature de IA que rompa la instalación
-  en ausencia de API key es un bug de diseño, no un detalle.
-- I-004 · El repositorio de un site template **ES la receta**: `recipe.yml` en la raíz con `type: Site`
-  (case-sensitive). No hay `recipes/` con sub-recetas locales, y el tema se **genera** vía
-  `site_template_helper`, no se versiona. Verificado 2026-08-20 contra `drupal_cms_site_template_base`.
-- I-005 · El starter kit **no tiene releases estables, solo ramas** — y eso **no** viola la política
-  de dependencias: se copia como andamiaje, nunca se declara en `require`. No entra en el SBOM.
-  El invariante `no-unstable-deps` debe excluirlo explícitamente para no dar un falso positivo.
-- I-006 · `www.drupal.org` puede estar bloqueado, pero **`updates.drupal.org` y `git.drupalcode.org`
-  suelen responder**. La release history oficial (`/release-history/<proyecto>/current`) da versión
-  estable, `<core_compatibility>` y `<security covered="1">` — es la fuente correcta para `sbom-check`,
-  y evita dar por "no verificable" algo que sí lo es.
-- I-007 · Un `exit 0` sin counts no prueba nada: una suite sin tests, un grep sin ficheros y un axe que
-  no cargó la página devuelven todos 0. Exigir siempre nº de elementos analizados.
-- I-008 · En este harness, los **subagentes de `.claude/agents/` se congelan al iniciar la sesión**:
-  no solo su registro, también **el contenido de su definición**. Editar un `agents/*.md` a mitad de
-  sesión NO tiene efecto — el subagente sigue corriendo con el system prompt viejo. Verificado
-  2026-08-20: tras reescribir `orquestador.md`, el agent seguía sin conocer los hechos nuevos y
-  respondía según la versión anterior. Las **skills y los comandos SÍ se recargan en caliente**.
-  → Tras crear o editar agents: **reiniciar la sesión** antes de fiarse de ellos.
-- I-009 · Un subagente con contexto limpio no ve la conversación: su fichero de definición debe ser
-  **autosuficiente**. Si un hecho verificado (estructura del repo, versiones del SBOM, falsos
-  positivos conocidos) no está escrito en su `.md`, para él no existe — y rellenará el hueco con la
-  regla genérica, que es justo como reaparecen los falsos positivos ya descartados.
-- I-010 · Una allowlist de permisos con **glob final** sobre un comando que acepta flags de salida
-  equivale a escritura arbitraria de ficheros: `Bash(curl -s https://host/path/*)` autoriza
-  `curl -s https://host/path/x -o ~/.zshrc`, y `Bash(git diff:*)` autoriza `git diff --output=<fichero>`.
-  Regla: comandos exactos, nunca `*` como token final, y **jamás allowlistar un directorio cuyo
-  contenido todavía no existe** (`tests/bin/*` con la carpeta vacía autoriza scripts que aún no se
-  han escrito ni revisado). Detectado por revisión de seguridad automática, 2026-08-20.
-- I-011 · Enmienda a I-006: en este entorno **Bash SÍ tiene red** (verificado 2026-08-21: `curl` a
-  `updates.drupal.org`, `git.drupalcode.org` y `www.drupal.org` → exit 0). Pero **varía dentro de la
-  misma sesión**: el mismo `curl` falló con exit 6 (DNS) veinte minutos antes de funcionar. Se
-  comprueba con un comando al empezar, nunca se asume — ni que la hay, ni que no. Declarar "no hay
-  red" sin probarlo produce planes tan malos como darla por hecha.
-- I-012 · `www.drupal.org/project/<X>` devuelve **302 hacia new.drupal.org para cualquier cadena**,
-  incluida una inexistente: un 302 NO prueba que un machine name esté libre. El oráculo válido es
-  `git.drupalcode.org/api/v4/projects/project%2F<X>` (200 = ocupado, 404 = libre).
-- I-013 · `updates.drupal.org/release-history/<X>/current` devuelve **HTTP 200 con cuerpo `<error>`**
-  para proyectos inexistentes. `curl -f` o cualquier chequeo por código de estado da falso verde:
-  hay que parsear el XML y exigir `<title>` + al menos una `<release>`.
-- I-014 · Un site template **no puede contener código propio**: `RequirementsTest` del starter kit
-  exige **0 ficheros `*.info.yml`** en el paquete, que además se instala en `./recipes/<name>` —
-  fuera del docroot, donde `RecursiveExtensionFilterCallback` ni recurre (solo `profiles/`,
-  `modules/`, `themes/` del root). Temas y módulos se **declaran en `require`**. Corrige I-004 en su
-  parte de "el tema se genera": se genera en el **sitio de trabajo**, no en el repo, es andamiaje de
-  desarrollo, y el bloque `extra.drupal-site-template` se borra antes de publicar.
-- I-015 · `RequirementsTest` respeta la variable `CI_ALLOW_DEV`: si está definida en CI, las
-  dependencias listadas **se saltan** la comprobación de versiones pineadas/dev. Es un debilitamiento
-  de gate por diseño. En Ágora **no se define nunca**, y hay invariante que lo verifica (T-209).
-- I-016 · Una premisa alarmante no verificada envenena la planificación tanto como una falsa
-  tranquilizadora: "el marketplace es DCP-only y cuesta 395 $" circuló dos unidades como restricción
-  dura y resultó **falso** (gratis está abierto a cualquier individuo; la cuota decía "none for pilot
-  and MVP"). Verificar en origen antes de dejar que una restricción externa moldee el alcance.
-- I-017 · La licencia y la privacidad son restricciones **estructurales**, no acabados: la tipografía
-  OFL auto-alojada son ficheros que la configuración no transporta, y una CDN de fuentes es pasivo
-  RGPD en sector público de la UE. Eso, y no la estética, es lo que obligó a que el tema sea un
-  proyecto aparte (D-014).
+> Project gotchas and lessons. They are promoted when each unit closes. Not to be confused with ADRs/decisions.
+
+- I-001 · This project builds on young technology (Drupal CMS, Canvas, site templates): all research
+  expires. Any claim about the state of the art carries a date and a source, and is re-verified
+  before building on top of it (prior-is-not-disk).
+- I-002 · The marketplace's "no unstable releases and no patches" requirement turns every dependency
+  into a decision, not a casual `composer require`.
+- I-003 · The installation CI runs WITHOUT AI keys: any AI feature that breaks the installation
+  in the absence of an API key is a design bug, not a detail.
+- I-004 · A site template's repository **IS the recipe**: `recipe.yml` at the root with `type: Site`
+  (case-sensitive). There is no `recipes/` with local sub-recipes, and the theme is **generated** via
+  `site_template_helper`, it is not versioned. Verified 2026-08-20 against `drupal_cms_site_template_base`.
+- I-005 · The starter kit **has no stable releases, only branches** — and that does **not** violate the
+  dependency policy: it is copied as scaffolding, never declared in `require`. It does not enter the SBOM.
+  The `no-unstable-deps` invariant must exclude it explicitly so as not to produce a false positive.
+- I-006 · `www.drupal.org` may be blocked, but **`updates.drupal.org` and `git.drupalcode.org`
+  usually respond**. The official release history (`/release-history/<project>/current`) gives the stable
+  version, `<core_compatibility>` and `<security covered="1">` — it is the correct source for `sbom-check`,
+  and it avoids writing off as "not verifiable" something that is.
+- I-007 · An `exit 0` without counts proves nothing: a suite with no tests, a grep with no files and an axe
+  run that never loaded the page all return 0. Always demand the number of items analyzed.
+- I-008 · In this harness, the **subagents in `.claude/agents/` freeze at session start**:
+  not only their registration, but also **the content of their definition**. Editing an `agents/*.md`
+  mid-session has NO effect — the subagent keeps running with the old system prompt. Verified
+  2026-08-20: after rewriting `orquestador.md`, the agent still did not know the new facts and
+  answered according to the previous version. **Skills and commands DO hot-reload.**
+  → After creating or editing agents: **restart the session** before relying on them.
+- I-009 · A subagent with a clean context does not see the conversation: its definition file must be
+  **self-sufficient**. If a verified fact (repo structure, SBOM versions, known false
+  positives) is not written in its `.md`, for it that fact does not exist — and it will fill the gap with
+  the generic rule, which is exactly how already-discarded false positives come back.
+- I-010 · A permission allowlist with a **trailing glob** on a command that accepts output flags
+  amounts to arbitrary file writing: `Bash(curl -s https://host/path/*)` authorizes
+  `curl -s https://host/path/x -o ~/.zshrc`, and `Bash(git diff:*)` authorizes `git diff --output=<file>`.
+  Rule: exact commands, never `*` as the final token, and **never allowlist a directory whose
+  contents do not yet exist** (`tests/bin/*` with the folder empty authorizes scripts that have not yet
+  been written or reviewed). Detected by automated security review, 2026-08-20.
+- I-011 · Amendment to I-006: in this environment **Bash DOES have network access** (verified 2026-08-21: `curl` to
+  `updates.drupal.org`, `git.drupalcode.org` and `www.drupal.org` → exit 0). But **it varies within the
+  same session**: the same `curl` failed with exit 6 (DNS) twenty minutes before it worked. It is
+  checked with a command at the start, never assumed — neither that there is network access, nor that there is not.
+  Declaring "there is no network" without testing it produces plans as bad as taking it for granted.
+- I-012 · `www.drupal.org/project/<X>` returns a **302 to new.drupal.org for any string**,
+  including a non-existent one: a 302 does NOT prove that a machine name is free. The valid oracle is
+  `git.drupalcode.org/api/v4/projects/project%2F<X>` (200 = taken, 404 = free).
+- I-013 · `updates.drupal.org/release-history/<X>/current` returns **HTTP 200 with an `<error>` body**
+  for non-existent projects. `curl -f` or any check by status code gives a false green:
+  the XML has to be parsed and `<title>` + at least one `<release>` demanded.
+- I-014 · A site template **cannot contain code of its own**: the starter kit's `RequirementsTest`
+  requires **0 `*.info.yml` files** in the package, which is moreover installed in `./recipes/<name>` —
+  outside the docroot, where `RecursiveExtensionFilterCallback` does not even recurse (only the root's
+  `profiles/`, `modules/`, `themes/`). Themes and modules are **declared in `require`**. It corrects I-004 in its
+  "the theme is generated" part: it is generated on the **working site**, not in the repo, it is development
+  scaffolding, and the `extra.drupal-site-template` block is deleted before publishing.
+- I-015 · `RequirementsTest` honors the `CI_ALLOW_DEV` variable: if it is defined in CI, the listed
+  dependencies **skip** the pinned/dev version check. It is a gate weakening
+  by design. In Ágora it is **never defined**, and there is an invariant that verifies this (T-209).
+- I-016 · An unverified alarming premise poisons planning just as much as a falsely
+  reassuring one: "the marketplace is DCP-only and costs $395" circulated for two units as a hard
+  constraint and turned out to be **false** (free is open to any individual; the fee said "none for pilot
+  and MVP"). Verify at the source before letting an external constraint shape the scope.
+- I-017 · License and privacy are **structural** constraints, not finishing touches: the self-hosted
+  OFL typography is files that configuration does not carry, and a font CDN is a GDPR
+  liability in the EU public sector. That, and not aesthetics, is what forced the theme to be a
+  separate project (D-014).
 - I-018 · String-match invariants are specified as **"not DEFINED in a versioned file"**, never
   **"not mentioned"**: the tests that police a string legitimately contain the very string being
   searched for. `git grep 'CI_ALLOW_DEV'` returns a permanent, unfixable failure because

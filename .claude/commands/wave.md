@@ -1,13 +1,13 @@
-Ejecuta la siguiente wave de la unidad activa según tasks.md:
-1. Reconciliation corto: relee tasks.md; verifica que la wave anterior tiene gate B firmado [✓ fecha].
-   Si no lo tiene → PARA y pide la firma. Append-only: no renumeres nada firmado.
-2. Invoca al subagente `orquestador` para el plan de la wave: lanes (paralelo/secuencial), criterio
-   de éxito por tarea y qué debe verificar el tester.
-3. Ejecuta ese plan invocando `desarrollador` y `tester` (en paralelo donde los ficheros sean
-   disjuntos). Conflicto runtime → pausa, secuencializa, reporta.
-4. Gate A completo: linters/static + suites + scripts de tests/bin/ + smoke si la unidad cierra.
-   Todo exit 0 con counts reales. Después, invoca al `orquestador` en modo auditoría para el
-   veredicto independiente. Sin su ✓, la wave NO cierra; sus 🔴 se resuelven o se escalan.
-5. Prepara gate B: PRE-VALIDA cada comando del walk (restaurando si es destructivo) y entrega
-   comandos copy-paste + qué debe VERSE en cada paso + dónde firma el humano en tasks.md.
-6. HOLD: reporte formato CLAUDE.md. El merge a rama canónica y el tag son del humano.
+Run the next wave of the active unit according to tasks.md:
+1. Short reconciliation: re-read tasks.md; verify that the previous wave has gate B signed [✓ date].
+   If it does not → STOP and ask for the signature. Append-only: do not renumber anything signed.
+2. Invoke the `orquestador` subagent for the wave plan: lanes (parallel/sequential), success
+   criterion per task and what the tester must verify.
+3. Execute that plan by invoking `desarrollador` and `tester` (in parallel where the files are
+   disjoint). Runtime conflict → pause, sequentialize, report.
+4. Complete gate A: linters/static + suites + tests/bin/ scripts + smoke if the unit closes.
+   Everything exit 0 with real counts. Afterwards, invoke the `orquestador` in audit mode for the
+   independent verdict. Without its ✓, the wave does NOT close; its 🔴 are resolved or escalated.
+5. Prepare gate B: PRE-VALIDATE every command of the walk (restoring it if it is destructive) and
+   deliver copy-paste commands + what must BE SEEN at each step + where the human signs in tasks.md.
+6. HOLD: report in CLAUDE.md format. The merge to the canonical branch and the tag belong to the human.

@@ -3,103 +3,103 @@ name: drupal-site-template
 description: Use when working on the structure, layout, packaging or publication of a Drupal CMS site template — creating or moving recipe.yml, composer.json, config/, content/ or screenshot.webp; deciding where a recipe, theme or demo page belongs; renaming the package; or preparing the template for release on Drupal.org.
 ---
 
-# Estructura de un Site Template de Drupal CMS
+# Structure of a Drupal CMS Site Template
 
-## Principio nuclear
+## Core principle
 
-**El repositorio ES la receta.** No es un contenedor con recetas dentro: `recipe.yml` vive en la
-raíz y describe todo el template. Colocar un `recipes/` con sub-recetas locales NO es el patrón del
-starter kit y no hay evidencia de que el instalador lo resuelva.
+**The repository IS the recipe.** It is not a container with recipes inside: `recipe.yml` lives at
+the root and describes the whole template. Placing a `recipes/` directory with local sub-recipes is
+NOT the starter kit pattern and there is no evidence that the installer resolves it.
 
-Verificado contra `drupal_cms_site_template_base` el 2026-08-20. Ver
+Verified against `drupal_cms_site_template_base` on 2026-08-20. See
 `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
 
-## Layout canónico
+## Canonical layout
 
 ```
-recipe.yml                 ← OBLIGATORIO, en la raíz, `type: Site`
-composer.json              ← `type: drupal-recipe`, nombre `drupal/<machine_name>`
-config/                    ← config exportada (la crea `drush site:export`)
-content/<entity_type>/<uuid>.yml   ← contenido demo como entidades
-recommended.yml            ← lista curada para Project Browser (opcional)
-screenshot.webp            ← captura del template
+recipe.yml                 ← MANDATORY, at the root, `type: Site`
+composer.json              ← `type: drupal-recipe`, name `drupal/<machine_name>`
+config/                    ← exported config (created by `drush site:export`)
+content/<entity_type>/<uuid>.yml   ← demo content as entities
+recommended.yml            ← curated list for Project Browser (optional)
+screenshot.webp            ← screenshot of the template
 README.md · LICENSE.txt
-.gitlab-ci.yml             ← include de gitlab_templates (NO definas jobs a mano)
+.gitlab-ci.yml             ← include of gitlab_templates (do NOT define jobs by hand)
 .github/workflows/         ← PHPUnit
-.tugboat/                  ← previews en vivo
+.tugboat/                  ← live previews
 tests/src/{Functional,Kernel}/
-.gitattributes             ← export-ignore de lo que no viaja al usuario final
+.gitattributes             ← export-ignore for whatever does not travel to the end user
 ```
 
-## Reglas duras (romper una = el template no se publica)
+## Hard rules (break one = the template does not get published)
 
-| # | Regla | Por qué |
+| # | Rule | Why |
 |---|---|---|
-| 1 | `recipe.yml`, ese nombre exacto, en la raíz | El instalador no lo encuentra si no |
-| 2 | `type: Site` **case-sensitive** | Sin esto no aparece en el selector de plantillas |
-| 3 | composer `type: drupal-recipe` | Determina cómo se instala |
-| 4 | Paquete `drupal/nombre_maquina` — solo letras, números, guion bajo | Requisito de publicación en Drupal.org |
-| 5 | **Sin `composer-patches`** | Prohibido explícitamente por el kit |
-| 6 | **Sin pins**: usa `^1`, nunca `1.2.3` | Prohibido explícitamente por el kit |
-| 7 | `GPL-2.0-or-later` salvo razón fuerte | Otra licencia puede impedir publicar |
-| 8 | Derechos legales sobre TODO el contenido incluido | Fuentes, imágenes, texto demo |
+| 1 | `recipe.yml`, that exact name, at the root | The installer does not find it otherwise |
+| 2 | `type: Site` **case-sensitive** | Without this it does not appear in the template selector |
+| 3 | composer `type: drupal-recipe` | Determines how it is installed |
+| 4 | Package `drupal/machine_name` — letters, numbers and underscores only | Drupal.org publication requirement |
+| 5 | **No `composer-patches`** | Explicitly forbidden by the kit |
+| 6 | **No pins**: use `^1`, never `1.2.3` | Explicitly forbidden by the kit |
+| 7 | `GPL-2.0-or-later` unless there is a strong reason | Another licence may prevent publication |
+| 8 | Legal rights over ALL included content | Fonts, images, demo text |
 
-## Composición: cómo se añaden funcionalidades
+## Composition: how features are added
 
-Un site template **sí** puede componerse de varias recetas más pequeñas, pero éstas son
-**paquetes composer externos**, no carpetas locales:
+A site template **can** be composed of several smaller recipes, but these are
+**external composer packages**, not local folders:
 
 ```yaml
 recipes:
-  - core/recipes/administrator_role   # las de core, por ruta
-  - drupal_cms_media                  # las contrib, por nombre de receta
+  - core/recipes/administrator_role   # core ones, by path
+  - drupal_cms_media                  # contrib ones, by recipe name
 install:
-  - modulo_o_tema                     # módulos/temas a instalar
+  - module_or_theme                     # modules/themes to install
 ```
 
-**Prohibido** construir un site template encima de otro site template. Regla textual del kit:
+**Forbidden** to build a site template on top of another site template. Literal rule from the kit:
 *"you shouldn't build a site template on top of another site template"*.
 
-## El tema NO se versiona (por defecto)
+## The theme is NOT versioned (by default)
 
-El tema lo genera el plugin `drupal/site_template_helper` desde `composer.json`:
+The theme is generated by the `drupal/site_template_helper` plugin from `composer.json`:
 
 ```json
 "extra": { "drupal-site-template": { "generate-theme": {
-    "name": "mi_tema", "from": false,
-    "info": { "name": "Mi tema", "regions": {"header":"Header","content":"Content","footer":"Footer"} }
+    "name": "my_theme", "from": false,
+    "info": { "name": "My theme", "regions": {"header":"Header","content":"Content","footer":"Footer"} }
 }}}
 ```
 
-`from: false` = no hereda de tema base. **`drush site:export` borra este bloque** — y debes borrarlo
-tú antes de publicar si sigue ahí. Un tema propio versionado es una desviación deliberada del flujo,
-no el camino por defecto: decídelo explícitamente.
+`from: false` = it does not inherit from a base theme. **`drush site:export` deletes this block** —
+and you must delete it yourself before publishing if it is still there. A versioned custom theme is
+a deliberate deviation from the flow, not the default path: decide it explicitly.
 
-## Qué rama del starter kit copiar
+## Which starter kit branch to copy
 
-| Rama | Qué es | Uso |
+| Branch | What it is | Use |
 |---|---|---|
-| `1.x` | El starter kit real: CI, Tugboat, `GET-STARTED.md`, `AGENTS.md`, tests | **Copiar ésta** |
-| `2.x` | Un template ya exportado (config/ + content/, sin CI ni docs) | Referencia de "cómo queda tras exportar" |
+| `1.x` | The real starter kit: CI, Tugboat, `GET-STARTED.md`, `AGENTS.md`, tests | **Copy this one** |
+| `2.x` | An already-exported template (config/ + content/, no CI or docs) | Reference for "what it looks like after exporting" |
 
-El starter kit **no tiene releases estables, solo ramas**. No es un problema de política de
-dependencias: **se copia, no se declara en `require`**. Nunca entra en el SBOM.
+The starter kit **has no stable releases, only branches**. This is not a dependency-policy problem:
+**it is copied, not declared in `require`**. It never enters the SBOM.
 
-## Errores comunes
+## Common mistakes
 
-- **Crear `recipes/agora_x/` dentro del repo** → no es el patrón; el repo ya es la receta.
-- **Versionar el tema generado sin decidirlo** → diverge del flujo de `site:export`.
-- **Dejar `extra.drupal-site-template` en el `composer.json` publicado** → hay que borrarlo.
-- **Dejar `GET-STARTED.md`** → es del kit, no de tu template (va en `export-ignore`).
-- **Escribir jobs de CI a mano** → `.gitlab-ci.yml` solo incluye `gitlab_templates`; se configura
-  con variables (`SKIP_ESLINT`, `OPT_IN_TEST_NEXT_MAJOR`…).
-- **Pinear una versión** para "asegurar" reproducibilidad → prohibido.
+- **Creating `recipes/agora_x/` inside the repo** → not the pattern; the repo already is the recipe.
+- **Versioning the generated theme without deciding it** → diverges from the `site:export` flow.
+- **Leaving `extra.drupal-site-template` in the published `composer.json`** → it must be deleted.
+- **Leaving `GET-STARTED.md`** → it belongs to the kit, not to your template (it goes in `export-ignore`).
+- **Writing CI jobs by hand** → `.gitlab-ci.yml` only includes `gitlab_templates`; it is configured
+  with variables (`SKIP_ESLINT`, `OPT_IN_TEST_NEXT_MAJOR`…).
+- **Pinning a version** to "ensure" reproducibility → forbidden.
 
-## Antes de publicar
+## Before publishing
 
-- [ ] `name`, `description` y `screenshot.webp` propios (no los del kit)
-- [ ] `_comment` y `extra.drupal-site-template` eliminados de `composer.json`
-- [ ] `GET-STARTED.md` borrado; `.gitattributes` con los `export-ignore`
-- [ ] `recipe.yml` con `type: Site` y descripción visible en el instalador
-- [ ] Prueba real: exportar → `drush sql:drop --yes` → reinstalar → el template aparece en el selector
-- [ ] `recommended.yml` solo con proyectos que tengan release **estable**
+- [ ] Own `name`, `description` and `screenshot.webp` (not the kit's)
+- [ ] `_comment` and `extra.drupal-site-template` removed from `composer.json`
+- [ ] `GET-STARTED.md` deleted; `.gitattributes` with the `export-ignore` entries
+- [ ] `recipe.yml` with `type: Site` and a description visible in the installer
+- [ ] Real test: export → `drush sql:drop --yes` → reinstall → the template appears in the selector
+- [ ] `recommended.yml` with only projects that have a **stable** release

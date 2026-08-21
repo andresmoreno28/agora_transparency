@@ -3,82 +3,82 @@ name: sbom-y-licencias
 description: Use when adding, upgrading or evaluating any dependency for the site template — running composer require, editing the require section, listing a project in recommended.yml, or reviewing whether a module's release status, security coverage or license allows it into the SBOM.
 ---
 
-# Política de dependencias, SBOM y licencias
+# Dependency policy, SBOM and licences
 
-## Principio nuclear
+## Core principle
 
-En este proyecto **cada dependencia es una decisión firmada, no un `composer require`**. El
-marketplace exige SBOM con estado de cobertura de seguridad, y prohíbe releases inestables y parches.
-Una dependencia sin justificación en `specs/000-proyecto/DECISIONES.md` **no existe**.
+In this project **every dependency is a signed decision, not a `composer require`**. The
+marketplace requires an SBOM with security coverage status, and forbids unstable releases and patches.
+A dependency without a justification in `specs/000-proyecto/DECISIONES.md` **does not exist**.
 
-## Puerta de entrada — las cuatro preguntas
+## Gateway — the four questions
 
-Antes de añadir NADA, en este orden:
+Before adding ANYTHING, in this order:
 
-1. **¿Lo resuelve algo que Drupal CMS ya trae?** Si sí → usa eso. Fin.
-2. **¿Tiene release estable?** Ni dev, ni alpha, ni beta, ni RC. Si no → **fuera**.
-3. **¿Tiene cobertura del equipo de seguridad de Drupal?** Si no → **fuera**, salvo escalación firmada.
-4. **¿La licencia es compatible?** GPL-2.0-or-later para lo derivado de Drupal.
+1. **Does something Drupal CMS already ships solve it?** If yes → use that. The end.
+2. **Does it have a stable release?** No dev, no alpha, no beta, no RC. If not → **out**.
+3. **Does it have Drupal security team coverage?** If not → **out**, barring a signed escalation.
+4. **Is the licence compatible?** GPL-2.0-or-later for anything derived from Drupal.
 
-Si las cuatro pasan → añadir **y** escribir su línea en `DECISIONES.md` en el mismo cambio.
+If all four pass → add it **and** write its line in `DECISIONES.md` in the same change.
 
-## Prohibiciones absolutas
+## Absolute prohibitions
 
-| Prohibido | Ejemplo | Por qué |
+| Forbidden | Example | Why |
 |---|---|---|
-| Releases inestables | `^2.1-beta3`, `1.0-alpha1`, `dev-main` | Requisito literal del marketplace |
-| Parches | `composer-patches`, sección `patches` | Prohibido por el starter kit |
-| Pins exactos | `"drupal/x": "1.2.3"` | Prohibido; usa `^1.2` |
-| `minimum-stability` relajado | `"minimum-stability": "beta"` | Enmascara el problema anterior |
-| Secretos en config o repo | claves de IA, tokens | No-negociable nº3 |
+| Unstable releases | `^2.1-beta3`, `1.0-alpha1`, `dev-main` | Literal marketplace requirement |
+| Patches | `composer-patches`, `patches` section | Forbidden by the starter kit |
+| Exact pins | `"drupal/x": "1.2.3"` | Forbidden; use `^1.2` |
+| Relaxed `minimum-stability` | `"minimum-stability": "beta"` | Masks the previous problem |
+| Secrets in config or repo | AI keys, tokens | Non-negotiable #3 |
 
-## La línea de `DECISIONES.md`
+## The `DECISIONES.md` line
 
-Cada módulo contrib necesita, como mínimo:
+Every contrib module needs, as a minimum:
 
 ```
-- **D-0NN** · SBOM: `drupal/<modulo>` ^X.Y — qué aporta (1 línea), por qué no lo cubre Drupal CMS,
-  estado de cobertura de seguridad, licencia. Firmada por [andres] AAAA-MM-DD.
+- **D-0NN** · SBOM: `drupal/<module>` ^X.Y — what it provides (1 line), why Drupal CMS does not cover it,
+  security coverage status, licence. Signed by [andres] YYYY-MM-DD.
 ```
 
-## Licencias — manifiesto
+## Licences — manifest
 
-| Tipo de activo | Licencia esperada |
+| Asset type | Expected licence |
 |---|---|
-| Código derivado de Drupal (recetas, temas, módulos) | GPL-2.0-or-later |
-| Tipografías | OFL u otra libre — **nunca** una fuente de licencia restringida |
-| Imágenes y media demo | CC0, propias, o con derechos documentados |
-| Contenido de texto demo | Propio |
+| Code derived from Drupal (recipes, themes, modules) | GPL-2.0-or-later |
+| Typefaces | OFL or another free one — **never** a restrictively licensed font |
+| Demo images and media | CC0, own work, or with documented rights |
+| Demo text content | Own work |
 
-Regla del kit: *"You must possess legal rights to all included content"*. Si no puedes nombrar la
-licencia de un activo, **no entra**.
+Rule from the kit: *"You must possess legal rights to all included content"*. If you cannot name the
+licence of an asset, **it does not go in**.
 
-## Caso especial: el starter kit no cuenta
+## Special case: the starter kit does not count
 
-`drupal_cms_site_template_base` no tiene releases estables — solo ramas. **No es una violación**:
-se **copia** como andamiaje, nunca se declara en `require`. No entra en el SBOM. No lo marques como
-hallazgo del invariante `no-unstable-deps`.
+`drupal_cms_site_template_base` has no stable releases — only branches. **This is not a violation**:
+it is **copied** as scaffolding, never declared in `require`. It does not enter the SBOM. Do not flag
+it as a finding of the `no-unstable-deps` invariant.
 
 ## `recommended.yml` (Project Browser)
 
-Aviso literal del propio fichero: lista **solo** proyectos con releases estables y soportadas.
-Un proyecto en beta ahí no será instalable por la mayoría de usuarios (`minimum-stability` por
-defecto de Composer).
+Literal warning from the file itself: list **only** projects with stable, supported releases.
+A project in beta there will not be installable by most users (Composer's default
+`minimum-stability`).
 
-## Racionalizaciones y realidad
+## Rationalisations and reality
 
-| Excusa | Realidad |
+| Excuse | Reality |
 |---|---|
-| "El beta es estable en la práctica" | El requisito es formal, no una opinión sobre calidad |
-| "Es solo una dependencia de desarrollo" | Si está en `require`, viaja al usuario |
-| "Lo pineo para que sea reproducible" | Los pins están prohibidos explícitamente |
-| "Un parche pequeño y lo quito luego" | Los parches están prohibidos; el "luego" no llega |
-| "Lo documento después" | La línea de DECISIONES va en el MISMO cambio |
-| "Es lo que trae el starter kit en 2.x" | Lo que traiga el kit no te exime; tu SBOM es tuyo |
+| "The beta is stable in practice" | The requirement is formal, not an opinion about quality |
+| "It's only a development dependency" | If it is in `require`, it travels to the user |
+| "I'll pin it so it is reproducible" | Pins are explicitly forbidden |
+| "A small patch and I'll remove it later" | Patches are forbidden; the "later" never comes |
+| "I'll document it afterwards" | The DECISIONES line goes in the SAME change |
+| "It's what the starter kit ships in 2.x" | Whatever the kit ships does not excuse you; your SBOM is yours |
 
-## Red flags — PARA y escala
+## Red flags — STOP and escalate
 
-- Estás a punto de escribir `-beta`, `-alpha`, `-rc` o `dev-` en `composer.json`
-- Estás buscando cómo relajar `minimum-stability`
-- Añades un módulo "y ya lo justifico luego"
-- No sabes decir bajo qué licencia está una fuente o una imagen que vas a incluir
+- You are about to write `-beta`, `-alpha`, `-rc` or `dev-` in `composer.json`
+- You are looking for how to relax `minimum-stability`
+- You add a module "and I'll justify it later"
+- You cannot say under which licence a font or an image you are about to include is

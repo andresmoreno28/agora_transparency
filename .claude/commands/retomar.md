@@ -1,6 +1,6 @@
-Reconstruye el estado del proyecto desde disco (el chat anterior no existe):
-1. Lee CLAUDE.md, specs/000-proyecto/plan.md, specs/000-proyecto/DECISIONES.md, specs/000-proyecto/IDIOMS.md
-   y el plan.md + tasks.md de la unidad activa (la de número más alto con tareas sin firmar).
-2. Verifica: rama actual, árbol limpio o sucio, último tag, último task firmado [✓], siguiente D-NNN libre.
-3. Reporta en ≤15 líneas: unidad activa, wave activa, qué está firmado, qué está pendiente de firma,
-   decisiones abiertas, y tu propuesta del siguiente paso. NO ejecutes nada más sin confirmación.
+Rebuild the project state from disk (the previous chat does not exist):
+1. Read CLAUDE.md, specs/000-proyecto/plan.md, specs/000-proyecto/DECISIONES.md, specs/000-proyecto/IDIOMS.md
+   and the plan.md + tasks.md of the active unit (the highest-numbered one with unsigned tasks).
+2. Verify: current branch, clean or dirty tree, latest tag, last signed task [✓], next free D-NNN.
+3. Report in ≤15 lines: active unit, active wave, what is signed, what is pending signature,
+   open decisions, and your proposal for the next step. Do NOT execute anything else without confirmation.

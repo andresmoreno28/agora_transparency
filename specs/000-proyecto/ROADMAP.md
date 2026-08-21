@@ -1,209 +1,209 @@
-# Ágora · Roadmap de desarrollo completo (unidades 001 → 007)
+# Ágora · Full development roadmap (units 001 → 007)
 
-> **Estado: DIRECCIÓN, no scope firmado.** Este documento desarrolla el §6 de `plan.md` para que
-> exista visión de extremo a extremo. El scope real de cada unidad se fija en **su** scaffolding turn
-> (research fechada → `plan.md` → `tasks.md`), y ahí puede diverger de aquí: manda el disco y el
-> estado del arte del momento (I-001).
+> **Status: DIRECTION, not signed scope.** This document develops §6 of `plan.md` so that an
+> end-to-end vision exists. The real scope of each unit is fixed in **its own** scaffolding turn
+> (dated research → `plan.md` → `tasks.md`), and there it may diverge from this one: disk wins, as
+> does the state of the art at that moment (I-001).
 >
-> Redactado [ejecutor] 2026-08-20, tras la research `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
+> Written [ejecutor] 2026-08-20, after the research `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
 
-## Mapa de dependencias
+## Dependency map
 
 ```
-001 fundación ──► 002 base + tema ──┬─► 003 contenido demo ──┐
-                                    │                        ├─► 006 hardening ──► 007 publicación
-                                    ├─► 004 publishing + foi ─┤
-                                    └─► 005 ia + governance ──┘
+001 foundation ──► 002 base + theme ──┬─► 003 demo content ─────┐
+                                      │                         ├─► 006 hardening ──► 007 publication
+                                      ├─► 004 publishing + foi ─┤
+                                      └─► 005 ai + governance ──┘
 ```
 
-`003`, `004` y `005` dependen de `002` pero **no entre sí**: pueden solaparse si los ficheros son
-disjuntos. `006` exige las tres cerradas. `007` es del humano.
+`003`, `004` and `005` depend on `002` but **not on each other**: they can overlap if the files are
+disjoint. `006` requires the three of them closed. `007` belongs to the human.
 
-## Convenciones del roadmap
+## Roadmap conventions
 
-- **Gate A** = verde automatizable, con counts reales (ver skill `gate-a-verde`).
-- **Gate B** = firma de Andrés.
-- Toda unidad arranca con reconciliation pass y cierra con reporte + HOLD.
-- Cada módulo contrib que aparezca necesita su línea en `DECISIONES.md` **en el mismo cambio**.
-
----
-
-## 001 · Fundación — esqueleto y CI verde en vacío
-
-**Objetivo:** que exista un repositorio que ES un site template válido, instalable en limpio y con el
-pipeline de drupalcode en verde, todavía sin identidad ni contenido propio.
-
-**Bloqueada por:** D-007 (machine name), D-008 (enfoque del tema), **D-011 (arquitectura de recetas)**
-y la re-verificación de los requisitos del marketplace. Ver `specs/001-fundacion/plan.md`.
-
-**Puntos de desarrollo**
-1. Copiar la rama `1.x` del starter kit y renombrar el paquete a `drupal/<machine_name>`.
-2. Limpiar el andamiaje: `_comment` de `composer.json`, `GET-STARTED.md`, `screenshot.webp` del kit.
-3. `.gitignore` / `.gitattributes` definitivos desde los `.example`.
-4. `recipe.yml` propio: `name`, `description`, `type: Site`, recetas base heredadas.
-5. Entorno DDEV (≥1.25.0) reproducible y documentado.
-6. `.gitlab-ci.yml` con las variables correctas; primer pipeline verde en vacío.
-7. Scripts de invariantes en `tests/bin/`: `no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check`.
-8. Install smoke real: aplicar sobre Drupal CMS limpio y comprobar que aparece en el selector.
-
-**Gate A** · `composer validate` · pipeline drupalcode verde · `InstallTest`/`ValidationTest`/
-`RequirementsTest` en verde con counts · los 4 invariantes exit 0 con nº de ficheros escaneados.
-
-**Gate B** · Andrés confirma que el esqueleto instala en limpio y que el machine name es el definitivo.
+- **Gate A** = automatable green, with real counts (see the `gate-a-verde` skill).
+- **Gate B** = Andrés's signature.
+- Every unit starts with a reconciliation pass and closes with a report + HOLD.
+- Every contrib module that appears needs its line in `DECISIONES.md` **in the same change**.
 
 ---
 
-## 002 · Base + tema — modelo de contenido y Canvas
+## 001 · Foundation — skeleton and green CI while empty
 
-**Objetivo:** el modelo de datos de transparencia y un tema Canvas-compatible sobrio y accesible.
+**Goal:** that a repository exists which IS a valid site template, installable from clean and with the
+drupalcode pipeline green, still without its own identity or content.
 
-**Puntos de desarrollo**
-1. **Tipos de contenido**: Documento, Cargo/Persona, Contrato, Partida presupuestaria, Convocatoria.
-2. **Taxonomías y facetas**: tipo de documento, año, área/departamento, estado.
-3. **Roles y permisos**: editor, revisor, publicador, administrador. Permisos mínimos por rol.
-4. **Vistas base**: biblioteca documental con facetas, listados por tipo, buscador.
-5. **Tema Canvas**: tokens de color con contraste AA verificado, tipografía OFL, escala tipográfica,
-   espaciado, foco visible, `prefers-reduced-motion`.
-6. **Componentes Canvas**: qué componentes se habilitan y cuáles se ocultan (`disable: []`).
-7. **Plantillas Twig** de los tipos de contenido, con semántica correcta y tablas accesibles.
-8. Decidir y aplicar el enfoque del tema (D-008: generado vs versionado).
+**Blocked by:** D-007 (machine name), D-008 (theme approach), **D-011 (recipe architecture)**
+and the re-verification of the marketplace requirements. See `specs/001-fundacion/plan.md`.
 
-**Gate A** · phpcs/phpstan/eslint/stylelint verdes · axe sin violaciones sobre las plantillas ·
-contraste de todos los tokens verificado · PHPUnit kernel del modelo de contenido.
+**Development points**
+1. Copy the starter kit's `1.x` branch and rename the package to `drupal/<machine_name>`.
+2. Clean up the scaffolding: `_comment` in `composer.json`, `GET-STARTED.md`, the kit's `screenshot.webp`.
+3. Final `.gitignore` / `.gitattributes` from the `.example` files.
+4. Own `recipe.yml`: `name`, `description`, `type: Site`, inherited base recipes.
+5. Reproducible and documented DDEV environment (≥1.25.0).
+6. `.gitlab-ci.yml` with the correct variables; first green pipeline while empty.
+7. Invariant scripts in `tests/bin/`: `no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check`.
+8. Real install smoke: apply it on a clean Drupal CMS and check that it appears in the selector.
 
-**Gate B** · Andrés valida la estética institucional y el modelo de contenido.
+**Gate A** · `composer validate` · drupalcode pipeline green · `InstallTest`/`ValidationTest`/
+`RequirementsTest` green with counts · the 4 invariants exit 0 with the number of files scanned.
 
-**Riesgo principal** 🟡 · Canvas es tecnología joven: re-verificar qué exige hoy un tema
-"Canvas-compatible" antes de escribir el tema.
-
----
-
-## 003 · Contenido demo — bilingüe ES/EN
-
-**Objetivo:** un portal que al instalarse ya cuenta una historia coherente y completa.
-
-**Puntos de desarrollo**
-1. **Portada**: buscador "¿qué quieres saber?" + indicadores clave.
-2. **Institución**: organigrama, cargos, retribuciones en tablas accesibles.
-3. **Biblioteca documental** con facetas pobladas.
-4. **Presupuestos y contratos**: visualización ligera **+ tabla accesible como fuente de verdad**
-   (evitar módulos de charts pesados).
-5. **Datos abiertos** descargables (CSV/JSON) con su ficha.
-6. **Declaración de accesibilidad** pre-armada, con canal de quejas.
-7. Traducciones ES/EN de todo lo anterior; `lang` correcto por fragmento.
-8. Media demo con licencias documentadas (CC0/propias) en el manifiesto.
-
-**Gate A** · axe sin violaciones en **todas** las páginas demo · Playwright funcional + visual ·
-invariante `no-secrets` sobre `content/` · verificación de que no hay datos personales reales.
-
-**Gate B** · Andrés revisa el tono institucional y la veracidad plausible del contenido ficticio.
-
-**Riesgo** 🟡 · Derechos de imágenes y fuentes: nada entra sin licencia nombrable.
+**Gate B** · Andrés confirms that the skeleton installs from clean and that the machine name is the final one.
 
 ---
 
-## 004 · Publishing + FOI — flujos con ECA
+## 002 · Base + theme — content model and Canvas
 
-**Objetivo:** el portal deja de ser estático: tiene flujo editorial y ciclo de solicitudes ciudadanas.
+**Goal:** the transparency data model and a sober, accessible Canvas-compatible theme.
 
-**Puntos de desarrollo**
-1. **Flujo editorial** (borrador → revisión → publicado) con moderación de contenido y trazabilidad.
-2. **ECA de publicación**: notificaciones, transiciones, registro de quién y cuándo.
-3. **Webform de solicitud de información** ciudadana, accesible y con validación clara.
-4. **Ciclo FOI con ECA**: acuse de recibo automático, cómputo de plazos, estados, recordatorios,
-   respuesta y cierre.
-5. **Panel de seguimiento** de solicitudes para el gestor.
-6. Correos transaccionales (sobre `easy_email_express`) accesibles y sin datos sensibles.
-7. Permisos y visibilidad: qué ve el ciudadano, qué ve el gestor.
+**Development points**
+1. **Content types**: Document, Position/Person, Contract, Budget line, Public call.
+2. **Taxonomies and facets**: document type, year, area/department, status.
+3. **Roles and permissions**: editor, reviewer, publisher, administrator. Minimum permissions per role.
+4. **Base views**: document library with facets, listings by type, search box.
+5. **Canvas theme**: color tokens with verified AA contrast, OFL typography, type scale,
+   spacing, visible focus, `prefers-reduced-motion`.
+6. **Canvas components**: which components are enabled and which are hidden (`disable: []`).
+7. **Twig templates** for the content types, with correct semantics and accessible tables.
+8. Decide and apply the theme approach (D-008: generated vs versioned).
 
-**Gate A** · PHPUnit funcional de los ciclos ECA (estados y plazos) · Playwright del flujo completo
-de solicitud · axe sobre el formulario y sus errores · `no-secrets`.
+**Gate A** · phpcs/phpstan/eslint/stylelint green · axe with no violations on the templates ·
+contrast of every token verified · PHPUnit kernel tests of the content model.
 
-**Gate B** · Andrés recorre el ciclo FOI de punta a punta.
+**Gate B** · Andrés validates the institutional aesthetics and the content model.
 
-**Riesgo** 🟡 · Los plazos legales varían por jurisdicción: configurables, nunca hardcodeados.
-
----
-
-## 005 · IA + governance — asistente con citas y auditoría
-
-**Objetivo:** las dos features diferenciales. Ambas deben degradar con elegancia.
-
-**Puntos de desarrollo**
-1. **Recipe `agora_ai`** sobre el recipe de IA de Drupal CMS, **proveedor-agnóstico**.
-2. **RAG sobre el corpus documental**: indexa **solo documentos publicados**.
-3. **Citas obligatorias**: toda respuesta enlaza a sus fuentes; fuera de fuentes responde "no lo sé".
-4. **Degradación elegante sin API key** — el CI de instalación corre sin claves (I-003). Si falta la
-   clave: la feature se oculta o informa, y **la instalación no se rompe**.
-5. **Descargo visible** de que la respuesta la genera una IA.
-6. **Config Guardian preconfigurado**: snapshots programados + panel en admin.
-7. Narrativa "el portal se audita a sí mismo" documentada para el usuario final.
-8. Configuración de la clave **por variable de entorno/UI post-instalación**, jamás en config.
-
-**Gate A** · install smoke **sin API key** verde (bloqueante) · PHPUnit del recipe de IA ·
-invariante `no-secrets` reforzado · axe sobre la UI del asistente.
-
-**Gate B** · Andrés valida que sin clave el sitio instala y se comporta bien, y que con clave las
-citas son correctas.
-
-**Riesgo** 🔴 · Es la unidad con más superficie de fuga de secretos y la que más fácilmente rompe
-la instalabilidad. Tratar el smoke sin clave como el test principal, no como un extra.
+**Main risk** 🟡 · Canvas is young technology: re-verify what a "Canvas-compatible" theme requires
+today before writing the theme.
 
 ---
 
-## 006 · Hardening — auditoría completa antes de publicar
+## 003 · Demo content — bilingual ES/EN
 
-**Objetivo:** pasar la revisión del marketplace **a la primera**.
+**Goal:** a portal that, once installed, already tells a coherent and complete story.
 
-**Puntos de desarrollo**
-1. **Auditoría a11y completa**: axe + recorrido de teclado en todos los flujos + criterios de WCAG 2.2
-   (foco no obstruido, tamaño de objetivo, ayuda consistente, entrada redundante).
-2. **Atestación WCAG** redactada y firmada.
-3. **SBOM final**: cada componente con versión estable, estado de cobertura de seguridad y su línea
-   en `DECISIONES.md`.
-4. **Manifiesto de licencias** completo: código GPL, fuentes OFL, media CC0/propia.
-5. **Binding smoke**: instalación en limpio de extremo a extremo, sin claves, verificando rutas y render.
-6. **Regresión visual** estabilizada de todas las páginas demo.
-7. **Rendimiento**: revisión de peso de página y consultas; sin módulos pesados innecesarios.
-8. **Documentación pública en inglés**: README del proyecto, instalación, configuración post-install,
-   qué hace cada recipe.
-9. **Compromiso de respuesta de seguridad**: SLA documentado.
-10. Barrido final de invariantes: `no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check`.
+**Development points**
+1. **Home page**: a "what do you want to know?" search box + key indicators.
+2. **Institution**: org chart, offices, remuneration in accessible tables.
+3. **Document library** with populated facets.
+4. **Budgets and contracts**: lightweight visualization **+ accessible table as the source of truth**
+   (avoid heavy chart modules).
+5. **Open data** downloadable (CSV/JSON) with its own record page.
+6. **Accessibility statement** pre-built, with a complaints channel.
+7. ES/EN translations of all of the above; correct `lang` per fragment.
+8. Demo media with documented licenses (CC0/own) in the manifest.
 
-**Gate A** · Todo lo anterior en verde con counts + veredicto del `orquestador` sin 🔴 abiertos.
+**Gate A** · axe with no violations on **all** the demo pages · Playwright functional + visual ·
+the `no-secrets` invariant over `content/` · verification that there is no real personal data.
 
-**Gate B** · Andrés firma que el template está listo para someterse a revisión.
+**Gate B** · Andrés reviews the institutional tone and the plausible truthfulness of the fictional content.
 
----
-
-## 007 · Publicación — manos del humano
-
-**Objetivo:** que Ágora exista públicamente. **Esta unidad no la ejecuta la IA.**
-
-**Puntos de desarrollo**
-1. Crear el proyecto en Drupal.org con el machine name firmado (D-007).
-2. Empujar el repositorio a `git.drupalcode.org`; configurar el mirror en GitHub si aplica.
-3. Verificar el pipeline en el proyecto real.
-4. Publicar `screenshot.webp`, descripción y documentación del proyecto.
-5. Configurar `recommended.yml` con su permalink de la API de GitLab.
-6. Tugboat para la demo en vivo; enlazarla desde `recipe.yml` (`drupal_cms_installer.links`).
-7. Primera **release estable**.
-8. Decidir vía de publicación (ver ⚠️ abajo) y, si procede, solicitud al marketplace.
-
-⚠️ **Bloqueante sin resolver:** la research del 2026-08-20 recogió señales (sin verificar) de que el
-marketplace arrancó como **piloto limitado a Drupal Certified Partners**, con **cuota de 395 $ por
-listing + 250 $ anuales**. Si se confirma, la vía marketplace puede no estar abierta y la ruta real
-sería **Community** (proyecto general, publicable sin revisión). Debe verificarse antes de 006.
+**Risk** 🟡 · Image and font rights: nothing enters without a nameable license.
 
 ---
 
-## Riesgos transversales
+## 004 · Publishing + FOI — workflows with ECA
 
-| Riesgo | Sev | Mitigación |
+**Goal:** the portal stops being static: it has an editorial workflow and a citizen request cycle.
+
+**Development points**
+1. **Editorial workflow** (draft → review → published) with content moderation and traceability.
+2. **Publishing ECA**: notifications, transitions, a record of who and when.
+3. **Citizen freedom-of-information request Webform**, accessible and with clear validation.
+4. **FOI cycle with ECA**: automatic acknowledgment of receipt, deadline computation, states, reminders,
+   response and closure.
+5. **Tracking panel** for requests, for the manager.
+6. Transactional emails (on top of `easy_email_express`) accessible and without sensitive data.
+7. Permissions and visibility: what the citizen sees, what the manager sees.
+
+**Gate A** · functional PHPUnit of the ECA cycles (states and deadlines) · Playwright of the complete
+request flow · axe over the form and its errors · `no-secrets`.
+
+**Gate B** · Andrés walks the FOI cycle end to end.
+
+**Risk** 🟡 · Legal deadlines vary by jurisdiction: configurable, never hardcoded.
+
+---
+
+## 005 · AI + governance — assistant with citations and auditing
+
+**Goal:** the two differentiating features. Both must degrade gracefully.
+
+**Development points**
+1. **Recipe `agora_ai`** on top of the Drupal CMS AI recipe, **provider-agnostic**.
+2. **RAG over the document corpus**: it indexes **only published documents**.
+3. **Mandatory citations**: every answer links to its sources; outside its sources it answers "I don't know".
+4. **Graceful degradation without an API key** — the installation CI runs without keys (I-003). If the
+   key is missing: the feature is hidden or reports it, and **the installation does not break**.
+5. **Visible disclaimer** that the answer is generated by an AI.
+6. **Config Guardian preconfigured**: scheduled snapshots + admin panel.
+7. The "the portal audits itself" narrative documented for the end user.
+8. Key configuration **via environment variable / post-installation UI**, never in config.
+
+**Gate A** · install smoke **without an API key** green (blocking) · PHPUnit of the AI recipe ·
+reinforced `no-secrets` invariant · axe over the assistant's UI.
+
+**Gate B** · Andrés validates that without a key the site installs and behaves well, and that with a key the
+citations are correct.
+
+**Risk** 🔴 · It is the unit with the largest secret-leak surface and the one that most easily breaks
+installability. Treat the keyless smoke as the main test, not as an extra.
+
+---
+
+## 006 · Hardening — full audit before publishing
+
+**Goal:** pass the marketplace review **on the first attempt**.
+
+**Development points**
+1. **Full a11y audit**: axe + keyboard walkthrough of every flow + WCAG 2.2 criteria
+   (focus not obscured, target size, consistent help, redundant entry).
+2. **WCAG attestation** written and signed.
+3. **Final SBOM**: every component with a stable version, security coverage status and its line
+   in `DECISIONES.md`.
+4. **Complete license manifest**: GPL code, OFL fonts, CC0/own media.
+5. **Binding smoke**: end-to-end clean installation, without keys, verifying routes and rendering.
+6. **Visual regression** stabilized across all the demo pages.
+7. **Performance**: review of page weight and queries; no unnecessary heavy modules.
+8. **Public documentation in English**: project README, installation, post-install configuration,
+   what each recipe does.
+9. **Security response commitment**: documented SLA.
+10. Final sweep of invariants: `no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check`.
+
+**Gate A** · All of the above green with counts + the `orquestador`'s verdict with no open 🔴.
+
+**Gate B** · Andrés signs that the template is ready to be submitted for review.
+
+---
+
+## 007 · Publication — the human's hands
+
+**Goal:** that Ágora exists publicly. **This unit is not executed by the AI.**
+
+**Development points**
+1. Create the project on Drupal.org with the signed machine name (D-007).
+2. Push the repository to `git.drupalcode.org`; set up the GitHub mirror if applicable.
+3. Verify the pipeline on the real project.
+4. Publish `screenshot.webp`, the project description and documentation.
+5. Configure `recommended.yml` with its GitLab API permalink.
+6. Tugboat for the live demo; link it from `recipe.yml` (`drupal_cms_installer.links`).
+7. First **stable release**.
+8. Decide the publication route (see ⚠️ below) and, if applicable, the marketplace application.
+
+⚠️ **Unresolved blocker:** the 2026-08-20 research picked up signals (unverified) that the
+marketplace started as a **pilot limited to Drupal Certified Partners**, with a **fee of $395 per
+listing + $250 annually**. If confirmed, the marketplace route may not be open and the real path
+would be **Community** (a general project, publishable without review). It must be verified before 006.
+
+---
+
+## Cross-cutting risks
+
+| Risk | Sev | Mitigation |
 |---|---|---|
-| Elegibilidad y coste del marketplace | 🔴 | Verificar en drupal.org antes de 006; vía Community como plan B |
-| Arquitectura de recetas sin decidir (D-011) | 🔴 | Bloquea 001; decisión de Andrés |
-| Canvas / site templates son tecnología joven | 🟡 | Research fechada al inicio de cada unidad (I-001) |
-| IA rompiendo la instalación sin clave | 🟡 | Smoke sin clave como test principal de 005 |
-| Derechos de media y fuentes | 🟡 | Nada entra sin licencia nombrable |
-| Módulos sin cobertura de seguridad | 🟡 | Puerta de entrada de la skill `sbom-y-licencias` |
+| Marketplace eligibility and cost | 🔴 | Verify on drupal.org before 006; Community route as plan B |
+| Recipe architecture undecided (D-011) | 🔴 | Blocks 001; Andrés's decision |
+| Canvas / site templates are young technology | 🟡 | Dated research at the start of each unit (I-001) |
+| AI breaking the installation without a key | 🟡 | Keyless smoke as the main test of 005 |
+| Media and font rights | 🟡 | Nothing enters without a nameable license |
+| Modules without security coverage | 🟡 | Entry gate of the `sbom-y-licencias` skill |

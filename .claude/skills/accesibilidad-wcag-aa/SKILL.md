@@ -3,65 +3,65 @@ name: accesibilidad-wcag-aa
 description: Use when writing or reviewing Twig templates, CSS tokens, components, forms or demo pages for the site template, when choosing colours or focus styles, when an axe run reports violations, or when preparing the accessibility statement required for publication.
 ---
 
-# Accesibilidad WCAG 2.2 AA como gate
+# WCAG 2.2 AA accessibility as a gate
 
-## Principio nuclear
+## Core principle
 
-**La accesibilidad se escribe, no se parchea.** En este proyecto es un gate: axe sin violaciones y
-navegación por teclado en los flujos clave. Un componente inaccesible no es "deuda", es una tarea
-sin terminar.
+**Accessibility is written, not patched in.** In this project it is a gate: axe with no violations
+and keyboard navigation on the key flows. An inaccessible component is not "debt", it is an
+unfinished task.
 
-## Lo que se comprueba antes de dar nada por hecho
+## What gets checked before taking anything as done
 
-| Capa | Comprobación | Herramienta |
+| Layer | Check | Tool |
 |---|---|---|
-| Semántica | Landmarks, jerarquía de encabezados sin saltos, listas reales | Revisión + axe |
-| Teclado | Todo alcanzable en orden lógico; foco **visible** siempre; sin trampas | Manual, Tab/Shift+Tab |
-| Contraste | Texto ≥ 4.5:1; texto grande y UI ≥ 3:1 | Tokens del tema |
-| Formularios | `<label>` asociado; errores enlazados al campo; no solo color | axe + manual |
-| Imágenes | `alt` con propósito; decorativas con `alt=""` | Revisión |
-| Idioma | `lang` correcto y por fragmento en contenido bilingüe ES/EN | Revisión |
-| Movimiento | Respeta `prefers-reduced-motion` | CSS |
+| Semantics | Landmarks, heading hierarchy without skips, real lists | Review + axe |
+| Keyboard | Everything reachable in a logical order; **visible** focus always; no traps | Manual, Tab/Shift+Tab |
+| Contrast | Text ≥ 4.5:1; large text and UI ≥ 3:1 | Theme tokens |
+| Forms | Associated `<label>`; errors linked to the field; not colour alone | axe + manual |
+| Images | Purposeful `alt`; decorative ones with `alt=""` | Review |
+| Language | Correct `lang`, and per fragment in bilingual ES/EN content | Review |
+| Motion | Respects `prefers-reduced-motion` | CSS |
 
-## Criterios de 2.2 que se olvidan más
+## The 2.2 criteria most often forgotten
 
-WCAG **2.2** añadió criterios que no estaban en 2.1 y que suelen fallar:
+WCAG **2.2** added criteria that were not in 2.1 and that tend to fail:
 
-- **Focus Not Obscured** — el elemento enfocado no puede quedar tapado por cabeceras sticky ni
-  banners de cookies. Es el fallo más habitual en portales institucionales.
-- **Target Size (Minimum)** — objetivos táctiles ≥ 24×24 px, salvo excepciones.
-- **Dragging Movements** — todo lo que se arrastre necesita alternativa con un solo puntero.
-- **Consistent Help** — si hay ayuda/contacto, en el mismo sitio en todas las páginas.
-- **Redundant Entry** — no volver a pedir datos ya introducidos en el mismo proceso.
-- **Accessible Authentication** — sin pruebas cognitivas obligatorias (recordar, transcribir).
+- **Focus Not Obscured** — the focused element cannot end up covered by sticky headers or cookie
+  banners. It is the most common failure in institutional portals.
+- **Target Size (Minimum)** — touch targets ≥ 24×24 px, barring exceptions.
+- **Dragging Movements** — anything that is dragged needs a single-pointer alternative.
+- **Consistent Help** — if there is help/contact, in the same place on every page.
+- **Redundant Entry** — do not ask again for data already entered in the same process.
+- **Accessible Authentication** — no mandatory cognitive tests (remembering, transcribing).
 
-## Tablas de datos accesibles
+## Accessible data tables
 
-Este template muestra retribuciones, contratos y presupuestos. Las tablas son contenido central:
+This template displays remuneration, contracts and budgets. Tables are core content:
 
-- `<th scope="col|row">` real, nunca `<td>` en negrita
-- `<caption>` que describa la tabla
-- Nada de tablas para maquetar
-- **Toda visualización necesita su tabla equivalente** como fallback accesible — y es la tabla, no
-  el gráfico, la fuente de verdad
+- A real `<th scope="col|row">`, never a bold `<td>`
+- A `<caption>` that describes the table
+- No tables for layout
+- **Every visualisation needs its equivalent table** as an accessible fallback — and it is the
+  table, not the chart, that is the source of truth
 
-## Declaración de accesibilidad
+## Accessibility statement
 
-Es un entregable, no un extra. Debe existir y contener: grado de conformidad declarado, fecha de la
-evaluación, método, limitaciones conocidas y **canal de quejas operativo**.
+It is a deliverable, not an extra. It must exist and contain: the declared conformance level, the
+date of the evaluation, the method, known limitations and an **operational complaints channel**.
 
-## Errores comunes
+## Common mistakes
 
-- **Quitar el `outline` del foco** por estética → si lo quitas, sustitúyelo por algo con ≥ 3:1
-- **Contraste medido sobre el color equivocado** → mide sobre el fondo real renderizado
-- **`aria-*` para tapar HTML mal hecho** → primero el elemento nativo correcto
-- **Color como único portador de significado** (estados, errores, categorías) → añade texto o forma
-- **Probar solo la home** → los flujos (búsqueda, facetas, formulario de solicitud) son lo que falla
-- **axe en verde = accesible** → axe detecta una fracción; el teclado hay que probarlo a mano
+- **Removing the focus `outline`** for aesthetics → if you remove it, replace it with something at ≥ 3:1
+- **Contrast measured against the wrong colour** → measure against the real rendered background
+- **`aria-*` to paper over badly written HTML** → the correct native element first
+- **Colour as the only carrier of meaning** (states, errors, categories) → add text or shape
+- **Testing only the home page** → the flows (search, facets, request form) are what fail
+- **axe green = accessible** → axe detects a fraction; the keyboard has to be tested by hand
 
-## Red flags — PARA
+## Red flags — STOP
 
-- "Lo arreglamos en la unidad de hardening" → la a11y no se aplaza, es gate por wave
-- "axe pasa, ya está" → ¿lo has recorrido con teclado?
-- "Es un caso raro" → los lectores de pantalla no son un caso raro
-- Vas a silenciar/excluir una regla de axe para poner el gate en verde → eso se escala, no se silencia
+- "We'll fix it in the hardening unit" → a11y is not deferred, it is a gate per wave
+- "axe passes, that's it" → have you walked through it with the keyboard?
+- "It's an edge case" → screen readers are not an edge case
+- You are about to silence/exclude an axe rule to turn the gate green → that gets escalated, not silenced

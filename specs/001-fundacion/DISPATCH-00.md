@@ -1,89 +1,89 @@
-DISPATCH · Ágora · 001-fundación / Turno 00 — Scaffolding: research + plan, SIN CÓDIGO
-Turno de scaffolding puro. Base: repo recién inicializado con este kit. NO se escribe código, NO se
-crea el proyecto en Drupal.org, NO se instala nada aún salvo lo necesario para verificar. NO tag.
+DISPATCH · Ágora · 001-fundación / Turn 00 — Scaffolding: research + plan, NO CODE
+Pure scaffolding turn. Baseline: repo freshly initialised with this kit. NO code is written, the
+project is NOT created on Drupal.org, NOTHING is installed yet beyond what is needed to verify. NO tag.
 
 ═══════════════════════════════════════════
-CONTEXTO
+CONTEXT
 ═══════════════════════════════════════════
-Ágora es un Site Template para Drupal CMS (portal de transparencia) destinado al Site Template
-Marketplace de Drupal.org. Identidad, arquitectura de recipes y restricciones del marketplace están
-encodeadas en `specs/000-proyecto/plan.md` y `CLAUDE.md` — léelos primero; mandan sobre este prompt.
-Decisiones ya firmadas por el humano (no reabrir): partir del **Drupal CMS Site Template Starter Kit**
-oficial; desarrollo en **git.drupalcode.org** como proyecto general (mirror GitHub opcional después);
-solo dependencias estables con cobertura de seguridad; Config Guardian dentro, Midgard fuera;
-pnpm/composer/DDEV. Este turno existe porque construimos sobre tecnología joven (Drupal CMS, Canvas,
-site templates) y el estado del arte DEBE verificarse fresco antes de fijar plan y tareas.
+Ágora is a Site Template for Drupal CMS (transparency portal) destined for the Drupal.org Site
+Template Marketplace. Identity, recipe architecture and marketplace constraints are encoded in
+`specs/000-proyecto/plan.md` and `CLAUDE.md` — read them first; they override this prompt.
+Decisions already signed by the human (do not reopen): start from the official **Drupal CMS Site
+Template Starter Kit**; development on **git.drupalcode.org** as a general project (GitHub mirror
+optional afterwards); only stable dependencies with security coverage; Config Guardian in, Midgard out;
+pnpm/composer/DDEV. This turn exists because we are building on young technology (Drupal CMS, Canvas,
+site templates) and the state of the art MUST be verified fresh before fixing plan and tasks.
 
 ═══════════════════════════════════════════
-RECONCILIATION PASS — OBLIGATORIO, AL FRENTE, SIN CÓDIGO
+RECONCILIATION PASS — MANDATORY, UP FRONT, NO CODE
 ═══════════════════════════════════════════
-1. Lee `CLAUDE.md`, `specs/000-proyecto/plan.md`, `specs/000-proyecto/DECISIONES.md`. Vincula todo
-   lo que produzcas a este marco. Verifica EN DISCO el siguiente número D-NNN libre antes de proponer
-   decisiones nuevas.
-2. Ground-truth FRESCO en web (todo fechado, con URL, guardado en `specs/001-fundacion/research/`):
-   a. Versión estable actual de **Drupal CMS** y estado de **Drupal Canvas** (¿qué exige hoy un tema
-      "Canvas-compatible"? ¿hay tema de referencia/starter?).
-   b. El **Drupal CMS Site Template Starter Kit** (proyecto drupal_cms_site_template_base en
-      Drupal.org): estructura real, qué CI trae (GitLab CI y GitHub Actions), qué recipes base
-      incluye, cómo se integra Tugboat y Project Browser.
-   c. El flujo real de **compartir plantilla** (new.drupal.org/site-template/share) y los requisitos
-      vigentes del marketplace (new.drupal.org/site-template/apply): confirma que siguen como los
-      encodea plan.md §4; si divergen → repórtalo (disco/plan se reconcilia, no se fuerza).
-   d. `drush site:export` del **Drupal CMS Helper**: estado, limitaciones conocidas.
-   e. **gitlab_templates de Drupal.org**: jobs exactos disponibles hoy (phpcs, phpstan, cspell,
-      eslint, stylelint, phpunit…), cómo se referencian, y si existe job/patrón para probar
-      instalabilidad de recipes. Viabilidad de Playwright+axe en el CI de drupalcode (¿runners lo
-      soportan? ¿o los tests visuales van a GitHub Actions del mirror?).
-   f. Disponibilidad del machine name en Drupal.org: "agora" probablemente ocupado; comprueba
-      alternativas (p.ej. agora_transparency, agora_gov) SIN crear nada.
-   g. Módulos candidatos del SBOM (facetas/búsqueda, webform, ECA, IA): para cada uno, versión
-      estable actual, compatibilidad con el core que usa Drupal CMS hoy y estado de cobertura de
-      seguridad. Lo que no cumpla → fuera, con alternativa dentro de Drupal CMS si existe.
-3. Entregables del pass: `research/2026-XX-XX-estado-del-arte.md` (fechado, con fuentes) +
-   reporte de divergencias respecto a plan.md/este prompt.
+1. Read `CLAUDE.md`, `specs/000-proyecto/plan.md`, `specs/000-proyecto/DECISIONES.md`. Tie everything
+   you produce to this framework. Verify ON DISK the next free D-NNN number before proposing
+   new decisions.
+2. FRESH ground truth on the web (all dated, with URL, saved in `specs/001-fundacion/research/`):
+   a. Current stable version of **Drupal CMS** and status of **Drupal Canvas** (what does a
+      "Canvas-compatible" theme require today? is there a reference/starter theme?).
+   b. The **Drupal CMS Site Template Starter Kit** (project drupal_cms_site_template_base on
+      Drupal.org): real structure, what CI it ships (GitLab CI and GitHub Actions), which base recipes
+      it includes, how Tugboat and Project Browser are integrated.
+   c. The real **share template** flow (new.drupal.org/site-template/share) and the marketplace
+      requirements in force (new.drupal.org/site-template/apply): confirm they still are as
+      plan.md §4 encodes them; if they diverge → report it (disk/plan is reconciled, not forced).
+   d. `drush site:export` from the **Drupal CMS Helper**: status, known limitations.
+   e. **Drupal.org gitlab_templates**: exact jobs available today (phpcs, phpstan, cspell,
+      eslint, stylelint, phpunit…), how they are referenced, and whether a job/pattern exists to test
+      recipe installability. Feasibility of Playwright+axe in drupalcode CI (do the runners
+      support it? or do the visual tests go to the mirror's GitHub Actions?).
+   f. Availability of the machine name on Drupal.org: "agora" probably taken; check
+      alternatives (e.g. agora_transparency, agora_gov) WITHOUT creating anything.
+   g. SBOM candidate modules (facets/search, webform, ECA, AI): for each one, current stable
+      version, compatibility with the core Drupal CMS uses today and security coverage
+      status. Whatever does not comply → out, with an alternative inside Drupal CMS if one exists.
+3. Deliverables of the pass: `research/2026-XX-XX-estado-del-arte.md` (dated, with sources) +
+   report of divergences with respect to plan.md/this prompt.
 
-REGLAS DE PARADA:
-  ▸ Los requisitos del marketplace han cambiado respecto a plan.md §4 → ESCALAR con el diff exacto.
-  ▸ El Starter Kit impone una estructura incompatible con la arquitectura de recipes de plan.md §2
-    → ESCALAR con opciones (adaptar arquitectura vs no usar starter kit), NO decidir solo.
-  ▸ Canvas exige releases inestables para algo esencial → ESCALAR (choca con la no-negociable nº1).
-  ▸ Un candidato del SBOM no tiene cobertura de seguridad y no hay alternativa razonable → ESCALAR.
-  ▸ Cualquier cosa que este prompt asuma y el estado del arte contradiga → el estado real manda;
-    repórtalo, no lo fuerces.
-
-═══════════════════════════════════════════
-ALCANCE (SÍ / NO)
-═══════════════════════════════════════════
-SÍ: research fechada · `specs/001-fundacion/plan.md` (objetivo de la unidad: esqueleto desde starter
-kit + CI verde en vacío + estructura de recipes creada pero mínima) · `specs/001-fundacion/tasks.md`
-(tareas numeradas, waves, gates A/B por wave) · open questions con opciones + recomendación ·
-propuesta de los primeros scripts de invariantes (`tests/bin/`: no-unstable-deps, no-patches,
-no-secrets, sbom-check) COMO ESPECIFICACIÓN, no implementados.
-NO: código · instalación del sitio · creación del proyecto en Drupal.org (unidad 007, humano) ·
-diseño visual del tema (unidad 002) · decisiones load-bearing cerradas por tu cuenta · tag/release.
+STOPPING RULES:
+  ▸ The marketplace requirements have changed with respect to plan.md §4 → ESCALATE with the exact diff.
+  ▸ The Starter Kit imposes a structure incompatible with the recipe architecture of plan.md §2
+    → ESCALATE with options (adapt architecture vs do not use starter kit), do NOT decide alone.
+  ▸ Canvas requires unstable releases for something essential → ESCALATE (clashes with non-negotiable no. 1).
+  ▸ An SBOM candidate has no security coverage and there is no reasonable alternative → ESCALATE.
+  ▸ Anything this prompt assumes and the state of the art contradicts → the real state wins;
+    report it, do not force it.
 
 ═══════════════════════════════════════════
-REGLAS NO-NEGOCIABLES
+SCOPE (YES / NO)
 ═══════════════════════════════════════════
-Las 10 de CLAUDE.md aplican íntegras. Recordatorio de las que este turno puede rozar: solo estables
-sin parches; secretos jamás en repo; docs de proceso en español, identificadores en inglés; pnpm
-exclusivo si algún tooling JS aparece en research; commits sin co-autoría de IA; append-only.
+YES: dated research · `specs/001-fundacion/plan.md` (unit objective: skeleton from starter
+kit + green CI while empty + recipe structure created but minimal) · `specs/001-fundacion/tasks.md`
+(numbered tasks, waves, A/B gates per wave) · open questions with options + recommendation ·
+proposal for the first invariant scripts (`tests/bin/`: no-unstable-deps, no-patches,
+no-secrets, sbom-check) AS A SPECIFICATION, not implemented.
+NO: code · site installation · creation of the project on Drupal.org (unit 007, human) ·
+visual design of the theme (unit 002) · load-bearing decisions closed on your own · tag/release.
+
+═══════════════════════════════════════════
+NON-NEGOTIABLE RULES
+═══════════════════════════════════════════
+The 10 in CLAUDE.md apply in full. Reminder of those this turn may brush against: stable only,
+no patches; secrets never in the repo; process docs in Spanish, identifiers in English; pnpm
+exclusively if any JS tooling shows up in research; commits without AI co-authorship; append-only.
 
 ═══════════════════════════════════════════
 GATE A · GATE B
 ═══════════════════════════════════════════
-Gate A de este turno (docs-only): los tres entregables existen en disco, la research tiene fecha y
-fuentes, tasks.md tiene gates A/B definidos por wave con comandos concretos.
-Gate B (humano): Andrés lee plan.md + open questions y firma las decisiones D-NNN nuevas en
-DECISIONES.md. Prepara tú la lista de decisiones EXACTA: una por punto, opciones, recomendación
-marcada, en lenguaje llano.
+Gate A for this turn (docs-only): the three deliverables exist on disk, the research has a date and
+sources, tasks.md has A/B gates defined per wave with concrete commands.
+Gate B (human): Andrés reads plan.md + open questions and signs the new D-NNN decisions in
+DECISIONES.md. You prepare the EXACT list of decisions: one per point, options, recommendation
+marked, in plain language.
 
 ═══════════════════════════════════════════
-ORDEN DE EJECUCIÓN
+EXECUTION ORDER
 ═══════════════════════════════════════════
-1) Reconciliation (lecturas disco + research web fechada). 2) Delegar en el subagente `orquestador`
-la redacción de research.md, plan.md y tasks.md de la unidad y las open questions + propuestas D-NNN
-(este turno NO invoca a `desarrollador` ni `tester`: es scaffolding, sin código). 3) La sesión
-principal integra y persiste los entregables en disco. 4) HOLD: reportar al humano con el formato de
-CLAUDE.md (reconciliación → entregables → escalaciones 🔴🟡🟢 → decisiones pendientes). NO avanzar a
-implementación hasta firma.
+1) Reconciliation (disk reads + dated web research). 2) Delegate to the `orquestador` subagent
+the drafting of the unit's research.md, plan.md and tasks.md and the open questions + D-NNN proposals
+(this turn does NOT invoke `desarrollador` or `tester`: it is scaffolding, no code). 3) The main
+session integrates and persists the deliverables on disk. 4) HOLD: report to the human with the
+CLAUDE.md format (reconciliation → deliverables → escalations 🔴🟡🟢 → pending decisions). Do NOT
+advance to implementation until signature.

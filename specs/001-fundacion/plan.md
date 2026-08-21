@@ -1,92 +1,92 @@
-# Ágora · Unidad 001 — Fundación · Plan
+# Ágora · Unit 001 — Foundation · Plan
 
-> Producido en el scaffolding turn del `DISPATCH-00.md` [ejecutor] 2026-08-20.
-> Base factual: `research/2026-08-20-estado-del-arte.md`. **No implementar nada de aquí sin gate B.**
+> Produced in the scaffolding turn of `DISPATCH-00.md` [ejecutor] 2026-08-20.
+> Factual basis: `research/2026-08-20-estado-del-arte.md`. **Do not implement anything from here without gate B.**
 
-## 1 · Objetivo de la unidad
+## 1 · Unit objective
 
-Que exista en disco un repositorio que **ya es un site template válido de Drupal CMS**: instalable
-sobre un Drupal limpio, con el pipeline de drupalcode en verde y los invariantes de `tests/bin/`
-operativos — **todavía sin identidad visual, sin modelo de contenido y sin contenido demo**.
+That there exists on disk a repository that **is already a valid Drupal CMS site template**: installable
+on a clean Drupal, with the drupalcode pipeline green and the `tests/bin/` invariants
+operational — **still without visual identity, without content model and without demo content**.
 
-Criterio de "hecho": un tercero clona el repo, levanta DDEV, instala Drupal CMS y **ve el template
-de Ágora en el selector de plantillas del instalador**.
+Criterion for "done": a third party clones the repo, brings up DDEV, installs Drupal CMS and **sees the
+Ágora template in the installer's template selector**.
 
-## 2 · Qué cambió respecto a lo que asumía el plan maestro
+## 2 · What changed with respect to what the master plan assumed
 
-La research invalidó dos supuestos estructurales de `CLAUDE.md` §Estructura del repo:
+The research invalidated two structural assumptions in `CLAUDE.md` §Repository structure:
 
-1. **No hay `recipes/`.** El repositorio **es** una única receta: `recipe.yml` en la raíz con
-   `type: Site`. Las funcionalidades se componen referenciando **paquetes composer externos**.
-2. **No hay `themes/agora_theme/`** en el flujo por defecto: el tema lo **genera**
-   `drupal/site_template_helper` desde `extra.drupal-site-template.generate-theme` en `composer.json`.
+1. **There is no `recipes/`.** The repository **is** a single recipe: `recipe.yml` at the root with
+   `type: Site`. Features are composed by referencing **external composer packages**.
+2. **There is no `themes/agora_theme/`** in the default flow: the theme is **generated** by
+   `drupal/site_template_helper` from `extra.drupal-site-template.generate-theme` in `composer.json`.
 
-Ambas cosas disparan la regla de parada nº2 del dispatch → **D-011 y D-008 deben firmarse antes de
-que esta unidad arranque**. El resto del plan maestro sobrevive intacto.
+Both things trigger stopping rule no. 2 of the dispatch → **D-011 and D-008 must be signed before
+this unit starts**. The rest of the master plan survives intact.
 
-## 3 · Alcance
+## 3 · Scope
 
-**SÍ** · Copiar y desnudar el starter kit (`1.x`) · identidad de paquete · `recipe.yml` propio ·
-entorno DDEV reproducible · CI verde en vacío · los 4 scripts de invariantes · install smoke real.
+**YES** · Copy and strip the starter kit (`1.x`) · package identity · own `recipe.yml` ·
+reproducible DDEV environment · green CI while empty · the 4 invariant scripts · real install smoke.
 
-**NO** · Modelo de contenido (002) · tema con estética (002) · contenido demo (003) · ECA (004) ·
-IA y Config Guardian operativos (005) · creación del proyecto en Drupal.org (007) · tag/release.
+**NO** · Content model (002) · theme with aesthetics (002) · demo content (003) · ECA (004) ·
+AI and Config Guardian operational (005) · creation of the project on Drupal.org (007) · tag/release.
 
 ## 4 · Waves
 
-### Wave 1 — Esqueleto e identidad
-Copiar `1.x`, renombrar el paquete, limpiar el andamiaje del kit, `.gitignore`/`.gitattributes`
-definitivos, `recipe.yml` propio con las recetas base heredadas.
-**Depende de:** D-007 (machine name), D-011 (arquitectura).
+### Wave 1 — Skeleton and identity
+Copy `1.x`, rename the package, clean up the kit's scaffolding, definitive `.gitignore`/`.gitattributes`,
+own `recipe.yml` with the inherited base recipes.
+**Depends on:** D-007 (machine name), D-011 (architecture).
 
-### Wave 2 — Entorno y CI
-DDEV ≥ 1.25.0 reproducible y documentado; `.gitlab-ci.yml` con sus variables; primer pipeline verde;
-decidir qué corre en GitHub Actions.
-**Depende de:** wave 1. Abre D-009.
+### Wave 2 — Environment and CI
+DDEV ≥ 1.25.0 reproducible and documented; `.gitlab-ci.yml` with its variables; first green pipeline;
+decide what runs on GitHub Actions.
+**Depends on:** wave 1. Opens D-009.
 
-### Wave 3 — Invariantes
-`tests/bin/no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check` (spec en §6).
-Paralelizable con wave 2: ficheros disjuntos.
+### Wave 3 — Invariants
+`tests/bin/no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check` (spec in §6).
+Parallelizable with wave 2: disjoint files.
 
-### Wave 4 — Install smoke y cierre
-Instalación en limpio verificada, `screenshot.webp` provisional propio, README en inglés,
-veredicto del `orquestador`.
-**Depende de:** waves 1–3.
+### Wave 4 — Install smoke and closure
+Clean installation verified, own provisional `screenshot.webp`, README in English,
+`orquestador` verdict.
+**Depends on:** waves 1–3.
 
 ## 5 · Gates
 
-| Wave | Gate A (automatizable, con counts) | Gate B (Andrés) |
+| Wave | Gate A (automatable, with counts) | Gate B (Andrés) |
 |---|---|---|
-| 1 | `composer validate --strict` exit 0 · `recipe.yml` con `type: Site` · sin `_comment` ni `extra.drupal-site-template` residuales | Confirma machine name e identidad |
-| 2 | Pipeline de drupalcode **verde**, con nº de jobs ejecutados · `ddev start` limpio desde cero | Confirma dónde corre cada tipo de test |
-| 3 | Los 4 scripts exit 0, cada uno reportando **nº de ficheros escaneados** y **nº de hallazgos** | — |
-| 4 | `InstallTest`+`ValidationTest`+`RequirementsTest` verdes con nº de tests y assertions · template visible en el selector tras `sql:drop` + reinstalación | Firma el cierre de la unidad |
+| 1 | `composer validate --strict` exit 0 · `recipe.yml` with `type: Site` · no residual `_comment` or `extra.drupal-site-template` | Confirms machine name and identity |
+| 2 | drupalcode pipeline **green**, with number of jobs executed · clean `ddev start` from scratch | Confirms where each type of test runs |
+| 3 | The 4 scripts exit 0, each reporting **number of files scanned** and **number of findings** | — |
+| 4 | `InstallTest`+`ValidationTest`+`RequirementsTest` green with number of tests and assertions · template visible in the selector after `sql:drop` + reinstallation | Signs the closure of the unit |
 
-Regla que aplica a los cuatro: **counts reales, nunca exit codes sueltos** (skill `gate-a-verde`).
+Rule that applies to all four: **real counts, never bare exit codes** (skill `gate-a-verde`).
 
-## 6 · Especificación de los invariantes (`tests/bin/`) — NO implementados aún
+## 6 · Specification of the invariants (`tests/bin/`) — NOT implemented yet
 
-Los cuatro: exit 0 = limpio, exit 1 = hallazgos. Todos imprimen **ámbito escaneado + nº de ficheros +
-nº de hallazgos**, y cada hallazgo con `fichero:línea`.
+All four: exit 0 = clean, exit 1 = findings. All print **scanned scope + number of files +
+number of findings**, and each finding with `file:line`.
 
-| Script | Qué busca | Ámbito | Notas |
+| Script | What it looks for | Scope | Notes |
 |---|---|---|---|
-| `no-unstable-deps` | `-dev`, `-alpha`, `-beta`, `-rc`, `dev-` en constraints; `minimum-stability` distinto de `stable` | `composer.json`, `composer.lock` | **Excluir** el starter kit: se copia, no se declara (research §3.1) |
-| `no-patches` | Clave `patches`, `composer-patches`, `patches-file` | `composer.json` | Prohibición literal del kit |
-| `no-secrets` | `api[_-]?key`, `secret`, `token`, `passwd`, `password`, `Bearer `, DSNs, claves privadas | todo el repo salvo `.git/` | Debe correr también sobre `config/` y `content/` |
-| `sbom-check` | Por cada `drupal/*` de `require`: consulta `updates.drupal.org` y exige release **estable** + `<security covered="1">` + línea en `DECISIONES.md` | `composer.json` + `DECISIONES.md` | Método verificado en research §10.4 |
+| `no-unstable-deps` | `-dev`, `-alpha`, `-beta`, `-rc`, `dev-` in constraints; `minimum-stability` other than `stable` | `composer.json`, `composer.lock` | **Exclude** the starter kit: it is copied, not declared (research §3.1) |
+| `no-patches` | `patches`, `composer-patches`, `patches-file` key | `composer.json` | Literal prohibition from the kit |
+| `no-secrets` | `api[_-]?key`, `secret`, `token`, `passwd`, `password`, `Bearer `, DSNs, private keys | the whole repo except `.git/` | Must also run over `config/` and `content/` |
+| `sbom-check` | For each `drupal/*` in `require`: queries `updates.drupal.org` and requires a **stable** release + `<security covered="1">` + a line in `DECISIONES.md` | `composer.json` + `DECISIONES.md` | Method verified in research §10.4 |
 
-## 7 · Riesgos
+## 7 · Risks
 
-| Riesgo | Sev | Mitigación |
+| Risk | Sev | Mitigation |
 |---|---|---|
-| Copiar el `require` de la rama `2.x` arrastra `project_browser ^2.1-beta3` (**beta**) | 🔴 | Partir de `1.x`; si hace falta Project Browser, esperar su estable o dejarlo fuera |
-| Requisitos del marketplace sin verificar (DCP-only, cuotas) | 🔴 | Verificar antes de 006; no bloquea 001 |
-| Machine name ocupado en Drupal.org | 🟡 | Verificar antes de wave 1; alternativas ya listadas |
-| Runners de drupalcode sin soporte para Playwright/axe | 🟡 | D-009; plan B = GitHub Actions del mirror |
+| Copying the `require` from the `2.x` branch drags in `project_browser ^2.1-beta3` (**beta**) | 🔴 | Start from `1.x`; if Project Browser is needed, wait for its stable release or leave it out |
+| Unverified marketplace requirements (DCP-only, fees) | 🔴 | Verify before 006; does not block 001 |
+| Machine name taken on Drupal.org | 🟡 | Verify before wave 1; alternatives already listed |
+| drupalcode runners without support for Playwright/axe | 🟡 | D-009; plan B = the mirror's GitHub Actions |
 
-## 8 · Open questions → decisiones a firmar
+## 8 · Open questions → decisions to sign
 
-Redactadas en lenguaje llano, con recomendación ★, en `DECISIONES.md` §Pendientes.
-**D-007** machine name · **D-008** enfoque del tema · **D-009** dónde corren los tests visuales ·
-**D-011** arquitectura de recetas (bloqueante) · **D-012** vía de publicación · **D-013** provider de IA.
+Written in plain language, with recommendation ★, in `DECISIONES.md` §Pending.
+**D-007** machine name · **D-008** theme approach · **D-009** where the visual tests run ·
+**D-011** recipe architecture (blocking) · **D-012** publication route · **D-013** AI provider.

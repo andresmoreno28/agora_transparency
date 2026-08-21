@@ -1,76 +1,76 @@
-# Ágora · Plan maestro (unidad 000)
+# Ágora · Master plan (unit 000)
 
-> Leer SIEMPRE al retomar. Este documento encodea lo decidido en la fase de concepto [andres, fase de concepto].
-> Nada de aquí se contradice sin decisión nueva en DECISIONES.md.
+> ALWAYS read this when resuming. This document encodes what was decided in the concept phase [andres, concept phase].
+> Nothing here is contradicted without a new decision in DECISIONES.md.
 
-## 1 · Posicionamiento
+## 1 · Positioning
 
-"Rendición de cuentas por defecto: portal de transparencia WCAG-AA, asistido por IA, que mantiene
-registro de auditoría de sí mismo." Público: ayuntamientos pequeños, organismos públicos, fundaciones
-y entidades que rinden cuentas. Doble propósito estratégico: (a) entrada al Site Template Marketplace
-de Drupal.org como plantilla gratuita insignia; (b) escaparate de la tesis profesional del autor
-(seguridad + accesibilidad + gobernanza de IA en sector público) y de Config Guardian.
+"Accountability by default: a WCAG-AA transparency portal, AI-assisted, that keeps an audit record of
+itself." Audience: small local councils, public bodies, foundations and accountable entities. Dual
+strategic purpose: (a) entry into the Drupal.org Site Template Marketplace as the flagship free
+template; (b) a showcase for the author's professional thesis (security + accessibility + AI
+governance in the public sector) and for Config Guardian.
 
-## 2 · Arquitectura: una sola receta, con costura para extraer
+## 2 · Architecture: a single recipe, with seams for extraction
 
-> **Enmendado por D-011 y D-014, [andres] 2026-08-21.** La versión original describía `agora_base`,
-> `agora_publishing`, `agora_foi`, `agora_ai`, `agora_governance` y `agora_theme` como sub-recetas en
-> subdirectorios. **El repositorio ES la receta**: un único `recipe.yml` en la raíz con `type: Site`.
-> Los cinco primeros nombres dejan de ser artefactos instalables y pasan a ser **áreas funcionales**:
-> la unidad de organización interna de `recipe.yml` y de `config/`. `agora_theme` sale de este
-> repositorio y pasa a ser **un proyecto propio en Drupal.org** (D-014).
+> **Amended by D-011 and D-014, [andres] 2026-08-21.** The original version described `agora_base`,
+> `agora_publishing`, `agora_foi`, `agora_ai`, `agora_governance` and `agora_theme` as sub-recipes in
+> subdirectories. **The repository IS the recipe**: a single `recipe.yml` at the root with `type: Site`.
+> The first five names stop being installable artifacts and become **functional areas**: the unit of
+> internal organization of `recipe.yml` and of `config/`. `agora_theme` leaves this repository and
+> becomes **its own project on Drupal.org** (D-014).
 
-Ágora v1 es **un `recipe.yml` en la raíz** que compone recetas de Drupal CMS y módulos contrib
-declarados en `require`. Las áreas funcionales son la costura por la que, cuando exista la plantilla
-de pago, se extraerán **recetas contrib independientes** (patrón B de D-011).
-**En v1 se deja la costura; no se implementa la extracción.**
+Ágora v1 is **a single `recipe.yml` at the root** that composes Drupal CMS recipes and contrib modules
+declared in `require`. The functional areas are the seam along which, once the paid template exists,
+**independent contrib recipes** will be extracted (pattern B of D-011).
+**In v1 the seam is left in place; the extraction is not implemented.**
 
-Reglas de costura (obligatorias desde el día 1, coste cero):
-- Cada área ocupa un bloque contiguo y rotulado con comentario en `recipe.yml`.
-- Los identificadores propios llevan prefijo de área: `agora_base_*`, `agora_publishing_*`,
+Seam rules (mandatory from day 1, zero cost):
+- Each area occupies a contiguous block labeled with a comment in `recipe.yml`.
+- Its own identifiers carry an area prefix: `agora_base_*`, `agora_publishing_*`,
   `agora_foi_*`, `agora_ai_*`, `agora_governance_*`.
-- Si un área referencia un identificador de otra, la dependencia se anota en el bloque.
+- If an area references an identifier from another, the dependency is noted in the block.
 
-| Área | Qué aporta |
+| Area | What it provides |
 |---|---|
-| **base** | Modelo de contenido y taxonomías: Documento (facetas: tipo, año, área), Cargo/Persona, Contrato, Partida presupuestaria, Convocatoria. Roles y permisos. |
-| **publishing** | Flujos editoriales con ECA (borrador → revisión → publicado, con trazabilidad). |
-| **foi** | Solicitudes de información ciudadana: Webform + ciclo de vida ECA (acuse, plazos, estados, recordatorios). |
-| **ai** | Asistente con citas sobre el corpus documental (RAG), sobre el recipe de IA de Drupal CMS, proveedor-agnóstico, **opcional y con degradación elegante** sin API key. Responde SOLO desde documentos publicados; dice "no lo sé" fuera de fuentes. Dependencia dura: `ai ^1.4` y ningún provider (D-013). |
-| **governance** | Config Guardian preconfigurado: snapshots programados, panel en admin. |
+| **base** | Content model and taxonomies: Document (facets: type, year, area), Position/Person, Contract, Budget line, Public call. Roles and permissions. |
+| **publishing** | Editorial workflows with ECA (draft → review → published, with traceability). |
+| **foi** | Citizen freedom-of-information requests: Webform + ECA lifecycle (acknowledgment, deadlines, states, reminders). |
+| **ai** | Assistant with citations over the document corpus (RAG), on top of the Drupal CMS AI recipe, provider-agnostic, **optional and degrading gracefully** without an API key. Answers ONLY from published documents; says "I don't know" outside its sources. Hard dependency: `ai ^1.4` and no provider (D-013). |
+| **governance** | Config Guardian preconfigured: scheduled snapshots, admin panel. |
 
-**Fuera de este repositorio — `drupal/agora_theme` (D-014):** estética institucional sobria, tokens de
-contraste AA, tipografía con licencia libre (OFL) **auto-alojada**, imágenes propias/CC0, todo en el
-manifiesto de licencias. Es un **proyecto separado en Drupal.org**, declarado en el `require` de Ágora:
-un site template **no puede contener código propio** (`RequirementsTest` exige 0 ficheros `*.info.yml`).
-Alcance: mínimo con dientes, compatible con Canvas, sin frameworks CSS genéricos.
+**Outside this repository — `drupal/agora_theme` (D-014):** sober institutional aesthetics, AA contrast
+tokens, free-licensed typography (OFL) **self-hosted**, own/CC0 images, everything in the license
+manifest. It is a **separate project on Drupal.org**, declared in Ágora's `require`: a site template
+**cannot contain code of its own** (`RequirementsTest` requires 0 `*.info.yml` files).
+Scope: minimal with teeth, Canvas-compatible, no generic CSS frameworks.
 
-## 3 · Páginas del contenido demo (bilingüe ES/EN)
+## 3 · Demo content pages (bilingual ES/EN)
 
-Portada (buscador "¿qué quieres saber?" + indicadores clave) · Institución (organigrama, cargos,
-retribuciones en tablas accesibles) · Biblioteca documental con facetas · Presupuestos y contratos
-(visualización ligera + tabla accesible como fallback; evitar módulos de charts pesados) ·
-Participación (solicitud de información con ciclo ECA) · Datos abiertos descargables · Asistente IA
-(con descargo y citas) · **Declaración de accesibilidad** pre-armada con canal de quejas.
+Home page (a "what do you want to know?" search box + key indicators) · Institution (org chart,
+offices, remuneration in accessible tables) · Document library with facets · Budgets and contracts
+(lightweight visualization + accessible table as fallback; avoid heavy chart modules) ·
+Participation (freedom-of-information request with ECA cycle) · Downloadable open data · AI assistant
+(with disclaimer and citations) · **Accessibility statement** pre-built, with a complaints channel.
 
-## 4 · Requisitos del marketplace que actúan como restricciones duras
+## 4 · Marketplace requirements that act as hard constraints
 
-Revisión de instalabilidad por CI · SBOM con estado de cobertura de seguridad de cada componente ·
-manifiesto de licencias (GPL para lo derivado de Drupal; propietario/CC0 posible en contenido/imágenes) ·
-atestación WCAG · compromiso de respuesta de seguridad (SLA definido; el autor pertenece al proceso
-de Security Team con Config Guardian) · solo Drupal CMS + Canvas actuales · **sin releases inestables
-ni parches**.
+CI installability review · SBOM with the security coverage status of every component ·
+license manifest (GPL for anything derived from Drupal; proprietary/CC0 possible for content/images) ·
+WCAG attestation · security response commitment (a defined SLA; the author is part of the Security
+Team process through Config Guardian) · current Drupal CMS + Canvas only · **no unstable releases
+and no patches**.
 
-## 5 · Out-of-scope v1 (explícito)
+## 5 · Out-of-scope for v1 (explicit)
 
-- La plantilla de pago vertical (usa estos mismos recipes; unidad futura separada).
-- Integraciones reales con sedes electrónicas / plataformas de contratación (costuras, no features).
-- Multiidioma más allá de ES/EN. — Midgard (alpha; solo narrativa en docs). — Comercio del
-  marketplace (la DA lo está construyendo). — Cualquier módulo sin cobertura de seguridad.
+- The vertical paid template (it uses these same recipes; a separate future unit).
+- Real integrations with e-government portals / public procurement platforms (seams, not features).
+- Multilingual beyond ES/EN. — Midgard (alpha; narrative in docs only). — Marketplace commerce
+  (the DA is building it). — Any module without security coverage.
 
-## 6 · Unidades previstas (la 001 se planifica en su scaffolding turn; el resto es dirección, no scope)
+## 6 · Planned units (001 is planned in its scaffolding turn; the rest is direction, not scope)
 
-000 proyecto (este doc) → 001 fundación (research + esqueleto starter kit + CI verde vacío) →
-002 base+theme (modelo de contenido + Canvas theme) → 003 demo content → 004 publishing+foi (ECA) →
-005 ai+governance → 006 hardening (a11y audit completo, binding smoke, SBOM/licencias) →
-007 publicación (proyecto Drupal.org, release, solicitud al marketplace) [manos del humano].
+000 project (this doc) → 001 foundation (research + starter kit skeleton + green CI while empty) →
+002 base+theme (content model + Canvas theme) → 003 demo content → 004 publishing+foi (ECA) →
+005 ai+governance → 006 hardening (full a11y audit, binding smoke, SBOM/licenses) →
+007 publication (Drupal.org project, release, marketplace application) [the human's hands].

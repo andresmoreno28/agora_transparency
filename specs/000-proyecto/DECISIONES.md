@@ -1,213 +1,219 @@
-# Ágora · Registro de decisiones (D-NNN, append-only)
+# Ágora · Decision record (D-NNN, append-only)
 
-> Verificar EN DISCO el siguiente número libre antes de añadir. Firmadas no se editan: se enmiendan
-> (mismo commit que el cambio que lo motiva, solo si es consecuencia directa) o se abre una nueva.
+> **Translation note — 2026-08-21.** This file was mechanically translated from Spanish into English
+> under D-017(b), which authorizes it explicitly. **The semantic content is unchanged:** no decision
+> was added, removed, renumbered or altered in meaning. The Spanish original is preserved in the git
+> history as the signed record. New entries are written directly in English.
 
-- **D-001** · Nombre y concepto: "Ágora", portal de transparencia como Site Template de Drupal CMS,
-  plantilla gratuita insignia para el marketplace. Machine name PENDIENTE de verificar disponibilidad
-  (candidatos: agora_transparency, agora_gov) — se cierra tras el DISPATCH-00. Firmada (concepto) por [andres] 2026-08-20.
-- **D-002** · Repositorio y base: desarrollo en git.drupalcode.org como proyecto general de Drupal.org,
-  partiendo del Drupal CMS Site Template Starter Kit oficial (trae GitLab CI, GitHub Actions, Tugboat
-  y recipes base). Mirror en GitHub opcional, solo para portfolio y, si hiciera falta, tests visuales.
-  Firmada por [andres] 2026-08-20.
-- **D-003** · Stack y tooling: Drupal CMS estable actual + Recipes + tema compatible con Drupal Canvas.
-  Composer (PHP), pnpm exclusivo (JS), DDEV (local). Firmada por [andres] 2026-08-20.
-- **D-004** · Política SBOM: solo releases estables con cobertura del equipo de seguridad; sin parches
-  ni pins. Config Guardian incluido y preconfigurado (recipe agora_governance). Midgard EXCLUIDO
-  mientras esté en alpha (solo narrativa en docs). Firmada por [andres] 2026-08-20.
-- **D-005** · Idiomas: docs de proceso ES; código, identificadores, commits y docs públicas EN;
-  contenido demo bilingüe ES/EN. Sin trailers de co-autoría de IA en commits. Firmada por [andres] 2026-08-20.
-- **D-006** · Calidad como gate: pipeline de drupalcode (gitlab_templates) + install smoke + PHPUnit +
-  Playwright (funcional/visual) + axe + scripts de invariantes en tests/bin/. Nada avanza con el
-  pipeline en rojo. Firmada por [andres] 2026-08-20.
+> Verify ON DISK the next free number before adding one. Signed decisions are not edited: they are
+> amended (in the same commit as the change that motivates it, only if it is a direct consequence) or
+> a new one is opened.
 
-## Pendientes (se plantean tras el DISPATCH-00, con opciones + recomendación)
-- D-007 · Machine name definitivo del proyecto.
-- D-008 · Enfoque del tema Canvas (partir del tema del starter kit vs tema propio desde cero).
-- D-009 · Dónde corren los tests visuales (drupalcode CI vs GitHub Actions del mirror), según lo que
-  soporten los runners hoy.
-- D-010 · Alcance exacto del contenido demo v1.
+- **D-001** · Name and concept: "Ágora", a transparency portal as a Drupal CMS Site Template, the
+  flagship free template for the marketplace. Machine name PENDING an availability check
+  (candidates: agora_transparency, agora_gov) — it is closed after DISPATCH-00. Signed (concept) by [andres] 2026-08-20.
+- **D-002** · Repository and base: development on git.drupalcode.org as a Drupal.org general project,
+  starting from the official Drupal CMS Site Template Starter Kit (it brings GitLab CI, GitHub Actions,
+  Tugboat and base recipes). GitHub mirror optional, only for portfolio and, if needed, visual tests.
+  Signed by [andres] 2026-08-20.
+- **D-003** · Stack and tooling: current stable Drupal CMS + Recipes + a Drupal Canvas-compatible theme.
+  Composer (PHP), pnpm exclusively (JS), DDEV (local). Signed by [andres] 2026-08-20.
+- **D-004** · SBOM policy: stable releases with security team coverage only; no patches and no
+  pins. Config Guardian included and preconfigured (recipe agora_governance). Midgard EXCLUDED
+  while it is in alpha (narrative in docs only). Signed by [andres] 2026-08-20.
+- **D-005** · Languages: process docs ES; code, identifiers, commits and public docs EN;
+  demo content bilingual ES/EN. No AI co-authorship trailers in commits. Signed by [andres] 2026-08-20.
+- **D-006** · Quality as a gate: drupalcode pipeline (gitlab_templates) + install smoke + PHPUnit +
+  Playwright (functional/visual) + axe + invariant scripts in tests/bin/. Nothing advances with the
+  pipeline red. Signed by [andres] 2026-08-20.
 
----
-
-## Framing de decisiones pendientes — preparado [ejecutor] 2026-08-20
-
-> Tras la research `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
-> Ninguna se cierra sin firma de [andres]. ★ = recomendación del ejecutor.
-> Siguiente D-NNN libre verificado en disco: **D-011**.
-
-### D-007 · Machine name definitivo
-Contexto: el nombre del paquete será `drupal/<machine_name>` y ya no se puede cambiar tras publicar.
-No se pudo comprobar disponibilidad (drupal.org bloqueado en la sesión).
-- **A** · `agora` — limpio, pero es una palabra común: probablemente ocupado.
-- **B ★** · `agora_transparency` — descriptivo, en inglés, casi seguro libre.
-- **C** · `agora_gov` — más corto, pero "gov" sugiere administración estatal y el público es más amplio.
-★ **B**: describe qué hace, sobrevive a la búsqueda en Project Browser y no depende de que `agora` esté libre.
-*Requisito previo:* comprobar disponibilidad en drupal.org antes de fijarlo.
-
-### D-008 · Enfoque del tema
-Contexto: el starter kit **genera** el tema con `site_template_helper` (`generate-theme`, `from: false`).
-`CLAUDE.md` asumía una carpeta `themes/agora_theme/` versionada, que no es el flujo por defecto.
-- **A ★** · Tema **generado** por el plugin y personalizado después vía config y CSS del propio tema.
-  Sigue el camino oficial; menos fricción en la revisión.
-- **B** · Tema **propio versionado** en el repo. Más control y mejor para la tesis profesional, pero
-  se sale del flujo estándar y hay que justificarlo ante el marketplace.
-★ **A** para v1: el objetivo declarado es pasar la revisión a la primera. La estética sobria se
-consigue igual con tokens y CSS; B es una desviación que hay que defender sin necesidad.
-
-### D-009 · Dónde corren los tests visuales
-Contexto: el kit trae CI de GitLab (jobs de la DA) **y** `.github/workflows/phpunit.yml`. No se pudo
-verificar si los runners de drupalcode soportan Playwright + axe.
-- **A ★** · Linters, static analysis y PHPUnit en **drupalcode**; Playwright + axe en **GitHub Actions**
-  del mirror. El kit ya usa GitHub para PHPUnit, así que el mirror no es solo portfolio.
-- **B** · Todo en drupalcode, si los runners lo permiten.
-★ **A**, pero **verificar primero**: si drupalcode soporta Playwright, B es más limpio (un solo gate).
-Decisión revisable en la wave 2 de la unidad 001.
-
-### D-010 · Alcance del contenido demo v1
-Se pospone a la unidad 003, cuando exista el modelo de contenido. Mantener abierta.
-
-### D-011 · Arquitectura de recetas 🔴 **BLOQUEANTE de la unidad 001**
-Contexto: `plan.md` §2 y `CLAUDE.md` describen `recipes/agora_base`, `agora_publishing`, `agora_foi`,
-`agora_ai`, `agora_governance` como subdirectorios. **El starter kit no funciona así**: el repositorio
-ES una sola receta (`recipe.yml` en la raíz, `type: Site`) y compone **paquetes composer externos**.
-No hay evidencia de que el instalador resuelva sub-recetas locales.
-- **A ★** · **Una sola receta** en la raíz. Ágora = un `recipe.yml` que compone recetas de Drupal CMS
-  y módulos contrib. Es el camino verificado del kit y el de menor riesgo en la revisión.
-  Coste: se pierde la modularidad interna que `plan.md` §2 quería para la futura plantilla de pago.
-- **B** · **Varios proyectos en Drupal.org**: `agora_base`, `agora_foi`… como recetas contrib
-  independientes, y Ágora como site template que las lista en `recipes:`. Máxima reutilización, es el
-  patrón que usa el propio Drupal CMS. Coste: mantener N proyectos, N releases, N revisiones.
-- **C** · Monorepo con sub-recetas locales. Conserva el plan original tal cual, pero **no está
-  verificado que funcione** y es el mayor riesgo de rechazo.
-★ **A para v1, con B como evolución**: publicar primero un template que pase la revisión, y extraer
-recetas reutilizables cuando exista la plantilla de pago. C se descarta salvo que se verifique.
-*Si se firma A o B, hay que enmendar `plan.md` §2 y la sección "Estructura del repo" de `CLAUDE.md`.*
-
-### D-012 · Vía de publicación 🔴
-Contexto (⚠️ **sin verificar**, drupal.org bloqueado): señales de que el marketplace arrancó como
-**piloto limitado a Drupal Certified Partners**, con **395 $ por listing + 250 $ anuales**.
-`CLAUDE.md` declara como meta "pasar la revisión del marketplace a la primera" y `plan.md` describe v1
-como "plantilla gratuita insignia" — ambas cosas podrían ser incompatibles con lo anterior.
-- **A ★** · **Vía Community** (proyecto general en Drupal.org, publicable sin revisión y sin coste).
-  Es lo que ya eligió D-002. Cumple igual todos los estándares de calidad; el marketplace queda como
-  objetivo posterior si abre a no-DCP.
-- **B** · Marketplace, asumiendo cuota y requisito de DCP.
-★ **A**, pero **la decisión no debe cerrarse hasta verificar** los requisitos reales en drupal.org.
-Construir cumpliendo el estándar del marketplace mantiene ambas puertas abiertas.
-
-### D-013 · Provider de IA
-Contexto: `ai` estable es **1.4.7** (la rama 1.5 solo tiene alpha/rc). `ai_provider_openai` 1.2.5 está
-estable y cubierto. `plan.md` §2 exige **proveedor-agnóstico** y degradación elegante sin clave.
-- **A ★** · Depender solo de `ai` (^1.4) y **ningún provider concreto**. El usuario elige e instala su
-  provider tras la instalación. Máxima neutralidad; el CI corre sin claves de forma natural.
-- **B** · Incluir `ai_provider_openai` como recomendado en `recommended.yml`, sin que sea dependencia dura.
-- **C** · Depender de un provider concreto. Contradice el proveedor-agnóstico. Descartar.
-★ **A**, con **B** como complemento: recomendar sin imponer.
-
-### Nota sobre D-004 (Config Guardian) — CONFIRMADA, sin cambios
-Verificado el 2026-08-20 en `updates.drupal.org`: **Config Guardian 1.0.3**, estable, **con cobertura
-de seguridad**, `core_compatibility: ^10.5 || ^11 || ^12` → compatible con el core 11.4 que exige el
-starter kit. Cumple las cuatro puertas de la política SBOM. **No requiere enmienda.**
-Igualmente verificados y aptos: ECA 3.1.6, AI 1.4.7, AI Agents 1.3.4, Search API 8.x-1.41,
-Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — todos estables y cubiertos (research §10).
+## Pending (raised after DISPATCH-00, with options + recommendation)
+- D-007 · Final machine name of the project.
+- D-008 · Canvas theme approach (start from the starter kit theme vs a bespoke theme from scratch).
+- D-009 · Where the visual tests run (drupalcode CI vs the mirror's GitHub Actions), depending on what
+  the runners support today.
+- D-010 · Exact scope of the v1 demo content.
 
 ---
 
-## Firmas — 2026-08-21 [andres]
+## Framing of pending decisions — prepared [ejecutor] 2026-08-20
 
-> Append-only. Esta sección no edita nada anterior. Cuando una firma cambia el marco de una
-> decisión ya redactada arriba, se dice explícitamente cuál queda superada y por cuál.
-> Siguiente D-NNN libre tras esta tanda: **D-015**.
+> After the research `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
+> None is closed without [andres]'s signature. ★ = recommendation from [ejecutor].
+> Next free D-NNN verified on disk: **D-011**.
 
-- **D-007** · Machine name definitivo: **`agora_transparency`**. El paquete composer será
-  `drupal/agora_transparency`; el título visible del proyecto sigue siendo "Ágora".
-  *Evidencia (2026-08-21):* `git.drupalcode.org/api/v4/projects/project%2Fagora` → **200** (ocupado
-  por un proyecto ajeno); `…%2Fagora_transparency` y `…%2Fagora_gov` → **404** (libres).
-  ⚠️ La API de GitLab es el único oráculo válido: `www.drupal.org/project/<X>` devuelve **302 hacia
-  new.drupal.org para cualquier cadena**, incluida una inexistente, y por tanto **no prueba
-  disponibilidad** (ver I-012). Firmada por [andres] 2026-08-21.
+### D-007 · Final machine name
+Context: the package name will be `drupal/<machine_name>` and it can no longer be changed after
+publishing. Availability could not be checked (drupal.org blocked during the session).
+- **A** · `agora` — clean, but it is a common word: probably taken.
+- **B ★** · `agora_transparency` — descriptive, in English, almost certainly free.
+- **C** · `agora_gov` — shorter, but "gov" suggests central government and the audience is broader.
+★ **B**: it describes what it does, survives a Project Browser search and does not depend on `agora` being free.
+*Prerequisite:* check availability on drupal.org before fixing it.
 
-- **D-011** · Arquitectura de recetas: **opción A — una sola receta en la raíz**. Ágora es un único
-  `recipe.yml` (`type: Site`) que compone recetas de Drupal CMS y módulos contrib declarados en
-  `require`. **No hay directorio `recipes/`** con sub-recetas locales. Firmada por [andres] 2026-08-21.
-  *Riders de [andres]:*
-  (a) `plan.md` §2 y `CLAUDE.md` §"Estructura del repo" se enmiendan **en este mismo commit**.
-  (b) La reutilización para la futura plantilla de pago se hará **extrayendo piezas a recetas
-      contrib independientes (patrón B)** cuando exista esa unidad. En v1 se deja **costura, no
-      implementación**: cada área funcional ocupa un bloque contiguo y rotulado de `recipe.yml`, y
-      los identificadores propios llevan prefijo de área (`agora_base_*`, `agora_foi_*`…), de modo
-      que la extracción futura sea mover ficheros y no reescribir.
-  (c) El dato "cuota de 395 $ por listing" queda pendiente de verificación con fuente y fecha en la
-      unidad 007. → **Pendiente CERRADO el mismo día por D-012**, ver allí.
+### D-008 · Theme approach
+Context: the starter kit **generates** the theme with `site_template_helper` (`generate-theme`, `from: false`).
+`CLAUDE.md` assumed a versioned `themes/agora_theme/` folder, which is not the default flow.
+- **A ★** · Theme **generated** by the plugin and customized afterwards via config and the theme's own CSS.
+  It follows the official path; less friction during review.
+- **B** · A **bespoke theme versioned** in the repo. More control and better for the professional thesis, but
+  it departs from the standard flow and has to be justified to the marketplace.
+★ **A** for v1: the stated goal is to pass review on the first attempt. The sober aesthetic is achieved
+just as well with tokens and CSS; B is a deviation that has to be defended for no reason.
 
-- **D-008** · Firmada por [andres] 2026-08-21 como **opción A** (el tema **no** se escribe a mano
-  dentro de este repositorio). Con dos salvedades registradas el mismo día:
-  1. **El rider adjunto — "el tema generado queda committeado en el repo y la personalización va
-     encima, versionada" — queda SUSPENDIDO por imposibilidad técnica**, verificada en origen:
-     · `tests/src/Kernel/RequirementsTest.php` del kit exige **0 ficheros `*.info.yml`** en todo el
-       paquete: *"Recipes cannot include any code (modules or themes) of their own; they must list
+### D-009 · Where the visual tests run
+Context: the kit brings GitLab CI (DA jobs) **and** `.github/workflows/phpunit.yml`. It could not be
+verified whether the drupalcode runners support Playwright + axe.
+- **A ★** · Linters, static analysis and PHPUnit on **drupalcode**; Playwright + axe on the mirror's
+  **GitHub Actions**. The kit already uses GitHub for PHPUnit, so the mirror is not only portfolio.
+- **B** · Everything on drupalcode, if the runners allow it.
+★ **A**, but **verify first**: if drupalcode supports Playwright, B is cleaner (a single gate).
+Decision reviewable in wave 2 of unit 001.
+
+### D-010 · Scope of the v1 demo content
+Postponed to unit 003, once the content model exists. Keep it open.
+
+### D-011 · Recipe architecture 🔴 **BLOCKING for unit 001**
+Context: `plan.md` §2 and `CLAUDE.md` describe `recipes/agora_base`, `agora_publishing`, `agora_foi`,
+`agora_ai`, `agora_governance` as subdirectories. **The starter kit does not work that way**: the repository
+IS a single recipe (`recipe.yml` at the root, `type: Site`) and it composes **external composer packages**.
+There is no evidence that the installer resolves local sub-recipes.
+- **A ★** · **A single recipe** at the root. Ágora = one `recipe.yml` that composes Drupal CMS recipes
+  and contrib modules. It is the kit's verified path and the lowest-risk one in review.
+  Cost: the internal modularity that `plan.md` §2 wanted for the future paid template is lost.
+- **B** · **Several projects on Drupal.org**: `agora_base`, `agora_foi`… as independent contrib recipes,
+  and Ágora as a site template that lists them in `recipes:`. Maximum reuse; it is the pattern Drupal CMS
+  itself uses. Cost: maintaining N projects, N releases, N reviews.
+- **C** · Monorepo with local sub-recipes. It keeps the original plan exactly as it is, but **it is not
+  verified to work** and it is the greatest risk of rejection.
+★ **A for v1, with B as the evolution**: first publish a template that passes review, and extract
+reusable recipes once the paid template exists. C is discarded unless it is verified.
+*If A or B is signed, `plan.md` §2 and the "Repository structure" section of `CLAUDE.md` must be amended.*
+
+### D-012 · Publication route 🔴
+Context (⚠️ **unverified**, drupal.org blocked): signals that the marketplace started as a
+**pilot limited to Drupal Certified Partners**, with **$395 per listing + $250 annually**.
+`CLAUDE.md` states as its goal "passing the marketplace review on the first attempt" and `plan.md`
+describes v1 as the "flagship free template" — both could be incompatible with the above.
+- **A ★** · **The Community route** (a general project on Drupal.org, publishable without review and at no cost).
+  It is what D-002 already chose. It meets all the quality standards just the same; the marketplace remains
+  a later goal if it opens to non-DCPs.
+- **B** · Marketplace, assuming the fee and the DCP requirement.
+★ **A**, but **the decision must not be closed until the real requirements are verified** on drupal.org.
+Building to the marketplace standard keeps both doors open.
+
+### D-013 · AI provider
+Context: stable `ai` is **1.4.7** (the 1.5 branch only has alpha/rc). `ai_provider_openai` 1.2.5 is
+stable and covered. `plan.md` §2 requires **provider-agnostic** and graceful degradation without a key.
+- **A ★** · Depend only on `ai` (^1.4) and **no specific provider**. The user chooses and installs their
+  provider after installation. Maximum neutrality; CI runs without keys naturally.
+- **B** · Include `ai_provider_openai` as recommended in `recommended.yml`, without it being a hard dependency.
+- **C** · Depend on a specific provider. It contradicts provider-agnosticism. Discard.
+★ **A**, with **B** as a complement: recommend without imposing.
+
+### Note on D-004 (Config Guardian) — CONFIRMED, no changes
+Verified on 2026-08-20 on `updates.drupal.org`: **Config Guardian 1.0.3**, stable, **with security
+coverage**, `core_compatibility: ^10.5 || ^11 || ^12` → compatible with the core 11.4 that the starter kit
+requires. It passes the four gates of the SBOM policy. **No amendment required.**
+Equally verified and suitable: ECA 3.1.6, AI 1.4.7, AI Agents 1.3.4, Search API 8.x-1.41,
+Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research §10).
+
+---
+
+## Signatures — 2026-08-21 [andres]
+
+> Append-only. This section does not edit anything above. When a signature changes the framing of a
+> decision already written above, it states explicitly which one is superseded and by which.
+> Next free D-NNN after this batch: **D-015**.
+
+- **D-007** · Final machine name: **`agora_transparency`**. The composer package will be
+  `drupal/agora_transparency`; the project's visible title remains "Ágora".
+  *Evidence (2026-08-21):* `git.drupalcode.org/api/v4/projects/project%2Fagora` → **200** (taken
+  by an unrelated project); `…%2Fagora_transparency` and `…%2Fagora_gov` → **404** (free).
+  ⚠️ The GitLab API is the only valid oracle: `www.drupal.org/project/<X>` returns **302 to
+  new.drupal.org for any string**, including a non-existent one, and therefore **does not prove
+  availability** (see I-012). Signed by [andres] 2026-08-21.
+
+- **D-011** · Recipe architecture: **option A — a single recipe at the root**. Ágora is a single
+  `recipe.yml` (`type: Site`) that composes Drupal CMS recipes and contrib modules declared in
+  `require`. **There is no `recipes/` directory** with local sub-recipes. Signed by [andres] 2026-08-21.
+  *Riders of [andres]:*
+  (a) `plan.md` §2 and `CLAUDE.md` §"Repository structure" are amended **in this same commit**.
+  (b) Reuse for the future paid template will be done by **extracting pieces into independent contrib
+      recipes (pattern B)** when that unit exists. In v1 what is left is **seam, not
+      implementation**: each functional area occupies a contiguous, labeled block of `recipe.yml`, and
+      its own identifiers carry an area prefix (`agora_base_*`, `agora_foi_*`…), so that
+      the future extraction is moving files and not rewriting.
+  (c) The datum "a $395 fee per listing" remains pending verification with source and date in
+      unit 007. → **Pending item CLOSED the same day by D-012**, see there.
+
+- **D-008** · Signed by [andres] 2026-08-21 as **option A** (the theme is **not** hand-written
+  inside this repository). With two caveats recorded the same day:
+  1. **The attached rider — "the generated theme stays committed in the repo and the customization goes
+     on top, versioned" — is SUSPENDED as technically impossible**, verified at the source:
+     · the kit's `tests/src/Kernel/RequirementsTest.php` requires **0 `*.info.yml` files** in the whole
+       package: *"Recipes cannot include any code (modules or themes) of their own; they must list
        them as dependencies in `composer.json`."*
-     · El paquete se instala en `./recipes/<name>` (`drupal/cms` 2.x, `extra.installer-paths`),
-       **fuera del docroot**, donde `RecursiveExtensionFilterCallback` ni siquiera recurre (solo
-       `profiles/`, `modules/`, `themes/` del root).
-     · El ADR oficial de site templates dice que un template **MAY depend on a theme**, no incluirlo.
-     La condición de parada que [andres] adjuntó al rider ("si el kit regenera el tema en cada
-     instalación del usuario final, PARAR") **no se dispara**: `site_template_helper` genera una sola
-     vez, en el sitio de trabajo del autor, es idempotente, y el bloque `extra.drupal-site-template`
-     se elimina antes de publicar.
-  2. **D-008 queda SUBSUMIDA por D-014**: la pregunta "dónde vive el tema" se responde allí. Lo que
-     sobrevive de D-008 es la regla negativa: *este repositorio no contiene tema propio*.
+     · The package is installed in `./recipes/<name>` (`drupal/cms` 2.x, `extra.installer-paths`),
+       **outside the docroot**, where `RecursiveExtensionFilterCallback` does not even recurse (only
+       the root's `profiles/`, `modules/`, `themes/`).
+     · The official site templates ADR says that a template **MAY depend on a theme**, not include it.
+     The stop condition that [andres] attached to the rider ("if the kit regenerates the theme on every
+     end-user installation, STOP") **does not trigger**: `site_template_helper` generates once only,
+     on the author's working site, is idempotent, and the `extra.drupal-site-template` block
+     is removed before publishing.
+  2. **D-008 is SUBSUMED by D-014**: the question "where the theme lives" is answered there. What
+     survives of D-008 is the negative rule: *this repository contains no theme of its own*.
 
-- **D-012** · Vía de publicación: **opción C — community primero, marketplace después**. No son
-  excluyentes: el marketplace **exige** que el template sea un proyecto general.
-  Firmada por [andres] 2026-08-21.
-  *Hallazgo que cierra el pendiente (c) de D-011, verificado 2026-08-21:*
+- **D-012** · Publication route: **option C — community first, marketplace afterwards**. They are not
+  mutually exclusive: the marketplace **requires** the template to be a general project.
+  Signed by [andres] 2026-08-21.
+  *Finding that closes pending item (c) of D-011, verified 2026-08-21:*
   · `new.drupal.org/site-template/apply`, §Individuals: *"Free templates: Any individual who wants
-    to submit free templates, is welcome to."* Ser Drupal Certified Partner o Ripplemaker es
-    requisito **solo para plantillas de pago**. La premisa "piloto DCP-only" era **falsa**.
-  · La cuota de **395 $ + 250 $/año** procede de la *propuesta* de julio 2025
-    (`drupal.org/project/innovation_ideas/issues/3532934`), que dice literalmente
-    **"(none for pilot and MVP)"**. No hay cuota confirmada para el MVP.
+    to submit free templates, is welcome to."* Being a Drupal Certified Partner or Ripplemaker is a
+    requirement **only for paid templates**. The premise "DCP-only pilot" was **false**.
+  · The fee of **$395 + $250/year** comes from the July 2025 *proposal*
+    (`drupal.org/project/innovation_ideas/issues/3532934`), which says literally
+    **"(none for pilot and MVP)"**. There is no confirmed fee for the MVP.
   · `drupal.org/about/initiatives/cms/blog/differentiating-marketplace-site-templates-and-community-site-templates`:
     *"All free site templates, including marketplace templates, are general projects for packaging
-    and distribution purposes"*, y recomienda explícitamente *"sharing a community template first"*.
-  *Riders de [andres]:* la unidad **007 pasa a ser "publicación community"**; la solicitud al
-  marketplace se trata como **007-bis, no bloqueante**.
-  *Nota:* los cinco criterios de revisión del marketplace (instalabilidad por CI · SBOM con cobertura
-  de seguridad · manifiesto de licencias · atestación WCAG · respuesta de seguridad, sin pins ni
-  parches) coinciden literalmente con `plan.md` §4: ese apartado queda **confirmado en origen**.
+    and distribution purposes"*, and it explicitly recommends *"sharing a community template first"*.
+  *Riders of [andres]:* unit **007 becomes "community publication"**; the application to the
+  marketplace is treated as **007-bis, non-blocking**.
+  *Note:* the five marketplace review criteria (CI installability · SBOM with security
+  coverage · license manifest · WCAG attestation · security response, with no pins and no
+  patches) match `plan.md` §4 literally: that section is **confirmed at the source**.
 
-- **D-013** · Provider de IA: **opción A + B**. Dependencia dura únicamente de `ai` **^1.4**
-  (nunca `^1.5`: esa rama solo tiene alpha/rc, violaría la no-negociable nº 1). Ningún provider como
-  dependencia dura. `ai_provider_openai` (1.2.5, estable y con cobertura) se **recomienda** en
-  `recommended.yml`, sin imponerse. Mantiene el proveedor-agnóstico de `plan.md` §2 y el CI corre sin
-  claves (I-003). Firmada por [andres] 2026-08-21.
-  *Riders de [andres]:*
-  (a) La recomendación es **por criterio, no por marca**: cualquier provider que cumpla el mismo
-      listón (release estable + cobertura de seguridad) se lista también en `recommended.yml`.
-  (b) **Verificación fresca del estado de `ai` ^1.x al llegar a la unidad 005**, antes de implementar.
-      Si `^1.5` alcanzó estable, se **propone enmienda**; no se asume (I-001).
+- **D-013** · AI provider: **option A + B**. Hard dependency on `ai` **^1.4** only
+  (never `^1.5`: that branch only has alpha/rc, it would violate non-negotiable rule 1). No provider as a
+  hard dependency. `ai_provider_openai` (1.2.5, stable and covered) is **recommended** in
+  `recommended.yml`, without being imposed. It preserves the provider-agnosticism of `plan.md` §2 and CI
+  runs without keys (I-003). Signed by [andres] 2026-08-21.
+  *Riders of [andres]:*
+  (a) The recommendation is **by criterion, not by brand**: any provider that meets the same bar
+      (stable release + security coverage) is also listed in `recommended.yml`.
+  (b) **A fresh verification of the state of `ai` ^1.x on reaching unit 005**, before implementing.
+      If `^1.5` has reached stable, an **amendment is proposed**; it is not assumed (I-001).
 
-- **D-014** · Dónde vive la estética de Ágora: **opción B — tema como proyecto separado en
-  Drupal.org** (`drupal/agora_theme`), versionado con normalidad (Twig, tokens, tipografía OFL),
-  declarado en el `require` de Ágora e instalado desde `recipe.yml`. Es la vía que contempla el ADR
-  oficial y la que prevé el propio `RequirementsTest` del kit ("a bespoke theme to which it is
-  strongly coupled"). Firmada por [andres] 2026-08-21.
-  *Riders de [andres]:*
-  (a) **Motivo adicional que hace a B la única opción compatible con las no-negociables:** la
-      tipografía OFL auto-alojada son **ficheros**, y la configuración no los transporta; usar una
-      CDN de fuentes es **pasivo RGPD** en sector público de la UE. La opción "todo en config de
-      Canvas" no podía cumplir ni la licencia ni la privacidad.
-  (b) `agora_theme` se **scaffolda con el generador oficial** (`site_template_helper`) y se
-      **promueve a proyecto propio** desde ahí.
-  (c) **Machine name del tema pendiente de verificar** (propuesta: `agora_theme`). Se cierra en la
-      unidad 002, con el oráculo de I-012.
-  (d) **La release estable de `agora_theme` es gate de la release de Ágora** en la unidad 007: debe
-      existir antes.
-  (e) Al crear el proyecto del tema, **opt-in a cobertura del equipo de seguridad**.
-  (f) **Alcance del tema: mínimo con dientes** — tokens AA, tipografía, tablas y formularios
-      accesibles, compatible con Canvas. **Sin frameworks CSS genéricos.**
+- **D-014** · Where Ágora's aesthetics live: **option B — theme as a separate project on
+  Drupal.org** (`drupal/agora_theme`), versioned as normal (Twig, tokens, OFL typography),
+  declared in Ágora's `require` and installed from `recipe.yml`. It is the route the official ADR
+  contemplates and the one the kit's own `RequirementsTest` foresees ("a bespoke theme to which it is
+  strongly coupled"). Signed by [andres] 2026-08-21.
+  *Riders of [andres]:*
+  (a) **Additional reason that makes B the only option compatible with the non-negotiables:** the
+      self-hosted OFL typography is **files**, and configuration does not carry them; using a
+      font CDN is a **GDPR liability** in the EU public sector. The "everything in Canvas config"
+      option could satisfy neither the license nor privacy.
+  (b) `agora_theme` is **scaffolded with the official generator** (`site_template_helper`) and is
+      **promoted to its own project** from there.
+  (c) **Theme machine name pending verification** (proposal: `agora_theme`). It is closed in
+      unit 002, with the oracle from I-012.
+  (d) **The stable release of `agora_theme` is a gate for Ágora's release** in unit 007: it must
+      exist first.
+  (e) When creating the theme project, **opt in to security team coverage**.
+  (f) **Theme scope: minimal with teeth** — AA tokens, typography, accessible tables and forms,
+      Canvas-compatible. **No generic CSS frameworks.**
 
 - **D-015** · **Policy for AI artifacts in the public repository.** Signed by [andres] 2026-08-21.
   1. **`AGENTS.md` is product.** It stays in the repository, ships to the end user, and is written

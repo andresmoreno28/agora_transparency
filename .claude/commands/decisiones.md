@@ -1,7 +1,7 @@
-Lista las decisiones pendientes del proyecto:
-1. Lee specs/000-proyecto/DECISIONES.md y las open questions del plan.md de la unidad activa.
-   Si el framing no está preparado, invoca al subagente `orquestador` para redactarlo.
-2. Presenta SOLO las no firmadas, una por punto, en lenguaje llano: contexto en 1 línea, opciones
-   A/B(/C), recomendación marcada con ★ y su porqué en 1 línea. Sin jerga sin explicar.
-3. Cuando el humano decida, escribe cada decisión en DECISIONES.md con el siguiente D-NNN libre
-   (verificado EN DISCO), fecha y "firmada por [andres]". Las load-bearing jamás las cierras tú.
+List the project's pending decisions:
+1. Read specs/000-proyecto/DECISIONES.md and the open questions of the plan.md of the active unit.
+   If the framing is not prepared, invoke the `orquestador` subagent to draft it.
+2. Present ONLY the unsigned ones, one per bullet, in plain language: context in 1 line, options
+   A/B(/C), recommendation marked with ★ and its why in 1 line. No unexplained jargon.
+3. When the human decides, write each decision into DECISIONES.md with the next free D-NNN
+   (verified ON DISK), date and "signed by [andres]". You never close the load-bearing ones.

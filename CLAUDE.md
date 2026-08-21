@@ -1,153 +1,154 @@
-# CLAUDE.md · Ágora — Site Template de transparencia para Drupal CMS
+# CLAUDE.md · Ágora — Transparency Site Template for Drupal CMS
 
-## Qué es este proyecto (y qué no es)
+## What this project is (and what it is not)
 
-**ES:** un Site Template oficial para Drupal CMS — un portal de transparencia y gobierno abierto
-(ayuntamientos pequeños, organismos, fundaciones que rinden cuentas) — destinado al Drupal.org
-Site Template Marketplace. Rendición de cuentas por defecto: WCAG 2.2 AA de serie, asistente IA
-con citas, y auditoría de la propia configuración (Config Guardian) como feature.
+**IT IS:** an official Site Template for Drupal CMS — a transparency and open government portal
+(small municipalities, public bodies, foundations that are accountable) — aimed at the Drupal.org
+Site Template Marketplace. Accountability by default: WCAG 2.2 AA out of the box, an AI assistant
+with citations, and auditing of the site's own configuration (Config Guardian) as a feature.
 
-**NO ES:** una distro de ayuntamiento completa (eso es LocalGov/govCMS), ni un producto de pago (v1
-es la plantilla gratuita insignia), ni un experimento: el destino es pasar la revisión del
-marketplace de Drupal.org a la primera.
+**IT IS NOT:** a complete municipal distro (that is LocalGov/govCMS), nor a paid product (v1 is the
+flagship free template), nor an experiment: the destination is passing the Drupal.org marketplace
+review on the first attempt.
 
-**Propiedades no-negociables:** accesible (AA real, verificado), auditable (cada pieza del SBOM
-justificada), instalable (CI lo prueba en limpio), sobria (estética institucional, cero ruido),
-publicable (todo cumple los términos del marketplace desde el día 1).
+**Non-negotiable properties:** accessible (real AA, verified), auditable (every piece of the SBOM
+justified), installable (CI proves it on a clean install), sober (institutional aesthetic, zero
+noise), publishable (everything meets the marketplace terms from day 1).
 
-## Roles (no mezclar jamás)
+## Roles (never mix them)
 
-- **Humano (Andrés):** decide lo load-bearing, firma gates B, ejecuta merges a rama canónica,
-  publicaciones y releases. No escribe prompts largos.
-- **Tú (Claude Code, sesión principal): coordinador del proyecto.** Toda la orquestación vive AQUÍ
-  dentro: mantienes el contexto, invocas a los subagentes, ejecutas sus planes y escalas al humano.
-  No implementas a mano lo que corresponde a un subagente, y no planificas ni cierras nada sin
-  pasar por el subagente `orquestador`.
-- **Subagentes fijos** (en `.claude/agents/`; sin fan-out dinámico, solo estos tres):
-  - `orquestador` — cerebro de contexto limpio: scaffolding turns, plan de lanes de cada wave,
-    auditorías de SOLO LECTURA (estándares, SBOM, licencias, marketplace, a11y) y veredicto
-    independiente de cada gate. Revisa Y ordena; nunca implementa.
-  - `desarrollador` — implementa contra el plan firmado.
-  - `tester` — tests, smokes e invariantes, con counts reales.
-- **Mecánica (limitación real de la plataforma):** los subagentes no pueden invocar subagentes.
-  El `orquestador` devuelve planes, órdenes y veredictos; la sesión principal los ejecuta invocando
-  a `desarrollador`/`tester`. Ninguna wave se planifica ni se cierra sin su paso.
-- **Reconciliation pass SIEMPRE** antes de implementar: el disco manda sobre cualquier prompt.
-  Si un prompt asume algo falso → PARAR y reportar. Decisiones arquitecturales: opciones +
-  recomendación, decide el humano.
+- **Human (Andrés):** decides what is load-bearing, signs B gates, runs merges to the canonical
+  branch, publications and releases. Does not write long prompts.
+- **You (Claude Code, main session): project coordinator.** All orchestration lives HERE inside:
+  you keep the context, you invoke the subagents, you execute their plans and you escalate to the
+  human. You do not implement by hand what belongs to a subagent, and you neither plan nor close
+  anything without going through the `orquestador` subagent.
+- **Fixed subagents** (in `.claude/agents/`; no dynamic fan-out, only these three):
+  - `orquestador` — clean-context brain: scaffolding turns, lane plan for each wave, READ-ONLY
+    audits (standards, SBOM, licenses, marketplace, a11y) and an independent verdict for each
+    gate. It reviews AND orders; it never implements.
+  - `desarrollador` — implements against the signed plan.
+  - `tester` — tests, smokes and invariants, with real counts.
+- **Mechanics (real platform limitation):** subagents cannot invoke subagents.
+  The `orquestador` returns plans, orders and verdicts; the main session executes them by invoking
+  `desarrollador`/`tester`. No wave is planned or closed without going through it.
+- **Reconciliation pass ALWAYS** before implementing: disk wins over any prompt.
+  If a prompt assumes something false → STOP and report. Architectural decisions: options +
+  recommendation, the human decides.
 
-## Reglas no-negociables (repetidas en cada dispatch; valen siempre)
+## Non-negotiable rules (repeated in every dispatch; always in force)
 
-1. **Solo releases estables.** Ninguna dependencia dev/alpha/beta/rc. Sin `patches` en composer.json,
-   sin pins exóticos. (Requisito literal del marketplace.) Midgard NO entra (está en alpha);
-   Config Guardian SÍ (estable, con cobertura de seguridad).
-2. **SBOM mínimo y justificado:** cada módulo contrib añadido necesita una línea en
-   `specs/000-proyecto/DECISIONES.md` (qué aporta, estado de cobertura de seguridad). En duda,
-   resolver con lo que Drupal CMS ya trae.
-3. **Secretos: JAMÁS** en recipes, config exportable, contenido demo, git o docs. La integración IA
-   se configura por variables de entorno/UI post-instalación y degrada con elegancia si no hay clave.
-4. **Accesibilidad es gate, no intención:** axe sin violaciones + navegación por teclado en flujos
-   clave. Contraste AA en tokens del tema.
-5. **Tooling exclusivo:** Composer para PHP. **pnpm exclusivo** para cualquier tooling JS del tema
-   (npm/yarn prohibidos, también en docs, scripts y CI). Entorno local: DDEV.
+1. **Stable releases only.** No dev/alpha/beta/rc dependency. No `patches` in composer.json,
+   no exotic pins. (Literal marketplace requirement.) Midgard is OUT (it is in alpha);
+   Config Guardian is IN (stable, with security coverage).
+2. **Minimal and justified SBOM:** every contrib module added needs a line in
+   `specs/000-proyecto/DECISIONES.md` (what it brings, security coverage status). When in doubt,
+   solve it with what Drupal CMS already ships.
+3. **Secrets: NEVER** in recipes, exportable config, demo content, git or docs. The AI integration
+   is configured through environment variables / post-install UI and degrades gracefully with no key.
+4. **Accessibility is a gate, not an intention:** axe with no violations + keyboard navigation on
+   key flows. AA contrast in the theme tokens.
+5. **Exclusive tooling:** Composer for PHP. **pnpm exclusively** for any JS tooling of the theme
+   (npm/yarn forbidden, also in docs, scripts and CI). Local environment: DDEV.
 6. **Language (amended by D-017, 2026-08-21):** the ENTIRE repository is in English — process layer
    included: `CLAUDE.md`, `.claude/`, `specs/`, commit messages, identifiers, code and public docs.
    Spanish is the language of orchestration **outside** the repository (conversation with the human).
    Demo content stays bilingual ES/EN. Supersedes D-005 on this point.
-7. **Commits:** convencionales, en inglés, **sin trailers de co-autoría de IA**. Etiquetas de rol en
-   docs: `[ejecutor]`, `[andres]` — nunca nombres de herramientas de IA.
-8. **Append-only:** tareas firmadas en `tasks.md` no se renumeran. ADRs/decisiones firmadas no se
-   editan: se enmiendan o se crea nueva.
-9. **Nada roto avanza:** una wave no cierra sin gate A completo en verde (exit 0 + counts reales).
-   El pipeline de CI en rojo bloquea todo lo demás.
-10. **Manos de git:** tú puedes commitear y pushear a ramas de trabajo si el dispatch lo delega.
-    Merges a la rama canónica, tags, releases y creación del proyecto en Drupal.org: humano.
+7. **Commits:** conventional, in English, **without AI co-authorship trailers**. Role labels in
+   docs: `[ejecutor]`, `[andres]` — never AI tool names.
+8. **Append-only:** signed tasks in `tasks.md` are not renumbered. Signed ADRs/decisions are not
+   edited: they are amended or a new one is created.
+9. **Nothing broken moves forward:** a wave does not close without a complete gate A in green
+   (exit 0 + real counts). A red CI pipeline blocks everything else.
+10. **Git hands:** you may commit and push to working branches if the dispatch delegates it.
+    Merges to the canonical branch, tags, releases and creation of the project on Drupal.org: human.
 
-## Estructura del repo
+## Repository structure
 
-**Capa de proceso (existe y es estable):**
+**Process layer (exists and is stable):**
 ```
-CLAUDE.md                  # este fichero
+CLAUDE.md                  # this file
 specs/
-  000-proyecto/            # unidad meta: identidad, decisiones, arquitectura
-    plan.md                # plan maestro (leer SIEMPRE al retomar)
-    ROADMAP.md             # unidades 001-007 desarrolladas (dirección, no scope firmado)
-    DECISIONES.md          # registro D-NNN append-only (verificar nº libre EN DISCO)
-    IDIOMS.md              # lecciones/gotchas del proyecto, append-only
-  001-fundacion/           # unidad activa
+  000-proyecto/            # meta unit: identity, decisions, architecture
+    plan.md                # master plan (ALWAYS read when resuming)
+    ROADMAP.md             # units 001-007 fleshed out (direction, not signed scope)
+    DECISIONES.md          # append-only D-NNN record (verify the free no. ON DISK)
+    IDIOMS.md              # project lessons/gotchas, append-only
+  001-fundacion/           # active unit
     DISPATCH-00.md · plan.md · tasks.md
-    research/              # research fechada (prior-is-not-disk)
-  002-base-tema/ … 007-publicacion/     # sin planificar; ver ROADMAP.md
-tests/bin/                 # scripts de invariantes + binding smokes (gate A)
+    research/              # dated research (prior-is-not-disk)
+  002-base-tema/ … 007-publicacion/     # not planned; see ROADMAP.md
+tests/bin/                 # invariant scripts + binding smokes (gate A)
 .claude/
   agents/                  # orquestador · desarrollador · tester
   commands/                # /retomar · /wave · /decisiones
-  skills/                  # 7 skills del proyecto (ver abajo)
+  skills/                  # 7 project skills (see below)
 ```
 
-**Capa del template (se crea en la unidad 001 — D-011 firmada 2026-08-21):**
-El repositorio **ES la receta**. Verificado en origen el 2026-08-21 contra el starter kit y contra el
-`RequirementsTest` que el propio kit ejecuta en el gate:
+**Template layer (created in unit 001 — D-011 signed 2026-08-21):**
+The repository **IS the recipe**. Verified at source on 2026-08-21 against the starter kit and
+against the `RequirementsTest` that the kit itself runs in the gate:
 
 ```
-recipe.yml                 # RAÍZ, type: Site (case-sensitive). Obligatorio.
+recipe.yml                 # ROOT, type: Site (case-sensitive). Mandatory.
 composer.json              # type: drupal-recipe · drupal/agora_transparency · GPL-2.0-or-later
-recommended.yml            # lista curada para Project Browser (SOLO proyectos estables)
-screenshot.webp            # captura del sitio, no el logo
-config/                    # config exportada por `drush site:export`
-content/                   # contenido demo exportado
-tests/                     # InstallTest · ValidationTest · RequirementsTest (del kit; se extienden)
+recommended.yml            # curated list for Project Browser (STABLE projects ONLY)
+screenshot.webp            # screenshot of the site, not the logo
+config/                    # config exported by `drush site:export`
+content/                   # exported demo content
+tests/                     # InstallTest · ValidationTest · RequirementsTest (from the kit; extended)
 ```
 
-**Prohibiciones estructurales duras — las verifica `RequirementsTest`, no son opinión:**
-- **NO hay `recipes/`** con sub-recetas locales. Una sola receta; la modularidad es de *áreas
-  funcionales* dentro de `recipe.yml` (plan.md §2), no de directorios.
-- **NO hay `themes/` ni `modules/`. Un site template no puede contener código propio:**
-  `RequirementsTest` exige **0 ficheros `*.info.yml`** en todo el paquete. Temas y módulos se
-  **declaran en `require`**; nunca se incluyen. El paquete se instala en `./recipes/<name>`, fuera
-  del docroot, donde Drupal ni siquiera escanea extensiones. El tema de Ágora vive en su propio
-  proyecto, `drupal/agora_theme` (D-014).
-- **NO se pinean versiones** (`"drupal/x": "1.13"`) ni se parchea ninguna dependencia.
-- **`CI_ALLOW_DEV` no se define nunca**: es el escape hatch de `RequirementsTest` para saltarse la
-  comprobación de versiones. Usarlo es debilitar un gate → 🔴 automático.
+**Hard structural prohibitions — `RequirementsTest` verifies them, they are not opinion:**
+- **There is NO `recipes/`** with local sub-recipes. A single recipe; modularity is by *functional
+  areas* inside `recipe.yml` (plan.md §2), not by directories.
+- **There is NO `themes/` nor `modules/`. A site template cannot contain its own code:**
+  `RequirementsTest` requires **0 `*.info.yml` files** in the whole package. Themes and modules are
+  **declared in `require`**; never bundled. The package is installed in `./recipes/<name>`, outside
+  the docroot, where Drupal does not even scan for extensions. The Ágora theme lives in its own
+  project, `drupal/agora_theme` (D-014).
+- **Versions are NOT pinned** (`"drupal/x": "1.13"`) and no dependency is patched.
+- **`CI_ALLOW_DEV` is never defined**: it is `RequirementsTest`'s escape hatch for skipping the
+  version check. Using it means weakening a gate → automatic 🔴.
 
-El repositorio **no es un proyecto Drupal**: no se hace `ddev start` dentro. El entorno real monta un
-Drupal aparte y añade el template como *path repository* (ver `specs/001-fundacion/`).
-Layout canónico: skill `drupal-site-template` + las researches de `specs/001-fundacion/research/`.
+The repository **is not a Drupal project**: you do not run `ddev start` inside it. The real
+environment sets up a separate Drupal and adds the template as a *path repository*
+(see `specs/001-fundacion/`).
+Canonical layout: skill `drupal-site-template` + the research in `specs/001-fundacion/research/`.
 
-## Gate A (cuando exista el esqueleto; la lista exacta la fija la unidad 001)
+## Gate A (once the skeleton exists; unit 001 fixes the exact list)
 
-- `composer validate` + install limpio
-- phpcs (Drupal + DrupalPractice), phpstan, cspell, eslint, stylelint (los mismos jobs que los
-  gitlab_templates de Drupal.org — el pipeline de drupalcode ES el gate, no una aproximación)
-- PHPUnit (kernel/funcional de los recipes)
-- **Install smoke:** aplicar la plantilla sobre Drupal CMS LIMPIO y verificar rutas/render clave
-- Playwright: funcional + visual regression de las páginas demo
-- axe (a11y) sin violaciones sobre las páginas demo
-- `tests/bin/`: sbom-check (estables + cobertura), no-unstable-deps, no-secrets, no-patches
+- `composer validate` + clean install
+- phpcs (Drupal + DrupalPractice), phpstan, cspell, eslint, stylelint (the same jobs as the
+  Drupal.org gitlab_templates — the drupalcode pipeline IS the gate, not an approximation)
+- PHPUnit (kernel/functional of the recipes)
+- **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render
+- Playwright: functional + visual regression of the demo pages
+- axe (a11y) with no violations on the demo pages
+- `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches
 
-## Comandos disponibles
+## Available commands
 
-`/retomar` — reconstruir estado desde disco y reportar · `/wave` — ejecutar la siguiente wave con
-gates · `/decisiones` — listar decisiones pendientes (opciones + recomendación)
+`/retomar` — rebuild state from disk and report · `/wave` — run the next wave with gates ·
+`/decisiones` — list pending decisions (options + recommendation)
 
-## Skills del proyecto (`.claude/skills/`)
+## Project skills (`.claude/skills/`)
 
-Se cargan solas cuando aplican; invócalas también a mano si dudas.
+They load on their own when they apply; invoke them by hand too if in doubt.
 
-| Skill | Cuándo |
+| Skill | When |
 |---|---|
-| `ciclo-agora` | Arrancar o retomar; roles, waves, gates, formato de reporte |
-| `drupal-site-template` | Estructura, empaquetado y publicación del template |
-| `drupal-recipe-authoring` | Escribir o depurar `recipe.yml` |
-| `exportar-config-limpia` | `drush site:export` y revisión de `config/` |
-| `sbom-y-licencias` | Añadir o evaluar cualquier dependencia |
-| `accesibilidad-wcag-aa` | Twig, CSS, formularios, axe, declaración de accesibilidad |
-| `gate-a-verde` | Antes de declarar algo terminado o cerrar un gate |
+| `ciclo-agora` | Starting or resuming; roles, waves, gates, report format |
+| `drupal-site-template` | Structure, packaging and publication of the template |
+| `drupal-recipe-authoring` | Writing or debugging `recipe.yml` |
+| `exportar-config-limpia` | `drush site:export` and review of `config/` |
+| `sbom-y-licencias` | Adding or evaluating any dependency |
+| `accesibilidad-wcag-aa` | Twig, CSS, forms, axe, accessibility statement |
+| `gate-a-verde` | Before declaring anything finished or closing a gate |
 
-## Formato de reporte al cerrar un turno
+## Report format when closing a turn
 
-1. Reconciliación: qué asumía el prompt vs qué hay en disco (divergencias = sano, repórtalas).
-2. Hecho / no hecho, con counts reales de tests (no solo exit codes).
-3. Escalaciones clasificadas 🔴/🟡/🟢, cada una con opciones + recomendación.
-4. HOLD: qué firma necesitas del humano antes de seguir.
+1. Reconciliation: what the prompt assumed vs what is on disk (divergences = healthy, report them).
+2. Done / not done, with real test counts (not just exit codes).
+3. Escalations classified 🔴/🟡/🟢, each with options + recommendation.
+4. HOLD: what signature you need from the human before continuing.

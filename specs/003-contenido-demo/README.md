@@ -1,4 +1,4 @@
-# Unidad 003-contenido-demo
+# Unit 003-contenido-demo
 
-Sin planificar. El scope se fija en su scaffolding turn (research fechada -> plan.md -> tasks.md).
-Direccion provisional: ver `specs/000-proyecto/ROADMAP.md`.
+Not planned. The scope is set in its scaffolding turn (dated research -> plan.md -> tasks.md).
+Provisional direction: see `specs/000-proyecto/ROADMAP.md`.

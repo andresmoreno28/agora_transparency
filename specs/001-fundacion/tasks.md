@@ -1,51 +1,51 @@
-# Ágora · Unidad 001 — Fundación · Tareas
+# Ágora · Unit 001 — Foundation · Tasks
 
-> **Append-only.** Una tarea firmada `[✓ fecha]` no se renumera ni se reescribe.
-> Ninguna tarea arranca sin gate B de la wave anterior. Producido [ejecutor] 2026-08-20.
+> **Append-only.** A task signed `[✓ date]` is not renumbered or rewritten.
+> No task starts without gate B of the previous wave. Produced [ejecutor] 2026-08-20.
 >
-> ✅ **DESBLOQUEADA 2026-08-21**: D-007, D-008, D-011, D-012, D-013 y D-014 firmadas por [andres].
-> T-101…T-105 ejecutables. **T-106 diferida** a la unidad 002 (D-014=B). D-009 sigue abierta → T-206.
-> Ver la tabla "Bloqueos activos" al final para el estado vigente.
+> ✅ **UNBLOCKED 2026-08-21**: D-007, D-008, D-011, D-012, D-013 and D-014 signed by [andres].
+> T-101…T-105 executable. **T-106 deferred** to unit 002 (D-014=B). D-009 remains open → T-206.
+> See the "Active blockers" table at the end for the current state.
 
-Leyenda: `[ ]` pendiente · `[~]` en curso · `[✓ AAAA-MM-DD]` firmada · 👤 requiere al humano
+Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed · 👤 requires the human
 
 ---
 
-## Wave 1 · Esqueleto e identidad
+## Wave 1 · Skeleton and identity
 
-- [ ] **T-101** · Copiar la rama `1.x` de `drupal_cms_site_template_base` al repo, sin su historia git.
-      *Éxito:* existen en raíz `recipe.yml`, `composer.json`, `.gitlab-ci.yml`, `.tugboat/`,
-      `.github/`, `tests/`. **Bloqueada por D-011.**
-- [ ] **T-102** · Renombrar el paquete a `drupal/<machine_name>` en `composer.json` y ajustar
-      `description`. *Éxito:* `composer validate --strict` exit 0. **Bloqueada por D-007.**
-- [ ] **T-103** · Desnudar el andamiaje: borrar el array `_comment` de `composer.json`, borrar
-      `GET-STARTED.md`, sustituir `screenshot.webp` por uno propio provisional.
-      *Éxito:* `grep -c '_comment' composer.json` = 0; `GET-STARTED.md` no existe.
-      > **Nota (rider [andres] 2026-08-21):** *"three `_comment` occurrences, not one; the
+- [ ] **T-101** · Copy the `1.x` branch of `drupal_cms_site_template_base` into the repo, without its git history.
+      *Success:* `recipe.yml`, `composer.json`, `.gitlab-ci.yml`, `.tugboat/`,
+      `.github/`, `tests/` exist at the root. **Blocked by D-011.**
+- [ ] **T-102** · Rename the package to `drupal/<machine_name>` in `composer.json` and adjust
+      `description`. *Success:* `composer validate --strict` exit 0. **Blocked by D-007.**
+- [ ] **T-103** · Strip the scaffolding: delete the `_comment` array from `composer.json`, delete
+      `GET-STARTED.md`, replace `screenshot.webp` with a provisional one of our own.
+      *Success:* `grep -c '_comment' composer.json` = 0; `GET-STARTED.md` does not exist.
+      > **Note (rider [andres] 2026-08-21):** *"three `_comment` occurrences, not one; the
       > `extra.drupal-site-template` block is NOT deleted in unit 001 — see the wave 1 rider on the
       > `blank` theme."*
-- [ ] **T-104** · `.gitignore` y `.gitattributes` definitivos desde los `.example`; borrar los `.example`.
-      *Éxito:* `.gitattributes` contiene los `export-ignore` de `/tests`, `/.github`,
+- [ ] **T-104** · Definitive `.gitignore` and `.gitattributes` from the `.example` files; delete the `.example` files.
+      *Success:* `.gitattributes` contains the `export-ignore` entries for `/tests`, `/.github`,
       `/.gitlab-ci.yml`, `/.tugboat`.
-      > **Nota (rider [andres] 2026-08-21):** *"`.gitattributes` must `export-ignore` `/CLAUDE.md`,
+      > **Note (rider [andres] 2026-08-21):** *"`.gitattributes` must `export-ignore` `/CLAUDE.md`,
       > `/.claude`, `/specs` (D-015.2) and must NOT export-ignore `AGENTS.md` (D-015.1)."*
-- [ ] **T-105** · `recipe.yml` propio: `name`, `description`, `type: Site`, recetas base heredadas.
-      *Éxito:* `type: Site` exacto; el fichero parsea como YAML válido.
-- [ ] **T-106** · Resolver el enfoque del tema según D-008 (generado vía `generate-theme` vs
-      versionado). *Éxito:* la decisión está aplicada y `recipe.yml` instala el tema correcto.
-      **Bloqueada por D-008.**
-- [ ] **T-107** · Firmas D-007, D-008, D-011, D-012, D-013, D-014 + enmiendas de `plan.md` §2 y
-      `CLAUDE.md` §Estructura, **en un solo commit** (rider D-011a + rider D-014b).
-      *Éxito:* `git show --stat HEAD` lista exactamente 3 ficheros;
+- [ ] **T-105** · Own `recipe.yml`: `name`, `description`, `type: Site`, inherited base recipes.
+      *Success:* `type: Site` exact; the file parses as valid YAML.
+- [ ] **T-106** · Resolve the theme approach according to D-008 (generated via `generate-theme` vs
+      versioned). *Success:* the decision is applied and `recipe.yml` installs the correct theme.
+      **Blocked by D-008.**
+- [ ] **T-107** · Signatures for D-007, D-008, D-011, D-012, D-013, D-014 + amendments to `plan.md` §2 and
+      `CLAUDE.md` §Structure, **in a single commit** (rider D-011a + rider D-014b).
+      *Success:* `git show --stat HEAD` lists exactly 3 files;
       `grep -c 'recipes/agora_base' specs/000-proyecto/plan.md` = 0;
       `grep -c 'D-014' specs/000-proyecto/DECISIONES.md` ≥ 1.
-- [ ] **T-108** · Append I-011…I-017 a `IDIOMS.md`.
-      *Éxito:* `grep -cE '^- I-01[1-7]' specs/000-proyecto/IDIOMS.md` = 7; ninguna línea previa eliminada.
-- [ ] **T-109** · Research fechada `specs/001-fundacion/research/2026-08-21-flujo-tema-y-marketplace.md`.
-      *Éxito:* ≥ 6 URLs de origen citadas y las 4 conclusiones registradas.
-- [ ] **T-110** · 🔒 **T-106 se declara DIFERIDA** a la unidad 002: se redefine allí contra
-      **D-014=B** (integrar el tema `drupal/agora_theme` como dependencia, no generarlo en este
-      repo). *Éxito:* la tabla de bloqueos refleja el diferimiento y la redefinición pendiente.
+- [ ] **T-108** · Append I-011…I-017 to `IDIOMS.md`.
+      *Success:* `grep -cE '^- I-01[1-7]' specs/000-proyecto/IDIOMS.md` = 7; no previous line deleted.
+- [ ] **T-109** · Dated research `specs/001-fundacion/research/2026-08-21-flujo-tema-y-marketplace.md`.
+      *Success:* ≥ 6 source URLs cited and the 4 conclusions recorded.
+- [ ] **T-110** · 🔒 **T-106 is declared DEFERRED** to unit 002: it is redefined there against
+      **D-014=B** (integrate the `drupal/agora_theme` theme as a dependency, not generate it in this
+      repo). *Success:* the blockers table reflects the deferral and the pending redefinition.
 - [ ] **T-111** · Fill in the "Template-specific notes" section of `AGENTS.md` in English, with the
       audience header required by D-015.1. *Success:* the section is no longer empty; it states that
       `CLAUDE.md` governs template development and `AGENTS.md` targets sites built with the template.
@@ -71,134 +71,134 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[✓ AAAA-MM-DD]` firmada · 👤
 ```bash
 composer validate --strict
 python3 -c "import yaml,sys; d=yaml.safe_load(open('recipe.yml')); assert d['type']=='Site', d.get('type'); print('type OK')"
-grep -c '_comment' composer.json          # esperado: 0
-test ! -f GET-STARTED.md && echo "kit docs limpias"
+grep -c '_comment' composer.json          # expected: 0
+test ! -f GET-STARTED.md && echo "kit docs clean"
 ```
-**Gate B wave 1** 👤 · Andrés confirma nombre de paquete, descripción visible e identidad.
-Firma aquí: `[ ]`
+**Gate B wave 1** 👤 · Andrés confirms package name, visible description and identity.
+Sign here: `[ ]`
 
 ---
 
-## Wave 2 · Entorno y CI
+## Wave 2 · Environment and CI
 
-- [ ] **T-201** · Configuración DDEV reproducible (≥ 1.25.0), documentada en el README.
-      *Éxito:* `ddev start` desde cero en una máquina limpia, sin pasos manuales.
-- [ ] **T-202** · Revisar `.gitlab-ci.yml`: mantener el include de `gitlab_templates`, fijar solo
-      las variables necesarias. *Éxito:* no se define ningún job a mano.
-- [ ] **T-203** · Leer `include.drupalci.variables.yml` y documentar en el README qué jobs quedan
-      activos (phpcs, phpstan, cspell, eslint, stylelint, phpunit). *Éxito:* lista real, no supuesta.
-- [ ] **T-204** · Crear `.cspell-project-words.txt` con el vocabulario del proyecto.
-      *Éxito:* el job de cspell pasa sin desactivarlo.
-- [ ] **T-205** · Primer pipeline verde en el repo de trabajo. *Éxito:* nº de jobs ejecutados > 0 y
-      todos en verde. **Un pipeline sin jobs NO es verde.**
-- [ ] **T-206** · Decidir y aplicar D-009: qué corre en drupalcode y qué en GitHub Actions.
-      **Bloqueada por D-009.**
-- [ ] **T-207** · Sustituir el supuesto "`ddev start` en el repo" por el flujo verificado: montar
-      Drupal aparte y añadir el template como *path repository*, siguiendo `.github/workflows/phpunit.yml`
-      del kit (`ddev config --project-type=drupal11 --docroot=web` → `ddev composer create-project
+- [ ] **T-201** · Reproducible DDEV configuration (≥ 1.25.0), documented in the README.
+      *Success:* `ddev start` from scratch on a clean machine, with no manual steps.
+- [ ] **T-202** · Review `.gitlab-ci.yml`: keep the `gitlab_templates` include, set only
+      the necessary variables. *Success:* no job is defined by hand.
+- [ ] **T-203** · Read `include.drupalci.variables.yml` and document in the README which jobs remain
+      active (phpcs, phpstan, cspell, eslint, stylelint, phpunit). *Success:* a real list, not an assumed one.
+- [ ] **T-204** · Create `.cspell-project-words.txt` with the project vocabulary.
+      *Success:* the cspell job passes without disabling it.
+- [ ] **T-205** · First green pipeline in the working repo. *Success:* number of jobs executed > 0 and
+      all green. **A pipeline with no jobs is NOT green.**
+- [ ] **T-206** · Decide and apply D-009: what runs on drupalcode and what on GitHub Actions.
+      **Blocked by D-009.**
+- [ ] **T-207** · Replace the assumption "`ddev start` in the repo" with the verified flow: set up
+      Drupal separately and add the template as a *path repository*, following the kit's `.github/workflows/phpunit.yml`
+      (`ddev config --project-type=drupal11 --docroot=web` → `ddev composer create-project
       --no-install drupal/recommended-project` → `ddev composer repository add source path source` →
-      `ddev composer require "<paquete>:@dev"`, con `COMPOSER_MIRROR_PATH_REPOS=1`).
-      *Éxito:* un comando reproduce el entorno desde cero; `ddev exec drush status` →
-      `Drupal bootstrap : Successful`; existe `./recipes/agora_transparency`.
-- [ ] **T-208** · Fijar DDEV ≥ 1.25.0 y **versionar `.ddev/config.yaml`** (hoy `.gitignore` ignora
-      `/.ddev/`, lo que hace inalcanzable el criterio de T-201).
-      *Éxito:* `git ls-files .ddev/config.yaml | wc -l` = 1; requisito documentado en el README.
-- [ ] **T-209** · Invariante: `CI_ALLOW_DEV` no se define en ningún fichero versionado.
-      *Éxito:* 0 coincidencias, imprimiendo nº de ficheros escaneados (> 0).
-      > **Nota (rider [andres] 2026-08-21):** *"specified as 'not DEFINED', never 'not mentioned' —
+      `ddev composer require "<package>:@dev"`, with `COMPOSER_MIRROR_PATH_REPOS=1`).
+      *Success:* one command reproduces the environment from scratch; `ddev exec drush status` →
+      `Drupal bootstrap : Successful`; `./recipes/agora_transparency` exists.
+- [ ] **T-208** · Pin DDEV ≥ 1.25.0 and **version `.ddev/config.yaml`** (today `.gitignore` ignores
+      `/.ddev/`, which makes the T-201 criterion unreachable).
+      *Success:* `git ls-files .ddev/config.yaml | wc -l` = 1; requirement documented in the README.
+- [ ] **T-209** · Invariant: `CI_ALLOW_DEV` is not defined in any versioned file.
+      *Success:* 0 matches, printing the number of files scanned (> 0).
+      > **Note (rider [andres] 2026-08-21):** *"specified as 'not DEFINED', never 'not mentioned' —
       > see I-018."*
 
 **Gate A wave 2**
 ```bash
-ddev start && ddev drush status          # esperado: Drupal bootstrap = Successful
-# En GitLab: el pipeline del último commit, en verde, con el nº de jobs a la vista
+ddev start && ddev drush status          # expected: Drupal bootstrap = Successful
+# On GitLab: the pipeline of the latest commit, green, with the number of jobs in view
 ```
-**Gate B wave 2** 👤 · Andrés confirma el reparto de tests entre drupalcode y GitHub.
-Firma aquí: `[ ]`
+**Gate B wave 2** 👤 · Andrés confirms the split of tests between drupalcode and GitHub.
+Sign here: `[ ]`
 
 ---
 
-## Wave 3 · Invariantes (paralelizable con wave 2 — ficheros disjuntos)
+## Wave 3 · Invariants (parallelizable with wave 2 — disjoint files)
 
-- [ ] **T-301** · `tests/bin/no-unstable-deps` según spec de `plan.md` §6.
-      *Éxito:* detecta un `-beta` inyectado a propósito y **no** marca el starter kit.
-- [ ] **T-302** · `tests/bin/no-patches`. *Éxito:* detecta una sección `patches` inyectada.
-- [ ] **T-303** · `tests/bin/no-secrets` sobre todo el repo salvo `.git/`.
-      *Éxito:* detecta una clave falsa inyectada en `config/` y otra en `content/`.
-- [ ] **T-304** · `tests/bin/sbom-check` contra `updates.drupal.org` (método en research §10.4).
-      *Éxito:* exige estable + `<security covered="1">` + línea en `DECISIONES.md`; falla si falta una.
-- [ ] **T-305** · Los cuatro imprimen ámbito, nº de ficheros escaneados y nº de hallazgos.
-      *Éxito:* ninguno reporta "0 ficheros escaneados".
-- [ ] **T-306** · **Enmienda del método de T-304** (`sbom-check`): el endpoint devuelve **HTTP 200
-      con cuerpo `<error>`** para proyectos inexistentes → un `curl -f` da falso verde. Debe:
-      (a) comprobar red al arrancar y **fallar ruidosamente si no hay** — "skip" prohibido;
-      (b) parsear el XML; (c) exigir `<title>` y ausencia de `<error>`; (d) tomar como estable la
-      primera release sin `dev|alpha|beta|rc`; (e) exigir `<security covered="1">` en esa release;
-      (f) comprobar `<core_compatibility>`; (g) exigir línea `D-NNN` en `DECISIONES.md` por cada
-      `drupal/*` de `require`.
-      *Éxito:* con el `require` real → exit 0 e imprime
-      `N proyectos consultados · N con cobertura · 0 hallazgos`; con un proyecto inexistente
-      inyectado → exit 1; con la red cortada (`https_proxy=http://127.0.0.1:1`) → **exit 1**,
-      nunca exit 0.
-- [ ] **T-307** · `tests/bin/no-code-in-template`: espeja localmente el assert de `RequirementsTest`.
-      *Éxito:* imprime `N ficheros escaneados · 0 ficheros *.info.yml`, N > 0; detecta un
-      `themes/x/x.info.yml` inyectado; árbol limpio tras revertir.
+- [ ] **T-301** · `tests/bin/no-unstable-deps` according to the spec in `plan.md` §6.
+      *Success:* it detects a deliberately injected `-beta` and does **not** flag the starter kit.
+- [ ] **T-302** · `tests/bin/no-patches`. *Success:* it detects an injected `patches` section.
+- [ ] **T-303** · `tests/bin/no-secrets` over the whole repo except `.git/`.
+      *Success:* it detects a fake key injected in `config/` and another in `content/`.
+- [ ] **T-304** · `tests/bin/sbom-check` against `updates.drupal.org` (method in research §10.4).
+      *Success:* it requires stable + `<security covered="1">` + a line in `DECISIONES.md`; it fails if one is missing.
+- [ ] **T-305** · All four print scope, number of files scanned and number of findings.
+      *Success:* none reports "0 files scanned".
+- [ ] **T-306** · **Amendment to the T-304 method** (`sbom-check`): the endpoint returns **HTTP 200
+      with an `<error>` body** for non-existent projects → a `curl -f` gives a false green. It must:
+      (a) check the network at startup and **fail loudly if there is none** — "skip" forbidden;
+      (b) parse the XML; (c) require `<title>` and the absence of `<error>`; (d) take as stable the
+      first release without `dev|alpha|beta|rc`; (e) require `<security covered="1">` in that release;
+      (f) check `<core_compatibility>`; (g) require a `D-NNN` line in `DECISIONES.md` for each
+      `drupal/*` in `require`.
+      *Success:* with the real `require` → exit 0 and it prints
+      `N projects queried · N with coverage · 0 findings`; with a non-existent project
+      injected → exit 1; with the network cut off (`https_proxy=http://127.0.0.1:1`) → **exit 1**,
+      never exit 0.
+- [ ] **T-307** · `tests/bin/no-code-in-template`: mirrors the `RequirementsTest` assert locally.
+      *Success:* it prints `N files scanned · 0 *.info.yml files`, N > 0; it detects an injected
+      `themes/x/x.info.yml`; clean tree after reverting.
 
 **Gate A wave 3**
 ```bash
 for s in no-unstable-deps no-patches no-secrets sbom-check; do
   echo "── $s"; tests/bin/$s; echo "exit=$?"
 done
-# Cada uno: exit 0 + nº de ficheros escaneados > 0 + nº de hallazgos impreso
+# Each one: exit 0 + number of files scanned > 0 + number of findings printed
 ```
-Cada script debe probarse además **con un caso sucio inyectado** (y revertido): si no falla con
-basura dentro, no sirve. Silenciar un invariante para pasar = 🔴 automático.
-**Gate B wave 3** 👤 · No requiere firma; entra en el veredicto del cierre de unidad.
+Each script must additionally be tested **with an injected dirty case** (and reverted): if it does not
+fail with garbage inside, it is useless. Silencing an invariant to pass = automatic 🔴.
+**Gate B wave 3** 👤 · No signature required; it enters the unit closure verdict.
 
 ---
 
-## Wave 4 · Install smoke y cierre
+## Wave 4 · Install smoke and closure
 
-- [ ] **T-401** · Install smoke en limpio: `sql:drop` + reinstalación, verificando que el template
-      aparece en el selector. *Éxito:* captura o salida que lo demuestre.
-- [ ] **T-402** · Extender `InstallTest`/`ValidationTest` con las rutas clave de Ágora.
-      *Éxito:* nº de tests y assertions reportados, > 0.
-- [ ] **T-403** · README del proyecto **en inglés** (docs públicas en inglés, D-005): qué es, cómo se
-      instala, qué trae.
-- [ ] **T-404** · Auditoría del `orquestador` (solo lectura): estándares, SBOM, licencias, requisitos
-      del marketplace. *Éxito:* veredicto sin 🔴 abiertos.
-- [ ] **T-405** · Promover a `IDIOMS.md` las lecciones de la unidad.
-- [ ] **T-406** · Verificar que `InstallTest`, `ValidationTest` y `RequirementsTest` pasan **sin
-      modificarse**. *Éxito:* 0 líneas eliminadas en esos 3 ficheros; salida de phpunit con nº de
-      tests **y** assertions.
+- [ ] **T-401** · Clean install smoke: `sql:drop` + reinstallation, verifying that the template
+      appears in the selector. *Success:* a capture or output that demonstrates it.
+- [ ] **T-402** · Extend `InstallTest`/`ValidationTest` with Ágora's key routes.
+      *Success:* number of tests and assertions reported, > 0.
+- [ ] **T-403** · Project README **in English** (public docs in English, D-005): what it is, how it is
+      installed, what it ships.
+- [ ] **T-404** · `orquestador` audit (read-only): standards, SBOM, licences, marketplace
+      requirements. *Success:* verdict with no open 🔴.
+- [ ] **T-405** · Promote the unit's lessons to `IDIOMS.md`.
+- [ ] **T-406** · Verify that `InstallTest`, `ValidationTest` and `RequirementsTest` pass **without
+      being modified**. *Success:* 0 lines deleted in those 3 files; phpunit output with number of
+      tests **and** assertions.
 
 **Gate A wave 4**
 ```bash
-ddev drush sql:drop --yes && ddev drush site:install --yes   # y comprobar el selector
-ddev exec vendor/bin/phpunit --testdox tests/                 # nº de tests y assertions
+ddev drush sql:drop --yes && ddev drush site:install --yes   # and check the selector
+ddev exec vendor/bin/phpunit --testdox tests/                 # number of tests and assertions
 ```
-**Gate B wave 4** 👤 · Andrés firma el cierre de la unidad 001.
-Firma aquí: `[ ]`
+**Gate B wave 4** 👤 · Andrés signs the closure of unit 001.
+Sign here: `[ ]`
 
 ---
 
-## Bloqueos activos
+## Active blockers
 
-> Tabla de **estado**, no de tareas firmadas: se reescribe en cada actualización.
-> Última actualización: 2026-08-21, tras la tanda de firmas D-015…D-017.
+> A table of **state**, not of signed tasks: it is rewritten on each update.
+> Last updated: 2026-08-21, after the D-015…D-017 batch of signatures.
 
-| Bloqueo | Estado | Impide | Quién resuelve |
+| Blocker | State | Blocks | Who resolves |
 |---|---|---|---|
-| D-011 arquitectura de recetas | ✅ FIRMADA 2026-08-21 · opción A (una sola receta en raíz) | — desbloquea T-101…T-105 | — |
-| D-007 machine name | ✅ FIRMADA 2026-08-21 · `agora_transparency` | — desbloquea T-102 | — |
-| D-008 enfoque del tema | ✅ FIRMADA 2026-08-21 · opción A; rider suspendido y **subsumida por D-014** | — | — |
-| D-012 vía de publicación | ✅ FIRMADA 2026-08-21 · opción C (community primero; marketplace = 007-bis, no bloqueante) | — | — |
-| D-013 provider de IA | ✅ FIRMADA 2026-08-21 · `ai` ^1.4 duro + `ai_provider_openai` recomendado | — | — |
-| D-014 dónde vive el tema | ✅ FIRMADA 2026-08-21 · opción B (proyecto aparte `drupal/agora_theme`) | **T-106 DIFERIDA a la unidad 002**, donde se redefine contra D-014=B (ver T-110) | — |
-| D-015 artefactos de IA en el repo público | ✅ FIRMADA 2026-08-21 · `AGENTS.md` es producto; `CLAUDE.md`/`.claude/`/`specs/` visibles y `export-ignore`d | — desbloquea T-111, T-112 y la nota de T-104 | — |
-| D-016 flujo de repositorio | ✅ FIRMADA 2026-08-21 · D-002 CONFIRMADA (drupalcode canónico; mirror GitHub read-only, misma historia) | — el mirror se monta en la unidad 007 | — |
-| D-017 idioma | ✅ FIRMADA 2026-08-21 · repo entero en inglés, capa de proceso incluida; enmienda D-005 y la regla 6 | — desbloquea T-113 | — |
-| D-009 reparto de tests | 🔴 ABIERTA | T-206 | 👤 Andrés |
-| D-010 alcance del contenido demo v1 | 🔴 ABIERTA | unidad 003 | 👤 Andrés |
-| T-106 enfoque del tema | ⏸️ DIFERIDA a la unidad 002 (ver T-110) | — | — |
-| `screenshot.webp` definitivo | ⏸️ DIFERIDA a la unidad 003 (ver T-114) · placeholder provisional en su lugar, deliberadamente no imita un sitio real | — | — |
+| D-011 recipe architecture | ✅ SIGNED 2026-08-21 · option A (a single recipe at the root) | — unblocks T-101…T-105 | — |
+| D-007 machine name | ✅ SIGNED 2026-08-21 · `agora_transparency` | — unblocks T-102 | — |
+| D-008 theme approach | ✅ SIGNED 2026-08-21 · option A; rider suspended and **subsumed by D-014** | — | — |
+| D-012 publication route | ✅ SIGNED 2026-08-21 · option C (community first; marketplace = 007-bis, non-blocking) | — | — |
+| D-013 AI provider | ✅ SIGNED 2026-08-21 · `ai` ^1.4 hard + `ai_provider_openai` recommended | — | — |
+| D-014 where the theme lives | ✅ SIGNED 2026-08-21 · option B (separate project `drupal/agora_theme`) | **T-106 DEFERRED to unit 002**, where it is redefined against D-014=B (see T-110) | — |
+| D-015 AI artefacts in the public repo | ✅ SIGNED 2026-08-21 · `AGENTS.md` is product; `CLAUDE.md`/`.claude/`/`specs/` visible and `export-ignore`d | — unblocks T-111, T-112 and the T-104 note | — |
+| D-016 repository flow | ✅ SIGNED 2026-08-21 · D-002 CONFIRMED (drupalcode canonical; GitHub mirror read-only, same history) | — the mirror is set up in unit 007 | — |
+| D-017 language | ✅ SIGNED 2026-08-21 · entire repo in English, process layer included; amends D-005 and rule 6 | — unblocks T-113 | — |
+| D-009 test split | 🔴 OPEN | T-206 | 👤 Andrés |
+| D-010 v1 demo content scope | 🔴 OPEN | unit 003 | 👤 Andrés |
+| T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
+| definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
