@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+#
+# no-code-in-template - Agora - unit 001, wave 3, task T-307.
+#
+# Mirrors, locally and without booting Drupal, the first assertion of
+# tests/src/Kernel/RequirementsTest.php:
+#
+#   "Recipes cannot include any code (modules or themes) of their own; they must
+#    list them as dependencies in `composer.json`."
+#
+# The kernel test expresses that as: zero `*.info.yml` files anywhere under the
+# site template root. This script requires the same, and adds the absence of the
+# `recipes/`, `themes/` and `modules/` directories at the repository root - the
+# three shapes this project has been told repeatedly not to create.
+#
+# Contract (shared by every invariant in tests/bin/):
+#   scope:    the exact set of files and directories inspected
+#   scanned:  N entries, and N must be > 0 or this script fails
+#   findings: M, each printed as  path:line  reason
+#   exit 0 if and only if M == 0
+#
+# TWO scopes, and they answer different questions:
+#
+#   1. The PACKAGED tree - `git archive --format=tar HEAD | tar -tf -`. This is
+#      literally what Drupal.org ships to a person installing the template, and
+#      it is therefore the authoritative scope. It reads HEAD, so it is BLIND to
+#      anything not yet committed: a `themes/x/x.info.yml` written one second ago
+#      and never `git add`ed does not appear here. That is not a bug, it is the
+#      question this scope answers - "what would we publish right now".
+#      `git archive` only reads; it never touches the index or the working tree.
+#
+#   2. The WORKING tree - `find`, minus .git/ vendor/ node_modules/ web/. This is
+#      the early warning, and it is the scope that catches the uncommitted
+#      offender that scope 1 cannot see (I-018: `git grep` and friends only see
+#      tracked files). It is NOT authoritative, because `export-ignore` legitimately
+#      keeps files out of the release.
+#
+# Both are printed separately. Neither is allowed to be empty: an empty scope is
+# a FINDING, never a skip (I-007). Scopes come from `find` and `tar -t`, never
+# from a shell glob, which would silently miss dotfiles (I-019).
+#
+# Usage: tests/bin/no-code-in-template   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# ---------------------------------------------------------------- repo root --
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+FINDINGS=0
+
+# finding <path> <line> <reason>
+finding() {
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "${1#./}" "$2" "$C_OFF" "$3"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+# Directories that must not exist at the repository root. The repository IS the
+# recipe: there are no local sub-recipes, and the theme is a separate project
+# declared in composer.json, never versioned here.
+FORBIDDEN_DIRS='recipes themes modules'
+
+PRUNED='./.git ./vendor ./node_modules ./web'
+
+scan_files() {
+  find . \
+    -path ./.git -prune -o \
+    -path ./vendor -prune -o \
+    -path ./node_modules -prune -o \
+    -path ./web -prune -o \
+    -type f -print 2>/dev/null | LC_ALL=C sort
+}
+
+# ---------------------------------------------------------------- preflight --
+# A missing tool cannot be a reason to report a clean tree. `git` and `tar` are
+# required by the packaged scope; without them that scope cannot be evaluated,
+# and an unevaluated scope is a finding.
+for tool in find grep sort wc git tar; do
+  command -v "$tool" >/dev/null 2>&1 || \
+    finding '<preflight>' '0' "required tool not available: $tool"
+done
+
+printf '=========================================================================================================\n'
+printf 'no-code-in-template - Agora invariant T-307\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+TMPDIR_RUN=$(mktemp -d 2>/dev/null) || { echo "FATAL: cannot create a temp dir"; exit 1; }
+trap 'rm -rf "$TMPDIR_RUN"' EXIT
+
+# =============================================== scope 1: the packaged tree ===
+# Authoritative. This is what a person downloading the template receives.
+PACKAGED_LIST="$TMPDIR_RUN/packaged"
+: > "$PACKAGED_LIST"
+PACKAGED=0
+
+printf '\nscope 1 (authoritative): packaged tree - git archive --format=tar HEAD | tar -tf -\n'
+printf '          read-only; reads HEAD, so it cannot see uncommitted files\n'
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  if git archive --format=tar HEAD 2>/dev/null | tar -tf - > "$PACKAGED_LIST" 2>/dev/null; then
+    PACKAGED=$(wc -l < "$PACKAGED_LIST" | tr -d ' ')
+  else
+    finding '<packaged>' '0' 'git archive or tar failed - the packaged tree could not be listed'
+  fi
+else
+  finding '<packaged>' '0' 'no HEAD commit - the packaged tree could not be listed'
+fi
+
+printf 'packaged: %s entries\n' "$PACKAGED"
+if [ "$PACKAGED" -eq 0 ]; then
+  finding '<packaged>' '0' 'the packaged tree listed 0 entries - the result proves nothing'
+fi
+
+PKG_INFO=0
+while IFS= read -r e; do
+  [ -n "$e" ] || continue
+  case "$e" in
+    *.info.yml)
+      finding "$e" '0' 'packaged: *.info.yml - a site template cannot ship code of its own'
+      PKG_INFO=$((PKG_INFO + 1))
+      ;;
+  esac
+done < "$PACKAGED_LIST"
+
+PKG_DIRS=0
+for d in $FORBIDDEN_DIRS; do
+  while IFS= read -r e; do
+    [ -n "$e" ] || continue
+    finding "$e" '0' "packaged: entry under the forbidden root directory $d/"
+    PKG_DIRS=$((PKG_DIRS + 1))
+  done <<< "$(LC_ALL=C grep -E "^$d/" "$PACKAGED_LIST" 2>/dev/null)"
+done
+[ "$PKG_INFO" -eq 0 ] && [ "$PKG_DIRS" -eq 0 ] && note 'no *.info.yml, no forbidden root directories'
+
+# ============================================ scope 2: the working tree =======
+# Early warning. Catches the offender that has not been committed yet, which the
+# packaged scope above is structurally unable to see.
+WORKING_LIST="$TMPDIR_RUN/working"
+scan_files > "$WORKING_LIST"
+WORKING=$(wc -l < "$WORKING_LIST" | tr -d ' ')
+
+printf '\nscope 2 (early warning): working tree of %s\n' "$REPO_ROOT"
+printf '          pruned: %s\n' "$PRUNED"
+printf '          not authoritative: export-ignore legitimately keeps files out of the release\n'
+printf 'working: %s files\n' "$WORKING"
+if [ "$WORKING" -eq 0 ]; then
+  finding '<working>' '0' 'the working tree listed 0 files - the result proves nothing'
+fi
+
+WT_INFO=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "$f" in
+    *.info.yml)
+      finding "$f" '0' 'working tree: *.info.yml - a site template cannot ship code of its own'
+      WT_INFO=$((WT_INFO + 1))
+      ;;
+  esac
+done < "$WORKING_LIST"
+
+WT_DIRS=0
+for d in $FORBIDDEN_DIRS; do
+  if [ -d "./$d" ]; then
+    finding "$d/" '0' "working tree: forbidden root directory $d/ exists"
+    WT_DIRS=$((WT_DIRS + 1))
+  fi
+done
+[ "$WT_INFO" -eq 0 ] && [ "$WT_DIRS" -eq 0 ] && note 'no *.info.yml, no forbidden root directories'
+
+# ----------------------------------------------------------------- summary ---
+INFO_TOTAL=$((PKG_INFO + WT_INFO))
+DIRS_TOTAL=$((PKG_DIRS + WT_DIRS))
+
+printf '\n---------------------------------------------------------------------------------------------------------\n'
+printf 'packaged: %s entries - working: %s files - *.info.yml: %s - forbidden dirs: %s - findings: %s\n' \
+  "$PACKAGED" "$WORKING" "$INFO_TOTAL" "$DIRS_TOTAL" "$FINDINGS"
+
+if [ "$FINDINGS" -eq 0 ]; then
+  printf '%sno-code-in-template: clean%s\n' "$C_OK" "$C_OFF"
+  exit 0
+fi
+printf '%sno-code-in-template: %s finding(s)%s\n' "$C_BAD" "$FINDINGS" "$C_OFF"
+exit 1
