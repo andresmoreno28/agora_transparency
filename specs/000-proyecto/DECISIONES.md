@@ -263,6 +263,122 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   ⚠️ Operational consequence (I-008): the three subagent definitions under `.claude/agents/` freeze
   at session start. After translating them, the session **must be restarted** before relying on them.
 
+- **D-018** · **Baseline SBOM.** The nine `drupal/*` packages in `composer.json`'s `require` as of
+  today are approved as a single, **closed** baseline. All nine were verified on **2026-08-21**
+  against `https://updates.drupal.org/release-history/<project>/current` (method: I-022 — download
+  with `curl`, parse with `xml.etree` reading from stdin). All nine have a stable release and
+  `<security covered="1">`. Signed by [andres] 2026-08-21.
+
+| Decision | Package | Constraint | Verified stable | Coverage | Maintenance on drupal.org | What it contributes |
+|---|---|---|---|---|---|---|
+| `D-018` | `drupal/drupal_cms_admin_ui` | `^2` | 2.1.2 | `covered="1"` | Minimally maintained · No further development | Administrative backend: admin theme plus site-management modules |
+| `D-018` | `drupal/drupal_cms_anti_spam` | `^2` | 2.1.2 | `covered="1"` | Minimally maintained · No further development | Basic anti-spam protection |
+| `D-018` | `drupal/drupal_cms_authentication` | `^2` | 2.1.2 | `covered="1"` | Minimally maintained · No further development | Tweaks to user authentication |
+| `D-018` | `drupal/drupal_cms_helper` | `^2` | 2.1.3 | `covered="1"` | Actively maintained · core `^11.3` | Tools for site template creators; polyfills functionality not yet in core |
+| `D-018` | `drupal/drupal_cms_media` | `^2` | 2.1.2 | `covered="1"` | Minimally maintained · No further development | A set of basic media types and configuration |
+| `D-018` | `drupal/drupal_cms_privacy_basic` | `^2` | 2.1.2 | `covered="1"` | Minimally maintained · No further development | Basic privacy and consent management tools |
+| `D-018` | `drupal/drupal_cms_seo_basic` | `^2` | 2.1.2 | `covered="1"` | Minimally maintained · No further development | Basic SEO tools and configuration |
+| `D-018` | `drupal/easy_email_express` | `^1` | 1.0.4 | `covered="1"` | Actively maintained | Configures Drupal to send well-formed HTML email |
+| `D-018` | `drupal/site_template_helper` | `^1.0.3` | 1.0.4 | `covered="1"` | Actively maintained | Composer plugin that generates the `blank` theme declared in `extra.drupal-site-template` |
+
+  *Source of the "what it contributes" column:* the descriptive comments the repository itself carries
+  next to each entry — `recipe.yml` under `recipes:` (the seven Drupal CMS recipes and
+  `easy_email_express`) and under `install:` (`drupal_cms_helper`) — and, for
+  `site_template_helper`, `composer.json` (`config.allow-plugins` + the
+  `extra.drupal-site-template.generate-theme` block) together with its `src/Plugin.php`.
+  The token `D-018` sits in the **first cell of every row** as a technical requirement: `sbom-check`
+  (T-304/T-306) matches "short package name + a `D-[0-9]{3}` token on the same line".
+
+  *Why ONE decision and not nine:* rule 2 of `CLAUDE.md` asks for *"a line in `DECISIONES.md`"* per
+  contrib module, not a decision per module. Seven of the nine are the base recipes that the starter
+  kit itself composes — they are not choices Ágora made.
+
+  *Riders of [andres]:*
+  (a) **The baseline is CLOSED.** Every later addition, removal or major-version jump gets **its own
+      D-NNN**. The baseline does not grow silently. The dependencies that *are* a choice — ECA, AI,
+      Config Guardian, Webform, Charts — each get their own D-NNN when they arrive.
+  (b) **`sbom-check` must fail loudly** for any package in `composer.lock` with no associated
+      `D-NNN` token.
+
+  *Note recorded explicitly rather than hidden:* six of the nine are marked
+  *"No further development / Minimally maintained"* on drupal.org
+  (`drupal_cms_admin_ui`, `drupal_cms_anti_spam`, `drupal_cms_authentication`, `drupal_cms_media`,
+  `drupal_cms_privacy_basic`, `drupal_cms_seo_basic`). **This does not violate the policy** — D-004
+  requires a stable release plus security-team coverage, and all nine meet both. It is written down
+  here, ahead of the question, because these are **recipes**: they are applied, unpacked, and then
+  live with the version of Drupal CMS that applied them. A recipe that is no longer developed is not
+  an unmaintained runtime dependency.
+
+- **D-009** · **Where the visual tests run: option C.** Signed by [andres] 2026-08-21.
+  ⚠️ **C is a third option, not one of the A/B framed on 2026-08-20 above** (which read "everything
+  split by tool" vs "everything on drupalcode"). It supersedes that framing.
+  The decision is **split in two**, because accessibility and visual regression are not the same
+  question and treating them as one is what made it hard:
+  1. **Accessibility (axe) → drupalcode, canonical and MANDATORY.** It is mounted **inside the
+     Nightwatch job that `gitlab_templates` already ships and already supports**, with
+     `OPT_IN_TEST_DRUPAL_CMS: '1'`. No new job, no new image, no new runner: one npm dependency and
+     one test file.
+  2. **Visual regression → GitHub Actions, NON-blocking.**
+
+  *Facts verified 2026-08-21 that support it:*
+  · `gitlab_templates` ships **no Playwright job, no axe job and no visual-regression job**;
+    Nightwatch is its only browser tool.
+  · `OPT_IN_TEST_DRUPAL_CMS` exists (default `0`), documented as *"Set to 1 to opt in testing
+    against the current stable Drupal CMS version"*.
+  · Drupal core does **not** ship an axe integration for Nightwatch: it needs an npm dependency and
+    a test of our own.
+
+  *Why option A (axe on GitHub Actions) was discarded:* **D-016 declares GitHub a read-only mirror**,
+  and a mirror whose CI is mandatory is a contradiction — the accessibility gate, which is the
+  product's thesis, would live where a Drupal.org contributor can neither see it nor re-run it, and
+  the reviewer who opens the canonical project would find no accessibility evidence at all.
+
+  *Riders of [andres]:*
+  (a) The Nightwatch+axe pattern is **the one Drupal core itself uses**: cited here as precedent.
+  (b) Turn on the opt-in variable and, **as soon as the drupalcode project exists, run a canary MR**
+      that verifies the browser job really executes on the shared contrib runners — **before unit
+      006**. Finding this out late was exactly the cost this was meant to avoid.
+  (c) **The axe report is exported as a CI artefact**: it becomes the citable evidence for the WCAG
+      attestation the marketplace requires.
+  (d) **Visual regression is INFORMATIVE by definition**: no task may reference it as a gate. Its
+      workflow **lives in the canonical repository** and runs only on the mirror.
+
+  *Warnings that ship with the signature, not after it:* the axe↔Nightwatch integration **is not
+  proven**; it is verified in unit 002, when a theme exists and there is something to audit. And
+  none of the options can be *applied* while the drupalcode project does not exist (404 verified
+  today): signing D-009 and creating the project are the same practical decision.
+
+- **Amendment to D-008 — correction of a fact.** Signed by [andres] 2026-08-21.
+  D-008 records above that *"`site_template_helper` generates once only, on the author's working
+  site […] The stop condition […] does not trigger."* **That is false.** Verified at the source
+  (`git.drupalcode.org/project/site_template_helper/-/raw/1.x/src/Plugin.php`):
+
+  ```php
+  public function onPackageInstall(PackageEvent $event): void {
+    $package = $operation->getPackage();
+    $this->generateTheme($package);   // no root-package check
+  ```
+
+  `generateTheme()` filters on two conditions only: that the package is a recipe, and that it
+  carries `extra.drupal-site-template.generate-theme`. **It does not check whether it is the root
+  package.** Therefore, when an end user runs `composer require drupal/agora_transparency`, the
+  plugin runs on their machine and writes `<drupal_root>/themes/blank/blank.info.yml`. It is
+  idempotent (`if (file_exists($info_file_path)) return;`), but it **does** generate on the end
+  user's installation: the stop condition [andres] attached to the D-008 rider **did** trigger, and
+  was assessed wrongly.
+
+  **The conclusion does not change**: D-014=B (theme as a separate project) remains correct, for the
+  reasons [andres] added — self-hosted OFL typography and GDPR (I-017). **What is amended is the
+  record of the fact**, so that whoever reads D-008 six months from now does not believe something
+  false.
+
+  *Practical consequence, UNVERIFIED, inherited by T-401:* **`config.allow-plugins` in a dependency
+  package is ignored by Composer** — only the root package's counts. The kit's own workflow gives
+  this away by running `ddev composer config allow-plugins.drupal/site_template_helper true`
+  explicitly. If the end user's root `composer.json` does not authorise the plugin, `blank` is not
+  generated, and `recipe.yml` both lists it in `install:` and pins it in `system.theme.default` →
+  **the clean install fails.**
+
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21

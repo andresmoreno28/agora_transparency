@@ -89,3 +89,22 @@
 - I-021 · `export-ignore` in `.gitattributes` removes files from the **packaged release only**;
   anyone cloning the repository still gets them. Hiding process artifacts from a Drupal.org project
   would require not committing them at all, not `export-ignore`. Verified 2026-08-21.
+- I-022 · The XML from `updates.drupal.org` puts **every `<release>` element on a single line**
+  (14 lines total, but line 13 is 23,303 characters for `drupal_cms_helper`), so a greedy
+  `sed`/`grep` returns the **last** release on that line — which is the `-dev` branch, not the
+  stable one: `sed -n 's/.*<version>\(.*\)<\/version>.*/\1/p` returned `1.2.x-dev` where the correct
+  answer was `2.1.3`. And `python3 urllib` fails on this machine with
+  `[SSL: CERTIFICATE_VERIFY_FAILED] unable to get local issuer certificate` (Python 3.13.7 from
+  python.org, installed without a CA bundle). Rule: **download with `curl`, parse with `xml.etree`
+  reading from stdin.** Complements I-013 (the endpoint returns HTTP 200 with an `<error>` body):
+  between the two, neither the status code nor a line-oriented parse can be trusted. Verified
+  2026-08-21.
+- I-023 · **No public claim without a gate that backs it.** What cannot be verified is **deleted, not
+  softened.** Origin: the `README.md` inherited from the starter kit promised *"a gorgeous theme
+  that meets WCAG AAA standards"* in a project whose thesis is **verified** AA — and it was
+  published. Rider of [andres], 2026-08-21.
+- I-024 · **Inherited boilerplate outlives the task that was supposed to clean it up** whenever no
+  task owns the *whole* file: T-112 owned a *section* of the README, not the README, so
+  "electricians" and "WCAG AAA" sailed through the gate without the gate lying. Rule: when importing
+  third-party scaffolding, do **a full sweep of the original's strings** across every published
+  artefact, not file-by-file according to whoever happens to touch it.

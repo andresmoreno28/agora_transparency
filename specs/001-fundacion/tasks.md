@@ -68,6 +68,12 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       repository root; `shasum -a 256 screenshot.webp` differs from
       `98363dd5a77e8374d33666d2bbf905f15229a7c1aca9e82fc7c37542b3e02f1c` (the placeholder);
       the blockers table records this debt as closed. Signed off visually by 👤 [andres].
+- [ ] **T-115** · Amend D-008 in `DECISIONES.md` with the real `Plugin.php` code, and record D-009
+      and D-018. *Success:* `grep -c 'D-018' specs/000-proyecto/DECISIONES.md` >= 1;
+      `grep -c 'onPackageInstall' specs/000-proyecto/DECISIONES.md` >= 1.
+      > **Note:** added after wave 1's gate A closed (61 checks / 0 failures). It is a
+      > process-layer task: it touches no artefact the wave 1 gate measures, so it does not
+      > reopen that gate.
 
 **Gate A wave 1**
 ```bash
@@ -146,6 +152,27 @@ Sign here: `[ ]`
 - [ ] **T-307** · `tests/bin/no-code-in-template`: mirrors the `RequirementsTest` assert locally.
       *Success:* it prints `N files scanned · 0 *.info.yml files`, N > 0; it detects an injected
       `themes/x/x.info.yml`; clean tree after reverting.
+- [ ] **T-308** · Translate `tests/bin/gate-a-wave1.sh` to English. It is code, and D-017 covers
+      code; T-113 enumerated `CLAUDE.md`, `.claude/*` and `specs/` and left it out.
+      **This blocks T-204:** the cspell job is on by default in `gitlab_templates`, and the
+      shortcut to green would be dumping Spanish words into `.cspell-project-words.txt` — which is
+      adding a file to an ignore list to turn a gate green, an automatic 🔴.
+      *Success:* 0 matches for the Spanish token list, **and the gate still reports
+      `61 checks · 0 failures`** — same N, same M: it is a translation, not a change of checks.
+- [ ] **T-309** · `tests/bin/no-boilerplate` — a deny-list invariant over **every published
+      artefact** (what `git archive` ships), for strings inherited from the starter kit:
+      `electrician`, `WCAG AAA`, `GET-STARTED`, `MY_SITE_TEMPLATE_NAME`,
+      `Site Template Starter Kit`, `my amazing site template`.
+      > **Rider of [andres] 2026-08-21:** *"it runs after **a full initial sweep** over config, demo
+      > content and descriptions — not just the README."*
+      *Success:* it prints scope and the number of files scanned (> 0) and 0 findings; it detects an
+      injected string; clean tree after reverting.
+- [ ] **T-310** · 🔒 **T-403 is brought forward to wave 3** (rider of [andres] 2026-08-21):
+      rewrite `README.md` in English describing Ágora, and resolve `recommended.yml`.
+      > **Rider of [andres] 2026-08-21:** *"the README declares **WCAG 2.2 AA, verified — never
+      > AAA** (I-023)."*
+      *Success:* 0 findings from `tests/bin/no-boilerplate`; the "Development process" section from
+      T-112 survives; no broken links.
 
 **Gate A wave 3**
 ```bash
@@ -164,10 +191,17 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
 
 - [ ] **T-401** · Clean install smoke: `sql:drop` + reinstallation, verifying that the template
       appears in the selector. *Success:* a capture or output that demonstrates it.
+      > **Note (rider [andres] 2026-08-21):** *"the clean-install assertion runs in
+      > **non-interactive mode** (no composer prompts answered by hand), and must verify how
+      > `site_template_helper` ends up authorised in the `allow-plugins` of the `composer.json` the
+      > end user receives. If generation requires manual interaction → **escalate as an install-UX
+      > finding, do not patch silently.**"* See the amendment to D-008.
 - [ ] **T-402** · Extend `InstallTest`/`ValidationTest` with Ágora's key routes.
       *Success:* number of tests and assertions reported, > 0.
 - [ ] **T-403** · Project README **in English** (public docs in English, D-005): what it is, how it is
       installed, what it ships.
+      > **Note 2026-08-21:** superseded in wave 3 by **T-310**; T-403 keeps whatever is left over
+      > for wave 4.
 - [ ] **T-404** · `orquestador` audit (read-only): standards, SBOM, licences, marketplace
       requirements. *Success:* verdict with no open 🔴.
 - [ ] **T-405** · Promote the unit's lessons to `IDIOMS.md`.
@@ -188,20 +222,23 @@ Sign here: `[ ]`
 ## Active blockers
 
 > A table of **state**, not of signed tasks: it is rewritten on each update.
-> Last updated: 2026-08-21, after wave 1 closed (gate A 61/0, gate B signed).
+> Last updated: 2026-08-21, after the D-009 / D-018 signature batch.
 
 | Blocker | State | Blocks | Who resolves |
 |---|---|---|---|
 | D-011 recipe architecture | ✅ SIGNED 2026-08-21 · option A (a single recipe at the root) | — unblocks T-101…T-105 | — |
 | D-007 machine name | ✅ SIGNED 2026-08-21 · `agora_transparency` | — unblocks T-102 | — |
-| D-008 theme approach | ✅ SIGNED 2026-08-21 · option A; rider suspended and **subsumed by D-014** | — | — |
+| D-008 theme approach | ✅ SIGNED 2026-08-21 · option A; rider suspended and **subsumed by D-014**. **AMENDED 2026-08-21**: the claim "it does not generate on the end user's installation" was false (`Plugin.php` has no root-package check) — conclusion unchanged, fact corrected | — the `allow-plugins` consequence is inherited by **T-401** | — |
 | D-012 publication route | ✅ SIGNED 2026-08-21 · option C (community first; marketplace = 007-bis, non-blocking) | — | — |
 | D-013 AI provider | ✅ SIGNED 2026-08-21 · `ai` ^1.4 hard + `ai_provider_openai` recommended | — | — |
 | D-014 where the theme lives | ✅ SIGNED 2026-08-21 · option B (separate project `drupal/agora_theme`) | **T-106 DEFERRED to unit 002**, where it is redefined against D-014=B (see T-110) | — |
 | D-015 AI artefacts in the public repo | ✅ SIGNED 2026-08-21 · `AGENTS.md` is product; `CLAUDE.md`/`.claude/`/`specs/` visible and `export-ignore`d | — unblocks T-111, T-112 and the T-104 note | — |
 | D-016 repository flow | ✅ SIGNED 2026-08-21 · D-002 CONFIRMED (drupalcode canonical; GitHub mirror read-only, same history) | — the mirror is set up in unit 007 | — |
-| D-017 language | ✅ SIGNED 2026-08-21 · entire repo in English, process layer included; amends D-005 and rule 6 | — unblocks T-113 | — |
-| D-009 test split | 🔴 OPEN | T-206 | 👤 Andrés |
-| D-010 v1 demo content scope | 🔴 OPEN | unit 003 | 👤 Andrés |
+| D-017 language | ✅ SIGNED 2026-08-21 · entire repo in English, process layer included; amends D-005 and rule 6 | — unblocks T-113; **T-308** picks up `tests/bin/gate-a-wave1.sh`, which T-113 left out | — |
+| D-009 test split | ✅ **SIGNED 2026-08-21 · option C** — axe inside the existing `gitlab_templates` Nightwatch job on drupalcode (canonical, mandatory); visual regression on GitHub Actions, non-blocking | — unblocks **T-206**, but it cannot be *applied* until the drupalcode project exists; the axe↔Nightwatch integration is verified in unit 002 | — |
+| D-018 baseline SBOM | ✅ **SIGNED 2026-08-21** — the 9 packages in `require`, all stable and `covered="1"`, verified against `updates.drupal.org`. Baseline **CLOSED**: any later change needs its own D-NNN | — gives `sbom-check` (T-304/T-306) its `D-NNN` oracle | — |
+| D-010 v1 demo content scope | 🔴 **OPEN** | unit 003 | 👤 Andrés |
+| **Wave 2 substantially BLOCKED** | 🔴 **OPEN** · **T-201, T-207 and T-208 are mutually incompatible**: T-201 assumes `ddev start` inside this repo, T-207 replaces that with the path-repository flow (Drupal set up separately), and T-208 versions `.ddev/config.yaml` in a repo that today `.gitignore`s `/.ddev/`. A recipe package is not a site: it cannot be `ddev start`ed on its own. **Pending a decision on where the development environment lives** — no D-NNN assigned yet | T-201, T-207, T-208 | 👤 Andrés |
+| T-205 first green pipeline | 🔴 **OPEN** · **there is no project on drupalcode** (`git.drupalcode.org/api/v4/projects/project%2Fagora_transparency` → **404**, verified 2026-08-21). Without a project there is no pipeline, no canary MR (D-009 rider b) and nothing to apply D-009 to | T-205, and the application of T-206 | 👤 Andrés (creates the project) |
 | T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
