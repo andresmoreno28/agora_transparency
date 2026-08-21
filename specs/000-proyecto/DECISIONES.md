@@ -208,3 +208,73 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — todos estables y cubiertos (resear
   (e) Al crear el proyecto del tema, **opt-in a cobertura del equipo de seguridad**.
   (f) **Alcance del tema: mínimo con dientes** — tokens AA, tipografía, tablas y formularios
       accesibles, compatible con Canvas. **Sin frameworks CSS genéricos.**
+
+- **D-015** · **Policy for AI artifacts in the public repository.** Signed by [andres] 2026-08-21.
+  1. **`AGENTS.md` is product.** It stays in the repository, ships to the end user, and is written
+     in English. Its "Template-specific notes" section — empty in the starter kit — is filled with
+     what is specific to Ágora (do not hand-edit exported config, where the theme lives, AI features
+     degrade without an API key in CI). It carries an **audience header**: *a guide for AI assistants
+     working on a site built WITH this template*. During development of the template itself,
+     `CLAUDE.md` governs — no agent of ours may mistake `AGENTS.md` for process instructions.
+  2. **`CLAUDE.md`, `.claude/` and `specs/` stay VISIBLE** in the public repository, as disclosure of
+     methodology. They are `export-ignore`d so they do not travel inside the packaged release.
+     ⚠️ Verified 2026-08-21: `export-ignore` affects **only the packaged tarball**, never the git
+     repository — *"All files will still be available for users that clone your project via Git."*
+     Visibility in the repo is therefore a deliberate choice, not a side effect. Source:
+     `drupal.org/docs/develop/git/git-for-drupal-project-maintainers/creating-a-project-release`
+  3. **Amends D-005 on language** → superseded in full by **D-017**, see below.
+  4. The `README.md` gains a **"Development process"** section: human-in-the-loop methodology,
+     decisions signed under `specs/`, and disclosure of AI use in line with the current governance
+     debate. It frames the artifacts before anyone discovers them.
+  5. **Rule 7 reaffirmed:** no AI co-authorship trailers in commit messages, ever.
+
+- **D-016** · **Repository workflow: D-002 is CONFIRMED, not amended.** Development stays canonical on
+  `git.drupalcode.org`; the GitHub mirror is **read-only and carries the same history**, a trivial
+  sync, and is set up in unit 007 (today it is only recorded). Signed by [andres] 2026-08-21.
+  *Rationale, recorded because it is load-bearing:*
+  · A **synthetic history** on drupalcode would reproduce the appearance of the "code dump" pattern
+    that governance guidelines penalise. The **real history** — waves, signed gates, granular
+    commits — **is the anti-slop evidence**.
+  · Commits on drupalcode are the author's **contribution currency**; a filtered republish would
+    throw them away.
+  · The collaboration surface must match the truth of the code.
+  · The aesthetic discomfort of exposing process artifacts is handled by `README` §"Development
+    process" (D-015.4), which frames them before anyone stumbles on them.
+  *Considered and rejected:* developing on a public GitHub as canonical and publishing only the
+  template layer to drupalcode through a filtering script. Rejected for the reasons above.
+
+- **D-017** · **Language: the ENTIRE repository is in English, process layer included.** Amends **D-005**
+  and **rule 6 of `CLAUDE.md`**. Spanish remains the language of orchestration **outside** the
+  repository (conversation with the human). Signed by [andres] 2026-08-21.
+  *Riders of [andres]:*
+  (a) The mechanical translation is executed **now**, in its own commit
+      (`docs: translate process layer to English`), **with no semantic changes**. Any ambiguity that
+      could alter meaning is **escalated, never resolved silently**.
+  (b) For `DECISIONES.md` and `IDIOMS.md` the translation **does not violate append-only**: the whole
+      file is translated with a header note (date, *"semantic content unchanged"*), and the Spanish
+      original is preserved in git history as the signed record.
+  (c) **New entries are written directly in English** from this decision onward.
+  ⚠️ Operational consequence (I-008): the three subagent definitions under `.claude/agents/` freeze
+  at session start. After translating them, the session **must be restarted** before relying on them.
+
+---
+
+## Riders on wave 1, signed by [andres] 2026-08-21
+
+- **On the `blank` theme (T-103 / T-105).** `blank` and the `extra.drupal-site-template` block are
+  **kept until unit 002**. T-103 deletes the three `_comment` arrays and `GET-STARTED.md`, but **not**
+  the `extra` block. **A gate A with a permanent red is NOT accepted** — a tolerated red degrades the
+  gate and violates non-negotiable rule 9. Therefore the affected check is **adjusted to the
+  specification in force for unit 001** (`blank` and the `extra` block are expected to be PRESENT,
+  with a reference to this rider); if adjusting it required touching a protected file, it is recorded
+  as an **explicit, documented skip** in the gate runner. In both cases the unit-002 task that
+  performs the coordinated change (delete `extra` + `require` the theme + `install:` + `system.theme`,
+  in **one atomic commit**) **owns that debt** and is the one that reverts the adjustment or skip.
+  **Debt = a task with an owner and an exit gate, never a known red light.**
+
+- **On the specification corrections found by the `tester` in wave 1, 2026-08-21.** All three adopted:
+  1. **T-209** is specified as *"`CI_ALLOW_DEV` is not **defined** in any versioned file"*, never
+     *"not mentioned"* — the string legitimately lives in `tests/src/Kernel/RequirementsTest.php:55`,
+     which T-406 forbids modifying.
+  2. **T-103** must account for the **three** `_comment` occurrences in `composer.json`.
+  3. **`ValidationTest.php`** is added to the set of kit files watched by the gate.

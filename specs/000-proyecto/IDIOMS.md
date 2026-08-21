@@ -65,3 +65,22 @@
   OFL auto-alojada son ficheros que la configuración no transporta, y una CDN de fuentes es pasivo
   RGPD en sector público de la UE. Eso, y no la estética, es lo que obligó a que el tema sea un
   proyecto aparte (D-014).
+- I-018 · String-match invariants are specified as **"not DEFINED in a versioned file"**, never
+  **"not mentioned"**: the tests that police a string legitimately contain the very string being
+  searched for. `git grep 'CI_ALLOW_DEV'` returns a permanent, unfixable failure because
+  `RequirementsTest.php` reads that variable by design. Match the assignment
+  (`CI_ALLOW_DEV[[:space:]]*[:=]`), not the token. Also: `git grep` only sees **tracked** files, so a
+  freshly written offender that has not been `git add`ed passes invisibly — scan the working tree.
+  Found by the `tester`, wave 1, 2026-08-21.
+- I-019 · Shell globs do **not** match dotfiles: `ls *.example | wc -l` returned 0 with
+  `.gitattributes.example` sitting right there, and in zsh the glob aborts before `ls` ever runs. Any
+  check meant to find dotfiles uses `find`. This is the same failure shape as a `grep -c` that
+  returned 0 both before and after the change it claimed to verify. Found by the `tester`, wave 1,
+  2026-08-21.
+- I-020 · Known debt is a **task with an owner and an exit gate**, never a tolerated red light in a
+  gate. If a check cannot pass under the specification in force, the check is adjusted to that
+  specification (or skipped explicitly and documented), and the future task that resolves the debt is
+  the one that reverts the adjustment. A red that everybody "knows about" stops being read.
+- I-021 · `export-ignore` in `.gitattributes` removes files from the **packaged release only**;
+  anyone cloning the repository still gets them. Hiding process artifacts from a Drupal.org project
+  would require not committing them at all, not `export-ignore`. Verified 2026-08-21.

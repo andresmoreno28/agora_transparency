@@ -50,8 +50,10 @@ publicable (todo cumple los términos del marketplace desde el día 1).
    clave. Contraste AA en tokens del tema.
 5. **Tooling exclusivo:** Composer para PHP. **pnpm exclusivo** para cualquier tooling JS del tema
    (npm/yarn prohibidos, también en docs, scripts y CI). Entorno local: DDEV.
-6. **Idiomas:** docs de proceso en español; identificadores, código, mensajes de commit y docs
-   públicas (README del proyecto en Drupal.org) en inglés. Contenido demo bilingüe ES/EN.
+6. **Language (amended by D-017, 2026-08-21):** the ENTIRE repository is in English — process layer
+   included: `CLAUDE.md`, `.claude/`, `specs/`, commit messages, identifiers, code and public docs.
+   Spanish is the language of orchestration **outside** the repository (conversation with the human).
+   Demo content stays bilingual ES/EN. Supersedes D-005 on this point.
 7. **Commits:** convencionales, en inglés, **sin trailers de co-autoría de IA**. Etiquetas de rol en
    docs: `[ejecutor]`, `[andres]` — nunca nombres de herramientas de IA.
 8. **Append-only:** tareas firmadas en `tasks.md` no se renumeran. ADRs/decisiones firmadas no se
