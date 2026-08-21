@@ -3,7 +3,9 @@
 > **Append-only.** Una tarea firmada `[✓ fecha]` no se renumera ni se reescribe.
 > Ninguna tarea arranca sin gate B de la wave anterior. Producido [ejecutor] 2026-08-20.
 >
-> 🔒 **LA UNIDAD ESTÁ BLOQUEADA**: T-101 no puede empezar sin D-007 y D-011 firmadas.
+> ✅ **DESBLOQUEADA 2026-08-21**: D-007, D-008, D-011, D-012, D-013 y D-014 firmadas por [andres].
+> T-101…T-105 ejecutables. **T-106 diferida** a la unidad 002 (D-014=B). D-009 sigue abierta → T-206.
+> Ver la tabla "Bloqueos activos" al final para el estado vigente.
 
 Leyenda: `[ ]` pendiente · `[~]` en curso · `[✓ AAAA-MM-DD]` firmada · 👤 requiere al humano
 
@@ -27,6 +29,18 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[✓ AAAA-MM-DD]` firmada · 👤
 - [ ] **T-106** · Resolver el enfoque del tema según D-008 (generado vía `generate-theme` vs
       versionado). *Éxito:* la decisión está aplicada y `recipe.yml` instala el tema correcto.
       **Bloqueada por D-008.**
+- [ ] **T-107** · Firmas D-007, D-008, D-011, D-012, D-013, D-014 + enmiendas de `plan.md` §2 y
+      `CLAUDE.md` §Estructura, **en un solo commit** (rider D-011a + rider D-014b).
+      *Éxito:* `git show --stat HEAD` lista exactamente 3 ficheros;
+      `grep -c 'recipes/agora_base' specs/000-proyecto/plan.md` = 0;
+      `grep -c 'D-014' specs/000-proyecto/DECISIONES.md` ≥ 1.
+- [ ] **T-108** · Append I-011…I-017 a `IDIOMS.md`.
+      *Éxito:* `grep -cE '^- I-01[1-7]' specs/000-proyecto/IDIOMS.md` = 7; ninguna línea previa eliminada.
+- [ ] **T-109** · Research fechada `specs/001-fundacion/research/2026-08-21-flujo-tema-y-marketplace.md`.
+      *Éxito:* ≥ 6 URLs de origen citadas y las 4 conclusiones registradas.
+- [ ] **T-110** · 🔒 **T-106 se declara DIFERIDA** a la unidad 002: se redefine allí contra
+      **D-014=B** (integrar el tema `drupal/agora_theme` como dependencia, no generarlo en este
+      repo). *Éxito:* la tabla de bloqueos refleja el diferimiento y la redefinición pendiente.
 
 **Gate A wave 1**
 ```bash
@@ -54,6 +68,18 @@ Firma aquí: `[ ]`
       todos en verde. **Un pipeline sin jobs NO es verde.**
 - [ ] **T-206** · Decidir y aplicar D-009: qué corre en drupalcode y qué en GitHub Actions.
       **Bloqueada por D-009.**
+- [ ] **T-207** · Sustituir el supuesto "`ddev start` en el repo" por el flujo verificado: montar
+      Drupal aparte y añadir el template como *path repository*, siguiendo `.github/workflows/phpunit.yml`
+      del kit (`ddev config --project-type=drupal11 --docroot=web` → `ddev composer create-project
+      --no-install drupal/recommended-project` → `ddev composer repository add source path source` →
+      `ddev composer require "<paquete>:@dev"`, con `COMPOSER_MIRROR_PATH_REPOS=1`).
+      *Éxito:* un comando reproduce el entorno desde cero; `ddev exec drush status` →
+      `Drupal bootstrap : Successful`; existe `./recipes/agora_transparency`.
+- [ ] **T-208** · Fijar DDEV ≥ 1.25.0 y **versionar `.ddev/config.yaml`** (hoy `.gitignore` ignora
+      `/.ddev/`, lo que hace inalcanzable el criterio de T-201).
+      *Éxito:* `git ls-files .ddev/config.yaml | wc -l` = 1; requisito documentado en el README.
+- [ ] **T-209** · Invariante: `CI_ALLOW_DEV` no se define en ningún fichero versionado.
+      *Éxito:* 0 coincidencias, imprimiendo nº de ficheros escaneados (> 0).
 
 **Gate A wave 2**
 ```bash
@@ -76,6 +102,20 @@ Firma aquí: `[ ]`
       *Éxito:* exige estable + `<security covered="1">` + línea en `DECISIONES.md`; falla si falta una.
 - [ ] **T-305** · Los cuatro imprimen ámbito, nº de ficheros escaneados y nº de hallazgos.
       *Éxito:* ninguno reporta "0 ficheros escaneados".
+- [ ] **T-306** · **Enmienda del método de T-304** (`sbom-check`): el endpoint devuelve **HTTP 200
+      con cuerpo `<error>`** para proyectos inexistentes → un `curl -f` da falso verde. Debe:
+      (a) comprobar red al arrancar y **fallar ruidosamente si no hay** — "skip" prohibido;
+      (b) parsear el XML; (c) exigir `<title>` y ausencia de `<error>`; (d) tomar como estable la
+      primera release sin `dev|alpha|beta|rc`; (e) exigir `<security covered="1">` en esa release;
+      (f) comprobar `<core_compatibility>`; (g) exigir línea `D-NNN` en `DECISIONES.md` por cada
+      `drupal/*` de `require`.
+      *Éxito:* con el `require` real → exit 0 e imprime
+      `N proyectos consultados · N con cobertura · 0 hallazgos`; con un proyecto inexistente
+      inyectado → exit 1; con la red cortada (`https_proxy=http://127.0.0.1:1`) → **exit 1**,
+      nunca exit 0.
+- [ ] **T-307** · `tests/bin/no-code-in-template`: espeja localmente el assert de `RequirementsTest`.
+      *Éxito:* imprime `N ficheros escaneados · 0 ficheros *.info.yml`, N > 0; detecta un
+      `themes/x/x.info.yml` inyectado; árbol limpio tras revertir.
 
 **Gate A wave 3**
 ```bash
@@ -101,6 +141,9 @@ basura dentro, no sirve. Silenciar un invariante para pasar = 🔴 automático.
 - [ ] **T-404** · Auditoría del `orquestador` (solo lectura): estándares, SBOM, licencias, requisitos
       del marketplace. *Éxito:* veredicto sin 🔴 abiertos.
 - [ ] **T-405** · Promover a `IDIOMS.md` las lecciones de la unidad.
+- [ ] **T-406** · Verificar que `InstallTest`, `ValidationTest` y `RequirementsTest` pasan **sin
+      modificarse**. *Éxito:* 0 líneas eliminadas en esos 3 ficheros; salida de phpunit con nº de
+      tests **y** assertions.
 
 **Gate A wave 4**
 ```bash
@@ -114,9 +157,13 @@ Firma aquí: `[ ]`
 
 ## Bloqueos activos
 
-| Bloqueo | Impide | Quién resuelve |
-|---|---|---|
-| D-011 arquitectura de recetas | T-101 y toda la unidad | 👤 Andrés |
-| D-007 machine name | T-102 | 👤 Andrés |
-| D-008 enfoque del tema | T-106 | 👤 Andrés |
-| D-009 reparto de tests | T-206 | 👤 Andrés |
+> Tabla de **estado**, no de tareas firmadas: se reescribe en cada actualización.
+> Última actualización: 2026-08-21, tras la tanda de firmas D-007…D-014.
+
+| Bloqueo | Estado | Impide | Quién resuelve |
+|---|---|---|---|
+| D-011 arquitectura de recetas | ✅ FIRMADA 2026-08-21 · opción A (una sola receta en raíz) | — desbloquea T-101…T-105 | — |
+| D-007 machine name | ✅ FIRMADA 2026-08-21 · `agora_transparency` | — desbloquea T-102 | — |
+| D-008 enfoque del tema | ✅ FIRMADA 2026-08-21 · opción A; rider suspendido y **subsumida por D-014** | — | — |
+| D-014 dónde vive el tema | ✅ FIRMADA 2026-08-21 · opción B (proyecto aparte `drupal/agora_theme`) | **T-106 DIFERIDA a la unidad 002**, donde se redefine contra D-014=B (ver T-110) | — |
+| D-009 reparto de tests | 🔴 ABIERTA | T-206 | 👤 Andrés |

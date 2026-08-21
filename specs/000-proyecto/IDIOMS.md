@@ -37,3 +37,31 @@
   Regla: comandos exactos, nunca `*` como token final, y **jamás allowlistar un directorio cuyo
   contenido todavía no existe** (`tests/bin/*` con la carpeta vacía autoriza scripts que aún no se
   han escrito ni revisado). Detectado por revisión de seguridad automática, 2026-08-20.
+- I-011 · Enmienda a I-006: en este entorno **Bash SÍ tiene red** (verificado 2026-08-21: `curl` a
+  `updates.drupal.org`, `git.drupalcode.org` y `www.drupal.org` → exit 0). Pero **varía dentro de la
+  misma sesión**: el mismo `curl` falló con exit 6 (DNS) veinte minutos antes de funcionar. Se
+  comprueba con un comando al empezar, nunca se asume — ni que la hay, ni que no. Declarar "no hay
+  red" sin probarlo produce planes tan malos como darla por hecha.
+- I-012 · `www.drupal.org/project/<X>` devuelve **302 hacia new.drupal.org para cualquier cadena**,
+  incluida una inexistente: un 302 NO prueba que un machine name esté libre. El oráculo válido es
+  `git.drupalcode.org/api/v4/projects/project%2F<X>` (200 = ocupado, 404 = libre).
+- I-013 · `updates.drupal.org/release-history/<X>/current` devuelve **HTTP 200 con cuerpo `<error>`**
+  para proyectos inexistentes. `curl -f` o cualquier chequeo por código de estado da falso verde:
+  hay que parsear el XML y exigir `<title>` + al menos una `<release>`.
+- I-014 · Un site template **no puede contener código propio**: `RequirementsTest` del starter kit
+  exige **0 ficheros `*.info.yml`** en el paquete, que además se instala en `./recipes/<name>` —
+  fuera del docroot, donde `RecursiveExtensionFilterCallback` ni recurre (solo `profiles/`,
+  `modules/`, `themes/` del root). Temas y módulos se **declaran en `require`**. Corrige I-004 en su
+  parte de "el tema se genera": se genera en el **sitio de trabajo**, no en el repo, es andamiaje de
+  desarrollo, y el bloque `extra.drupal-site-template` se borra antes de publicar.
+- I-015 · `RequirementsTest` respeta la variable `CI_ALLOW_DEV`: si está definida en CI, las
+  dependencias listadas **se saltan** la comprobación de versiones pineadas/dev. Es un debilitamiento
+  de gate por diseño. En Ágora **no se define nunca**, y hay invariante que lo verifica (T-209).
+- I-016 · Una premisa alarmante no verificada envenena la planificación tanto como una falsa
+  tranquilizadora: "el marketplace es DCP-only y cuesta 395 $" circuló dos unidades como restricción
+  dura y resultó **falso** (gratis está abierto a cualquier individuo; la cuota decía "none for pilot
+  and MVP"). Verificar en origen antes de dejar que una restricción externa moldee el alcance.
+- I-017 · La licencia y la privacidad son restricciones **estructurales**, no acabados: la tipografía
+  OFL auto-alojada son ficheros que la configuración no transporta, y una CDN de fuentes es pasivo
+  RGPD en sector público de la UE. Eso, y no la estética, es lo que obligó a que el tema sea un
+  proyecto aparte (D-014).
