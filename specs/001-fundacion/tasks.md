@@ -21,9 +21,14 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[✓ AAAA-MM-DD]` firmada · 👤
 - [ ] **T-103** · Desnudar el andamiaje: borrar el array `_comment` de `composer.json`, borrar
       `GET-STARTED.md`, sustituir `screenshot.webp` por uno propio provisional.
       *Éxito:* `grep -c '_comment' composer.json` = 0; `GET-STARTED.md` no existe.
+      > **Nota (rider [andres] 2026-08-21):** *"three `_comment` occurrences, not one; the
+      > `extra.drupal-site-template` block is NOT deleted in unit 001 — see the wave 1 rider on the
+      > `blank` theme."*
 - [ ] **T-104** · `.gitignore` y `.gitattributes` definitivos desde los `.example`; borrar los `.example`.
       *Éxito:* `.gitattributes` contiene los `export-ignore` de `/tests`, `/.github`,
       `/.gitlab-ci.yml`, `/.tugboat`.
+      > **Nota (rider [andres] 2026-08-21):** *"`.gitattributes` must `export-ignore` `/CLAUDE.md`,
+      > `/.claude`, `/specs` (D-015.2) and must NOT export-ignore `AGENTS.md` (D-015.1)."*
 - [ ] **T-105** · `recipe.yml` propio: `name`, `description`, `type: Site`, recetas base heredadas.
       *Éxito:* `type: Site` exacto; el fichero parsea como YAML válido.
 - [ ] **T-106** · Resolver el enfoque del tema según D-008 (generado vía `generate-theme` vs
@@ -41,6 +46,15 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[✓ AAAA-MM-DD]` firmada · 👤
 - [ ] **T-110** · 🔒 **T-106 se declara DIFERIDA** a la unidad 002: se redefine allí contra
       **D-014=B** (integrar el tema `drupal/agora_theme` como dependencia, no generarlo en este
       repo). *Éxito:* la tabla de bloqueos refleja el diferimiento y la redefinición pendiente.
+- [ ] **T-111** · Fill in the "Template-specific notes" section of `AGENTS.md` in English, with the
+      audience header required by D-015.1. *Success:* the section is no longer empty; it states that
+      `CLAUDE.md` governs template development and `AGENTS.md` targets sites built with the template.
+- [ ] **T-112** · `README.md` gains the "Development process" section required by D-015.4.
+      *Success:* the section exists, in English, and links to `specs/`.
+- [ ] **T-113** · Mechanical translation of the process layer to English (D-017): `CLAUDE.md`,
+      `.claude/agents/*` (3), `.claude/commands/*` (3), `.claude/skills/*` (7), `specs/`. Own commit,
+      no semantic changes; ambiguities escalated. *Success:* zero semantic diffs reported; a restart
+      of the session after translating `.claude/agents/` (I-008).
 
 **Gate A wave 1**
 ```bash
@@ -80,6 +94,8 @@ Firma aquí: `[ ]`
       *Éxito:* `git ls-files .ddev/config.yaml | wc -l` = 1; requisito documentado en el README.
 - [ ] **T-209** · Invariante: `CI_ALLOW_DEV` no se define en ningún fichero versionado.
       *Éxito:* 0 coincidencias, imprimiendo nº de ficheros escaneados (> 0).
+      > **Nota (rider [andres] 2026-08-21):** *"specified as 'not DEFINED', never 'not mentioned' —
+      > see I-018."*
 
 **Gate A wave 2**
 ```bash
@@ -158,12 +174,19 @@ Firma aquí: `[ ]`
 ## Bloqueos activos
 
 > Tabla de **estado**, no de tareas firmadas: se reescribe en cada actualización.
-> Última actualización: 2026-08-21, tras la tanda de firmas D-007…D-014.
+> Última actualización: 2026-08-21, tras la tanda de firmas D-015…D-017.
 
 | Bloqueo | Estado | Impide | Quién resuelve |
 |---|---|---|---|
 | D-011 arquitectura de recetas | ✅ FIRMADA 2026-08-21 · opción A (una sola receta en raíz) | — desbloquea T-101…T-105 | — |
 | D-007 machine name | ✅ FIRMADA 2026-08-21 · `agora_transparency` | — desbloquea T-102 | — |
 | D-008 enfoque del tema | ✅ FIRMADA 2026-08-21 · opción A; rider suspendido y **subsumida por D-014** | — | — |
+| D-012 vía de publicación | ✅ FIRMADA 2026-08-21 · opción C (community primero; marketplace = 007-bis, no bloqueante) | — | — |
+| D-013 provider de IA | ✅ FIRMADA 2026-08-21 · `ai` ^1.4 duro + `ai_provider_openai` recomendado | — | — |
 | D-014 dónde vive el tema | ✅ FIRMADA 2026-08-21 · opción B (proyecto aparte `drupal/agora_theme`) | **T-106 DIFERIDA a la unidad 002**, donde se redefine contra D-014=B (ver T-110) | — |
+| D-015 artefactos de IA en el repo público | ✅ FIRMADA 2026-08-21 · `AGENTS.md` es producto; `CLAUDE.md`/`.claude/`/`specs/` visibles y `export-ignore`d | — desbloquea T-111, T-112 y la nota de T-104 | — |
+| D-016 flujo de repositorio | ✅ FIRMADA 2026-08-21 · D-002 CONFIRMADA (drupalcode canónico; mirror GitHub read-only, misma historia) | — el mirror se monta en la unidad 007 | — |
+| D-017 idioma | ✅ FIRMADA 2026-08-21 · repo entero en inglés, capa de proceso incluida; enmienda D-005 y la regla 6 | — desbloquea T-113 | — |
 | D-009 reparto de tests | 🔴 ABIERTA | T-206 | 👤 Andrés |
+| D-010 alcance del contenido demo v1 | 🔴 ABIERTA | unidad 003 | 👤 Andrés |
+| T-106 enfoque del tema | ⏸️ DIFERIDA a la unidad 002 (ver T-110) | — | — |
