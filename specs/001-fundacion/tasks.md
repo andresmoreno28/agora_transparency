@@ -3,59 +3,61 @@
 > **Append-only.** A task signed `[✓ date]` is not renumbered or rewritten.
 > No task starts without gate B of the previous wave. Produced [ejecutor] 2026-08-20.
 >
-> ✅ **UNBLOCKED 2026-08-21**: D-007, D-008, D-011, D-012, D-013 and D-014 signed by [andres].
-> T-101…T-105 executable. **T-106 deferred** to unit 002 (D-014=B). D-009 remains open → T-206.
-> See the "Active blockers" table at the end for the current state.
+> ✅ **WAVE 1 CLOSED 2026-08-21**: gate A **61 checks · 0 failures**, gate B signed by [andres].
+> 12 tasks signed, 2 deferred with an owner (T-106 → unit 002, T-114 → unit 003).
+> **Waves 2 and 3 are now open** and are parallelizable (disjoint files).
+> D-009 remains open → T-206. See the "Active blockers" table at the end for the current state.
 
-Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed · 👤 requires the human
+Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
+`[⏸ …]` deferred to a later unit, with owner · 👤 requires the human
 
 ---
 
 ## Wave 1 · Skeleton and identity
 
-- [ ] **T-101** · Copy the `1.x` branch of `drupal_cms_site_template_base` into the repo, without its git history.
+- [✓ 2026-08-21] **T-101** · Copy the `1.x` branch of `drupal_cms_site_template_base` into the repo, without its git history.
       *Success:* `recipe.yml`, `composer.json`, `.gitlab-ci.yml`, `.tugboat/`,
       `.github/`, `tests/` exist at the root. **Blocked by D-011.**
-- [ ] **T-102** · Rename the package to `drupal/<machine_name>` in `composer.json` and adjust
+- [✓ 2026-08-21] **T-102** · Rename the package to `drupal/<machine_name>` in `composer.json` and adjust
       `description`. *Success:* `composer validate --strict` exit 0. **Blocked by D-007.**
-- [ ] **T-103** · Strip the scaffolding: delete the `_comment` array from `composer.json`, delete
+- [✓ 2026-08-21] **T-103** · Strip the scaffolding: delete the `_comment` array from `composer.json`, delete
       `GET-STARTED.md`, replace `screenshot.webp` with a provisional one of our own.
       *Success:* `grep -c '_comment' composer.json` = 0; `GET-STARTED.md` does not exist.
       > **Note (rider [andres] 2026-08-21):** *"three `_comment` occurrences, not one; the
       > `extra.drupal-site-template` block is NOT deleted in unit 001 — see the wave 1 rider on the
       > `blank` theme."*
-- [ ] **T-104** · Definitive `.gitignore` and `.gitattributes` from the `.example` files; delete the `.example` files.
+- [✓ 2026-08-21] **T-104** · Definitive `.gitignore` and `.gitattributes` from the `.example` files; delete the `.example` files.
       *Success:* `.gitattributes` contains the `export-ignore` entries for `/tests`, `/.github`,
       `/.gitlab-ci.yml`, `/.tugboat`.
       > **Note (rider [andres] 2026-08-21):** *"`.gitattributes` must `export-ignore` `/CLAUDE.md`,
       > `/.claude`, `/specs` (D-015.2) and must NOT export-ignore `AGENTS.md` (D-015.1)."*
-- [ ] **T-105** · Own `recipe.yml`: `name`, `description`, `type: Site`, inherited base recipes.
+- [✓ 2026-08-21] **T-105** · Own `recipe.yml`: `name`, `description`, `type: Site`, inherited base recipes.
       *Success:* `type: Site` exact; the file parses as valid YAML.
-- [ ] **T-106** · Resolve the theme approach according to D-008 (generated via `generate-theme` vs
+- [⏸ deferred 2026-08-21 → unit 002 (D-014=B)] **T-106** · Resolve the theme approach according to D-008 (generated via `generate-theme` vs
       versioned). *Success:* the decision is applied and `recipe.yml` installs the correct theme.
       **Blocked by D-008.**
-- [ ] **T-107** · Signatures for D-007, D-008, D-011, D-012, D-013, D-014 + amendments to `plan.md` §2 and
+- [✓ 2026-08-21] **T-107** · Signatures for D-007, D-008, D-011, D-012, D-013, D-014 + amendments to `plan.md` §2 and
       `CLAUDE.md` §Structure, **in a single commit** (rider D-011a + rider D-014b).
       *Success:* `git show --stat HEAD` lists exactly 3 files;
       `grep -c 'recipes/agora_base' specs/000-proyecto/plan.md` = 0;
       `grep -c 'D-014' specs/000-proyecto/DECISIONES.md` ≥ 1.
-- [ ] **T-108** · Append I-011…I-017 to `IDIOMS.md`.
+- [✓ 2026-08-21] **T-108** · Append I-011…I-017 to `IDIOMS.md`.
       *Success:* `grep -cE '^- I-01[1-7]' specs/000-proyecto/IDIOMS.md` = 7; no previous line deleted.
-- [ ] **T-109** · Dated research `specs/001-fundacion/research/2026-08-21-flujo-tema-y-marketplace.md`.
+- [✓ 2026-08-21] **T-109** · Dated research `specs/001-fundacion/research/2026-08-21-flujo-tema-y-marketplace.md`.
       *Success:* ≥ 6 source URLs cited and the 4 conclusions recorded.
-- [ ] **T-110** · 🔒 **T-106 is declared DEFERRED** to unit 002: it is redefined there against
+- [✓ 2026-08-21] **T-110** · 🔒 **T-106 is declared DEFERRED** to unit 002: it is redefined there against
       **D-014=B** (integrate the `drupal/agora_theme` theme as a dependency, not generate it in this
       repo). *Success:* the blockers table reflects the deferral and the pending redefinition.
-- [ ] **T-111** · Fill in the "Template-specific notes" section of `AGENTS.md` in English, with the
+- [✓ 2026-08-21] **T-111** · Fill in the "Template-specific notes" section of `AGENTS.md` in English, with the
       audience header required by D-015.1. *Success:* the section is no longer empty; it states that
       `CLAUDE.md` governs template development and `AGENTS.md` targets sites built with the template.
-- [ ] **T-112** · `README.md` gains the "Development process" section required by D-015.4.
+- [✓ 2026-08-21] **T-112** · `README.md` gains the "Development process" section required by D-015.4.
       *Success:* the section exists, in English, and links to `specs/`.
-- [ ] **T-113** · Mechanical translation of the process layer to English (D-017): `CLAUDE.md`,
+- [✓ 2026-08-21] **T-113** · Mechanical translation of the process layer to English (D-017): `CLAUDE.md`,
       `.claude/agents/*` (3), `.claude/commands/*` (3), `.claude/skills/*` (7), `specs/`. Own commit,
       no semantic changes; ambiguities escalated. *Success:* zero semantic diffs reported; a restart
       of the session after translating `.claude/agents/` (I-008).
-- [ ] **T-114** · 🔒 The **definitive `screenshot.webp` is DEFERRED to unit 003**, where the demo
+- [⏸ deferred 2026-08-21 → unit 003 (demo content)] **T-114** · 🔒 The **definitive `screenshot.webp` is DEFERRED to unit 003**, where the demo
       content it must depict exists. T-103 shipped a **provisional placeholder** instead: a 632×363
       WebP (the starter kit's own dimensions, therefore known-compatible with the installer), neutral,
       hatched, and labelled *"PLACEHOLDER — NOT A SCREENSHOT OF A REAL SITE"*, rendered with DejaVu
@@ -75,7 +77,8 @@ grep -c '_comment' composer.json          # expected: 0
 test ! -f GET-STARTED.md && echo "kit docs clean"
 ```
 **Gate B wave 1** 👤 · Andrés confirms package name, visible description and identity.
-Sign here: `[ ]`
+Sign here: `[✓ 2026-08-21 andres]` — package `drupal/agora_transparency`, visible identity "Ágora",
+description as recorded in `composer.json`. Gate A closed with **61 checks · 0 failures**.
 
 ---
 
@@ -185,7 +188,7 @@ Sign here: `[ ]`
 ## Active blockers
 
 > A table of **state**, not of signed tasks: it is rewritten on each update.
-> Last updated: 2026-08-21, after the D-015…D-017 batch of signatures.
+> Last updated: 2026-08-21, after wave 1 closed (gate A 61/0, gate B signed).
 
 | Blocker | State | Blocks | Who resolves |
 |---|---|---|---|
