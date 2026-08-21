@@ -37,3 +37,27 @@ Are there any bugs or gotchas you want end users to know about? List them here, 
 
 ## Support
 Provide a few links here where your end users can get help.
+
+## Development process
+
+Ágora is built with a human-in-the-loop process, and the artefacts of that process are kept in the
+open rather than tidied away before release.
+
+* **Decisions are signed before they are implemented.** Every load-bearing choice — the package
+  name, the recipe architecture, where the theme lives, the dependency policy, the publication
+  route — is recorded as a numbered, append-only entry in
+  [`specs/000-proyecto/DECISIONES.md`](specs/000-proyecto/DECISIONES.md) and approved by a human
+  before any code depends on it. Signed entries are never rewritten: they are amended or superseded.
+* **Work is planned in units and waves.** Each unit under [`specs/`](specs/) carries a plan, an
+  explicit task list and a verification gate that has to pass with real counts — an exit code of
+  zero on its own does not close anything.
+* **AI assistance is used, and disclosed.** Parts of this repository were drafted with AI coding
+  assistants working under human direction and review. The instructions those assistants operate
+  under are in `CLAUDE.md` and `.claude/`, in this repository, for anyone to read. A human reviews
+  and signs every decision and every gate and is accountable for what is released. Commits are
+  attributed to their human author, with no AI co-authorship trailers.
+* **The process layer does not ship.** `CLAUDE.md`, `.claude/` and `specs/` are marked
+  `export-ignore` in `.gitattributes`: they stay visible to anyone who clones the repository, but
+  they are not part of the packaged release an end user installs. `AGENTS.md` is the deliberate
+  exception — it is product, and documents how AI assistants should work on a site built *with*
+  this template.
