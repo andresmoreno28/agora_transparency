@@ -1,0 +1,427 @@
+#!/usr/bin/env bash
+#
+# sbom-check - Agora - unit 001, T-304 amended by T-306.
+#
+# For every `drupal/*` package in `composer.json`'s `require`, this script
+# demands, against the official release history at updates.drupal.org:
+#   - the project exists and is published,
+#   - it has a stable release,
+#   - that release carries <security covered="1">,
+#   - and there is a line in specs/000-proyecto/DECISIONES.md that carries both a
+#     D-NNN token and the qualified name `drupal/<short>` (CLAUDE.md rule 2: no
+#     dependency without a justification recorded in the same change).
+#
+# THREE TRAPS THIS SCRIPT IS BUILT AROUND (all reproduced in this project, not
+# theoretical):
+#
+#   I-013 - `updates.drupal.org/release-history/<project>/current` answers
+#           HTTP 200 with an `<error>` body for a project that does not exist.
+#           `curl -f`, or any check on the status code, gives a FALSE GREEN.
+#           The XML is therefore parsed, and <title> plus the absence of
+#           <error> are demanded.
+#
+#   I-022 - every <release> element sits on ONE line (23,303 characters for
+#           drupal_cms_helper), so a greedy line-oriented parse returns the LAST
+#           release on that line - the `-dev` branch.
+#           `sed -n 's:.*<version>\(.*\)</version>.*:\1:p'` returned `1.2.x-dev`
+#           where the correct answer was `2.1.3`. Hence a real XML parse.
+#
+#   I-022 - `python3 urllib` fails on this machine with CERTIFICATE_VERIFY_FAILED
+#           (Python 3.13 from python.org, no CA bundle). Hence: DOWNLOAD with
+#           `curl`, PARSE with `python3` + `xml.etree` reading from stdin.
+#
+# AMENDMENT TO T-306(f), applied deliberately: T-306 asks for
+# <core_compatibility> to be checked. Verified 2026-08-21 against the real SBOM:
+# only `drupal_cms_helper` publishes that element (`^11.3`); the other eight
+# releases do not carry it at all. Demanding it would make this script exit 1 on
+# a clean, correct SBOM - a check that fails on the good case is a broken check,
+# not a strict one. So: if it is present it is checked and printed; if it is
+# absent it is printed as `core=n/a` and is NOT a finding.
+#
+# NO SKIPS. If there is no network, this script exits 1 saying so. An invariant
+# that quietly turns itself off is worse than no invariant at all (I-007).
+#
+# Contract:
+#   scope:    <exact list of files and projects inspected>
+#   scanned:  <N> file(s)    - N must be > 0 or this script exits 1
+#   findings: <M>            - each printed as  path:line  reason
+#   exit 0 iff M == 0
+#
+# Usage: tests/bin/sbom-check   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# `CDPATH= cd` is an env-var prefix, not an assignment; shellcheck misreads it.
+# The idiom matches tests/bin/gate-a-wave1.sh deliberately.
+# shellcheck disable=SC1007
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck disable=SC1007
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_BAD=$(printf '\033[31m'); C_OFF=$(printf '\033[0m'); C_DIM=$(printf '\033[2m')
+fi
+
+ENDPOINT="https://updates.drupal.org/release-history"
+MANIFEST="composer.json"
+LOCK="composer.lock"
+DECISIONS="specs/000-proyecto/DECISIONES.md"
+
+fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
+
+# ---------------------------------------------------------------- preflight --
+# Name the missing tool loudly; never continue with a degraded check.
+for tool in jq curl python3; do
+  command -v "$tool" >/dev/null 2>&1 || fatal "required tool not found: $tool"
+done
+
+[ -f "$MANIFEST" ]  || fatal "$MANIFEST not found in $REPO_ROOT (empty scope)"
+[ -r "$MANIFEST" ]  || fatal "$MANIFEST is not readable"
+jq -e . "$MANIFEST" >/dev/null 2>&1 || fatal "$MANIFEST is not valid JSON"
+[ -f "$DECISIONS" ] || fatal "$DECISIONS not found - there is no oracle to check the SBOM against"
+[ -r "$DECISIONS" ] || fatal "$DECISIONS is not readable"
+
+WORKDIR=$(mktemp -d -t sbom-check.XXXXXX) || fatal "cannot create a temp directory"
+trap 'rm -rf "$WORKDIR"' EXIT
+FINDINGS_FILE="$WORKDIR/findings"
+: > "$FINDINGS_FILE"
+
+SCANNED=2   # composer.json + DECISIONES.md
+
+# Findings are appended to a file and counted from it at report time, never
+# accumulated in a variable that a subshell could silently drop. One finding is
+# always exactly one line.
+finding() { # <file> <line> <reason>
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3" >> "$FINDINGS_FILE"
+}
+
+count_findings() {
+  wc -l < "$FINDINGS_FILE" | tr -d '[:space:]'
+}
+
+# The D-NNN justification for a package: the first line of DECISIONES.md that
+# carries BOTH a D-NNN token AND the qualified package name `drupal/<short>`.
+# Prints the `<line>:<content>` grep hit, or nothing.
+#
+# The qualified name, not the bare short name, on purpose (I-018: match the
+# DEFINITION, never the mention). Verified 2026-08-21: matching the bare short
+# name made `drupal/token` pass against the PROSE of D-018 - the sentence
+# "The token `D-018` sits in the first cell of every row" carries both a D-NNN
+# token and the string "token", so an undocumented dependency would have been
+# waved through. `drupal/<short>` is how the D-018 table names each package, so
+# this is a tightening, not a relaxation: all nine still match their own row.
+# The trailing class is a word boundary, so `drupal/media` never matches
+# `drupal/drupal_cms_media`.
+decision_line() { # <short project name>
+  grep -nE 'D-[0-9]{3}' "$DECISIONS" \
+    | grep -E "drupal/$1([^A-Za-z0-9_]|\$)" \
+    | head -1
+}
+
+# jq finds the offender, grep -n locates it: jq does not report line numbers.
+line_of() { # <string> <file>
+  _n=$(grep -n -F -- "$1" "$2" 2>/dev/null | head -1 | cut -d: -f1)
+  if [ -n "${_n:-}" ]; then printf '%s' "$_n"; else printf '0'; fi
+}
+
+# ------------------------------------------------------------- XML parser ----
+# Written out once and fed each downloaded document on stdin. It emits flat
+# `key=value` lines; `error=` means the document must be rejected.
+PARSER="$WORKDIR/parse_release_history.py"
+cat > "$PARSER" <<'PYEOF'
+"""Parse an updates.drupal.org release-history document read from stdin.
+
+Emits flat `key=value` lines. An `error=` line means the document is not a
+usable release history and the caller must reject it.
+
+Downloaded by curl and read from stdin on purpose: python3's urllib fails on
+the reference machine with CERTIFICATE_VERIFY_FAILED (I-022).
+
+On xml.etree rather than defusedxml: the input is a single, known HTTPS
+endpoint, and ElementTree's expat parser resolves no external entities and
+rejects undefined ones, so neither XXE nor billion-laughs applies here.
+defusedxml is not in the standard library; adding a pip dependency to a gate-A
+invariant would need its own signed D-NNN, and I-022 prescribes xml.etree.
+"""
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+# A version is unstable if it carries any pre-release or branch marker.
+UNSTABLE = re.compile(r'(-dev([^0-9A-Za-z]|$)|-alpha|-beta|-rc|\.x-dev)', re.IGNORECASE)
+
+
+def emit(key, value):
+    # Values are single-line by construction; newlines are flattened so the
+    # shell reader can never be desynchronised by a stray line break.
+    print('%s=%s' % (key, str(value).replace('\n', ' ').strip()))
+
+
+def main():
+    raw = sys.stdin.buffer.read()
+    if not raw.strip():
+        emit('error', 'empty response body')
+        return
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as e:
+        emit('error', 'not parseable as XML: %s' % e)
+        return
+
+    # I-013: the endpoint answers HTTP 200 with an <error> body for projects
+    # that do not exist. The status code cannot be trusted; the body can.
+    if root.tag == 'error':
+        emit('error', 'API error body: %s' % (root.text or '').strip())
+        return
+    err = root.find('error')
+    if err is not None:
+        emit('error', 'API error element: %s' % (err.text or '').strip())
+        return
+    if root.tag != 'project':
+        emit('error', 'unexpected root element <%s>, expected <project>' % root.tag)
+        return
+
+    title = (root.findtext('title') or '').strip()
+    if not title:
+        emit('error', 'no <title> element: not a valid release history')
+        return
+
+    emit('title', title)
+    emit('project_status', (root.findtext('project_status') or '').strip())
+
+    releases = root.find('releases')
+    items = list(releases) if releases is not None else []
+    emit('n_releases', len(items))
+    if not items:
+        emit('error', 'no <release> elements')
+        return
+
+    # I-022: releases are newest-first, but every one of them lives on a single
+    # very long line, so they must be walked as elements. The stable release is
+    # the FIRST published release whose version carries no pre-release marker.
+    for rel in items:
+        version = (rel.findtext('version') or '').strip()
+        status = (rel.findtext('status') or '').strip()
+        if status != 'published' or UNSTABLE.search(version):
+            continue
+        security = rel.find('security')
+        emit('stable_version', version)
+        emit('stable_security', security.get('covered', '0') if security is not None else 'none')
+        emit('stable_core', (rel.findtext('core_compatibility') or '').strip())
+        return
+
+    emit('stable_version', '')
+
+
+main()
+PYEOF
+
+# ---------------------------------------------------------- network preflight
+# The endpoint is queried once for Drupal core itself. If this fails there is no
+# way to verify anything, and the honest answer is exit 1 - never a skip and
+# never an exit 0.
+NETCHECK="$WORKDIR/preflight.xml"
+if ! curl -sS --max-time 15 "$ENDPOINT/drupal/current" > "$NETCHECK" 2>"$WORKDIR/preflight.err"; then
+  printf 'NETWORK UNAVAILABLE - SBOM cannot be verified\n' >&2
+  printf '  endpoint: %s/drupal/current\n' "$ENDPOINT" >&2
+  printf '  curl: %s\n' "$(tr '\n' ' ' < "$WORKDIR/preflight.err")" >&2
+  exit 1
+fi
+PREFLIGHT_TITLE=$(python3 "$PARSER" < "$NETCHECK" | sed -n 's/^title=//p')
+if [ -z "$PREFLIGHT_TITLE" ]; then
+  printf 'NETWORK UNAVAILABLE - SBOM cannot be verified\n' >&2
+  printf '  %s/drupal/current answered, but the body is not a release history\n' "$ENDPOINT" >&2
+  printf '  (a captive portal or proxy can answer HTTP 200 with anything - I-013)\n' >&2
+  exit 1
+fi
+
+# --------------------------------------------------- packages to be checked --
+PROJECTS=$(jq -r '(.require // {}) | keys[] | select(startswith("drupal/")) | sub("^drupal/"; "")' "$MANIFEST")
+PROJECT_COUNT=$(printf '%s\n' "$PROJECTS" | grep -c '[^[:space:]]')
+
+if [ "$PROJECT_COUNT" -eq 0 ]; then
+  printf '\nsbom-check\n\nscope:      %s (require, drupal/* entries)\n' "$MANIFEST"
+  printf 'scanned:    0 file(s)\nfindings:   n/a\n'
+  printf '\nFAILURE: no drupal/* package found in require - an empty scope proves nothing (I-007).\n'
+  exit 1
+fi
+
+QUERIED=0
+WITH_STABLE=0
+WITH_COVERAGE=0
+WITH_DECISION=0
+WITH_CORE=0
+
+printf '\nsbom-check - stable release, security coverage and D-NNN justification\n\n'
+printf '  %-30s %-10s %-6s %-10s %s\n' "project" "stable" "sec" "core" "decision"
+printf '  %s\n' "--------------------------------------------------------------------------------"
+
+while IFS= read -r project; do
+  [ -n "$project" ] || continue
+  QUERIED=$((QUERIED + 1))
+  MANIFEST_LINE=$(line_of "\"drupal/$project\"" "$MANIFEST")
+  XML="$WORKDIR/$project.xml"
+
+  if ! curl -sS --max-time 20 "$ENDPOINT/$project/current" > "$XML" 2>"$WORKDIR/$project.err"; then
+    finding "$MANIFEST" "$MANIFEST_LINE" \
+      "drupal/$project: the release history could not be downloaded ($(tr '\n' ' ' < "$WORKDIR/$project.err"))"
+    printf '  %-30s %s\n' "$project" "DOWNLOAD FAILED"
+    continue
+  fi
+
+  # Flat key=value pairs; `read -r k v` with IFS='=' keeps any further '=' in v.
+  # <title> is enforced inside the parser: a document without one comes back as
+  # an `error=` line, so there is nothing for the shell to re-check here.
+  PROJECT_STATUS=""; N_RELEASES="0"
+  STABLE_VERSION=""; STABLE_SECURITY=""; STABLE_CORE=""; PARSE_ERROR=""
+  while IFS='=' read -r k v; do
+    case "$k" in
+      error)            PARSE_ERROR=$v ;;
+      project_status)   PROJECT_STATUS=$v ;;
+      n_releases)       N_RELEASES=$v ;;
+      stable_version)   STABLE_VERSION=$v ;;
+      stable_security)  STABLE_SECURITY=$v ;;
+      stable_core)      STABLE_CORE=$v ;;
+    esac
+  done <<PARSED
+$(python3 "$PARSER" < "$XML")
+PARSED
+
+  # (d) reject an <error> body, an unparseable document or a missing <title>.
+  if [ -n "$PARSE_ERROR" ]; then
+    finding "$MANIFEST" "$MANIFEST_LINE" \
+      "drupal/$project: $ENDPOINT/$project/current is not a valid release history - $PARSE_ERROR"
+    printf '  %-30s %s\n' "$project" "REJECTED: $PARSE_ERROR"
+    continue
+  fi
+
+  # (h) the project itself must be published.
+  if [ "$PROJECT_STATUS" != "published" ]; then
+    finding "$MANIFEST" "$MANIFEST_LINE" \
+      "drupal/$project: project_status is \"$PROJECT_STATUS\", expected \"published\""
+  fi
+
+  # (e) a stable release must exist.
+  if [ -z "$STABLE_VERSION" ]; then
+    finding "$MANIFEST" "$MANIFEST_LINE" \
+      "drupal/$project: no stable release among $N_RELEASES releases (only dev/alpha/beta/rc)"
+    STABLE_SHOWN="NONE"
+  else
+    WITH_STABLE=$((WITH_STABLE + 1))
+    STABLE_SHOWN=$STABLE_VERSION
+    # (f) that release must carry <security covered="1">.
+    if [ "$STABLE_SECURITY" = "1" ]; then
+      WITH_COVERAGE=$((WITH_COVERAGE + 1))
+    else
+      finding "$MANIFEST" "$MANIFEST_LINE" \
+        "drupal/$project $STABLE_VERSION has no <security covered=\"1\"> (covered=\"$STABLE_SECURITY\"); D-004 requires security-team coverage"
+    fi
+  fi
+
+  # (g) <core_compatibility> is informational: checked and printed when present,
+  # `n/a` when absent, and NEVER a finding. See the amendment note in the header.
+  if [ -n "$STABLE_CORE" ]; then
+    WITH_CORE=$((WITH_CORE + 1))
+    CORE_SHOWN=$STABLE_CORE
+  else
+    CORE_SHOWN="n/a"
+  fi
+
+  # (i) a line in DECISIONES.md carrying both a D-NNN token and the package.
+  DEC_HIT=$(decision_line "$project")
+  if [ -n "$DEC_HIT" ]; then
+    WITH_DECISION=$((WITH_DECISION + 1))
+    DEC_LINE=${DEC_HIT%%:*}
+    DEC_TOKEN=$(printf '%s' "$DEC_HIT" | grep -oE 'D-[0-9]{3}' | head -1)
+    DEC_SHOWN="$DEC_TOKEN ($DECISIONS:$DEC_LINE)"
+  else
+    DEC_SHOWN="MISSING"
+    finding "$MANIFEST" "$MANIFEST_LINE" \
+      "drupal/$project has no line in $DECISIONS carrying both a D-NNN token and \"drupal/$project\" (CLAUDE.md rule 2)"
+  fi
+
+  printf '  %-30s %-10s %-6s %-10s %s\n' \
+    "$project" "$STABLE_SHOWN" "${STABLE_SECURITY:-none}" "$CORE_SHOWN" "$DEC_SHOWN"
+done <<PROJECTLIST
+$PROJECTS
+PROJECTLIST
+
+# ------------------------------------------------------ latent lock clause ---
+# D-018 rider (b) of [andres]: sbom-check must fail loudly for a package in
+# composer.lock with no associated D-NNN token.
+#
+# This is a LATENT clause. A `drupal-recipe` package does not version a lock
+# file, so there is nothing to walk today; its absence is printed and is not a
+# finding. The code runs unchanged the day a lock appears.
+#
+# DIVERGENCE, recorded rather than hidden: the rider says "any package". This
+# implements it for `drupal/*` packages only. A real lock file carries hundreds
+# of transitive packages (symfony, guzzle, ...) that no D-NNN will ever name, so
+# the literal reading would make the script permanently red the moment a lock
+# existed. CLAUDE.md rule 2 asks for a justification per contrib module, which is
+# what `drupal/*` selects. Widening this to every package needs a signed D-NNN.
+LOCK_STATE="absent"
+LOCK_DRUPAL=0
+if [ -f "$LOCK" ]; then
+  [ -r "$LOCK" ] || fatal "$LOCK exists but is not readable"
+  jq -e . "$LOCK" >/dev/null 2>&1 || fatal "$LOCK is not valid JSON"
+  LOCK_STATE="present"
+  SCANNED=$((SCANNED + 1))
+  LOCK_NAMES=$(jq -r '((.packages // []) + (.["packages-dev"] // []))[] | .name | select(startswith("drupal/")) | sub("^drupal/"; "")' "$LOCK")
+  if [ -n "$LOCK_NAMES" ]; then
+    while IFS= read -r lname; do
+      [ -n "$lname" ] || continue
+      LOCK_DRUPAL=$((LOCK_DRUPAL + 1))
+      if [ -z "$(decision_line "$lname")" ]; then
+        finding "$LOCK" "$(line_of "\"drupal/$lname\"" "$LOCK")" \
+          "locked package drupal/$lname has no line in $DECISIONS carrying both a D-NNN token and \"drupal/$lname\" (D-018 rider b)"
+      fi
+    done <<LOCKNAMES
+$LOCK_NAMES
+LOCKNAMES
+  fi
+fi
+
+# ------------------------------------------------------------------ report --
+NO_CORE=$((QUERIED - WITH_CORE))
+
+printf '\n'
+printf 'scope:      %s drupal/* from %s require\n' "$PROJECT_COUNT" "$MANIFEST"
+printf 'files:      %s, %s\n' "$MANIFEST" "$DECISIONS"
+printf 'scanned:    %s file(s)\n' "$SCANNED"
+printf 'endpoint:   %s/<project>/current\n' "$ENDPOINT"
+printf 'queried:    %s\n' "$QUERIED"
+printf 'with stable release: %s\n' "$WITH_STABLE"
+printf 'with security coverage: %s\n' "$WITH_COVERAGE"
+printf 'with a D-NNN line: %s\n' "$WITH_DECISION"
+printf 'core_compatibility declared: %s (%s n/a - informational, not a finding)\n' "$WITH_CORE" "$NO_CORE"
+if [ "$LOCK_STATE" = "absent" ]; then
+  printf 'lock:       composer.lock: absent (not a finding; the D-018 rider (b) clause is latent)\n'
+else
+  printf 'lock:       composer.lock: present (%s drupal/* packages checked)\n' "$LOCK_DRUPAL"
+fi
+printf 'exclusions: none - every drupal/* entry in require is queried\n'
+
+if [ "$QUERIED" -eq 0 ] || [ "$SCANNED" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: nothing was queried - an empty scope proves nothing (I-007).\n'
+  exit 1
+fi
+
+M=$(count_findings)
+printf 'findings:   %s\n' "$M"
+
+if [ "$M" -gt 0 ]; then
+  printf '\n'
+  cat "$FINDINGS_FILE"
+  printf '\nFAILURE: %s SBOM finding(s).\n' "$M"
+  exit 1
+fi
+
+printf '\n%s%s projects queried - %s with coverage - 0 findings%s\n' \
+  "$C_DIM" "$QUERIED" "$WITH_COVERAGE" "$C_OFF"
+printf 'OK: every drupal/* dependency is stable, covered, and justified in %s.\n' "$DECISIONS"
+exit 0
