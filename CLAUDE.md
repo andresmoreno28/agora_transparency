@@ -83,13 +83,35 @@ tests/bin/                 # scripts de invariantes + binding smokes (gate A)
   skills/                  # 7 skills del proyecto (ver abajo)
 ```
 
-**Capa del template (todavía NO existe — bloqueada por D-011):**
-Verificado el 2026-08-20 contra el starter kit real: **el repositorio ES la receta**. `recipe.yml`
-vive en la RAÍZ con `type: Site`; no hay `recipes/` con sub-recetas locales, y el tema se **genera**
-vía `site_template_helper`, no se versiona en `themes/`. Esto contradice lo que asumía la versión
-anterior de este fichero. Layout canónico y reglas duras: skill `drupal-site-template` y
-`specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
-**No crear `recipes/` ni `themes/` hasta que D-011 esté firmada.**
+**Capa del template (se crea en la unidad 001 — D-011 firmada 2026-08-21):**
+El repositorio **ES la receta**. Verificado en origen el 2026-08-21 contra el starter kit y contra el
+`RequirementsTest` que el propio kit ejecuta en el gate:
+
+```
+recipe.yml                 # RAÍZ, type: Site (case-sensitive). Obligatorio.
+composer.json              # type: drupal-recipe · drupal/agora_transparency · GPL-2.0-or-later
+recommended.yml            # lista curada para Project Browser (SOLO proyectos estables)
+screenshot.webp            # captura del sitio, no el logo
+config/                    # config exportada por `drush site:export`
+content/                   # contenido demo exportado
+tests/                     # InstallTest · ValidationTest · RequirementsTest (del kit; se extienden)
+```
+
+**Prohibiciones estructurales duras — las verifica `RequirementsTest`, no son opinión:**
+- **NO hay `recipes/`** con sub-recetas locales. Una sola receta; la modularidad es de *áreas
+  funcionales* dentro de `recipe.yml` (plan.md §2), no de directorios.
+- **NO hay `themes/` ni `modules/`. Un site template no puede contener código propio:**
+  `RequirementsTest` exige **0 ficheros `*.info.yml`** en todo el paquete. Temas y módulos se
+  **declaran en `require`**; nunca se incluyen. El paquete se instala en `./recipes/<name>`, fuera
+  del docroot, donde Drupal ni siquiera escanea extensiones. El tema de Ágora vive en su propio
+  proyecto, `drupal/agora_theme` (D-014).
+- **NO se pinean versiones** (`"drupal/x": "1.13"`) ni se parchea ninguna dependencia.
+- **`CI_ALLOW_DEV` no se define nunca**: es el escape hatch de `RequirementsTest` para saltarse la
+  comprobación de versiones. Usarlo es debilitar un gate → 🔴 automático.
+
+El repositorio **no es un proyecto Drupal**: no se hace `ddev start` dentro. El entorno real monta un
+Drupal aparte y añade el template como *path repository* (ver `specs/001-fundacion/`).
+Layout canónico: skill `drupal-site-template` + las researches de `specs/001-fundacion/research/`.
 
 ## Gate A (cuando exista el esqueleto; la lista exacta la fija la unidad 001)
 

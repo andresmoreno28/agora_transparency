@@ -11,23 +11,39 @@ y entidades que rinden cuentas. Doble propósito estratégico: (a) entrada al Si
 de Drupal.org como plantilla gratuita insignia; (b) escaparate de la tesis profesional del autor
 (seguridad + accesibilidad + gobernanza de IA en sector público) y de Config Guardian.
 
-## 2 · Arquitectura de recipes (modular, reutilizable en la futura plantilla de pago)
+## 2 · Arquitectura: una sola receta, con costura para extraer
 
-- **agora_base** — modelo de contenido y taxonomías: Documento (con facetas: tipo, año, área),
-  Cargo/Persona, Contrato, Partida presupuestaria, Convocatoria. Roles y permisos.
-- **agora_publishing** — flujos editoriales de publicación con ECA (borrador → revisión → publicado,
-  con trazabilidad).
-- **agora_foi** — solicitudes de información ciudadana: Webform + ciclo de vida ECA (acuse, plazos,
-  estados, recordatorios).
-- **agora_ai** — asistente con citas sobre el corpus documental (RAG), montado sobre el recipe de IA
-  de Drupal CMS, proveedor-agnóstico, **opcional y con degradación elegante** si no hay API key
-  (crítico para el CI de instalación). Responde SOLO desde documentos publicados; dice "no lo sé"
-  fuera de fuentes.
-- **agora_governance** — Config Guardian preconfigurado: snapshots programados, panel en admin,
-  narrativa "el portal se audita a sí mismo".
-- **agora_theme** — tema compatible con Drupal Canvas: estética institucional sobria, tokens de
-  contraste AA, tipografía con licencia libre (OFL), imágenes propias/CC0. Todo en el manifiesto
-  de licencias.
+> **Enmendado por D-011 y D-014, [andres] 2026-08-21.** La versión original describía `agora_base`,
+> `agora_publishing`, `agora_foi`, `agora_ai`, `agora_governance` y `agora_theme` como sub-recetas en
+> subdirectorios. **El repositorio ES la receta**: un único `recipe.yml` en la raíz con `type: Site`.
+> Los cinco primeros nombres dejan de ser artefactos instalables y pasan a ser **áreas funcionales**:
+> la unidad de organización interna de `recipe.yml` y de `config/`. `agora_theme` sale de este
+> repositorio y pasa a ser **un proyecto propio en Drupal.org** (D-014).
+
+Ágora v1 es **un `recipe.yml` en la raíz** que compone recetas de Drupal CMS y módulos contrib
+declarados en `require`. Las áreas funcionales son la costura por la que, cuando exista la plantilla
+de pago, se extraerán **recetas contrib independientes** (patrón B de D-011).
+**En v1 se deja la costura; no se implementa la extracción.**
+
+Reglas de costura (obligatorias desde el día 1, coste cero):
+- Cada área ocupa un bloque contiguo y rotulado con comentario en `recipe.yml`.
+- Los identificadores propios llevan prefijo de área: `agora_base_*`, `agora_publishing_*`,
+  `agora_foi_*`, `agora_ai_*`, `agora_governance_*`.
+- Si un área referencia un identificador de otra, la dependencia se anota en el bloque.
+
+| Área | Qué aporta |
+|---|---|
+| **base** | Modelo de contenido y taxonomías: Documento (facetas: tipo, año, área), Cargo/Persona, Contrato, Partida presupuestaria, Convocatoria. Roles y permisos. |
+| **publishing** | Flujos editoriales con ECA (borrador → revisión → publicado, con trazabilidad). |
+| **foi** | Solicitudes de información ciudadana: Webform + ciclo de vida ECA (acuse, plazos, estados, recordatorios). |
+| **ai** | Asistente con citas sobre el corpus documental (RAG), sobre el recipe de IA de Drupal CMS, proveedor-agnóstico, **opcional y con degradación elegante** sin API key. Responde SOLO desde documentos publicados; dice "no lo sé" fuera de fuentes. Dependencia dura: `ai ^1.4` y ningún provider (D-013). |
+| **governance** | Config Guardian preconfigurado: snapshots programados, panel en admin. |
+
+**Fuera de este repositorio — `drupal/agora_theme` (D-014):** estética institucional sobria, tokens de
+contraste AA, tipografía con licencia libre (OFL) **auto-alojada**, imágenes propias/CC0, todo en el
+manifiesto de licencias. Es un **proyecto separado en Drupal.org**, declarado en el `require` de Ágora:
+un site template **no puede contener código propio** (`RequirementsTest` exige 0 ficheros `*.info.yml`).
+Alcance: mínimo con dientes, compatible con Canvas, sin frameworks CSS genéricos.
 
 ## 3 · Páginas del contenido demo (bilingüe ES/EN)
 
