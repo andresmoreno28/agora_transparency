@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+#
+# no-boilerplate - Agora - invariant: no starter kit boilerplate in what we publish.
+#
+# Origin (I-024): the `README.md` inherited from the Drupal CMS Site Template
+# Starter Kit was PUBLISHED promising "a gorgeous theme that meets WCAG AAA
+# standards" and describing a template "designed for professional electricians",
+# with a broken link to `GET-STARTED.md`. It survived because no task owned the
+# WHOLE file - T-112 owned one section of it - so the gate never lied, it was
+# simply never asked. The same overpromise was also alive in the `description`
+# fields of `composer.json` and `recipe.yml`, which are the strings the Drupal CMS
+# installer puts in front of the user.
+#
+# Rider of [andres] 2026-08-21: this invariant runs after "a full initial sweep
+# over config, demo content and descriptions - not just the README". That sweep
+# was executed for T-309; its results are reported below in DELIBERATELY NOT
+# DENY-LISTED.
+#
+# SCOPE - everything that gets published, in two passes:
+#   (1) the packaged tree at HEAD: literally `git archive HEAD`, which is what
+#       Drupal.org ships to end users;
+#   (2) the working-tree copies of those same paths, so a reintroduction is
+#       caught BEFORE it is committed.
+# The process layer (specs/, .claude/, CLAUDE.md, tests/) is `export-ignore`d
+# (D-015.2) and is therefore out of scope by construction, not by exclusion.
+# That matters: `drupal_cms_site_template_base` appears legitimately in prose
+# inside `specs/` and `IDIOMS.md`. If this script ever reports a hit there, the
+# SCOPE is wrong and must be fixed - never add an exclusion for it.
+#
+# Contract:
+#   - prints both scopes, the files scanned, the deny-list size and the findings
+#   - every finding is reported as file:line with the offending line
+#   - exit 0 ONLY if findings = 0
+#   - a scope that cannot be read (no git, no HEAD) is a FAILURE, never a skip
+#     (I-007: an exit 0 without counts proves nothing).
+#
+# Usage: tests/bin/no-boilerplate   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and reported, not abort the run.
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+# ---------------------------------------------------------------- deny-list --
+# Verbatim strings from the starter kit, matched case-insensitively as fixed
+# strings. Each one is a phrase that describes a DIFFERENT product than Agora,
+# or a placeholder the kit expects you to replace.
+#
+# FORBIDDEN: deleting a term from this list to turn the invariant green. A term
+# leaves this list only when the string it guards can no longer be reintroduced,
+# and that reasoning is recorded in specs/000-proyecto/DECISIONES.md. Turning a
+# gate green by shrinking its input is the failure mode this file exists to stop.
+DENY_TERMS=$(cat <<'EOF'
+electrician
+WCAG AAA
+GET-STARTED
+MY_SITE_TEMPLATE_NAME
+Site Template Starter Kit
+my amazing site template
+drupal_cms_site_template_base
+EOF
+)
+
+TERM_COUNT=$(printf '%s\n' "$DENY_TERMS" | grep -cve '^$')
+
+FINDINGS=0
+SCANNED=0
+BINARY=0
+MISSING=0
+
+printf '=========================================================================================================\n'
+printf 'no-boilerplate - Agora - starter kit strings must not reach what we publish (I-024)\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf '=========================================================================================================\n'
+
+# ------------------------------------------------------- resolve the scope ---
+if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+  printf '\n%sFATAL:%s no git HEAD - the packaged scope cannot be resolved.\n' "$C_BAD" "$C_OFF"
+  printf 'A scope that cannot be read is a FAILURE, never a skip.\n'
+  exit 1
+fi
+
+ARCHIVE_LIST=$(git archive --format=tar HEAD 2>/dev/null | tar -tf - 2>/dev/null)
+ARCHIVE_RC=$?
+if [ "$ARCHIVE_RC" -ne 0 ] || [ -z "$ARCHIVE_LIST" ]; then
+  printf '\n%sFATAL:%s `git archive HEAD` produced nothing (exit %s).\n' "$C_BAD" "$C_OFF" "$ARCHIVE_RC"
+  printf 'An empty archive would pass every "does not contain" check through the back door.\n'
+  exit 1
+fi
+
+ENTRIES=$(printf '%s\n' "$ARCHIVE_LIST" | wc -l | tr -d ' ')
+# Directory entries end in `/` and have no content to scan; files are the scope.
+PACKAGED_FILES=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '/$')
+FILE_COUNT=$(printf '%s\n' "$PACKAGED_FILES" | grep -cve '^$')
+
+printf '\nscope resolved from `git archive HEAD` (%s):\n' "$(git rev-parse --short HEAD)"
+printf '  %s%d tarball entries - %d files, %d directory entries%s\n' \
+  "$C_DIM" "$ENTRIES" "$FILE_COUNT" "$((ENTRIES - FILE_COUNT))" "$C_OFF"
+printf '%s\n' "$PACKAGED_FILES" | sed 's/^/    /'
+
+# ----------------------------------------------------------------- scanner ---
+# scan_one <display-label> <file-with-content>
+# Reports every deny-list hit as `label:line: term` plus the offending line.
+scan_one() {
+  _label=$1; _file=$2
+  if ! grep -Iq . "$_file" 2>/dev/null; then
+    BINARY=$((BINARY + 1))
+    return
+  fi
+  SCANNED=$((SCANNED + 1))
+  printf '%s\n' "$DENY_TERMS" | grep -ve '^$' | while IFS= read -r _term; do
+    grep -Iin -F -- "$_term" "$_file" 2>/dev/null | while IFS= read -r _hit; do
+      printf '%s|%s|%s\n' "$_label" "$_term" "$_hit"
+    done
+  done
+}
+
+# Findings are collected in a file: the `while` loops above run in subshells, so
+# a counter incremented inside them would be lost. I-007: a count that silently
+# resets to 0 is worse than no count at all.
+HITS_FILE=$(mktemp -t no-boilerplate.XXXXXX) || exit 1
+WORK_DIR=$(mktemp -d -t no-boilerplate.XXXXXX) || exit 1
+trap 'rm -rf -- "$HITS_FILE" "$WORK_DIR"' EXIT INT TERM
+
+# --------------------------------------------- pass 1: packaged tree at HEAD --
+printf '\n-- pass 1: packaged tree at HEAD (what Drupal.org ships) ------------------------------------------------\n'
+printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$' | while IFS= read -r f; do
+  _tmp="$WORK_DIR/head_$(printf '%s' "$f" | tr '/' '_')"
+  if git show "HEAD:$f" > "$_tmp" 2>/dev/null; then
+    scan_one "HEAD:$f" "$_tmp"
+  else
+    printf 'UNREADABLE|-|%s\n' "$f"
+  fi
+done >> "$HITS_FILE"
+
+# ------------------------------------- pass 2: working copies of those paths --
+printf -- '-- pass 2: working copies of the same paths (catch it before the commit) ---------------------------------\n'
+printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$' | while IFS= read -r f; do
+  if [ -f "$f" ]; then
+    scan_one "WORKTREE:$f" "$f"
+  else
+    printf 'DELETED|-|%s\n' "$f"
+  fi
+done >> "$HITS_FILE"
+
+# Recount in the parent shell: the subshell counters above did not survive.
+SCANNED=0
+BINARY=0
+for f in $(printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$'); do
+  _tmp="$WORK_DIR/head_$(printf '%s' "$f" | tr '/' '_')"
+  if [ -f "$_tmp" ] && grep -Iq . "$_tmp" 2>/dev/null; then
+    SCANNED=$((SCANNED + 1))
+  else
+    BINARY=$((BINARY + 1))
+  fi
+  if [ -f "$f" ]; then
+    if grep -Iq . "$f" 2>/dev/null; then SCANNED=$((SCANNED + 1)); else BINARY=$((BINARY + 1)); fi
+  else
+    MISSING=$((MISSING + 1))
+  fi
+done
+
+# ---------------------------------------------------------------- findings ---
+FINDINGS=$(grep -cve '^$' "$HITS_FILE" 2>/dev/null || printf '0')
+FINDINGS=${FINDINGS:-0}
+
+printf '\n-- findings ---------------------------------------------------------------------------------------------\n'
+if [ "$FINDINGS" -eq 0 ]; then
+  printf '  %snone%s\n' "$C_OK" "$C_OFF"
+else
+  while IFS='|' read -r _label _term _hit; do
+    [ -z "$_label" ] && continue
+    printf '  %sBOILERPLATE%s  %s  [%s]\n' "$C_BAD" "$C_OFF" "$_label" "$_term"
+    printf '      | %s\n' "$_hit"
+  done < "$HITS_FILE"
+fi
+
+# ------------------------------------------------------------------ counts ---
+printf '\n=========================================================================================================\n'
+printf 'scope: packaged tree (%d entries) + their working copies - scanned: %d - deny-list terms: %d - findings: %d\n' \
+  "$ENTRIES" "$SCANNED" "$TERM_COUNT" "$FINDINGS"
+if [ "$BINARY" -gt 0 ] || [ "$MISSING" -gt 0 ]; then
+  printf '%s(skipped: %d binary blob(s); %d packaged path(s) absent from the working tree)%s\n' \
+    "$C_DIM" "$BINARY" "$MISSING" "$C_OFF"
+fi
+printf '=========================================================================================================\n'
+
+[ "$FINDINGS" -eq 0 ] && exit 0
+exit 1

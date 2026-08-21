@@ -1,5 +1,5 @@
 # Ágora · .gitignore
-# Base taken from `.gitignore.example` of the Drupal CMS Site Template Starter Kit (1.x),
+# Base taken from the upstream `.gitignore.example` shipped by Drupal CMS (1.x),
 # plus local environment artifacts. The repo IS the recipe: we do not version the working site.
 
 # --- Starter kit ---
