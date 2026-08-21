@@ -4,7 +4,7 @@
 name: Ágora
 
 # A short description that will be visible in the Drupal CMS installer.
-description: 'Ágora: a transparency and open government portal for Drupal CMS. Publishes documents, officials, contracts and budgets in accessible pages, handles freedom-of-information requests, and ships WCAG 2.2 AA compliance out of the box.'
+description: 'Ágora: a transparency and open government site template for Drupal CMS, for councils, public bodies and organisations that publish accountability information. In development — see README.md for what is implemented today.'
 
 # All site templates must have the `Site` type (case-sensitive); don't change this.
 type: Site

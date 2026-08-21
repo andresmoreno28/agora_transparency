@@ -1,42 +1,139 @@
-# 💧 Site Template Starter Kit
+# Ágora — a transparency site template for Drupal CMS
 
-If you're here to create a site template for Drupal CMS, you've come to the right place; see [GET-STARTED.md](GET-STARTED.md).
+Ágora is a site template for Drupal CMS aimed at **transparency and open government portals**: small
+local councils, public bodies, foundations and any organisation that has to publish what it decides,
+what it spends and who works for it.
 
-**You should customize this file** and fill it with information about the fantastic site template you build with this starter kit. 🚀
+![Placeholder image, not a screenshot: Ágora has no demo site yet, so there is nothing real to capture. It will be replaced once the demo content exists.](screenshot.webp)
 
-A screenshot is a great way to start:
+## Status — in development
 
-![A screenshot of my amazing site template.](screenshot.webp)
+Ágora is being built in the open and is **not usable as a transparency portal yet**. So far only the
+foundation exists: the packaging skeleton, the recipe that composes Drupal CMS, and the test suite
+that installs Drupal with the template applied.
 
-## Key Features
-Describe who this site template is for, and what it does particularly well. For example:
+**What the template does today**
 
-* Designed for professional electricians
-* Stellar content model with job management functionality
-* A gorgeous theme that meets WCAG AAA standards
-* E-commerce capabilities
-* AI features that will amaze you
-* Comes in any color you want
+* Installs a working Drupal CMS site: administrative back end, media, basic SEO, basic privacy and
+  consent, anti-spam, authentication tweaks and HTML email.
+* Generates a blank front-end theme at install time and sets a blank Canvas landing page as the
+  home page.
+* Nothing else. There is no transparency-specific functionality in it yet.
+
+**What does not exist yet**, and is therefore not offered by this template — this is the plan, not a
+feature list:
+
+| Planned | Where it is going |
+|---|---|
+| Content model: documents, officials, contracts, budget lines, public calls | unit 002 |
+| Ágora's own theme, as the separate project `drupal/agora_theme` | unit 002 |
+| Bilingual (ES/EN) demo content and the real screenshot | unit 003 |
+| Editorial workflow and freedom-of-information requests | unit 004 |
+| AI assistant with citations, and configuration auditing | unit 005 |
+
+The full intended scope is written down in `specs/000-proyecto/plan.md` in this repository.
+
+## Accessibility
+
+**A goal, not a verified result — yet.** Ágora targets WCAG 2.2 AA, and the plan is for automated
+accessibility checks over the demo pages to gate every release, with the outcome reported in this
+section. No such check has run, because there is nothing to run it against: the template currently
+ships no theme, no components and no demo pages. **No conformance with any WCAG level is claimed at
+this point.**
+
+## Requirements
+
+* A **Drupal CMS 2.x** site — the Drupal CMS recipes Ágora builds on are constrained to `^2`, and
+  that line runs on Drupal core 11.
+* **PHP:** whatever your Drupal CMS version requires. Ágora adds no constraint of its own; there is
+  no `php` entry in its `composer.json`.
+* Composer. [DDEV](https://ddev.com) is recommended for a local environment; see
+  [DDEV's installation instructions](https://docs.ddev.com/en/stable/users/install).
 
 ## Installation
-These are generic instructions for how to install the finished site template; customize these however you want.
 
-We recommend using DDEV 1.25.0 or later to set up your local Drupal development environment; see [DDEV's installation instructions](https://docs.ddev.com/en/stable/users/install). Once you have DDEV, you can set up this site template as follows:
+> **Ágora is not published yet.** There is no project on Drupal.org and no released package, so
+> `composer require drupal/agora_transparency` does not resolve today. Publication is a later unit of
+> work. Until then, install it from a local checkout, as shown below.
+
+Create a Drupal CMS project, but do not install the site yet:
+
 ```shell
-mkdir my-project
-cd my-project
+mkdir agora-site
+cd agora-site
 ddev config --project-type=drupal11 --docroot=web
 ddev composer create-project drupal/cms
-ddev composer require drupal/MY_SITE_TEMPLATE_NAME
+```
+
+Clone this repository into the project directory, as `source/`, and add it as a path repository:
+
+```shell
+git clone <this-repository> source
+ddev composer repository add source path source
+ddev composer config allow-plugins.drupal/site_template_helper true
+ddev composer require --update-with-all-dependencies drupal/agora_transparency:@dev
+```
+
+Composer places the template in `recipes/agora_transparency`. The `allow-plugins` line is needed
+because Ágora depends on `drupal/site_template_helper`, the Composer plugin that generates the blank
+theme; without it, Composer will stop and ask. This is the same sequence the project's own CI uses to
+install the template before running its tests.
+
+Then install Drupal with the template applied — either through the web installer, choosing **Ágora**
+at the site template step:
+
+```shell
 ddev launch
 ```
-Replace `MY_SITE_TEMPLATE_NAME` with the actual name of your site template, from the `name` field of `composer.json`.
 
-## Known Issues
-Are there any bugs or gotchas you want end users to know about? List them here, along with any workarounds.
+…or from the command line:
+
+```shell
+ddev drush site:install --yes recipes/agora_transparency
+```
+
+Once Ágora is published on Drupal.org, the first two commands of the second block are replaced by a
+plain `ddev composer require drupal/agora_transparency`, and this section will say so.
+
+## What the template applies
+
+Recipes, in the order `recipe.yml` applies them:
+
+| Recipe | What it contributes |
+|---|---|
+| `core/recipes/administrator_role` | A generic administrator role with all permissions |
+| `core/recipes/core_recommended_maintenance` | Core modules that help with site maintenance |
+| `core/recipes/core_recommended_performance` | Core modules that improve performance |
+| `drupal_cms_admin_ui` | The administrative back end, with its theme and site management modules |
+| `drupal_cms_anti_spam` | Basic anti-spam protection |
+| `drupal_cms_authentication` | Tweaks to user authentication |
+| `drupal_cms_media` | Basic media types and configuration |
+| `drupal_cms_privacy_basic` | Basic privacy and consent management |
+| `drupal_cms_seo_basic` | Basic SEO tools and configuration |
+| `easy_email_express` | HTML email |
+
+It also installs `drupal_cms_helper`, the `stark` theme and the generated `blank` theme, points the
+front page at a blank Canvas landing page shipped in `content/`, makes `blank` the default theme, and
+hides from the Canvas page builder a set of administrative components that are not useful for
+building pages.
+
+## Known limitations
+
+* **The site has no design.** The default theme is `blank` — a deliberately empty theme. Ágora's own
+  theme is a separate project that does not exist yet.
+* **`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
+  installed site.
+* **No demo content**, beyond the empty home page.
 
 ## Support
-Provide a few links here where your end users can get help.
+
+Ágora has no project on Drupal.org yet, so there is no public issue queue and no support channel to
+point you to. Both come with publication. Until then, the repository you are reading this in is the
+only place this work exists.
+
+## License
+
+GPL-2.0-or-later. See [LICENSE.txt](LICENSE.txt).
 
 ## Development process
 
