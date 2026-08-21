@@ -168,7 +168,10 @@ for f in $(printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$'); do
 done
 
 # ---------------------------------------------------------------- findings ---
-FINDINGS=$(grep -cve '^$' "$HITS_FILE" 2>/dev/null || printf '0')
+# `grep -c` prints its count AND exits 1 when the count is zero, so a `|| printf 0`
+# fallback concatenates a second zero and every later arithmetic test blows up.
+# The assignment's own exit status is the one to branch on.
+FINDINGS=$(grep -cve '^$' "$HITS_FILE" 2>/dev/null) || FINDINGS=0
 FINDINGS=${FINDINGS:-0}
 
 printf '\n-- findings ---------------------------------------------------------------------------------------------\n'
