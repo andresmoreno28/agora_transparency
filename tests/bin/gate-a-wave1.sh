@@ -7,11 +7,11 @@
 # IDIOMS.md (I-004, I-007, I-014, I-015, I-020).
 #
 # Contract:
-#   - every check prints:  obtained | expected | OK/FALLO
-#   - closing line:        "N comprobaciones - M fallos"
+#   - every check prints:  obtained | expected | OK/FAIL
+#   - closing line:        "N checks - M failures"
 #   - exit 0 ONLY if M = 0
 #   - a check that CANNOT be evaluated (missing file, missing tool, invalid
-#     JSON) is a FALLO, never a skip. I-007: an exit 0 without counts proves
+#     JSON) is a FAIL, never a skip. I-007: an exit 0 without counts proves
 #     nothing.
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
@@ -50,7 +50,7 @@ check() {
   if [ "$_got" = "$_exp" ]; then
     _res="${C_OK}OK${C_OFF}"
   else
-    _res="${C_BAD}FALLO${C_OFF}"
+    _res="${C_BAD}FAIL${C_OFF}"
     M=$((M + 1))
   fi
   printf '  %-38s %-28s | %-28s | %s\n' \
@@ -60,37 +60,37 @@ check() {
 group() {
   GRP=$1
   printf '\n%s\n' "$GRP"
-  printf '  %-38s %-28s | %-28s | %s\n' "comprobacion" "obtenido" "esperado" "veredicto"
+  printf '  %-38s %-28s | %-28s | %s\n' "check" "obtained" "expected" "verdict"
   printf '  %s\n' "----------------------------------------------------------------------------------------------------------"
 }
 
 note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
 
 # ------------------------------------------------------------ safe readers ----
-# Every reader returns a sentinel string on failure so the check reports FALLO
+# Every reader returns a sentinel string on failure so the check reports FAIL
 # with a legible reason instead of crashing or silently passing.
 
 jq_raw() { # <filter> <file>
   _f=$2
-  [ -f "$_f" ] || { printf '<%s ausente>' "$_f"; return; }
-  _out=$(jq -r "$1" "$_f" 2>/dev/null) || { printf '<%s json invalido>' "$_f"; return; }
+  [ -f "$_f" ] || { printf '<%s absent>' "$_f"; return; }
+  _out=$(jq -r "$1" "$_f" 2>/dev/null) || { printf '<%s invalid json>' "$_f"; return; }
   printf '%s' "$_out"
 }
 
 grep_count() { # <ERE> <file>
   _f=$2
-  [ -f "$_f" ] || { printf '<%s ausente>' "$_f"; return; }
+  [ -f "$_f" ] || { printf '<%s absent>' "$_f"; return; }
   printf '%s' "$(grep -cE "$1" "$_f" 2>/dev/null || true)"
 }
 
 grep_count_fixed() { # <fixed string> <file>
   _f=$2
-  [ -f "$_f" ] || { printf '<%s ausente>' "$_f"; return; }
+  [ -f "$_f" ] || { printf '<%s absent>' "$_f"; return; }
   printf '%s' "$(grep -cF "$1" "$_f" 2>/dev/null || true)"
 }
 
-exists_file() { [ -f "$1" ] && printf 'presente' || printf 'ausente'; }
-exists_dir()  { [ -d "$1" ] && printf 'presente' || printf 'ausente'; }
+exists_file() { [ -f "$1" ] && printf 'present' || printf 'absent'; }
+exists_dir()  { [ -d "$1" ] && printf 'present' || printf 'absent'; }
 
 # Files in scope for filesystem scans: the packaged tree, minus VCS/build dirs.
 scan_files() {
@@ -102,39 +102,39 @@ scan_files() {
 }
 
 printf '=========================================================================================================\n'
-printf 'Gate A - Agora unidad 001 wave 1 - esqueleto e identidad\n'
+printf 'Gate A - Agora unit 001 wave 1 - skeleton and identity\n'
 printf 'repo: %s\n' "$REPO_ROOT"
-printf 'rama: %s\n' "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '<sin git>')"
-printf 'fecha: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf 'branch: %s\n' "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '<no git>')"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 printf '=========================================================================================================\n'
 
 # ------------------------------------------------------------- G0 preflight --
 # Missing tooling is a FAILURE of the gate, not a reason to skip it.
-group 'G0 - Preflight (herramientas requeridas)'
+group 'G0 - Preflight (required tooling)'
 MISSING=0
 # `tar` is required by G8 (packaging): it reads the tarball produced by
-# `git archive`. If it is missing, G8 cannot be evaluated -> that is a FALLO.
+# `git archive`. If it is missing, G8 cannot be evaluated -> that is a FAIL.
 for tool in jq composer git find grep tar; do
   if command -v "$tool" >/dev/null 2>&1; then
-    got='disponible'
+    got='available'
   else
-    got="NO ENCONTRADO: $tool"
+    got="NOT FOUND: $tool"
     MISSING=$((MISSING + 1))
   fi
-  check "herramienta '$tool'" "$got" 'disponible'
+  check "tool '$tool'" "$got" 'available'
 done
 
 if [ "$MISSING" -gt 0 ]; then
-  printf '\n%sPREFLIGHT FALLIDO:%s faltan %d herramienta(s).\n' "$C_BAD" "$C_OFF" "$MISSING"
-  printf 'El gate NO puede evaluarse. Instala lo que falta (brew install jq composer) y re-ejecuta.\n'
-  printf 'Un gate que se salta comprobaciones en silencio es peor que no tenerlo.\n\n'
-  printf '%d comprobaciones - %d fallos\n' "$N" "$M"
+  printf '\n%sPREFLIGHT FAILED:%s %d tool(s) missing.\n' "$C_BAD" "$C_OFF" "$MISSING"
+  printf 'The gate CANNOT be evaluated. Install what is missing (brew install jq composer) and re-run.\n'
+  printf 'A gate that silently skips checks is worse than not having one.\n\n'
+  printf '%d checks - %d failures\n' "$N" "$M"
   exit 1
 fi
 
-# ------------------------------------------------ G1 identidad del paquete ---
-group 'G1 - Identidad del paquete (composer.json)'
-check 'composer.json presente'     "$(exists_file composer.json)" 'presente'
+# --------------------------------------------------- G1 package identity -----
+group 'G1 - Package identity (composer.json)'
+check 'composer.json present'      "$(exists_file composer.json)" 'present'
 check '.name'                      "$(jq_raw '.name'    composer.json)" 'drupal/agora_transparency'
 check '.type'                      "$(jq_raw '.type'    composer.json)" 'drupal-recipe'
 check '.license'                   "$(jq_raw '.license' composer.json)" 'GPL-2.0-or-later'
@@ -147,25 +147,25 @@ if [ -f composer.json ]; then
     printf '%s' "$CV_OUT" | sed 's/^/      | /'
   fi
 else
-  check 'composer validate --strict (exit)' '<composer.json ausente>' '0'
+  check 'composer validate --strict (exit)' '<composer.json absent>' '0'
 fi
 
 # ---------------------------------------------------------- G2 recipe.yml ----
-group 'G2 - recipe.yml (raiz, type: Site case-sensitive)'
-check 'recipe.yml presente'        "$(exists_file recipe.yml)" 'presente'
-check 'lineas "^type: Site" (exacto)'  "$(grep_count '^type:[[:space:]]*Site$' recipe.yml)" '1'
-check 'lineas "^type:" (sin duplicar)' "$(grep_count '^type:' recipe.yml)"                  '1'
-check 'lineas "^name:"'                "$(grep_count '^name:' recipe.yml)"                  '1'
-check 'lineas "^description:"'         "$(grep_count '^description:' recipe.yml)"           '1'
+group 'G2 - recipe.yml (root, type: Site case-sensitive)'
+check 'recipe.yml present'         "$(exists_file recipe.yml)" 'present'
+check 'lines "^type: Site" (exact)'    "$(grep_count '^type:[[:space:]]*Site$' recipe.yml)" '1'
+check 'lines "^type:" (no duplicates)' "$(grep_count '^type:' recipe.yml)"                  '1'
+check 'lines "^name:"'                 "$(grep_count '^name:' recipe.yml)"                  '1'
+check 'lines "^description:"'          "$(grep_count '^description:' recipe.yml)"           '1'
 
-# -------------------------------------------- G3 andamiaje del kit borrado ---
-group 'G3 - Andamiaje del starter kit eliminado (T-103, T-104)'
-check 'ocurrencias de _comment'    "$(grep_count_fixed '_comment' composer.json)" '0'
+# ------------------------------------- G3 kit scaffolding removed ------------
+group 'G3 - Starter kit scaffolding removed (T-103, T-104)'
+check 'occurrences of _comment'    "$(grep_count_fixed '_comment' composer.json)" '0'
 # ---------------------------------------------------------------------------
-# DEUDA CON DUENO Y GATE DE SALIDA - NO ES UNA COMPROBACION RELAJADA.
+# DEBT WITH AN OWNER AND AN EXIT GATE - THIS IS NOT A RELAXED CHECK.
 #
-# Esperado = PRESENTE, a proposito. Rider del tema `blank`, firmado por [andres]
-# el 2026-08-21 (specs/000-proyecto/DECISIONES.md, "Riders on wave 1"):
+# Expected = PRESENT, on purpose. Rider of the `blank` theme, signed by [andres]
+# on 2026-08-21 (specs/000-proyecto/DECISIONES.md, "Riders on wave 1"):
 #
 #   "`blank` and the `extra.drupal-site-template` block are kept until unit 002.
 #    T-103 deletes the three `_comment` arrays and `GET-STARTED.md`, but NOT the
@@ -173,78 +173,79 @@ check 'ocurrencias de _comment'    "$(grep_count_fixed '_comment' composer.json)
 #    force for unit 001 (`blank` and the `extra` block are expected to be
 #    PRESENT, with a reference to this rider)."
 #
-# Por que es la especificacion vigente y no una excusa: `recipe.yml` instala hoy
-# el tema `blank` (`install: - blank`) y lo fija como tema por defecto
-# (`system.theme.default: 'blank'`). Ese tema NO se versiona: lo FABRICA
-# drupal/site_template_helper leyendo exactamente este bloque `extra`. Borrarlo
-# hoy dejaria `recipe.yml` apuntando a un tema inexistente y la plantilla NO
-# instalaria. El bloque es, en la unidad 001, un requisito duro; esperar
-# 'ausente' era describir el estado final de la unidad 002, no el contrato
-# vigente.
+# Why this is the specification in force and not an excuse: `recipe.yml` today
+# installs the `blank` theme (`install: - blank`) and sets it as the default
+# theme (`system.theme.default: 'blank'`). That theme is NOT versioned: it is
+# MANUFACTURED by drupal/site_template_helper reading exactly this `extra`
+# block. Deleting it today would leave `recipe.yml` pointing at a non-existent
+# theme and the template would NOT install. In unit 001 the block is a hard
+# requirement; expecting 'absent' was describing the end state of unit 002, not
+# the contract in force.
 #
-# QUIEN LA REVIERTE: la tarea de la UNIDAD 002 que hace el cambio atomico
-# `drupal/agora_theme` (D-014, opcion B) en UN SOLO COMMIT:
-#     borrar .extra["drupal-site-template"] de composer.json
-#   + anadir "drupal/agora_theme" a .require
-#   + cambiar `- blank` por `- agora_theme` en `install:` de recipe.yml
-#   + cambiar system.theme.default a 'agora_theme'
-# Esa misma tarea DEBE volver a poner 'ausente' aqui. Esta linea es el tripwire:
-# en cuanto alguien borre el bloque `extra` sin tocar el gate, esta comprobacion
-# se pone en ROJO y el cambio no pasa. Es deliberado (I-020: "la deuda conocida
-# es una tarea con dueno y un gate de salida, nunca un rojo tolerado").
+# WHO REVERTS IT: the UNIT 002 task that performs the atomic
+# `drupal/agora_theme` change (D-014, option B) in ONE SINGLE COMMIT:
+#     delete .extra["drupal-site-template"] from composer.json
+#   + add "drupal/agora_theme" to .require
+#   + change `- blank` to `- agora_theme` in `install:` of recipe.yml
+#   + change system.theme.default to 'agora_theme'
+# That same task MUST set 'absent' back here. This line is the tripwire: the
+# moment someone deletes the `extra` block without touching the gate, this
+# check goes RED and the change does not pass. It is deliberate (I-020: "known
+# debt is a task with an owner and an exit gate, never a tolerated red").
 #
-# PROHIBIDO: cambiar este esperado a 'ausente' -- o borrar la comprobacion --
-# sin ejecutar en el mismo commit los cuatro pasos de arriba.
+# FORBIDDEN: changing this expected value to 'absent' -- or deleting the check --
+# without executing the four steps above in the same commit.
 # ---------------------------------------------------------------------------
-check '.extra["drupal-site-template"]' "$(jq_raw '.extra["drupal-site-template"] // "ausente" | if . == "ausente" then . else "presente" end' composer.json)" 'presente'
-note 'esperado PRESENTE por el rider de `blank` [andres] 2026-08-21; lo revierte la tarea del tema de la unidad 002 (cambio atomico)'
-check 'GET-STARTED.md'             "$(exists_file GET-STARTED.md)" 'ausente'
-# NOTA: se usa find, no el glob `*.example` del dispatch: el glob del shell NO
-# casa con dotfiles y el kit trae `.gitignore.example` / `.gitattributes.example`.
+check '.extra["drupal-site-template"]' "$(jq_raw '.extra["drupal-site-template"] // "absent" | if . == "absent" then . else "present" end' composer.json)" 'present'
+note 'expected PRESENT by the `blank` rider [andres] 2026-08-21; reverted by the unit 002 theme task (atomic change)'
+check 'GET-STARTED.md'             "$(exists_file GET-STARTED.md)" 'absent'
+# NOTE: find is used, not the dispatch's `*.example` glob: the shell glob does
+# NOT match dotfiles and the kit ships `.gitignore.example` / `.gitattributes.example`.
 EXAMPLES=$(find . -maxdepth 1 -name '*.example' -type f 2>/dev/null | wc -l | tr -d ' ')
-check 'ficheros *.example en raiz'  "$EXAMPLES" '0'
+check '*.example files at root'     "$EXAMPLES" '0'
 if [ "$EXAMPLES" != "0" ]; then
   find . -maxdepth 1 -name '*.example' -type f | sed 's/^/      | /'
 fi
 
-# ------------------------------- G4 invariantes estructurales (I-014) --------
-group 'G4 - Invariantes estructurales (espeja RequirementsTest del kit)'
+# ------------------------------- G4 structural invariants (I-014) -----------
+group 'G4 - Structural invariants (mirrors the kit RequirementsTest)'
 SCANNED=$(scan_files | wc -l | tr -d ' ')
-note "ambito: arbol del paquete sin .git/ vendor/ node_modules/ - $SCANNED ficheros escaneados"
-check 'ficheros escaneados > 0'    "$([ "$SCANNED" -gt 0 ] && echo 'si' || echo 'no')" 'si'
+note "scope: package tree without .git/ vendor/ node_modules/ - $SCANNED files scanned"
+check 'files scanned > 0'          "$([ "$SCANNED" -gt 0 ] && echo 'yes' || echo 'no')" 'yes'
 INFOYML=$(scan_files | grep -c '\.info\.yml$' || true)
-check 'ficheros *.info.yml'        "$INFOYML" '0'
+check '*.info.yml files'           "$INFOYML" '0'
 if [ "$INFOYML" != "0" ]; then
   scan_files | grep '\.info\.yml$' | sed 's/^/      | /'
 fi
-check 'directorio recipes/'        "$(exists_dir recipes)" 'ausente'
-check 'directorio themes/'         "$(exists_dir themes)"  'ausente'
-check 'directorio modules/'        "$(exists_dir modules)" 'ausente'
+check 'recipes/ directory'         "$(exists_dir recipes)" 'absent'
+check 'themes/ directory'          "$(exists_dir themes)"  'absent'
+check 'modules/ directory'         "$(exists_dir modules)" 'absent'
 
-# ------------------------- G5 sin pins, parches ni escape hatches (I-015) ----
-group 'G5 - Sin pins, sin parches, sin escape hatches'
+# ------------------------- G5 no pins, no patches, no escape hatches (I-015) -
+group 'G5 - No pins, no patches, no escape hatches'
 REQ_COUNT=$(jq_raw '.require | to_entries | length' composer.json)
-check 'entradas en .require > 0'   "$([ "$REQ_COUNT" -gt 0 ] 2>/dev/null && echo 'si' || echo 'no')" 'si'
-note "require: $REQ_COUNT entradas"
+check '.require entries > 0'       "$([ "$REQ_COUNT" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+note "require: $REQ_COUNT entries"
 PINNED=$(jq_raw '[.require | to_entries[] | select(.value|test("^v?[0-9]+\\.")) | .key] | length' composer.json)
-check 'versiones pineadas'         "$PINNED" '0'
+check 'pinned versions'            "$PINNED" '0'
 [ "$PINNED" != "0" ] && jq -r '.require | to_entries[] | select(.value|test("^v?[0-9]+\\.")) | "      | \(.key): \(.value)"' composer.json 2>/dev/null
 UNSTABLE=$(jq_raw '[.require | to_entries[] | select(.value|test("dev|alpha|beta|rc";"i")) | .key] | length' composer.json)
-check 'constraints dev/alpha/beta/rc' "$UNSTABLE" '0'
+check 'dev/alpha/beta/rc constraints' "$UNSTABLE" '0'
 [ "$UNSTABLE" != "0" ] && jq -r '.require | to_entries[] | select(.value|test("dev|alpha|beta|rc";"i")) | "      | \(.key): \(.value)"' composer.json 2>/dev/null
-check '.extra.patches'             "$(jq_raw 'if (.extra.patches // null) == null then "ausente" else "presente" end' composer.json)" 'ausente'
-# NOTA: no se busca la simple mencion de CI_ALLOW_DEV (RequirementsTest.php del
-# kit la LEE con getenv() y no puede tocarse - T-406). Se busca su DEFINICION.
+check '.extra.patches'             "$(jq_raw 'if (.extra.patches // null) == null then "absent" else "present" end' composer.json)" 'absent'
+# NOTE: the bare mention of CI_ALLOW_DEV is not searched for (the kit's
+# RequirementsTest.php READS it with getenv() and cannot be touched - T-406).
+# What is searched for is its DEFINITION.
 CIALLOW=$(scan_files | xargs grep -lIE 'CI_ALLOW_DEV[[:space:]]*[:=]' 2>/dev/null | wc -l | tr -d ' ')
-check 'ficheros que DEFINEN CI_ALLOW_DEV' "$CIALLOW" '0'
+check 'files DEFINING CI_ALLOW_DEV' "$CIALLOW" '0'
 [ "$CIALLOW" != "0" ] && scan_files | xargs grep -lIE 'CI_ALLOW_DEV[[:space:]]*[:=]' 2>/dev/null | sed 's/^/      | /'
 
-# ------------------------------------- G6 ficheros del kit presentes ---------
-# `ValidationTest.php` entra aqui por el rider de correcciones de especificacion
+# ------------------------------------- G6 kit files present ------------------
+# `ValidationTest.php` is here because of the specification-correction rider
 # [andres] 2026-08-21: "ValidationTest.php is added to the set of kit files
-# watched by the gate." Son los tres tests que trae el kit: T-406 prohibe
-# modificarlos, asi que el gate vigila que sigan existiendo.
-group 'G6 - Ficheros del starter kit presentes (T-101) - 13/13'
+# watched by the gate." These are the three tests the kit ships: T-406 forbids
+# modifying them, so the gate watches that they still exist.
+group 'G6 - Starter kit files present (T-101) - 13/13'
 for f in \
   recipe.yml \
   composer.json \
@@ -260,31 +261,32 @@ for f in \
   tests/src/Functional/ValidationTest.php \
   tests/src/Kernel/RequirementsTest.php
 do
-  check "$f" "$(exists_file "$f")" 'presente'
+  check "$f" "$(exists_file "$f")" 'present'
 done
 
-# ------------------------------------- G7 coherencia con lo firmado ----------
-group 'G7 - Coherencia de la capa de proceso con lo firmado'
+# ------------------------------------- G7 consistency with what is signed ----
+group 'G7 - Process layer consistency with what is signed'
 D011=$(grep_count_fixed 'D-011' specs/000-proyecto/DECISIONES.md)
-check 'D-011 en DECISIONES.md (>=1)' "$([ "${D011:-0}" -ge 1 ] 2>/dev/null && echo 'si' || echo 'no')" 'si'
+check 'D-011 in DECISIONES.md (>=1)' "$([ "${D011:-0}" -ge 1 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
 NAME_REF=$(grep_count_fixed 'agora_transparency' composer.json)
-check 'agora_transparency en composer.json (>=1)' "$([ "${NAME_REF:-0}" -ge 1 ] 2>/dev/null && echo 'si' || echo 'no')" 'si'
+check 'agora_transparency in composer.json (>=1)' "$([ "${NAME_REF:-0}" -ge 1 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
 
 # --------------------------------------------------- G8 packaging (D-015.2) --
-# El unico muro que impide que la capa de proceso (specs/, .claude/, CLAUDE.md)
-# viaje dentro del release publicado en Drupal.org es el `export-ignore` de
-# `.gitattributes` (D-015.2). Si alguien se lleva una linea por delante, nadie se
-# entera hasta la revision del marketplace.
+# The only wall stopping the process layer (specs/, .claude/, CLAUDE.md) from
+# travelling inside the release published on Drupal.org is the `export-ignore`
+# in `.gitattributes` (D-015.2). If someone takes out a line, nobody finds out
+# until the marketplace review.
 #
-# Por eso este grupo NO hace grep sobre `.gitattributes`: EJECUTA `git archive` y
-# mira el tarball resultante, que es literalmente lo que empaqueta Drupal.org.
-# Un grep verificaria el texto de la regla; esto verifica su efecto.
+# That is why this group does NOT grep `.gitattributes`: it RUNS `git archive`
+# and looks at the resulting tarball, which is literally what Drupal.org
+# packages. A grep would verify the text of the rule; this verifies its effect.
 #
-# AMBITO: el arbol de HEAD. `git archive <commit>` lee los atributos del propio
-# commit, no del working tree -- igual que el empaquetador de Drupal.org, que
-# archiva un tag. Consecuencia conocida: una edicion de `.gitattributes` aun sin
-# commitear no la ve este grupo; se caza en el commit siguiente (y en CI).
-group 'G8 - Packaging: contenido real de `git archive` (D-015.2)'
+# SCOPE: the tree at HEAD. `git archive <commit>` reads the attributes of the
+# commit itself, not of the working tree -- just like the Drupal.org packager,
+# which archives a tag. Known consequence: an uncommitted edit to
+# `.gitattributes` is not seen by this group; it is caught on the next commit
+# (and in CI).
+group 'G8 - Packaging: real contents of `git archive` (D-015.2)'
 
 ARCHIVE_LIST=""
 ARCHIVE_RC=1
@@ -295,15 +297,15 @@ fi
 if [ "$ARCHIVE_RC" -eq 0 ] && [ -n "$ARCHIVE_LIST" ]; then
   ENTRIES=$(printf '%s\n' "$ARCHIVE_LIST" | wc -l | tr -d ' ')
 else
-  # Fallo al archivar = FALLO del gate, jamas un skip. I-007: un archivo vacio
-  # pasaria todas las comprobaciones de "no contiene" por la puerta de atras.
+  # A failure to archive = a FAIL of the gate, never a skip. I-007: an empty
+  # archive would pass every "does not contain" check through the back door.
   ENTRIES=0
 fi
-note "HEAD: $(git rev-parse --short HEAD 2>/dev/null || echo '<sin git>') - entradas en el tarball: $ENTRIES"
-check 'git archive ejecutable (exit)'  "$ARCHIVE_RC" '0'
-check 'entradas en el tarball > 0'     "$([ "$ENTRIES" -gt 0 ] && echo 'si' || echo 'no')" 'si'
+note "HEAD: $(git rev-parse --short HEAD 2>/dev/null || echo '<no git>') - entries in the tarball: $ENTRIES"
+check 'git archive runnable (exit)'    "$ARCHIVE_RC" '0'
+check 'entries in the tarball > 0'     "$([ "$ENTRIES" -gt 0 ] && echo 'yes' || echo 'no')" 'yes'
 
-# --- NO debe viajar: capa de proceso, CI, tests y tooling de desarrollo -------
+# --- must NOT travel: process layer, CI, tests and development tooling --------
 for excluded in \
   'specs/' \
   '.claude/' \
@@ -314,17 +316,17 @@ for excluded in \
   '.tugboat/' \
   '.eslintrc.json'
 do
-  # Prefijo anclado al inicio: 'tests/' casa 'tests/...' y la entrada de
-  # directorio 'tests/'; 'CLAUDE.md' casa la entrada exacta del fichero.
+  # Prefix anchored at the start: 'tests/' matches 'tests/...' and the directory
+  # entry 'tests/'; 'CLAUDE.md' matches the exact file entry.
   HITS=$(printf '%s\n' "$ARCHIVE_LIST" | grep -c "^$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')" 2>/dev/null || true)
-  check "NO empaquetado: $excluded" "${HITS:-0}" '0'
+  check "NOT packaged: $excluded" "${HITS:-0}" '0'
   if [ "${HITS:-0}" != "0" ]; then
-    printf '%s\n' "$ARCHIVE_LIST" | grep "^$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')" | sed 's/^/      | SE CUELA EN EL RELEASE: /'
+    printf '%s\n' "$ARCHIVE_LIST" | grep "^$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')" | sed 's/^/      | LEAKS INTO THE RELEASE: /'
   fi
 done
 
-# --- SI debe viajar: el producto que instala el usuario final -----------------
-# AGENTS.md esta aqui a proposito (D-015.1): es producto, no proceso.
+# --- must travel: the product the end user installs ---------------------------
+# AGENTS.md is here on purpose (D-015.1): it is product, not process.
 for included in \
   AGENTS.md \
   recipe.yml \
@@ -334,15 +336,15 @@ for included in \
   LICENSE.txt
 do
   FOUND=$(printf '%s\n' "$ARCHIVE_LIST" | grep -cx -F "$included" 2>/dev/null || true)
-  check "empaquetado: $included" "$([ "${FOUND:-0}" -ge 1 ] && echo 'presente' || echo 'ausente')" 'presente'
+  check "packaged: $included" "$([ "${FOUND:-0}" -ge 1 ] && echo 'present' || echo 'absent')" 'present'
 done
 
-# ----------------------------------------------------------------- resumen ---
+# ----------------------------------------------------------------- summary ---
 printf '\n=========================================================================================================\n'
 if [ "$M" -eq 0 ]; then
-  printf '%s%d comprobaciones - %d fallos%s\n' "$C_OK" "$N" "$M" "$C_OFF"
+  printf '%s%d checks - %d failures%s\n' "$C_OK" "$N" "$M" "$C_OFF"
 else
-  printf '%s%d comprobaciones - %d fallos%s\n' "$C_BAD" "$N" "$M" "$C_OFF"
+  printf '%s%d checks - %d failures%s\n' "$C_BAD" "$N" "$M" "$C_OFF"
 fi
 printf '=========================================================================================================\n'
 
