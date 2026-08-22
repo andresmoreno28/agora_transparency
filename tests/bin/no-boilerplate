@@ -80,6 +80,64 @@ printf 'no-boilerplate - Agora - starter kit strings must not reach what we publ
 printf 'repo: %s\n' "$REPO_ROOT"
 printf '=========================================================================================================\n'
 
+# ------------------------------------------------------- grep's third state --
+# T-316 / I-027. `grep` has THREE exit states, not two: 0 = matched, 1 = no
+# match, >= 2 = grep itself FAILED (invalid pattern, unreadable file, crash).
+# This script inferred "no hit" from "no stdout", so a grep that could not run
+# read exactly like a clean file - a scanner that cannot scan reporting that
+# everything is fine. That is how an invalid eighth deny term could be counted
+# in `deny-list terms: 8` while scanning with seven.
+#
+# The scanning greps run inside `printf ... | while ... done >> "$HITS_FILE"`,
+# i.e. in a subshell whose stdout IS the findings file: an `exit` there would
+# not stop this script, and a message printed there would be counted as a
+# finding. So a failure is recorded in a marker file and announced on stderr,
+# and assert_grep_ok() below turns it into a loud, non-zero abort before a
+# single count is printed. Never a warning, never a finding: "the file was not
+# searched" is not "the file is clean". GREP_ERR_FILE itself is created further
+# down, together with HITS_FILE, so that the existing trap owns its cleanup;
+# neither function below runs before that.
+grep_failed() { # <rc> <pattern> <subject>
+  printf 'grep exit %s on %s while matching: %s\n' "$1" "$3" "$2" >> "$GREP_ERR_FILE"
+  printf 'FATAL: grep failed (exit %s) on %s while matching: %s\n' "$1" "$3" "$2" >&2
+}
+
+assert_grep_ok() {
+  [ -s "$GREP_ERR_FILE" ] || return 0
+  printf '\n%sFATAL:%s the scan did not complete - grep failed:\n' "$C_BAD" "$C_OFF"
+  sed 's/^/  /' "$GREP_ERR_FILE"
+  printf 'A file that could not be searched is NOT a file with no boilerplate in it.\n'
+  printf 'This run has NO result, which is not a clean result. (T-316 / I-027)\n'
+  exit 1
+}
+
+# --------------------------------------------------- deny-list preflight ------
+# Every deny term is used as a BRE (see the scanner). An INVALID one - an
+# unmatched `[`, a trailing `\` - does not over-match: grep refuses to compile
+# it, exits 2 and prints nothing, which is indistinguishable from "no match"
+# unless the status is read. The whole list is therefore compiled once, HERE, in
+# the parent shell where an abort actually stops the run, against empty input so
+# that only the pattern is under test.
+BAD_TERMS=0
+while IFS= read -r _t; do
+  [ -n "$_t" ] || continue
+  printf '' | grep -Iin -- "$_t" >/dev/null 2>&1
+  _trc=$?
+  if [ "$_trc" -ge 2 ]; then
+    printf '\n%sFATAL:%s deny-list term is not a pattern grep can compile (exit %s): [%s]\n' \
+      "$C_BAD" "$C_OFF" "$_trc" "$_t"
+    BAD_TERMS=$((BAD_TERMS + 1))
+  fi
+done <<DENYCHECK
+$DENY_TERMS
+DENYCHECK
+if [ "$BAD_TERMS" -gt 0 ]; then
+  printf 'A term grep cannot compile scans NOTHING, while still being counted in\n'
+  printf 'the deny-list size, so the run looks clean for a list it never actually applied.\n'
+  printf 'Escape the metacharacter or remove the term. (T-316 / I-027)\n'
+  exit 1
+fi
+
 # ------------------------------------------------------- resolve the scope ---
 if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
   printf '\n%sFATAL:%s no git HEAD - the packaged scope cannot be resolved.\n' "$C_BAD" "$C_OFF"
@@ -110,7 +168,12 @@ printf '%s\n' "$PACKAGED_FILES" | sed 's/^/    /'
 # Reports every deny-list hit as `label:line: term` plus the offending line.
 scan_one() {
   _label=$1; _file=$2
-  if ! grep -Iq . "$_file" 2>/dev/null; then
+  grep -Iq . "$_file" 2>/dev/null
+  _brc=$?
+  # rc 1 = binary or empty, which is a real answer and is counted as such.
+  # rc >= 2 was counted as "binary" too: a file silently dropped from the scan.
+  [ "$_brc" -ge 2 ] && grep_failed "$_brc" "<non-empty-line test: the text/binary probe>" "$_file"
+  if [ "$_brc" -ne 0 ]; then
     BINARY=$((BINARY + 1))
     return
   fi
@@ -121,13 +184,36 @@ scan_one() {
     # `-Fin`/`-IFin` -> rc=134, `-Iin` -> rc=0 with the correct hit. `-i` itself
     # is not optional: the deny list is matched case-insensitively by design
     # ("WCAG AAA" must also catch "wcag aaa"). Consequence: terms are now BRE,
-    # not fixed strings, so a future deny term containing a regex metacharacter
-    # (`.`, `*`, `[`, `\`) would over-match instead of matching literally - a
-    # false positive, i.e. the safe direction, and one that announces itself
-    # loudly instead of hiding a boilerplate string. None of the seven terms
-    # above contains one; whoever adds an eighth term must keep that true, or
-    # escape it.
-    grep -Iin -- "$_term" "$_file" 2>/dev/null | while IFS= read -r _hit; do
+    # not fixed strings, and a deny term carrying a regex metacharacter falls
+    # into one of TWO cases. T-315 recorded only the first and called it "the
+    # safe direction"; that claim was true of the first case and false of the
+    # second, which is the one that bites (T-316):
+    #
+    #   VALID BRE - `.`, `*`, `\{2\}`: the term over-matches instead of matching
+    #   literally. A false POSITIVE: the safe direction, loud, and unable to
+    #   hide a boilerplate string.
+    #
+    #   INVALID BRE - `[unclosed`, a trailing `\`: grep does not over-match, it
+    #   refuses to compile the pattern. It exits 2 and prints nothing, which is
+    #   indistinguishable from "no match" unless the exit status is read. A
+    #   false NEGATIVE: the UNSAFE direction, and silent - the term is counted
+    #   in `deny-list terms: N` while nothing is scanned with it.
+    #
+    # Hence both defences: the deny-list preflight above compiles every term
+    # before the scan starts, and the exit status below is read on every file.
+    # None of the seven terms above contains a metacharacter; whoever adds an
+    # eighth must keep that true or escape it - and if they do not, the run
+    # aborts instead of reporting `findings: 0`.
+    _out=$(grep -Iin -- "$_term" "$_file" 2>/dev/null)
+    _grc=$?
+    if [ "$_grc" -ge 2 ]; then
+      grep_failed "$_grc" "$_term" "$_file"
+      continue
+    fi
+    # Without this guard an empty result would be printed as one blank hit line
+    # and counted as a finding.
+    [ -n "$_out" ] || continue
+    printf '%s\n' "$_out" | while IFS= read -r _hit; do
       printf '%s|%s|%s\n' "$_label" "$_term" "$_hit"
     done
   done
@@ -138,7 +224,8 @@ scan_one() {
 # resets to 0 is worse than no count at all.
 HITS_FILE=$(mktemp -t no-boilerplate.XXXXXX) || exit 1
 WORK_DIR=$(mktemp -d -t no-boilerplate.XXXXXX) || exit 1
-trap 'rm -rf -- "$HITS_FILE" "$WORK_DIR"' EXIT INT TERM
+GREP_ERR_FILE=$(mktemp -t no-boilerplate-grep.XXXXXX) || exit 1
+trap 'rm -rf -- "$HITS_FILE" "$WORK_DIR" "$GREP_ERR_FILE"' EXIT INT TERM
 
 # --------------------------------------------- pass 1: packaged tree at HEAD --
 printf '\n-- pass 1: packaged tree at HEAD (what Drupal.org ships) ------------------------------------------------\n'
@@ -166,24 +253,57 @@ SCANNED=0
 BINARY=0
 for f in $(printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$'); do
   _tmp="$WORK_DIR/head_$(printf '%s' "$f" | tr '/' '_')"
-  if [ -f "$_tmp" ] && grep -Iq . "$_tmp" 2>/dev/null; then
-    SCANNED=$((SCANNED + 1))
+  # Written as separate statements rather than `[ -f ] && grep -Iq`, because the
+  # `&&` form throws grep's exit status away and cannot tell rc 1 (binary) from
+  # rc >= 2 (grep failed) - which is how an unscannable file used to be counted
+  # as a scanned-and-clean one.
+  if [ -f "$_tmp" ]; then
+    grep -Iq . "$_tmp" 2>/dev/null
+    _rc=$?
+    [ "$_rc" -ge 2 ] && grep_failed "$_rc" "<non-empty-line test: the text/binary probe>" "$_tmp"
+    if [ "$_rc" -eq 0 ]; then SCANNED=$((SCANNED + 1)); else BINARY=$((BINARY + 1)); fi
   else
     BINARY=$((BINARY + 1))
   fi
   if [ -f "$f" ]; then
-    if grep -Iq . "$f" 2>/dev/null; then SCANNED=$((SCANNED + 1)); else BINARY=$((BINARY + 1)); fi
+    grep -Iq . "$f" 2>/dev/null
+    _rc=$?
+    [ "$_rc" -ge 2 ] && grep_failed "$_rc" "<non-empty-line test: the text/binary probe>" "$f"
+    if [ "$_rc" -eq 0 ]; then SCANNED=$((SCANNED + 1)); else BINARY=$((BINARY + 1)); fi
   else
     MISSING=$((MISSING + 1))
   fi
 done
 
+# Before the findings block and the counts: any grep that failed - in this shell
+# or in either scanning subshell - stops the run here, loudly.
+assert_grep_ok
+
+# ------------------------------------------------------- I-007 self-guard ----
+# Every count above is built from PACKAGED_FILES, which is filtered out of the
+# archive listing by a bare `grep -v '/$'` (line 158) that never checks its own
+# exit status. On rc >= 2 that filter prints nothing, PACKAGED_FILES is empty,
+# both scanning passes and the recount above iterate zero times, and SCANNED
+# reaches 0 without a single grep_failed() ever firing - assert_grep_ok has
+# nothing to report, because nothing was ever told to report. `no-boilerplate`
+# was the only one of the seven invariants without this guard, even though the
+# CONTRACT at the top of this file already promises it. Match the other six:
+# SCANNED == 0 is a FAILURE, never a clean run over nothing (I-007).
+if [ "$SCANNED" -eq 0 ]; then
+  printf '\n%sFATAL:%s scanned 0 files - the scope collapsed to nothing.\n' "$C_BAD" "$C_OFF"
+  printf 'A scan of nothing is not a clean result (I-007).\n'
+  exit 1
+fi
+
 # ---------------------------------------------------------------- findings ---
-# `grep -c` prints its count AND exits 1 when the count is zero, so a `|| printf 0`
-# fallback concatenates a second zero and every later arithmetic test blows up.
-# The assignment's own exit status is the one to branch on.
-FINDINGS=$(grep -cve '^$' "$HITS_FILE" 2>/dev/null) || FINDINGS=0
-FINDINGS=${FINDINGS:-0}
+# T-316 / I-027, second bite: `grep -cve '^$' "$HITS_FILE" || FINDINGS=0` fixed
+# the concatenation bug but kept the `||` itself, which still turns a grep that
+# FAILED (rc >= 2: this grep is not one of the call sites assert_grep_ok covers)
+# into "zero findings" - indistinguishable from a grep that legitimately matched
+# nothing. `wc -l` has no third exit state to swallow: it counts the newlines in
+# HITS_FILE or it does not run, full stop. This is count_findings() from
+# no-patches / no-unstable-deps / sbom-check, applied here to HITS_FILE.
+FINDINGS=$(wc -l < "$HITS_FILE" | tr -d '[:space:]')
 
 printf '\n-- findings ---------------------------------------------------------------------------------------------\n'
 if [ "$FINDINGS" -eq 0 ]; then

@@ -70,6 +70,27 @@ finding() {
 
 note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
 
+# ------------------------------------------------------- grep's third state --
+# T-316 / I-027. `grep` has THREE exit states, not two: 0 = matched, 1 = no
+# match, >= 2 = grep itself FAILED (invalid pattern, unreadable file, crash).
+# The greps below discarded stderr and inferred "no match" from "no stdout", so
+# a grep that could not run read exactly like a clean tree - a scanner that
+# cannot scan reporting that everything is fine.
+#
+# A grep error is therefore FATAL here: never a warning, never a finding. A
+# finding says "the tree contains an offender"; this says "the tree was not
+# searched". rc 1 keeps its meaning everywhere below - only rc >= 2 aborts.
+fatal() { # <reason>
+  printf '\nFATAL: %s\n' "$1"
+  printf 'The scan did not complete: this run has NO result, which is not a clean result.\n'
+  printf '(T-316 / I-027)\n'
+  exit 1
+}
+
+grep_failed() { # <rc> <pattern> <subject>
+  fatal "$(printf 'grep failed (exit %s) on %s while matching: %s' "$1" "$3" "$2")"
+}
+
 # The bare name. Used ONLY for the canary count, never to produce a finding.
 MENTION_PATTERN='CI_ALLOW_DEV'
 # The name followed by optional whitespace and a `:` or `=` separator. This is
@@ -125,7 +146,10 @@ MENTIONS=0
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   [ "$f" = "$SELF_REL" ] && continue
-  if LC_ALL=C grep -qIE "$MENTION_PATTERN" "$f" 2>/dev/null; then
+  LC_ALL=C grep -qIE "$MENTION_PATTERN" "$f" 2>/dev/null
+  MEN_RC=$?
+  [ "$MEN_RC" -ge 2 ] && grep_failed "$MEN_RC" "$MENTION_PATTERN" "$f"
+  if [ "$MEN_RC" -eq 0 ]; then
     MENTIONS=$((MENTIONS + 1))
     printf '  %smention: %s%s\n' "$C_DIM" "${f#./}" "$C_OFF"
   fi
@@ -145,12 +169,19 @@ printf '\ndefinitions: the variable name followed by a colon or an equals sign\n
 DEFINITIONS=0
 while IFS= read -r f; do
   [ -n "$f" ] || continue
+  # The grep runs HERE, not inside the `<<<` below, and is not piped straight
+  # into `cut`: in either case the exit status read back would be the subshell's
+  # or `cut`'s, never grep's - and grep's is the one that separates "this file
+  # defines nothing" (rc 1) from "this file was never searched" (rc >= 2).
+  DEF_HITS=$(LC_ALL=C grep -nIE "$DEFINITION_PATTERN" "$f" 2>/dev/null)
+  DEF_RC=$?
+  [ "$DEF_RC" -ge 2 ] && grep_failed "$DEF_RC" "$DEFINITION_PATTERN" "$f"
   while IFS= read -r rec; do
     [ -n "$rec" ] || continue
     finding "$f" "${rec%%:*}" \
       'CI_ALLOW_DEV is DEFINED here - it weakens RequirementsTest and is never set in Agora'
     DEFINITIONS=$((DEFINITIONS + 1))
-  done <<< "$(LC_ALL=C grep -nIE "$DEFINITION_PATTERN" "$f" 2>/dev/null | cut -d: -f1)"
+  done <<< "$(printf '%s\n' "$DEF_HITS" | cut -d: -f1)"
 done < "$ALL_LIST"
 [ "$DEFINITIONS" -eq 0 ] && note 'none'
 

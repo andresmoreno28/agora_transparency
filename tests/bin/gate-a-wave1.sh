@@ -77,16 +77,50 @@ jq_raw() { # <filter> <file>
   printf '%s' "$_out"
 }
 
+# T-316 / I-027: `grep` has THREE exit states, not two - 0 = matched, 1 = no
+# match, >= 2 = grep itself FAILED (invalid pattern, unreadable file, crash).
+# `grep -c` prints `0` and exits 1 when nothing matches, which is a real answer;
+# on rc >= 2 it prints NOTHING, and `$(... || true)` turned that into an empty
+# string that the caller could not tell from a count. Both readers now return a
+# sentinel naming the exit status, exactly like jq_raw() above: the check FAILS
+# with a legible reason instead of comparing an invisible value.
 grep_count() { # <ERE> <file>
   _f=$2
   [ -f "$_f" ] || { printf '<%s absent>' "$_f"; return; }
-  printf '%s' "$(grep -cE "$1" "$_f" 2>/dev/null || true)"
+  _n=$(grep -cE "$1" "$_f" 2>/dev/null)
+  _rc=$?
+  [ "$_rc" -ge 2 ] && { printf '<grep exit %s on %s>' "$_rc" "$_f"; return; }
+  printf '%s' "$_n"
 }
 
 grep_count_fixed() { # <fixed string> <file>
   _f=$2
   [ -f "$_f" ] || { printf '<%s absent>' "$_f"; return; }
-  printf '%s' "$(grep -cF "$1" "$_f" 2>/dev/null || true)"
+  _n=$(grep -cF "$1" "$_f" 2>/dev/null)
+  _rc=$?
+  [ "$_rc" -ge 2 ] && { printf '<grep exit %s on %s>' "$_rc" "$_f"; return; }
+  printf '%s' "$_n"
+}
+
+# Number of in-scope files whose CONTENT matches <ERE>, one path per line.
+# Replaces `scan_files | xargs grep -lIE ... | wc -l`, which reported "0 files"
+# both when nothing matched and when grep FAILED - `wc` counts an empty stdout
+# identically either way, so a broken grep passed the check (T-316 / I-027).
+# On a grep error this prints a single sentinel line instead of paths, which the
+# caller turns into a FAIL. It also handles paths with spaces, which xargs did
+# not.
+grep_definers() { # <ERE>
+  while IFS= read -r _file; do
+    [ -n "$_file" ] || continue
+    LC_ALL=C grep -qIE "$1" "$_file" 2>/dev/null
+    _rc=$?
+    if [ "$_rc" -eq 0 ]; then
+      printf '%s\n' "$_file"
+    elif [ "$_rc" -ge 2 ]; then
+      printf '<grep exit %s on %s>\n' "$_rc" "$_file"
+      return
+    fi
+  done <<< "$(scan_files)"
 }
 
 exists_file() { [ -f "$1" ] && printf 'present' || printf 'absent'; }
@@ -212,7 +246,10 @@ group 'G4 - Structural invariants (mirrors the kit RequirementsTest)'
 SCANNED=$(scan_files | wc -l | tr -d ' ')
 note "scope: package tree without .git/ vendor/ node_modules/ - $SCANNED files scanned"
 check 'files scanned > 0'          "$([ "$SCANNED" -gt 0 ] && echo 'yes' || echo 'no')" 'yes'
-INFOYML=$(scan_files | grep -c '\.info\.yml$' || true)
+INFOYML=$(scan_files | grep -c '\.info\.yml$' 2>/dev/null)
+INFO_RC=$?
+# rc 1 means "none", and grep -c already printed the 0. rc >= 2 printed nothing.
+[ "$INFO_RC" -ge 2 ] && INFOYML="<grep exit $INFO_RC on the file list>"
 check '*.info.yml files'           "$INFOYML" '0'
 if [ "$INFOYML" != "0" ]; then
   scan_files | grep '\.info\.yml$' | sed 's/^/      | /'
@@ -236,9 +273,14 @@ check '.extra.patches'             "$(jq_raw 'if (.extra.patches // null) == nul
 # NOTE: the bare mention of CI_ALLOW_DEV is not searched for (the kit's
 # RequirementsTest.php READS it with getenv() and cannot be touched - T-406).
 # What is searched for is its DEFINITION.
-CIALLOW=$(scan_files | xargs grep -lIE 'CI_ALLOW_DEV[[:space:]]*[:=]' 2>/dev/null | wc -l | tr -d ' ')
+DEFINERS=$(grep_definers 'CI_ALLOW_DEV[[:space:]]*[:=]')
+case "$DEFINERS" in
+  '')            CIALLOW=0 ;;
+  '<grep exit'*) CIALLOW=$DEFINERS ;;
+  *)             CIALLOW=$(printf '%s\n' "$DEFINERS" | wc -l | tr -d ' ') ;;
+esac
 check 'files DEFINING CI_ALLOW_DEV' "$CIALLOW" '0'
-[ "$CIALLOW" != "0" ] && scan_files | xargs grep -lIE 'CI_ALLOW_DEV[[:space:]]*[:=]' 2>/dev/null | sed 's/^/      | /'
+[ "$CIALLOW" != "0" ] && printf '%s\n' "$DEFINERS" | sed 's/^/      | /'
 
 # ------------------------------------- G6 kit files present ------------------
 # `ValidationTest.php` is here because of the specification-correction rider
@@ -318,10 +360,17 @@ for excluded in \
 do
   # Prefix anchored at the start: 'tests/' matches 'tests/...' and the directory
   # entry 'tests/'; 'CLAUDE.md' matches the exact file entry.
-  HITS=$(printf '%s\n' "$ARCHIVE_LIST" | grep -c "^$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')" 2>/dev/null || true)
+  EXC_RE=$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')
+  HITS=$(printf '%s\n' "$ARCHIVE_LIST" | grep -c "^$EXC_RE" 2>/dev/null)
+  HITS_RC=$?
+  # rc 1 = no such entry, and grep -c already printed the 0 - the clean answer.
+  # rc >= 2 printed nothing, and `${HITS:-0}` below would have turned that empty
+  # string into the number 0: a grep that never ran PASSING this check, which is
+  # the exact defect T-316 repairs. The sentinel makes it FAIL and names it.
+  [ "$HITS_RC" -ge 2 ] && HITS="<grep exit $HITS_RC on the archive list>"
   check "NOT packaged: $excluded" "${HITS:-0}" '0'
   if [ "${HITS:-0}" != "0" ]; then
-    printf '%s\n' "$ARCHIVE_LIST" | grep "^$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')" | sed 's/^/      | LEAKS INTO THE RELEASE: /'
+    printf '%s\n' "$ARCHIVE_LIST" | grep "^$EXC_RE" | sed 's/^/      | LEAKS INTO THE RELEASE: /'
   fi
 done
 
@@ -335,8 +384,13 @@ for included in \
   screenshot.webp \
   LICENSE.txt
 do
-  FOUND=$(printf '%s\n' "$ARCHIVE_LIST" | grep -cx -F "$included" 2>/dev/null || true)
-  check "packaged: $included" "$([ "${FOUND:-0}" -ge 1 ] && echo 'present' || echo 'absent')" 'present'
+  FOUND=$(printf '%s\n' "$ARCHIVE_LIST" | grep -cx -F "$included" 2>/dev/null)
+  FOUND_RC=$?
+  if [ "$FOUND_RC" -ge 2 ]; then
+    check "packaged: $included" "<grep exit $FOUND_RC on the archive list>" 'present'
+  else
+    check "packaged: $included" "$([ "${FOUND:-0}" -ge 1 ] && echo 'present' || echo 'absent')" 'present'
+  fi
 done
 
 # ----------------------------------------------------------------- summary ---

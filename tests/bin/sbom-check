@@ -81,6 +81,32 @@ DECISIONS="specs/000-proyecto/DECISIONES.md"
 
 fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
 
+# ------------------------------------------------------- grep's third state --
+# T-316 / I-027. `grep` has THREE exit states, not two: 0 = matched, 1 = no
+# match, >= 2 = grep itself FAILED (invalid pattern, unreadable file, crash).
+# `decision_line()` below is a SCANNER, not a locator: an empty answer from it
+# becomes the finding "no D-NNN line justifies this package". A grep error
+# produces exactly that same empty answer, so an unjustified dependency and a
+# broken grep were reported identically - and on the lock-file path an error
+# would instead have been read as "justified". Both are now aborts.
+#
+# `decision_line()` and `line_of()` are called inside command substitutions,
+# where `exit` ends only the subshell, so they also leave a marker file that
+# assert_grep_ok() honours before any count is printed.
+grep_failed() { # <rc> <pattern> <subject>
+  printf 'FATAL: grep failed (exit %s) on %s while matching: %s\n' "$1" "$3" "$2" >&2
+  printf 'grep exit %s on %s while matching: %s\n' "$1" "$3" "$2" >> "$GREP_ERR_FILE"
+  exit 1
+}
+
+assert_grep_ok() {
+  [ -s "$GREP_ERR_FILE" ] || return 0
+  printf '\nFATAL: the scan did not complete - grep failed:\n' >&2
+  sed 's/^/  /' "$GREP_ERR_FILE" >&2
+  printf 'Nothing was scanned: this run has NO result, which is not a clean result. (T-316 / I-027)\n' >&2
+  exit 1
+}
+
 # ---------------------------------------------------------------- preflight --
 # Name the missing tool loudly; never continue with a degraded check.
 for tool in jq curl python3; do
@@ -97,6 +123,8 @@ WORKDIR=$(mktemp -d -t sbom-check.XXXXXX) || fatal "cannot create a temp directo
 trap 'rm -rf "$WORKDIR"' EXIT
 FINDINGS_FILE="$WORKDIR/findings"
 : > "$FINDINGS_FILE"
+GREP_ERR_FILE="$WORKDIR/grep-errors"
+: > "$GREP_ERR_FILE"
 
 SCANNED=2   # composer.json + DECISIONES.md
 
@@ -124,15 +152,32 @@ count_findings() {
 # this is a tightening, not a relaxation: all nine still match their own row.
 # The trailing class is a word boundary, so `drupal/media` never matches
 # `drupal/drupal_cms_media`.
+#
+# The two greps are run as separate, status-checked steps rather than as one
+# pipeline: a pipeline's exit status is `head`'s, and grep's own status is what
+# distinguishes "no such line" (rc 1, a real answer) from "grep failed" (rc >= 2,
+# no answer at all).
 decision_line() { # <short project name>
-  grep -nE 'D-[0-9]{3}' "$DECISIONS" \
-    | grep -E "drupal/$1([^A-Za-z0-9_]|\$)" \
-    | head -1
+  _dl=$(grep -nE 'D-[0-9]{3}' "$DECISIONS" 2>/dev/null)
+  _rc=$?
+  [ "$_rc" -ge 2 ] && grep_failed "$_rc" 'D-[0-9]{3}' "$DECISIONS"
+  [ "$_rc" -eq 0 ] || return 0
+  _dl=$(printf '%s\n' "$_dl" | grep -E "drupal/$1([^A-Za-z0-9_]|\$)" 2>/dev/null)
+  _rc=$?
+  [ "$_rc" -ge 2 ] && grep_failed "$_rc" "drupal/$1([^A-Za-z0-9_]|\$)" "the D-NNN lines of $DECISIONS"
+  [ "$_rc" -eq 0 ] || return 0
+  printf '%s\n' "$_dl" | head -1
 }
 
 # jq finds the offender, grep -n locates it: jq does not report line numbers.
+# Not piped straight into `head`, for the reason given in decision_line().
 line_of() { # <string> <file>
-  _n=$(grep -n -F -- "$1" "$2" 2>/dev/null | head -1 | cut -d: -f1)
+  _out=$(grep -n -F -- "$1" "$2" 2>/dev/null)
+  _rc=$?
+  # rc 1 = not located, which is the documented `0` answer below. rc >= 2 = grep
+  # broke, and a fabricated line number would bury that.
+  [ "$_rc" -ge 2 ] && grep_failed "$_rc" "$1" "$2"
+  _n=$(printf '%s\n' "$_out" | head -1 | cut -d: -f1)
   if [ -n "${_n:-}" ]; then printf '%s' "$_n"; else printf '0'; fi
 }
 
@@ -258,6 +303,11 @@ fi
 # --------------------------------------------------- packages to be checked --
 PROJECTS=$(jq -r '(.require // {}) | keys[] | select(startswith("drupal/")) | sub("^drupal/"; "")' "$MANIFEST" | tr -d '\r')
 PROJECT_COUNT=$(printf '%s\n' "$PROJECTS" | grep -c '[^[:space:]]')
+PC_RC=$?
+# grep -c prints its count AND exits 1 when that count is zero, which the I-007
+# guard below handles. rc >= 2 prints nothing at all, and an empty PROJECT_COUNT
+# would make that guard compare an empty string instead of a number.
+[ "$PC_RC" -ge 2 ] && fatal "grep failed (exit $PC_RC) counting the drupal/* entries of $MANIFEST"
 
 if [ "$PROJECT_COUNT" -eq 0 ]; then
   printf '\nsbom-check\n\nscope:      %s (require, drupal/* entries)\n' "$MANIFEST"
@@ -403,6 +453,10 @@ LOCKNAMES
 fi
 
 # ------------------------------------------------------------------ report --
+# Before any count is printed: a grep that failed inside a subshell left its
+# reason here, and `findings: 0` from a scan that did not run is a lie.
+assert_grep_ok
+
 NO_CORE=$((QUERIED - WITH_CORE))
 
 printf '\n'

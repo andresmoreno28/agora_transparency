@@ -64,6 +64,27 @@ finding() {
 
 note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
 
+# ------------------------------------------------------- grep's third state --
+# T-316 / I-027. `grep` has THREE exit states, not two: 0 = matched, 1 = no
+# match, >= 2 = grep itself FAILED (invalid pattern, unreadable file, crash).
+# The greps below discarded stderr and inferred "no match" from "no stdout", so
+# a grep that could not run read exactly like a clean tree - a scanner that
+# cannot scan reporting that everything is fine.
+#
+# A grep error is therefore FATAL here: never a warning, never a finding. A
+# finding says "the tree contains an offender"; this says "the tree was not
+# searched". rc 1 keeps its meaning everywhere below - only rc >= 2 aborts.
+fatal() { # <reason>
+  printf '\nFATAL: %s\n' "$1"
+  printf 'The scan did not complete: this run has NO result, which is not a clean result.\n'
+  printf '(T-316 / I-027)\n'
+  exit 1
+}
+
+grep_failed() { # <rc> <pattern> <subject>
+  fatal "$(printf 'grep failed (exit %s) on %s while matching: %s' "$1" "$3" "$2")"
+}
+
 # Directories that must not exist at the repository root. The repository IS the
 # recipe: there are no local sub-recipes, and the theme is a separate project
 # declared in composer.json, never versioned here.
@@ -135,11 +156,18 @@ done < "$PACKAGED_LIST"
 
 PKG_DIRS=0
 for d in $FORBIDDEN_DIRS; do
+  # The grep runs HERE, not inside the `<<<` below: a command substitution is a
+  # subshell, and grep's exit status would not survive it. rc 1 (the directory
+  # is absent from the archive) is the expected clean answer; rc >= 2 means the
+  # archive listing was never searched and "0 entries" would be fabricated.
+  PKG_HITS=$(LC_ALL=C grep -E "^$d/" "$PACKAGED_LIST" 2>/dev/null)
+  PKG_RC=$?
+  [ "$PKG_RC" -ge 2 ] && grep_failed "$PKG_RC" "^$d/" "$PACKAGED_LIST"
   while IFS= read -r e; do
     [ -n "$e" ] || continue
     finding "$e" '0' "packaged: entry under the forbidden root directory $d/"
     PKG_DIRS=$((PKG_DIRS + 1))
-  done <<< "$(LC_ALL=C grep -E "^$d/" "$PACKAGED_LIST" 2>/dev/null)"
+  done <<< "$PKG_HITS"
 done
 [ "$PKG_INFO" -eq 0 ] && [ "$PKG_DIRS" -eq 0 ] && note 'no *.info.yml, no forbidden root directories'
 

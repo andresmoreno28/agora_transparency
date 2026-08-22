@@ -161,8 +161,23 @@ run_invariant() { # <path>
 # The seven scripts do not share one wording for their scope/scanned line
 # (see the per-group comments below), so each group passes the exact ERE that
 # matches what that script actually prints, read from its own summary line.
+#
+# T-316 / I-027: `grep` has THREE exit states, not two - 0 = matched, 1 = no
+# match, >= 2 = grep itself FAILED. Both greps were piped straight into `tail`,
+# so the pipeline's status was `tail`'s and grep's was unreadable; an error and
+# an unparseable summary produced the same empty answer. Each grep is now run
+# and its status read, and an error returns a sentinel that check_positive()
+# prints and FAILS on, instead of an empty string that only says "no number".
 extract_count() {
-  printf '%s\n' "$1" | grep -oE "$2" | tail -1 | grep -oE '[0-9]+' | tail -1
+  _m=$(printf '%s\n' "$1" | grep -oE "$2" 2>/dev/null)
+  _rc=$?
+  [ "$_rc" -ge 2 ] && { printf '<grep exit %s on the summary>' "$_rc"; return; }
+  [ "$_rc" -eq 0 ] || return 0
+  _n=$(printf '%s\n' "$_m" | tail -1 | grep -oE '[0-9]+' 2>/dev/null)
+  _rc=$?
+  [ "$_rc" -ge 2 ] && { printf '<grep exit %s on the summary>' "$_rc"; return; }
+  [ "$_rc" -eq 0 ] || return 0
+  printf '%s\n' "$_n" | tail -1
 }
 
 # ---------------------------------------------- G1 - no-unstable-deps (T-301) --
