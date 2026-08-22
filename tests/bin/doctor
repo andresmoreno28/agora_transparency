@@ -1,0 +1,554 @@
+#!/usr/bin/env bash
+#
+# doctor - Agora - unit 001, D-019 rider (b).
+#
+# THIS IS A DIAGNOSTIC, NOT A GATE. It never produces an "N checks - M
+# failures" line (that phrase is reserved for tests/bin/gate-a-wave1.sh and
+# tests/bin/gate-a-wave3.sh) and its output must never be quoted as a gate
+# verdict. Its job is narrower and comes first: decide whether THIS host can
+# do useful work at all, before any invariant or gate runs on it.
+#
+# WHY THIS EXISTS (D-019). [andres] works from a Windows PC at home and a
+# MacBook away from it, and asked for the project to work on both. D-019
+# answered: the gate's toolchain lives in a container, so neither host's
+# tools are the gate's tools - but host mode stays available as a fallback,
+# because a laptop away from home should not need Docker running to do
+# useful work. This script is what makes that safe. It runs before any work
+# in a session and is meant to become the first step of /retomar (that
+# wiring is a separate change; this file does not touch /retomar).
+#
+# ALL FIVE false greens of unit 001 came from the HOST, not from Agora's own
+# code (D-019 evidence list). This script exists so the sixth is caught in
+# the first ten seconds instead of two days later:
+#   - python3 resolving to the Microsoft Store stub (I-026)
+#   - jq/python3 emitting CRLF on stdout (I-025)
+#   - GNU grep 3.0 aborting on `-F` combined with `-i` (I-027)
+#   - host Python defaulting to cp1252 and dying on non-ASCII bytes (T-320c)
+#   - no jq, no composer at all - the gate could not even be evaluated
+#
+# PHILOSOPHY (matches tests/bin/gate-a-wave3.sh on purpose - one house
+# style): report everything it can rather than aborting at the first
+# problem. A tool that is missing does not stop the scan of the other
+# seventeen; it is recorded, with its fix, and the scan continues. `set -u`,
+# no `set -e`.
+#
+# HYGIENE (T-316/T-321 - do not reintroduce what those tasks had to clean
+# up): no counter here is a `grep -c` feeding a comparison - counts are
+# either plain integers incremented in control flow (TOOLS_MISSING,
+# TOOLS_BROKEN, HAZ_TOTAL, HAZ_PRESENT: incapable of being blank by
+# construction, per I-031's preferred fix) or `wc -l` over output this
+# script generated itself. Every grep this script runs for its OWN
+# bookkeeping avoids `-F` combined with `-i` (the one combination I-027
+# proved aborts on this host's grep) - the one place that exact combination
+# IS used is the hazard probe that deliberately reproduces I-027, where an
+# abort is the expected, correctly-reported outcome, not a bug.
+#
+# CERTIFIED-PLATFORM DATA. D-019 rider (c): a platform whose dirty-case
+# matrix (T-312) has not been run is NOT CERTIFIED, and a result from it must
+# be reported as such - loudly, but as a WARNING, never as a failure: host
+# mode on an uncertified platform is still explicitly permitted (rider c).
+# The task that requested this script asked for that record to live "in a
+# versioned data file... your call where" while ALSO restricting this change
+# to one new file, tests/bin/doctor, touching nothing else. Both are honored
+# by keeping the record HERE, as the clearly-delimited, non-executable block
+# immediately below (CERTIFIED_PLATFORMS) rather than folding it into the
+# procedural logic further down: certifying a new platform is still a
+# one-line, reviewable diff, and no second file exists that could drift out
+# of sync with this one. Flagged in the delivery report as a judgment call,
+# for [andres]/orquestador to correct if a separate file was actually meant.
+#
+# TOOL LIST. Six tools are named directly by the task that requested this
+# script: grep, jq, python3, curl, git, composer. The rest were SURVEYED, not
+# guessed: every tests/bin/* invariant and both gate runners were grepped for
+# real invocations (as opposed to the tool's name merely appearing in a
+# comment or a filename like composer.json) on 2026-08-22. That survey found
+# sed, tr, cut, sort, wc, find, tar, date, mktemp, dirname and basename in
+# real use, plus head (no-patches, no-unstable-deps, sbom-check). `awk`,
+# `xargs` and any checksum tool were searched for and are NOT currently used
+# (xargs appears only in a gate-a-wave1.sh comment describing what T-316
+# removed, not in live code).
+#
+# Usage: tests/bin/doctor   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a missing or broken tool must be recorded, not abort the run.
+
+# ============================================================================
+# CERTIFIED PLATFORMS -- versioned data, not logic. To certify a new
+# platform, edit ONE line below (or add one) and say so in the commit that
+# also records its dirty-case matrix (T-312) run. Nothing else in this file
+# needs to change.
+#
+# format:  <platform-family>|<label>|<yes/no>|<matrix date, or ->|<task, or ->
+# ============================================================================
+CERTIFIED_PLATFORMS='
+windows|Windows (MSYS2 / Git for Windows)|yes|2026-08-22|T-312
+macos|macOS|no|-|-
+linux|Linux|no|-|-
+'
+
+# ---------------------------------------------------------------- repo root --
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck disable=SC1007
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_WARN=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_WARN=$'\033[33m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+N=0
+M=0
+TOOLS_MISSING=0
+TOOLS_BROKEN=0
+HAZ_TOTAL=0
+HAZ_PRESENT=0
+
+# Truncate a value so the table stays aligned; never hide the fact it was cut.
+trunc() {
+  _v=$1; _max=$2
+  if [ "${#_v}" -gt "$_max" ]; then
+    printf '%s...' "$(printf '%s' "$_v" | cut -c1-$((_max - 3)))"
+  else
+    printf '%s' "$_v"
+  fi
+}
+
+# check <label> <obtained> <expected>  -- exact string match. Same contract
+# as tests/bin/gate-a-wave3.sh's check(): N/M are internal bookkeeping for
+# this row's OK/FAIL colour only, never printed as a gate-style summary.
+check() {
+  _label=$1; _got=$2; _exp=$3
+  N=$((N + 1))
+  if [ "$_got" = "$_exp" ]; then
+    _res="${C_OK}OK${C_OFF}"
+  else
+    _res="${C_BAD}FAIL${C_OFF}"
+    M=$((M + 1))
+  fi
+  printf '  %-46s %-24s | %-24s | %s\n' \
+    "$_label" "$(trunc "$_got" 24)" "$(trunc "$_exp" 24)" "$_res"
+}
+
+group() {
+  printf '\n%s\n' "$1"
+  printf '  %-46s %-24s | %-24s | %s\n' "check" "obtained" "expected" "verdict"
+  printf '  %s\n' "----------------------------------------------------------------------------------------------------------"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+# hazard <label> <PRESENT|ABSENT> <consequence-if-present> <source>
+# Deliberately NOT check(): a hazard being present is not a failure of this
+# script or of the toolchain - it is a fact the invariants already work
+# around (see the cited idiom/task). PRESENT is coloured as a warning, never
+# as red FAIL, and never counted toward TOOLS_MISSING/TOOLS_BROKEN.
+hazard() {
+  _label=$1; _state=$2; _cons=$3; _src=$4
+  HAZ_TOTAL=$((HAZ_TOTAL + 1))
+  if [ "$_state" = PRESENT ]; then
+    HAZ_PRESENT=$((HAZ_PRESENT + 1))
+    _res="${C_WARN}PRESENT${C_OFF}"
+  else
+    _res="${C_OK}ABSENT${C_OFF}"
+  fi
+  printf '  %-46s %-24s | %-24s | %s\n' "$_label" "$(trunc "$_src" 24)" "$(trunc "$_cons" 24)" "$_res"
+  note "$_cons"
+}
+
+# hazard_skipped <label> <reason> -- the probe's own prerequisite tool is
+# unusable, so the probe cannot run. Counted in HAZ_TOTAL (honesty about
+# scope) but never in HAZ_PRESENT (we did not confirm anything either way).
+hazard_skipped() {
+  _label=$1; _reason=$2
+  HAZ_TOTAL=$((HAZ_TOTAL + 1))
+  printf '  %-46s %-24s | %-24s | %s\n' "$_label" '<skipped>' "$(trunc "$_reason" 24)" "${C_DIM}SKIPPED${C_OFF}"
+}
+
+# all_resolutions <tool-basename> -> one absolute path per line, deduped.
+# Walks $PATH by hand (not `type -a`, to keep the output format under this
+# script's control) so a SECOND, hazardous resolution further down PATH is
+# visible even when the first one works fine - "two python3s on one PATH" is
+# literally what I-026 was.
+all_resolutions() {
+  _tool=$1
+  _seen='|'
+  _oldifs=$IFS
+  set -f
+  IFS=':'
+  set -- $PATH
+  IFS=$_oldifs
+  set +f
+  for _dir in "$@"; do
+    [ -z "$_dir" ] && continue
+    for _cand in "$_dir/$_tool" "$_dir/$_tool.exe"; do
+      if [ -f "$_cand" ] && [ -x "$_cand" ]; then
+        case "$_seen" in
+          *"|$_cand|"*) : ;;
+          *) printf '%s\n' "$_cand"; _seen="$_seen$_cand|" ;;
+        esac
+      fi
+    done
+  done
+}
+
+# install_hint <tool> -- a real, copy-paste command for THIS detected
+# platform family. Windows entries are verified against what is actually
+# installed on the certified host (see the tool-inventory group below);
+# macOS/Linux entries are the standard command for that platform's usual
+# package manager and are explicitly NOT verified - T-317 (blocked by
+# D-019, still open) owns measuring those hosts for real.
+install_hint() {
+  case "$PLATFORM_FAMILY" in
+    windows)
+      case "$1" in
+        jq)       echo 'winget install --id jqlang.jq -e' ;;
+        python3)  echo 'winget install --id Python.Python.3.12 -e' ;;
+        curl)     echo 'winget install --id cURL.cURL -e  (Windows 10 1803+ already ships curl.exe in System32)' ;;
+        git)      echo 'winget install --id Git.Git -e  (also provides sed/tr/cut/sort/wc/find/tar/date/mktemp/dirname/basename/head/grep via its MSYS2 userland)' ;;
+        composer) echo 'winget install --id Composer.Composer -e' ;;
+        grep|sed|tr|cut|sort|wc|find|tar|date|mktemp|dirname|basename|head)
+                  echo "winget install --id Git.Git -e  (repairs the MSYS2 userland that ships $1; open a fresh terminal afterwards)" ;;
+        docker)   echo 'winget install --id Docker.DockerDesktop -e' ;;
+        ddev)     echo 'winget install --id drud.ddev -e' ;;
+        *)        echo "no install command recorded for $1 on Windows" ;;
+      esac
+      ;;
+    macos)
+      case "$1" in
+        jq)       echo 'brew install jq' ;;
+        python3)  echo 'brew install python3' ;;
+        curl)     echo 'brew install curl  (macOS already ships a system curl; only needed if that one is broken)' ;;
+        git)      echo 'brew install git  (or: xcode-select --install)' ;;
+        composer) echo 'brew install composer' ;;
+        grep|sed|tr|cut|sort|wc|find|tar|date|mktemp|dirname|basename|head)
+                  echo "brew install coreutils  (macOS ships BSD $1 by default; whether GNU is actually required here is UNMEASURED - see T-317)" ;;
+        docker)   echo 'brew install --cask docker' ;;
+        ddev)     echo 'brew install ddev/ddev/ddev' ;;
+        *)        echo "no install command recorded for $1 on macOS" ;;
+      esac
+      ;;
+    linux)
+      case "$1" in
+        jq)       echo 'sudo apt-get install -y jq  (package name/manager varies by distro)' ;;
+        python3)  echo 'sudo apt-get install -y python3' ;;
+        curl)     echo 'sudo apt-get install -y curl' ;;
+        git)      echo 'sudo apt-get install -y git' ;;
+        composer) echo 'see https://getcomposer.org/download/  (package name/availability varies by distro)' ;;
+        grep|sed|tr|cut|sort|wc|find|tar|date|mktemp|dirname|basename|head)
+                  echo 'sudo apt-get install -y coreutils findutils grep sed tar' ;;
+        docker)   echo 'see https://docs.docker.com/engine/install/  (distro-specific)' ;;
+        ddev)     echo 'see https://ddev.readthedocs.io/en/stable/users/install/ddev-installation/' ;;
+        *)        echo "no install command recorded for $1 on Linux" ;;
+      esac
+      ;;
+    *)
+      echo "platform not recognised - no install command available (see Platform detection above)"
+      ;;
+  esac
+}
+
+# report_tool <tool> <label> <obtained> <expected> -> returns 0 if the tool
+# is usable, 1 otherwise. Prints its exercise verdict, path, version and any
+# extra PATH resolutions. The exercise command itself is run by the CALLER,
+# not here, so what "a real, minimal invocation" means for each tool stays
+# visible at the call site (I-026) instead of hidden in a generic loop.
+report_tool() {
+  _tool=$1; _label=$2; _got=$3; _exp=$4
+  _path=$(command -v "$_tool" 2>/dev/null)
+  if [ -z "$_path" ]; then
+    check "$_label" '<not found>' "$_exp"
+    TOOLS_MISSING=$((TOOLS_MISSING + 1))
+    note "install: $(install_hint "$_tool")"
+    return 1
+  fi
+  check "$_label" "$_got" "$_exp"
+  # Strip ANSI colour escapes: composer's own --version banner is colourised
+  # even when not attached to a real TTY, and a raw escape would either
+  # print as literal bracket text or fight with this script's own C_DIM.
+  _ver=$("$_tool" --version 2>&1 | head -1 | sed 's/\x1b\[[0-9;]*m//g')
+  note "path:    $_path"
+  note "version: ${_ver:-<no --version output>}"
+  _all=$(all_resolutions "$_tool")
+  if [ -n "$_all" ]; then _all_n=$(printf '%s\n' "$_all" | wc -l | tr -d ' '); else _all_n=0; fi
+  if [ "$_all_n" -gt 1 ]; then
+    note "PATH has $_all_n resolutions for '$_tool' (first one wins, but see below):"
+    printf '%s\n' "$_all" | while IFS= read -r _p; do note "  - $_p"; done
+    case "$_all" in
+      *WindowsApps*) note "  ${C_WARN}one resolution is under WindowsApps - the Microsoft Store stub location (I-026).${C_OFF}" ;;
+    esac
+  fi
+  if [ "$_got" != "$_exp" ]; then
+    TOOLS_BROKEN=$((TOOLS_BROKEN + 1))
+    note "fix: $(install_hint "$_tool")"
+    return 1
+  fi
+  return 0
+}
+
+printf '=========================================================================================================\n'
+printf 'doctor - Agora - host readiness diagnostic (D-019 rider b) - NOT A GATE\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo '<date unavailable>')"
+printf '=========================================================================================================\n'
+
+# ============================================================= 1. Platform --
+group '1. Platform detection'
+UNAME_S=$(uname -s 2>/dev/null); [ -z "${UNAME_S:-}" ] && UNAME_S='<unavailable>'
+UNAME_M=$(uname -m 2>/dev/null); [ -z "${UNAME_M:-}" ] && UNAME_M='<unavailable>'
+UNAME_R=$(uname -r 2>/dev/null)
+HOST_NAME=$(hostname 2>/dev/null)
+
+case "$UNAME_S" in
+  MINGW*|MSYS*|CYGWIN*) PLATFORM_FAMILY=windows; PLATFORM_LABEL="Windows (MSYS2 / Git for Windows - $UNAME_S)" ;;
+  Darwin*)              PLATFORM_FAMILY=macos;   PLATFORM_LABEL="macOS (Darwin $UNAME_R)" ;;
+  Linux*)               PLATFORM_FAMILY=linux;   PLATFORM_LABEL="Linux ($UNAME_R)" ;;
+  *)                     PLATFORM_FAMILY=unknown; PLATFORM_LABEL="unrecognised ($UNAME_S)" ;;
+esac
+
+note "uname -s -r:  $UNAME_S $UNAME_R"
+note "uname -m:     $UNAME_M"
+note "MSYSTEM:      ${MSYSTEM:-<not set>}"
+note "hostname:     ${HOST_NAME:-<unknown>}"
+note "shell:        bash ${BASH_VERSION:-<unknown>}"
+note "platform family recognised as: $PLATFORM_LABEL"
+if [ "$PLATFORM_FAMILY" = unknown ]; then
+  printf '  %sWARNING:%s uname -s reports "%s", which this script does not recognise as\n' "$C_WARN" "$C_OFF" "$UNAME_S"
+  printf '  Windows/macOS/Linux. Tool detection below still runs (it only needs PATH), but\n'
+  printf '  install hints and certification status cannot be determined for it.\n'
+fi
+
+# Certification lookup against the CERTIFIED_PLATFORMS data block above.
+CERT_STATUS=no
+CERT_LABEL=$PLATFORM_LABEL
+CERT_DATE='-'
+CERT_TASK='-'
+while IFS='|' read -r _fam _label _cert _date _task; do
+  [ -z "$_fam" ] && continue
+  if [ "$_fam" = "$PLATFORM_FAMILY" ]; then
+    CERT_STATUS=$_cert; CERT_LABEL=$_label; CERT_DATE=$_date; CERT_TASK=$_task
+  fi
+done <<< "$CERTIFIED_PLATFORMS"
+
+if [ "$CERT_STATUS" = yes ]; then
+  printf '\n  %sCERTIFIED%s - dirty-case matrix run %s (%s). A green result here carries the\n' "$C_OK" "$C_OFF" "$CERT_DATE" "$CERT_TASK"
+  printf '  same weight as a gate run in the container (D-019 rider c).\n'
+else
+  printf '\n  %sNOT CERTIFIED%s - no dirty-case matrix (T-312) has been run on this platform yet\n' "$C_WARN" "$C_OFF"
+  printf '  (D-019 rider c). Host mode is still explicitly allowed here - this is a WARNING,\n'
+  printf '  not a failure - but do not read a green invariant run on this platform as the\n'
+  printf '  same guarantee as one from a certified platform or the container. See T-317.\n'
+fi
+
+# Full table, not just this platform's row: proof (not assertion) that no
+# platform is claimed certified beyond what CERTIFIED_PLATFORMS actually
+# says - readable on any host, not only the one currently running.
+note ''
+note 'full certification table (CERTIFIED_PLATFORMS, this file):'
+while IFS='|' read -r _fam _label _cert _date _task; do
+  [ -z "$_fam" ] && continue
+  if [ "$_cert" = yes ]; then
+    note "  - $_label: CERTIFIED ($_date, $_task)"
+  else
+    note "  - $_label: not certified"
+  fi
+done <<< "$CERTIFIED_PLATFORMS"
+
+# ===================================================== 2. Required tools ---
+group '2. Required tools (grep, jq, python3, curl, git, composer)'
+
+GREP_GOT=$(printf 'a' | grep -c a 2>&1)
+if report_tool grep 'grep (printf a | grep -c a)' "$GREP_GOT" '1'; then GREP_OK=yes; else GREP_OK=no; fi
+
+JQ_GOT=$(jq -n 1 2>&1)
+if report_tool jq 'jq (jq -n 1)' "$JQ_GOT" '1'; then JQ_OK=yes; else JQ_OK=no; fi
+
+PY3_GOT=$(python3 -c 'pass' >/dev/null 2>&1; echo $?)
+if report_tool python3 'python3 (python3 -c pass, exit)' "$PY3_GOT" '0'; then PY3_OK=yes; else PY3_OK=no; fi
+
+CURL_GOT=$(curl --version >/dev/null 2>&1; echo $?)
+report_tool curl 'curl (curl --version, exit)' "$CURL_GOT" '0'
+
+GIT_GOT=$(git rev-parse --is-inside-work-tree 2>&1)
+report_tool git 'git (rev-parse --is-inside-work-tree)' "$GIT_GOT" 'true'
+
+COMPOSER_GOT=$(composer --version >/dev/null 2>&1; echo $?)
+report_tool composer 'composer (composer --version, exit)' "$COMPOSER_GOT" '0'
+
+# ============================================ 3. Coreutils used by tests/bin --
+group '3. Coreutils used by tests/bin/* (surveyed 2026-08-22, not guessed)'
+note 'real invocations found (not comments/mentions) across no-boilerplate, no-ci-allow-dev,'
+note 'no-code-in-template, no-patches, no-secrets, no-unstable-deps, sbom-check and both gate'
+note 'runners. awk, xargs and checksum tools were searched for and are NOT currently used.'
+
+SED_GOT=$(printf 'a' | sed 's/a/b/' 2>&1)
+report_tool sed 'sed (printf a | sed s/a/b/)' "$SED_GOT" 'b'
+
+TR_GOT=$(printf 'a' | tr 'a' 'b' 2>&1)
+report_tool tr 'tr (printf a | tr a b)' "$TR_GOT" 'b'
+
+CUT_GOT=$(printf 'a:b' | cut -d: -f2 2>&1)
+report_tool cut 'cut (printf a:b | cut -d: -f2)' "$CUT_GOT" 'b'
+
+SORT_GOT=$(printf 'b\na' | sort | tr '\n' ',' 2>&1)
+report_tool sort 'sort (printf b\na | sort)' "$SORT_GOT" 'a,b,'
+
+WC_GOT=$(printf 'a\nb\n' | wc -l | tr -d ' ' 2>&1)
+report_tool wc 'wc (printf a\nb | wc -l)' "$WC_GOT" '2'
+
+FIND_GOT=$(find . -maxdepth 0 >/dev/null 2>&1; echo $?)
+report_tool find 'find (find . -maxdepth 0, exit)' "$FIND_GOT" '0'
+
+TAR_GOT=$(tar --version >/dev/null 2>&1; echo $?)
+report_tool tar 'tar (tar --version, exit)' "$TAR_GOT" '0'
+
+DATE_GOT=$(date -u '+%Y' 2>&1 | grep -qE '^[0-9]{4}$' && echo 'yes' || echo 'no')
+report_tool date 'date (date -u +%Y, is 4 digits)' "$DATE_GOT" 'yes'
+
+MKTEMP_TMP=$(mktemp -t doctor.XXXXXX 2>&1)
+if [ -f "$MKTEMP_TMP" ]; then MKTEMP_GOT='created'; rm -f "$MKTEMP_TMP"; else MKTEMP_GOT=$MKTEMP_TMP; fi
+report_tool mktemp 'mktemp (creates a real file)' "$MKTEMP_GOT" 'created'
+
+DIRNAME_GOT=$(dirname /a/b/c 2>&1)
+report_tool dirname 'dirname (dirname /a/b/c)' "$DIRNAME_GOT" '/a/b'
+
+BASENAME_GOT=$(basename /a/b/c 2>&1)
+report_tool basename 'basename (basename /a/b/c)' "$BASENAME_GOT" 'c'
+
+HEAD_GOT=$(printf 'a\nb\nc\n' | head -n 1 2>&1)
+report_tool head 'head (printf a\nb\nc | head -n1)' "$HEAD_GOT" 'a'
+
+# ================================================= 4. Known-hazard probes ---
+printf '\n%s\n' '4. Known-hazard probes (reproduced live on this host, not assumed - I-025/I-026/I-027)'
+printf '  %-46s %-24s | %-24s | %s\n' 'probe' 'source' 'consequence if present' 'status'
+printf '  %s\n' "----------------------------------------------------------------------------------------------------------"
+
+if [ "$GREP_OK" = yes ]; then
+  GREP_HAZ_OUT=$(printf 'hello\n' | grep -IFin 'hello' 2>&1)
+  GREP_HAZ_RC=$?
+  if [ "$GREP_HAZ_RC" -ge 128 ] 2>/dev/null; then
+    hazard 'grep -IFin abort (-F + -i together)' PRESENT "rc=$GREP_HAZ_RC (SIGABRT) - deny-list scans like no-boilerplate become silent no-ops" 'I-027'
+  else
+    hazard 'grep -IFin abort (-F + -i together)' ABSENT "rc=$GREP_HAZ_RC - this grep does not abort on -IFin" 'I-027'
+  fi
+else
+  hazard_skipped 'grep -IFin abort (-F + -i together)' 'grep itself is not usable, see group 2 above'
+fi
+
+if [ "$JQ_OK" = yes ]; then
+  JQ_MULTI=$(jq -rn '"line1","line2","line3"' 2>/dev/null)
+  case "$JQ_MULTI" in
+    *$'\r'*) hazard 'jq CRLF on stdout (multi-line output)' PRESENT 'every line but the last gains a stray CR, desyncing string compares' 'I-025' ;;
+    *)       hazard 'jq CRLF on stdout (multi-line output)' ABSENT  'n/a - stdout is clean LF' 'I-025' ;;
+  esac
+else
+  hazard_skipped 'jq CRLF on stdout (multi-line output)' 'jq itself is not usable, see group 2 above'
+fi
+
+if [ "$PY3_OK" = yes ]; then
+  PY_MULTI=$(python3 -c "print('line1'); print('line2'); print('line3')" 2>/dev/null)
+  case "$PY_MULTI" in
+    *$'\r'*) hazard 'python3 CRLF on stdout (multi-line output)' PRESENT 'same corruption as jq, same fix (tr -d \r at the boundary)' 'I-025' ;;
+    *)       hazard 'python3 CRLF on stdout (multi-line output)' ABSENT  'n/a - stdout is clean LF' 'I-025' ;;
+  esac
+
+  UTF8_PROBE_SRC='
+import locale
+enc = locale.getpreferredencoding(False)
+try:
+    with open("recipe.yml", encoding=enc) as f:
+        f.read()
+    print("ok:" + enc)
+except UnicodeDecodeError:
+    print("decodeerror:" + enc)
+except FileNotFoundError:
+    print("notfound")
+except Exception as e:
+    print("othererror:" + type(e).__name__)
+'
+  UTF8_PROBE_OUT=$(python3 -c "$UTF8_PROBE_SRC" 2>&1)
+  case "$UTF8_PROBE_OUT" in
+    decodeerror:*) hazard 'python3 default encoding vs recipe.yml' PRESENT "preferred encoding is ${UTF8_PROBE_OUT#decodeerror:} - dies on the A-acute in 'Agora' (T-320c)" 'T-320c' ;;
+    ok:*)          hazard 'python3 default encoding vs recipe.yml' ABSENT  "reads clean with ${UTF8_PROBE_OUT#ok:}" 'T-320c' ;;
+    notfound)      hazard_skipped 'python3 default encoding vs recipe.yml' 'recipe.yml not found from repo root' ;;
+    *)             hazard_skipped 'python3 default encoding vs recipe.yml' "$UTF8_PROBE_OUT" ;;
+  esac
+else
+  hazard_skipped 'python3 CRLF on stdout (multi-line output)' 'python3 itself is not usable, see group 2 above'
+  hazard_skipped 'python3 default encoding vs recipe.yml' 'python3 itself is not usable, see group 2 above'
+fi
+
+# ============================================== 5. Container availability --
+group '5. Container availability (Docker / DDEV - the D-019-certified path)'
+DOCKER_PATH=$(command -v docker 2>/dev/null)
+DOCKER_DAEMON='n/a (no CLI)'
+if [ -n "$DOCKER_PATH" ]; then
+  DOCKER_VER=$(docker --version 2>&1)
+  note "docker CLI:    $DOCKER_PATH ($DOCKER_VER)"
+  DOCKER_ERR_FILE=$(mktemp -t doctor-docker.XXXXXX 2>/dev/null)
+  if [ -n "$DOCKER_ERR_FILE" ] && docker info >/dev/null 2>"$DOCKER_ERR_FILE"; then
+    DOCKER_DAEMON=reachable
+  else
+    if [ -n "${DOCKER_ERR_FILE:-}" ] && [ -f "$DOCKER_ERR_FILE" ]; then
+      DOCKER_ERR_MSG=$(tr -d '\r' < "$DOCKER_ERR_FILE" | tr '\n' ' ' | cut -c1-100)
+    else
+      DOCKER_ERR_MSG=''
+    fi
+    DOCKER_DAEMON="NOT reachable (${DOCKER_ERR_MSG:-daemon did not respond})"
+  fi
+  [ -n "${DOCKER_ERR_FILE:-}" ] && rm -f "$DOCKER_ERR_FILE" 2>/dev/null
+  note "docker daemon: $DOCKER_DAEMON"
+else
+  note "docker CLI:    not found - $(install_hint docker)"
+fi
+
+DDEV_PATH=$(command -v ddev 2>/dev/null)
+if [ -n "$DDEV_PATH" ]; then
+  DDEV_VER=$(ddev --version 2>&1)
+  note "ddev CLI:      $DDEV_PATH ($DDEV_VER)"
+else
+  note "ddev CLI:      not found - $(install_hint ddev)"
+fi
+
+if [ -n "$DOCKER_PATH" ] && [ "$DOCKER_DAEMON" = reachable ]; then
+  CONTAINER_SUMMARY='available (docker daemon reachable)'
+elif [ -n "$DOCKER_PATH" ]; then
+  CONTAINER_SUMMARY='CLI present, daemon unreachable - start Docker Desktop (or the daemon) and re-run'
+else
+  CONTAINER_SUMMARY='unavailable - no docker CLI on PATH'
+fi
+note "verdict: $CONTAINER_SUMMARY"
+note '(informational only - D-019 rider (c) keeps host mode valid with no container at all)'
+
+# ----------------------------------------------------------------- summary --
+TOOLS_UNUSABLE=$((TOOLS_MISSING + TOOLS_BROKEN))
+
+printf '\n=========================================================================================================\n'
+printf 'DOCTOR SUMMARY -- this is a DIAGNOSTIC, not a gate; gate verdicts live in\n'
+printf 'tests/bin/gate-a-wave1.sh and tests/bin/gate-a-wave3.sh. Do not quote this as one.\n'
+printf '=========================================================================================================\n'
+printf '  platform:        %s\n' "$PLATFORM_LABEL"
+printf '  tools missing:   %d\n' "$TOOLS_MISSING"
+printf '  tools broken:    %d\n' "$TOOLS_BROKEN"
+printf '  hazards probed:  %d (%d present - informational, already handled at their call sites)\n' "$HAZ_TOTAL" "$HAZ_PRESENT"
+printf '  container:       %s\n' "$CONTAINER_SUMMARY"
+if [ "$CERT_STATUS" = yes ]; then
+  printf '  certification:   %sCERTIFIED%s (matrix run %s, %s)\n' "$C_OK" "$C_OFF" "$CERT_DATE" "$CERT_TASK"
+else
+  printf '  certification:   %sNOT CERTIFIED%s (D-019 rider c - see group 1 above)\n' "$C_WARN" "$C_OFF"
+fi
+printf '=========================================================================================================\n'
+
+if [ "$TOOLS_UNUSABLE" -gt 0 ]; then
+  printf '%sNOT READY%s - %d required tool(s) unusable on this host. Fix them (see above) and re-run.\n' \
+    "$C_BAD" "$C_OFF" "$TOOLS_UNUSABLE"
+  exit 1
+fi
+
+printf '%sREADY%s - every required tool is usable on this host.\n' "$C_OK" "$C_OFF"
+if [ "$CERT_STATUS" != yes ]; then
+  printf '%sNOT CERTIFIED%s - proceed in host mode at your own risk; this is not the same guarantee\n' "$C_WARN" "$C_OFF"
+  printf 'as a green result from a certified platform or the container. Prefer the container when in doubt.\n'
+fi
+exit 0

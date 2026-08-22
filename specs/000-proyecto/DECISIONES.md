@@ -379,6 +379,57 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   generated, and `recipe.yml` both lists it in `install:` and pins it in `system.theme.default` →
   **the clean install fails.**
 
+- **D-019** · **Where the development environment lives: option C — the gate runs in a container,
+  not on host tools.** Signed by [andres] 2026-08-22.
+  ⚠️ **C is a third option, not one of the A/B framed by the `orquestador` on 2026-08-21**
+  ("Linux/DDEV canonical, Windows a convenience" vs "the Windows host is a first-class gate
+  environment"). It supersedes that framing, and it was surfaced by [andres]'s question
+  *"can it not be environment-agnostic — I need it to work wherever I am"*.
+
+  **Windows and macOS are BOTH first-class development hosts.** Neither host's tooling is the
+  gate's tooling: the toolchain that produces a verdict lives in a container, so `grep`, `jq`,
+  `python3` and `composer` are the same bytes on every machine and in CI.
+
+  *Evidence that decided it — all five false greens of unit 001 came from the HOST, not from the
+  project's own code:*
+  · `sbom-check` non-discriminating — Windows `jq`/`python` emit CRLF on stdout (I-025).
+  · `no-boilerplate` a total no-op — GNU grep 3.0 from Git for Windows aborts on `-F` with `-i` (I-027).
+  · `python3` resolving to the Microsoft Store stub, which passes `command -v` (I-026).
+  · The wave 1 gate not runnable at all — no `jq`, no `composer` on the host.
+  · `UnicodeDecodeError` in a signed gate command — host Python defaulting to cp1252, not UTF-8.
+  A container does not *guard* that class of defect; it **deletes** it, which is the same move as
+  T-316/R2 and the reason this is C and not B.
+
+  *Riders of [andres]:*
+  (a) **A toolchain floor is pinned and documented** — the container image and the minimum
+      versions of `grep`, `jq`, `python3`, `curl` and `composer`. T-317 owns recording it.
+  (b) **`tests/bin/doctor` runs before any work in a session.** It detects the platform and
+      **exercises** every required tool rather than locating it (I-026: the Store `python3` stub
+      satisfies `command -v` and then fails at first real use). It reports what is missing and
+      how to install it. It is the first step of `/retomar`.
+  (c) **Host mode stays available as a fallback** — a laptop away from home should not need
+      Docker running to do useful work — **but `doctor` labels any platform whose dirty-case
+      matrix has not been run as NOT CERTIFIED**, and a gate result from an uncertified platform
+      is reported as such. A green on a platform with no matrix is not a green, it is an
+      assumption: that is exactly what `no-boilerplate` was for two commits.
+  (d) **The dirty-case matrix (T-312) runs on every platform declared first-class.** A no-op on
+      one platform is a no-op nobody sees.
+  (e) **Every new invariant ships with its dirty case in the same commit**, from here to unit 007.
+      No invariant counts as existing until it has been made to fail. (Rider absorbing the
+      `orquestador`'s E4 meta-risk: verification code is the only code whose bugs are invisible
+      by construction, because its correct output and its broken output look the same.)
+
+  *Consequence for the wave 2 deadlock, which this decision exists to break.* Two needs were being
+  conflated in T-201/T-207/T-208, which is why they were mutually incompatible:
+  1. **Running the `tests/bin/` invariants** needs only the pinned toolchain → the container.
+  2. **The install smoke and PHPUnit** need a real Drupal site → set up **separately**, with this
+     package added as a *path repository*, exactly the flow T-207 recorded and the flow
+     `.github/workflows/phpunit.yml` already executes.
+  A recipe package is not a site and is never `ddev start`ed on its own. **T-201 is therefore
+  superseded by T-207**, and **T-208 is redefined**: what gets versioned is the gate's container
+  definition, not a `.ddev/config.yaml` for a site this repository does not contain. The
+  `orquestador` owns the task-level rewiring; this decision fixes only the principle.
+
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21
