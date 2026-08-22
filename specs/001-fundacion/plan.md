@@ -99,7 +99,12 @@ number of findings**, and each finding with `file:line`.
 > · **Row 4 — drupalcode runners without Playwright/axe: SUPERSEDED by D-009 = C.** The row's
 >   *verification* remains open; the canary MR cannot run until the project exists.
 > **New risk, added 2026-08-22:** a gate surface whose result nobody reads as a count.
-> Sev 🔴 · Mitigation: T-213/T-214/T-215; I-032, I-034.
+> Sev 🔴 · **CLOSED for the GitHub surface** (T-213 run `32582950414` reports `Tests: 3,
+> Assertions: 38`; T-215 run `32583207616` proves the empty case red), **OPEN for drupalcode**
+> until T-205 observes `--fail-on-empty-test-suite` in an executed phpunit command line.
+> **New risk 2026-08-22 — `simpleConfigUpdate` becomes an exception in Drupal 12** inside an
+> upstream recipe Ágora composes. Sev 🟡 · Not Ágora's own usage (verified at source, I-037) ·
+> Mitigation: unit 007 dependency review; see the blockers table.
 
 ## 8 · Open questions → decisions to sign
 

@@ -248,3 +248,34 @@
   for deletion. Rule: locate the defect's blast radius before sizing the fix — *"does the place we
   are going have this problem?"* is a cheaper question than any solution to it, and it is answerable
   with `curl`.
+- I-036 · **Text is not disk until it is persisted, and a dispatch that cites unpersisted IDs is a
+  dispatch against phantoms.** The coordinator dispatched T-213 citing T-213, T-214(a), D-020(d)
+  and I-032 **before writing any of them to disk**; the `desarrollador` stopped, reported the
+  divergence and refused to implement. Cost: one round trip. Value: the reconciliation rule
+  (*"disk wins over any prompt"*) **caught its own coordinator**, which is the strongest evidence
+  yet that it is load-bearing rather than ceremonial — a rule only its author can bypass is not a
+  rule, it is a habit. Order, always: receive text → **persist and commit** → dispatch against the
+  IDs that now exist. Corollary for subagents: an ID that cannot be found on disk is a **stop
+  condition**, never something to infer from context. Recorded 2026-08-22.
+- I-037 · **A matching count is not an attribution.** The log attributed a deprecation —
+  *"`simpleConfigUpdate` on config entities … throws an exception in drupal:12.0.0"* — to
+  `InstallTest::testInstall (2 times)`, and Ágora's `recipe.yml` uses `simpleConfigUpdate` exactly
+  **twice**. Two and two: a coincidence one step away from being written down as a finding against
+  our own file. It was settled by reading the **trigger condition** at source instead —
+  `SimpleConfigUpdate::apply()` fires only when `getEntityTypeIdByName($configName)` is truthy, and
+  Ágora's two targets (`system.site`, `system.theme`) are simple config objects with no entity
+  type, so they **cannot** trigger it. The recipe applies ten upstream recipes; any of them can
+  emit twice. Rule: attribute by **mechanism**, never by arithmetic — ask *what makes this fire*
+  and check whether our input satisfies it. A number that matches is a prompt to verify, not a
+  verification. Recorded 2026-08-22.
+- I-038 · **I-028 has escaped `tests/bin/`: a log grep can be vacuous exactly as a counter can.**
+  T-215's hand-off cited *"`FATAL: tests did not reach …` appears 0 times, so it failed for the
+  correct cause."* But the dirty case had **deleted the step that prints that string**, so it could
+  not appear — not even as CI's echo of the step's own script, which is where it appears once in
+  the clean run. The check's degenerate value equalled its expected value, in a `gh run view --log`
+  pipeline rather than in a shell counter: the sixth appearance of the class and the first outside
+  our own scanners. Rules: (a) a claim of the form *"string X is absent from the log"* must be
+  paired, in the same breath, with a positive claim a broken run could not counterfeit — here,
+  `No tests executed!` **present** and phpunit's exit status naming the flag; (b) before citing an
+  absence, ask whether the code that would have produced the string was even reachable in that run.
+  A CI log is an instrument like any other, and I-007 applies to reading it. Recorded 2026-08-22.

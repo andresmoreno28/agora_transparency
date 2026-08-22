@@ -131,7 +131,11 @@ Canonical layout: skill `drupal-site-template` + the research in `specs/001-fund
 - PHPUnit (kernel/functional of the recipes) runs with **`--fail-on-empty-test-suite`**, on every
   runner. A suite that executed 0 tests is a **failed** gate, not a passed one (I-007, I-032).
   `tests/bin/no-blind-phpunit` enforces that the flag is present in every versioned CI file.
-- **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render
+- **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render.
+  ⚠️ Today this executes **only** on the GitHub workflow, which D-020 classifies as an
+  **informative** surface — it may fail without blocking, but it may never lie. It becomes a
+  **gate** when the drupalcode pipeline runs it (T-205). Until then, no wave closes on its green,
+  and its counts are quoted as evidence, never as authority.
 - Playwright: functional + visual regression of the demo pages
 - axe (a11y) with no violations on the demo pages
 - `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches

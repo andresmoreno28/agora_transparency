@@ -161,6 +161,7 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
 - [ ] **T-204** · Create `.cspell-project-words.txt` with the project vocabulary.
       *Success:* the cspell job passes without disabling it.
 - [ ] **T-205** · First green pipeline in the working repo. *Success:* number of jobs executed > 0 and
+      the phpunit job's log shows `--fail-on-empty-test-suite` in the executed command line (T-214c), and
       all green. **A pipeline with no jobs is NOT green.**
 - [ ] **T-206** · Decide and apply D-009: what runs on drupalcode and what on GitHub Actions.
       **Blocked by D-009.**
@@ -212,7 +213,7 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       predating the rename in `e6197ed`.
       *Success:* the mechanism reproduced end to end from source, the responsible commit named, and
       the class recorded as **I-032** rather than patched as an instance.
-- [ ] **T-213** · 🔴 Restore test execution in `.github/workflows/phpunit.yml` by copying the tests
+- [✓ 2026-08-22] **T-213** · 🔴 Restore test execution in `.github/workflows/phpunit.yml` by copying the tests
       into the installed package, mirroring `gitlab_templates`' `.recipe-replace-symlinks`
       (`include.drupalci.main.yml:1605-1611`). **`/tests export-ignore` is NOT removed** (D-020(d)).
       The copy step is the **last** step before phpunit — any `composer` command after it re-mirrors
@@ -226,7 +227,41 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       from `gh run view <RUN_ID> --log`, never from the badge.
       **Owns the automatic 🔴 raised by T-212. If it cannot produce a count, the workflow is
       deleted under D-020 rider (a), not kept.**
-- [ ] **T-214** · The invariant that was missing: **a PHPUnit run that executed zero tests must fail
+      *Evidence, read from the log and not the badge — run `32582950414`, `1a09e96`, conclusion
+      `success`:* copy step printed **`3`** for `find "$RECIPE_DIR/tests" -name '*Test.php' | wc -l`;
+      **`Tests: 3, Assertions: 38, Deprecations: 125.`**; verdict line `OK, but there were issues!`
+      with **0** occurrences of `FAILURES!` or `ERRORS!` — the `⚠` on `Apply` is PHPUnit's issue
+      marker for deprecations, not a failure; **0** occurrences of `No tests executed`; `--testdox`
+      named all three — `✔ Install`, `✔ Site template requirements`, `⚠ Apply`.
+      **The paths are the part that matters:**
+      `/var/www/html/recipes/agora_transparency/tests/src/Functional/{InstallTest,ValidationTest}.php`
+      — resolved from the **installed package under Ágora's own name**, unlike the `Tests: 3` of
+      `1b4a48f`, which predated the rename in `e6197ed` and was the kit testing itself.
+      The lane predicted `3` and `N ≥ 3` before the run and matched exactly, which is what makes
+      this a verification rather than a hope (I-030).
+      Verified independently by `orquestador` 2026-08-22, re-reading the log with `gh run view
+      32582950414 --log` and re-deriving every count above.
+      > **Note — the TRAP comment is documentation, not the guard.** The guard against a `composer`
+      > command being added after the copy step is `--fail-on-empty-test-suite` (T-214a): the
+      > recurrence would turn the build **red**, exactly as run `32583207616` demonstrates. The
+      > comment buys diagnosis speed, not detection. A mechanical guard (a YAML step-ordering rule
+      > in `no-blind-phpunit`) was considered and **rejected**: it would mean building a
+      > YAML-ordering parser for a file that D-020 rider (a) schedules for deletion or reduction at
+      > unit 007 — engineering around a disposable shim, which is precisely what I-035 warns
+      > against. Recorded as a decision, so nobody re-opens it as an oversight.
+      > **Note — the deprecation that touches Ágora's own `recipe.yml`, settled at source.** Of the
+      > 125 deprecations, **0 originate in Ágora**. One warranted checking rather than assuming:
+      > *"Using the `simpleConfigUpdate` config action on config entities is deprecated in
+      > drupal:11.2.0 and **throws an exception in drupal:12.0.0**"*, attributed in the log to
+      > `InstallTest::testInstall (2 times)` — and Ágora's `recipe.yml` uses `simpleConfigUpdate`
+      > exactly **twice** (`:120`, `:125`). **That numeric coincidence is not attribution** (I-037).
+      > Settled by reading the trigger, `SimpleConfigUpdate.php` @ `11.4.x`:
+      > `if ($this->configManager->getEntityTypeIdByName($configName)) { @trigger_error(…); }`
+      > — it fires **only** when the config name maps to a config **entity type**. Ágora's two uses
+      > target `system.site` and `system.theme`, which are **simple config objects with no entity
+      > type**, so they **provably cannot** trigger it. Not our defect; it belongs to a Drupal CMS
+      > recipe Ágora composes, and it is carried in the blockers table, not as a task here.
+- [✓ 2026-08-22] **T-214** · The invariant that was missing: **a PHPUnit run that executed zero tests must fail
       the build.** Two layers, neither sufficient alone.
       **(a)** `--fail-on-empty-test-suite` on the workflow's phpunit invocation. Verified at source
           in PHPUnit 11.5: `ShellExitCodeCalculator` →
@@ -249,7 +284,27 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       `git status --porcelain` empty. Added to `gate-a-wave3.sh` as two checks:
       **29 → 31 checks · 0 failures**, stated as a number so the change cannot be silent.
       `gate-a-wave1.sh` unchanged at **61 · 0**.
-- [ ] **T-215** · Prove T-214 in the place it has to work: a CI run that executes nothing must go
+      *Evidence, reproduced independently by `orquestador` 2026-08-22 in a throwaway copy, with
+      real exit codes captured directly (never through a pipe — a `tail` in the pipeline returns
+      its own status and would have reported `exit=0` for every dirty case, which is I-028 one more
+      time and is how this matrix was nearly mis-certified):*
+      clean → exit 0, `files scanned: 2 · phpunit invocations: 2 · guarded: 2 · unguarded: 0 ·
+      findings: 0`; **D1** flag removed → exit 1, 1 finding, `unguarded: 1`; **D2** negation flag →
+      exit 1, 3 findings; **D3** `_PHPUNIT_CONCURRENT: '1'` → exit 1, 1 finding; **D4** scope
+      collapse → exit 1, `FATAL: files scanned: 0 …`, **and no summary line printed**.
+      `git status --porcelain` empty after the matrix. `gate-a-wave3.sh` **31 checks · 0 failures**;
+      `gate-a-wave1.sh` unchanged at **61 checks · 0 failures**.
+      > **Scope of this signature, stated so it is not read wider than it is.** Layers **(a)** and
+      > **(b)** are proven, in CI and locally respectively. Layer **(c)** — that
+      > `_PHPUNIT_EXTRA: '--fail-on-empty-test-suite'` actually reaches the phpunit binary on a
+      > GitLab runner — is verified **statically only**: `gitlab_templates`
+      > `include.drupalci.main.yml:1638` appends `$_PHPUNIT_EXTRA` to the phpunit invocation, and
+      > `_PHPUNIT_CONCURRENT` defaults to `'0'`, which is the branch where phpunit options are
+      > legal. **No run has observed it**, and none can until the drupalcode project exists.
+      > Carried by **T-205**, whose criterion is extended accordingly. Debt with an owner and an
+      > exit gate (I-020), not an unmet criterion: this task's criterion never claimed a GitLab
+      > run, because none was available to claim.
+- [✓ 2026-08-22] **T-215** · Prove T-214 in the place it has to work: a CI run that executes nothing must go
       **red**. Executed by an actor other than whoever wrote T-213/T-214 (I-030).
       *Success:* on a throwaway branch with only the T-213 copy step removed, `gh run watch
       --exit-status` returns **non-zero** and the log names the cause (`No tests executed!` or
@@ -260,6 +315,23 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       gate A job list in `CLAUDE.md`.
       *Success:* `grep -c 'D-020' specs/000-proyecto/DECISIONES.md` ≥ 1;
       `grep -cE '^- I-03[2-5]' specs/000-proyecto/IDIOMS.md` = 4; no line deleted from either file.
+
+      *Evidence — run `32583207616`, `3af759e`, branch `ci/prove-empty-suite-fails`, conclusion
+      `failure`, `gh run watch --exit-status` → **1**:* `No tests executed!` ×1;
+      `Failed to execute command … --fail-on-empty-test-suite …: exit status 1`;
+      `##[error]Process completed with exit code 1.` The change was `+0/−26` on one file: only the
+      copy step removed, the flag kept. **The same `No tests executed!` line that accompanied nine
+      green runs, opposite outcome.** Branch deleted locally and on the remote; tree clean.
+      > **Correction to this task's own evidence, recorded rather than quietly dropped
+      > (`orquestador`, 2026-08-22).** The hand-off also cited *"`FATAL: tests did not reach …`
+      > appears **0 times**, so it failed for the correct cause."* **That check was vacuous:** the
+      > copy step had been deleted, so the string could not appear at all — not even as CI's echo
+      > of the step's own script, which is where it appears **once** in the clean run. Its
+      > degenerate value equalled its expected value. **The verdict is unaffected**, because it
+      > never depended on that check: the positive evidence — `No tests executed!` present, and
+      > phpunit's own exit status naming the flag — is what carries it. Recorded because this is
+      > **I-028's sixth appearance and its first outside `tests/bin/`**: the class has escaped from
+      > our scanners into how we read logs. See I-038.
 
 **Gate A wave 2**
 ```bash
@@ -520,7 +592,20 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
       > `site_template_helper` ends up authorised in the `allow-plugins` of the `composer.json` the
       > end user receives. If generation requires manual interaction → **escalate as an install-UX
       > finding, do not patch silently.**"* See the amendment to D-008.
-- [ ] **T-402** · Extend `InstallTest`/`ValidationTest` with Ágora's key routes.
+- [⏸ deferred 2026-08-22 → unit 002 (content model)] **T-402** · 🔒 **Extending
+      `InstallTest`/`ValidationTest` with Ágora's key routes presumes Ágora has routes. It has
+      none.** There is no content model until unit 002/003: every route the site serves today comes
+      from the Drupal CMS base recipes, so assertions written now would pass with Ágora absent —
+      a test that cannot fail for the reason it claims to test, which is this unit's signature
+      defect in test form (I-032). Deferred with an owner rather than written weak.
+      Deferred by **[ejecutor] under [andres]'s explicit delegation** of 2026-08-22; it changes
+      unit 001's signed scope, and the record says who decided it.
+      *What survives in unit 001:* the three kit tests execute unmodified against the installed
+      package and report real counts — **T-406**, signed below.
+      *Success (unit 002):* `ValidationTest::testApply` asserts on at least one route, block or
+      config entity that **Ágora's own `recipe.yml` creates**, and the assertion is proven to fail
+      on a site where the Ágora recipe has not been applied.
+      *Original text:* Extend `InstallTest`/`ValidationTest` with Ágora's key routes.
       *Success:* number of tests and assertions reported, > 0.
 - [ ] **T-403** · Project README **in English** (public docs in English, D-005): what it is, how it is
       installed, what it ships.
@@ -529,9 +614,22 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
 - [ ] **T-404** · `orquestador` audit (read-only): standards, SBOM, licences, marketplace
       requirements. *Success:* verdict with no open 🔴.
 - [ ] **T-405** · Promote the unit's lessons to `IDIOMS.md`.
-- [ ] **T-406** · Verify that `InstallTest`, `ValidationTest` and `RequirementsTest` pass **without
+- [✓ 2026-08-22] **T-406** · Verify that `InstallTest`, `ValidationTest` and `RequirementsTest` pass **without
       being modified**. *Success:* 0 lines deleted in those 3 files; phpunit output with number of
       tests **and** assertions.
+      *Evidence — run `32582950414`:* `Tests: 3, Assertions: 38`, both halves of the criterion met
+      for the first time; `git diff --stat 1b4a48f..HEAD -- tests/src/` is **empty** — zero lines
+      touched in `InstallTest.php`, `ValidationTest.php` and `RequirementsTest.php` since the kit
+      import. `RequirementsTest` (`✔ Site template requirements`) executed against the **installed
+      package** — the first execution of Ágora's publishability oracle, and the first since
+      2026-08-21.
+      > **Rider [orquestador] 2026-08-22 — signed OUT OF ORDER.** T-406 is a **wave 4** task closed
+      > while wave 4 is **not open**, on the precedent of T-209 (a wave 2 task closed inside wave
+      > 3). **This tick is NOT wave 4 progress.** Wave 4 remains closed: T-401 needs a Docker
+      > daemon that is unreachable on the dev host, T-402 is deferred to unit 002, and
+      > T-403/T-404/T-405 are untouched. It is signed here rather than held because the evidence
+      > exists now and holding it would mean the record understating what has been proven —
+      > which is the failure this whole episode was about.
 
 **Gate A wave 4**
 ```bash
@@ -546,7 +644,7 @@ Sign here: `[ ]`
 ## Active blockers
 
 > A table of **state**, not of signed tasks: it is rewritten on each update.
-> Last updated: 2026-08-22, after D-019 was signed.
+> Last updated: 2026-08-22, after T-213/T-214/T-215/T-406 were signed.
 
 | Blocker | State | Blocks | Who resolves |
 |---|---|---|---|
@@ -564,13 +662,15 @@ Sign here: `[ ]`
 | D-010 v1 demo content scope | 🔴 **OPEN** | unit 003 | 👤 Andrés |
 | **Wave 2 deadlock** | ✅ **RESOLVED 2026-08-22 by D-019** · the incompatibility was two needs conflated: running the invariants (→ container) and running the install smoke (→ a Drupal site set up separately, this package added as a path repository — the T-207 flow, already executed by `.github/workflows/phpunit.yml`). **T-201 superseded by T-207**; **T-208 redefined** to version the gate's container definition, not a `.ddev/config.yaml` for a site this repository does not contain. Task-level rewiring owned by the `orquestador` | — | — |
 | T-205 first green pipeline | 🔴 **OPEN** · **there is no project on drupalcode** (`git.drupalcode.org/api/v4/projects/project%2Fagora_transparency` → **404**, verified 2026-08-21). Without a project there is no pipeline, no canary MR (D-009 rider b) and nothing to apply D-009 to | T-205, and the application of T-206 | 👤 Andrés (creates the project) |
-| **`phpunit.yml` executed ZERO tests** | 🔴 **OPEN** · nine of ten green runs ran nothing, bisected to `975b263` (`/tests export-ignore`) · Composer's path-repo mirroring honours `export-ignore`, so `tests/` never reached the installed package (I-032, I-033). `RequirementsTest` has not executed since 2026-08-21 — **no unit 001 closure verdict is possible without it** | T-402, T-406, T-404 | owner **T-213**; exit gate = a run reporting `Tests: N ≥ 3` |
+| **`phpunit.yml` executed ZERO tests** | ✅ **CLOSED 2026-08-22 by T-213** · run `32582950414` reports `Tests: 3, Assertions: 38` with 0 occurrences of `No tests executed`, paths resolving under `recipes/agora_transparency/`; the recurrence is guarded by `--fail-on-empty-test-suite` and proven red by T-215 (run `32583207616`, exit 1) | — | — |
+| **`_PHPUNIT_EXTRA` guard unobserved** | 🟡 **OPEN** · T-214(c) is verified statically (`include.drupalci.main.yml:1638` appends it; `_PHPUNIT_CONCURRENT` defaults `'0'`) but **no run has seen it**. Folded into T-205's criterion: the first pipeline's phpunit job log must show `--fail-on-empty-test-suite` in the executed command line | T-205 | 👤 Andrés (creates the project) |
+| **`simpleConfigUpdate` → exception in Drupal 12** | 🟡 **OPEN** · an upstream Drupal CMS recipe that Ágora composes calls `simpleConfigUpdate` on a config **entity**; deprecated in 11.2, **throws** in 12.0 (verified at source). **Not Ágora's** — its two uses target `system.site` and `system.theme`, simple config with no entity type, which cannot trigger it (I-037). Re-checked at unit 007's dependency review | unit 007 | — |
 | T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
 | **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants execute only when a human types them; `no-boilerplate` was a no-op for two commits and only a hand-dispatched injection caught it. The criterion clash is **RESOLVED 2026-08-22** by the T-202 rider (Ágora may add jobs upstream does not provide). The blocker itself still needs a drupalcode project (T-205); automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | — |
-| T-316 grep rc-blindness | 🔴 **OPEN** · no scanner inspects grep's exit status, so rc ≥ 2 reads as "no match". A **false green**, reproduced in the repaired `no-boilerplate` with an invalid-BRE deny term. Debt with an owner and an exit gate (I-020) | wave 4 | — |
+| T-316 grep rc-blindness | ✅ **CLOSED 2026-08-22** · signed — 28 `rc >= 2` guards across 27 call sites in 9 files; residuals R1/R2 closed in the same wave; clean-path output byte-identical to `c3dc9f5` | — | — |
 | T-317 toolchain floor | 🟡 **OPEN** · unblocked by D-019, which requires the floor to be pinned and documented · `-Fin` and the CRLF assumptions are measured **only on the Windows dev host**. The CI/DDEV image and the **macOS dev host** are both unmeasured, and macOS is a different question (BSD grep, not GNU). Do not assume either covers for the other | — | blocked by D-019 |
 | **second dev host (macOS)** | 🟡 **OPEN** · a second agent works this repo from a Mac. The wave 3 gate is certified on the Windows host **only** (see the closure note): its toolchain floor, its `grep` flavour and its line endings are all unverified there. First action on that host is T-317's measurement, before trusting any invariant's green | T-317 | — |
-| T-314 packaged `recipe.yml` boilerplate | 🟡 **OPEN** · commented starter-kit strings inside a shipped file, not on the deny list (I-024 shape) | wave 4 | — |
-| `.gitattributes` `text eol=lf` | 🟡 **OPEN** · fresh clones check out `tests/bin/*` CRLF (`i/lf w/crlf`, system-scope `core.autocrlf`). Harmless under MSYS2 bash, cheap to close. Touches a **packaged** file carrying D-015.2 semantics → its own reviewed commit | — | 👤 Andrés |
+| T-314 packaged `recipe.yml` boilerplate | ✅ **CLOSED 2026-08-22** · signed; deny list 7 → 8, proven to fire on the uncleaned file before the cleanup | — | — |
+| `.gitattributes` `text eol=lf` | ✅ **CLOSED 2026-08-22 by T-319** · `tests/bin/** text eol=lf` and `*.sh text eol=lf`, in their own labelled section, scope confirmed narrow | — | — |
 | PHP 8.4 **ZTS** on the dev host | 🟡 **OPEN** · `gitlab_templates` and the Drupal CLI assume NTS. Inert today (no invariant executes PHP; `composer validate --strict` exit 0); surfaces at **T-406** | T-406 | — |
