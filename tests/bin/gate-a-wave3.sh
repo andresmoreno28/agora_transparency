@@ -2,13 +2,14 @@
 #
 # gate-a-wave3.sh - Agora - Unit 001, wave 3 gate A verification.
 #
-# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the SEVEN
+# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the EIGHT
 # invariants that exist on disk today - the tasks.md "Gate A wave 3" block
 # still loops over only four (no-unstable-deps no-patches no-secrets
-# sbom-check); no-code-in-template, no-ci-allow-dev and no-boilerplate landed
-# later (T-307, T-308 area, T-309) and are exercised by no gate runner at all.
-# Closing wave 3 on the stale four-item loop would close it on a stale gate.
-# This script is that missing runner (T-313).
+# sbom-check); no-code-in-template, no-ci-allow-dev, no-boilerplate and
+# no-blind-phpunit landed later (T-307, T-308 area, T-309, T-214) and are
+# exercised by no gate runner at all. Closing wave 3 on the stale four-item
+# loop would close it on a stale gate. This script is that missing runner
+# (T-313).
 #
 # Contract (mirrors gate-a-wave1.sh on purpose - one house style):
 #   - every check prints:  obtained | expected | OK/FAIL
@@ -300,6 +301,22 @@ else
   check 'no-boilerplate present'           "$(trunc "$INV" 24)" 'present'
   check_positive 'no-boilerplate (scanned)' ''
   check_positive 'no-boilerplate (deny terms)' ''
+fi
+
+# ------------------------------------------------------- G8 - no-blind-phpunit (T-214) --
+group 'G8 - no-blind-phpunit'
+INV=tests/bin/no-blind-phpunit
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary line: "scope: ... - files scanned: N - phpunit invocations: N -
+  # guarded: N - unguarded: N - findings: N"
+  CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E 'files scanned:' | tail -1)"
+  check 'no-blind-phpunit (exit)'          "$INV_RC" '0'
+  check_positive 'no-blind-phpunit (scanned)' "$CNT"
+else
+  check 'no-blind-phpunit present'         "$(trunc "$INV" 24)" 'present'
+  check_positive 'no-blind-phpunit (scanned)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

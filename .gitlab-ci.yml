@@ -27,3 +27,14 @@ include:
 #   SKIP_ESLINT: '1'
 #   OPT_IN_TEST_NEXT_MAJOR: '1'
 #   _CURL_TEMPLATES_REF: 'main'
+
+# T-214(c): a green PHPUnit job must mean tests actually ran. _PHPUNIT_EXTRA
+# is handed to the phpunit binary and armed with --fail-on-empty-test-suite
+# so an empty suite fails the pipeline instead of passing silently (see
+# tests/bin/no-blind-phpunit, and I-007 - the false-green pattern this
+# closes). _PHPUNIT_CONCURRENT is deliberately left unset/default ('0'):
+# at '1' drupalci routes _PHPUNIT_EXTRA to run-tests.sh instead, where
+# --fail-on-empty-test-suite is not a valid option and the guard silently
+# stops existing (include.drupalci.variables.yml:107-109).
+variables:
+  _PHPUNIT_EXTRA: '--fail-on-empty-test-suite'

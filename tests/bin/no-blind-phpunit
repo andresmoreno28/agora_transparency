@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+#
+# no-blind-phpunit - Agora - unit 001, task T-214(b).
+#
+# What it enforces: every PHPUnit invocation in CI is armed with
+# --fail-on-empty-test-suite, and nothing quietly disarms it.
+#
+# Why this exists: nine of ten green CI runs executed ZERO tests and nobody
+# noticed for two days, because nothing ever checked that the test run had
+# done anything (I-007, in the one place it had not yet been applied). A
+# parallel lane (T-214a) restores execution in
+# .github/workflows/phpunit.yml; this script makes the absence of the guard
+# LOUD, permanently, so the regression cannot silently return.
+#
+# An "invocation" is a line that either:
+#   - runs phpunit as a command: `phpunit`, `bin/phpunit`, `vendor/bin/phpunit`
+#     or `$COMPOSER_BIN_DIR/phpunit`, as a word (not a YAML job key like
+#     `phpunit:`, which is never followed by whitespace or end of line); or
+#   - assigns `_PHPUNIT_EXTRA` (drupalci's own file never spells "phpunit" as
+#     a bare command - it hands flags to the upstream job through this
+#     variable instead).
+#
+# Three findings:
+#   1. an invocation with no --fail-on-empty-test-suite on its own line;
+#   2. any occurrence of --do-not-fail-on-empty-test-suite anywhere in scope
+#      (the literal negation of the guard);
+#   3. _PHPUNIT_CONCURRENT set to '1'.
+#
+# Finding 3 is not obvious and is a real trap: on drupalcode,
+# `_PHPUNIT_EXTRA` is handed to the `phpunit` binary only while
+# `_PHPUNIT_CONCURRENT` is '0' (its default - verified in
+# include.drupalci.variables.yml:107-109). Set it to '1' and `_PHPUNIT_EXTRA`
+# goes to `run-tests.sh` instead, where --fail-on-empty-test-suite is not a
+# valid option - the guard silently stops existing. Someone enabling
+# concurrency for speed would remove the guard without ever touching the
+# line that sets it.
+#
+# Contract (shared by every invariant in tests/bin/, see no-ci-allow-dev):
+#   scope:    the exact set of files inspected
+#   scanned:  N files, N must be > 0
+#   findings: M, each printed as  path:line  reason
+#   exit 0 if and only if M == 0
+#
+# TWO conditions are FATAL here, not ordinary findings (I-028 / I-031):
+# `files scanned == 0` and `phpunit invocations == 0`. A soft "0 findings"
+# over an empty scope would look identical to a clean run over a real one -
+# exactly the false-green shape this script exists to prevent. Both guards
+# default their input (`[ "${X:-0}" -eq 0 ]`, because a blank left-hand side
+# makes `[` exit 2 with "integer expression expected" and the branch is
+# simply not taken - I-031) and print NO summary line when they fire: the
+# closing metrics line is a claim about a scan that happened, and a FATAL
+# means it didn't.
+#
+# The scan reads the WORKING TREE with `find`, never `git grep` (I-018):
+# `git grep` only sees tracked files, so an offender written and never
+# `git add`ed would pass invisibly.
+#
+# House rules paid for the hard way (T-321 sweeps older scripts for these;
+# this one is born clean):
+#   - `wc -l`, never `grep -c`, for any value that feeds a numeric
+#     comparison. `grep -c` prints blank on rc >= 2, and `[ "" -eq 0 ]` exits
+#     2 ("integer expression expected") - the branch is not taken and
+#     execution walks past the guard (I-031).
+#   - a `grep` rc >= 2 is an ERROR, never "no match" (I-027). Every scanning
+#     site here treats it as fatal, naming the file and the pattern.
+#   - no `-F` combined with `-i` in one grep (GNU grep 3.0 on this host
+#     SIGABRTs, rc 134). Every pattern below is matched case-sensitively
+#     without `-i`, so the combination never arises.
+#
+# Usage: tests/bin/no-blind-phpunit   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# ---------------------------------------------------------------- repo root --
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+FINDINGS=0
+
+finding() { # <file> <line> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "${1#./}" "$2" "$C_OFF" "$3"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+# ------------------------------------------------------- grep's third state --
+# I-027: `grep` has THREE exit states - 0 = matched, 1 = no match, >= 2 =
+# grep itself FAILED (invalid pattern, unreadable file, crash). A grep error
+# is FATAL here: never a warning, never a finding. A finding says "the tree
+# contains an offender"; this says "the tree was not searched".
+grep_failed() { # <rc> <pattern> <subject>
+  printf 'FATAL: grep failed (exit %s) on %s while matching: %s\n' "$1" "$3" "$2"
+  printf 'The scan did not complete: this run has NO result, which is not a clean result.\n'
+  printf '(I-027)\n'
+  exit 1
+}
+
+# ---------------------------------------------------------------- patterns --
+# Command invocation: an optional path prefix, then "phpunit" as a whole
+# word - preceded by start-of-line or whitespace, followed by whitespace or
+# end-of-line. The "followed by" half is what excludes the YAML job key
+# `phpunit:`, where the very next character is a colon.
+CMD_PATTERN='(^|[[:space:]])(\$COMPOSER_BIN_DIR/|vendor/bin/|bin/)?phpunit([[:space:]]|$)'
+# `_PHPUNIT_EXTRA` as a YAML mapping entry or shell assignment.
+EXTRA_PATTERN='_PHPUNIT_EXTRA[[:space:]]*[:=]'
+# The guard itself, and its literal negation.
+FAIL_FLAG='--fail-on-empty-test-suite'
+DO_NOT_FAIL_PATTERN='--do-not-fail-on-empty-test-suite'
+# `_PHPUNIT_CONCURRENT` as a YAML mapping entry or shell assignment - matched
+# first, then its value is read back out and compared in the shell (not in
+# the regex): an ERE like `...=.?1.?` would also fire on `'10'`, which is a
+# different value entirely.
+CONCURRENT_KEY_PATTERN='_PHPUNIT_CONCURRENT[[:space:]]*[:=]'
+
+# -------------------------------------------------------------------- scope --
+# Exactly the two places drupalci-driven PHPUnit runs are configured in this
+# repository. Not a tree walk: a narrower, named scope, because both files
+# are known by path and a broader walk would only invite false positives
+# from unrelated YAML.
+scan_files() {
+  find . \( -path './.gitlab-ci.yml' -o -path './.github/workflows/*.yml' \) \
+    -type f -print 2>/dev/null | LC_ALL=C sort
+}
+
+# ---------------------------------------------------------------- preflight --
+for tool in find grep sort wc sed; do
+  command -v "$tool" >/dev/null 2>&1 || \
+    finding '<preflight>' '0' "required tool not available: $tool"
+done
+
+printf '=========================================================================================================\n'
+printf 'no-blind-phpunit - Agora invariant T-214(b)\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+TMPDIR_RUN=$(mktemp -d 2>/dev/null) || { echo "FATAL: cannot create a temp dir"; exit 1; }
+trap 'rm -rf "$TMPDIR_RUN"' EXIT
+ALL_LIST="$TMPDIR_RUN/all"
+scan_files > "$ALL_LIST"
+SCANNED=$(wc -l < "$ALL_LIST" | tr -d ' ')
+
+printf '\nscope:    .gitlab-ci.yml and .github/workflows/*.yml, working tree of %s\n' "$REPO_ROOT"
+printf 'scanned:  %s files\n' "${SCANNED:-0}"
+
+if [ "${SCANNED:-0}" -eq 0 ]; then
+  printf '\nFATAL: files scanned: 0 - neither .gitlab-ci.yml nor .github/workflows/*.yml was found\n'
+  printf 'in the working tree. This run has NO result: the scope did not reach what it\n'
+  printf 'claims to police. (I-028 / I-031)\n'
+  exit 1
+fi
+
+# --------------------------------------------------------------- the scan ---
+printf '\ninvocations: phpunit commands and _PHPUNIT_EXTRA assignments\n'
+
+INVOCATIONS=0
+GUARDED=0
+UNGUARDED=0
+
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+
+  # --- invocation lines: phpunit command OR _PHPUNIT_EXTRA assignment ---
+  # A whole-line YAML comment can never be a live invocation or assignment,
+  # so it is filtered out here - otherwise prose that merely NAMES phpunit
+  # (this very file's own header comment does, to explain the guard) would
+  # be miscounted as code. `--do-not-fail-on-empty-test-suite` and
+  # `_PHPUNIT_CONCURRENT` below are intentionally NOT filtered this way: the
+  # spec asks for "any occurrence", a stricter, paranoid check.
+  CMD_HITS_RAW=$(LC_ALL=C grep -nE "$CMD_PATTERN" "$f" 2>/dev/null)
+  CMD_RC=$?
+  [ "$CMD_RC" -ge 2 ] && grep_failed "$CMD_RC" "$CMD_PATTERN" "$f"
+  CMD_HITS=$(printf '%s\n' "$CMD_HITS_RAW" | grep -vE '^[0-9]+:[[:space:]]*#' 2>/dev/null)
+  CMD_FILT_RC=$?
+  [ "$CMD_FILT_RC" -ge 2 ] && grep_failed "$CMD_FILT_RC" 'comment-line filter' "$f"
+
+  EXTRA_HITS_RAW=$(LC_ALL=C grep -nE "$EXTRA_PATTERN" "$f" 2>/dev/null)
+  EXTRA_RC=$?
+  [ "$EXTRA_RC" -ge 2 ] && grep_failed "$EXTRA_RC" "$EXTRA_PATTERN" "$f"
+  EXTRA_HITS=$(printf '%s\n' "$EXTRA_HITS_RAW" | grep -vE '^[0-9]+:[[:space:]]*#' 2>/dev/null)
+  EXTRA_FILT_RC=$?
+  [ "$EXTRA_FILT_RC" -ge 2 ] && grep_failed "$EXTRA_FILT_RC" 'comment-line filter' "$f"
+
+  INV_LINES=$(printf '%s\n%s\n' "$CMD_HITS" "$EXTRA_HITS" | cut -d: -f1 | grep -E '^[0-9]+$' | LC_ALL=C sort -nu)
+
+  while IFS= read -r ln; do
+    [ -n "$ln" ] || continue
+    INVOCATIONS=$((INVOCATIONS + 1))
+    LINE_TEXT=$(sed -n "${ln}p" "$f")
+    LC_ALL=C grep -qE -- "$FAIL_FLAG" <<< "$LINE_TEXT" 2>/dev/null
+    FLAG_RC=$?
+    [ "$FLAG_RC" -ge 2 ] && grep_failed "$FLAG_RC" "$FAIL_FLAG" "$f (line $ln)"
+    if [ "$FLAG_RC" -eq 0 ]; then
+      GUARDED=$((GUARDED + 1))
+      note "guarded:   ${f#./}:$ln"
+    else
+      UNGUARDED=$((UNGUARDED + 1))
+      finding "$f" "$ln" 'phpunit invocation with no --fail-on-empty-test-suite'
+    fi
+  done <<< "$INV_LINES"
+
+  # --- finding 2: the negation, anywhere in the file ---
+  NEG_HITS=$(LC_ALL=C grep -nE -- "$DO_NOT_FAIL_PATTERN" "$f" 2>/dev/null)
+  NEG_RC=$?
+  [ "$NEG_RC" -ge 2 ] && grep_failed "$NEG_RC" "$DO_NOT_FAIL_PATTERN" "$f"
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    finding "$f" "${rec%%:*}" "$DO_NOT_FAIL_PATTERN found - this negates the guard"
+  done <<< "$NEG_HITS"
+
+  # --- finding 3: _PHPUNIT_CONCURRENT set to '1' ---
+  CONC_HITS=$(LC_ALL=C grep -nE "$CONCURRENT_KEY_PATTERN" "$f" 2>/dev/null)
+  CONC_RC=$?
+  [ "$CONC_RC" -ge 2 ] && grep_failed "$CONC_RC" "$CONCURRENT_KEY_PATTERN" "$f"
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    ln="${rec%%:*}"
+    txt="${rec#*:}"
+    rhs=$(printf '%s' "$txt" | sed -E 's/^.*_PHPUNIT_CONCURRENT[[:space:]]*[:=][[:space:]]*//; s/[[:space:]]*#.*$//; s/[[:space:]]+$//')
+    rhs=$(printf '%s' "$rhs" | sed -E "s/^['\"]//; s/['\"]\$//")
+    if [ "$rhs" = "1" ]; then
+      finding "$f" "$ln" \
+        "_PHPUNIT_CONCURRENT: '1' routes _PHPUNIT_EXTRA to run-tests.sh instead of phpunit, where --fail-on-empty-test-suite is not a valid option - the guard silently stops existing (include.drupalci.variables.yml:107-109)"
+    fi
+  done <<< "$CONC_HITS"
+done < "$ALL_LIST"
+
+if [ "${INVOCATIONS:-0}" -eq 0 ]; then
+  printf '\nFATAL: phpunit invocations: 0 - scanned %s file(s) but found no phpunit command\n' "${SCANNED:-0}"
+  printf 'and no _PHPUNIT_EXTRA assignment. This run has NO result: the scan did not\n'
+  printf 'reach what it claims to police. (I-028 / I-031)\n'
+  exit 1
+fi
+
+# ----------------------------------------------------------------- summary ---
+printf '\n---------------------------------------------------------------------------------------------------------\n'
+printf 'scope: .gitlab-ci.yml, .github/workflows/*.yml (working tree) · files scanned: %s · phpunit invocations: %s · guarded: %s · unguarded: %s · findings: %s\n' \
+  "$SCANNED" "$INVOCATIONS" "$GUARDED" "$UNGUARDED" "$FINDINGS"
+
+if [ "$FINDINGS" -eq 0 ]; then
+  printf '%sno-blind-phpunit: clean%s\n' "$C_OK" "$C_OFF"
+  exit 0
+fi
+printf '%sno-blind-phpunit: %s finding(s)%s\n' "$C_BAD" "$FINDINGS" "$C_OFF"
+exit 1
