@@ -430,6 +430,84 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   definition, not a `.ddev/config.yaml` for a site this repository does not contain. The
   `orquestador` owns the task-level rewiring; this decision fixes only the principle.
 
+- **D-020** · **Interim CI: GitHub is an execution surface, never an authority — and tests reach the
+  package under test by being copied in, not by being shipped.**
+  Signed 2026-08-22 by **[ejecutor] under the explicit delegation of [andres]**
+  (*"aquí dejo a tu elección según lo que hemos hablado qué firmar y qué arreglar"*). Recorded this
+  way deliberately: [andres] delegated the choice, he did not write this text, and the record must
+  not imply otherwise.
+
+  *Context:* Ágora's canonical remote does not exist yet (`git.drupalcode.org/api/v4/projects/
+  project%2Fagora_transparency` → 404). Throughout unit 001 the **only** remote, and the only place
+  any CI has ever executed, has been a personal GitHub repository running the workflow inherited
+  from the starter kit — which, from `975b263` (2026-08-21) to `e54caa3` (2026-08-22), executed
+  **zero tests across nine consecutive green runs**.
+
+  - **A** · Delete `.github/workflows/phpunit.yml` and run nothing until drupalcode exists.
+    Cost: unit 001 closes with no execution evidence whatsoever; wave 4's gate A becomes
+    unreachable and T-402/T-406 slide behind a 👤 action.
+  - **B** · Promote GitHub to canonical CI for the interim. Cost: contradicts D-016 and D-009 —
+    the quality evidence would live where a Drupal.org reviewer can neither see nor re-run it,
+    and it would have to be un-promoted later.
+  - **C ★** · Keep GitHub as an **interim, informative execution surface**: the workflow runs, its
+    result never gates a wave, it is repaired so that what it reports is **true**, and it carries an
+    explicit expiry at unit 007.
+  ★ **C**: the cheapest way to obtain real execution evidence before the canonical remote exists,
+  without granting authority to a mirror.
+
+  *Riders:*
+  (a) **`phpunit.yml` is reclassified as informative — and "informative" is a lower standard of
+      AUTHORITY, never a lower standard of TRUTH.** The earlier framing kept this workflow because
+      it was *"the only executing install smoke Ágora has"*. **That justification was false**: it
+      executed nothing. It is kept on a narrower ground — it is the only place where a real Drupal,
+      this package and these tests are assembled at all, and it is repairable today without a
+      project on drupalcode. The keep is **conditional and expiring**: if T-213 does not produce a
+      run reporting `Tests: N` with N ≥ 3 and `RequirementsTest` among them, the workflow is
+      **deleted**, not tolerated. A job that runs no tests is worse than no job, because it
+      manufactures the appearance of coverage — which is the entire finding of this turn. At unit
+      007 it is deleted, or reduced to what D-009(2) assigns to the mirror (visual regression,
+      non-blocking).
+  (b) **Amendment to D-016, one line, fact only.** D-016 records that the GitHub mirror *"is set up
+      in unit 007 (today it is only recorded)"*. In fact, for the whole of unit 001 GitHub was the
+      project's **only** remote and the only place any CI executed. D-016's direction is unchanged —
+      drupalcode is canonical the day it exists, and the history moves whole — but the record is
+      corrected so that nobody reads D-016 as a description of what was true in August 2026.
+  (c) **Container base for the gate toolchain (closes D-019 rider a's open half).**
+      ★ the Drupal Association's own gate image,
+      `registry.gitlab.com/drupal-infrastructure/drupalci/drupalci-environments/php-8.3-ubuntu-apache`,
+      **pinned by digest**, never by the moving `:production` tag. Verified 2026-08-22 in
+      `gitlab_templates` — this is literally the userland the canonical gate runs, so a green there
+      means what a green there means. It also ships PHP 8.3 **NTS** and Composer, retiring the
+      "PHP 8.4 ZTS on the dev host" blocker. Named fallback if that image lacks `jq` or `python3`:
+      `debian:bookworm-slim` with explicit apt pins — **never `alpine`**, whose BusyBox `grep` is a
+      different implementation and would reintroduce I-027's exact class.
+      ⚠️ **Unverified today**: the Docker daemon is down on the dev host, so the image's contents
+      have not been inspected. This rider fixes the **preference and the fallback**, not a
+      measurement. T-317 owns the measurement; until it exists, `doctor` reports the container path
+      as **NOT CERTIFIED** (D-019 rider c).
+  (d) **`/tests export-ignore` STAYS, and tests reach the package under test by being copied in.**
+      T-104 was correct: the end user receives no tests. Verified 2026-08-22:
+      · the starter kit does the same — `drupal_cms_site_template_base@2.x`, `.gitattributes:1`;
+      · the three published site templates (`caresphere@1.2.x`, `convene@1.2.x`, `provus_edu@1.x`)
+        carry **no `tests/` and no `.gitattributes` at all**, so the ecosystem norm is "no tests
+        anywhere" — which is exactly why a suite reporting zero looked normal to everyone;
+      · the canonical pipeline already solves this by copying: `gitlab_templates`
+        `include.drupalci.main.yml:1605-1611`, `.recipe-replace-symlinks`, `cp -Rvp
+        $CI_PROJECT_DIR/tests $DRUPAL_PROJECT_FOLDER` — from the **clone**, where `export-ignore`
+        does not apply (I-021).
+      The local workflow adopts the same move (T-213). **Rejected alternatives, with their reasons
+      recorded so they are not re-proposed:** dropping the `export-ignore` (inverts a correct
+      packaging decision to work around one runner); dropping `COMPOSER_MIRROR_PATH_REPOS=1`
+      (upstream wrote a shim *because* symlinks break recipe test resolution); pointing PHPUnit at
+      `source/tests` (**impossible**: all three tests resolve the recipe with `dirname(__FILE__, 4)`
+      — `InstallTest.php:28`, `ValidationTest.php:36`, `RequirementsTest.php:27` — so they would
+      silently change subject from the package to the repository); moving the exclusion to
+      `composer.json`'s `archive.exclude` (**no effect** — Composer applies `GitExcludeFilter` and
+      `ComposerExcludeFilter` in the same chain, `ArchivableFilesFinder.php:60-61`).
+      *Consequence kept deliberately:* everything **except** `tests/` in the mirrored copy remains
+      the packaged artefact, so `RequirementsTest` scans, and `ValidationTest` applies, what the end
+      user actually receives. That is stronger evidence than drupalcode's own symlinked variant.
+
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21

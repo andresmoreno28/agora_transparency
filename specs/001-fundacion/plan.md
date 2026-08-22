@@ -85,6 +85,22 @@ number of findings**, and each finding with `file:line`.
 | Machine name taken on Drupal.org | 🟡 | Verify before wave 1; alternatives already listed |
 | drupalcode runners without support for Playwright/axe | 🟡 | D-009; plan B = the mirror's GitHub Actions |
 
+> **Risk status update — [orquestador] 2026-08-22.** Three of these four rows are stale, and a risk
+> table that is mostly stale stops being read (same mechanism as I-020). Statuses are recorded here
+> rather than by deleting rows.
+> · **Row 1 — `project_browser ^2.1-beta3` (beta): CLOSED.** Verified 2026-08-22 against
+>   `https://updates.drupal.org/release-history/project_browser/current` (method I-022):
+>   **2.1.4**, stable, `<security covered="1">`, `core_compatibility ^11.2 || ^12`. Ágora never
+>   carried it — `require` holds nine packages, none of them `project_browser` (D-018).
+> · **Row 2 — unverified marketplace requirements: CLOSED by D-012.** The "DCP-only, $395" premise
+>   was false (I-016).
+> · **Row 3 — machine name taken: CLOSED by D-007** (`agora_transparency`, 404 on the GitLab API
+>   oracle, I-012; re-verified free 2026-08-22).
+> · **Row 4 — drupalcode runners without Playwright/axe: SUPERSEDED by D-009 = C.** The row's
+>   *verification* remains open; the canary MR cannot run until the project exists.
+> **New risk, added 2026-08-22:** a gate surface whose result nobody reads as a count.
+> Sev 🔴 · Mitigation: T-213/T-214/T-215; I-032, I-034.
+
 ## 8 · Open questions → decisions to sign
 
 Written in plain language, with recommendation ★, in `DECISIONES.md` §Pending.

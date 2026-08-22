@@ -202,3 +202,49 @@
   `grep -c` — which is the T-316/R2 move of deleting a failure mode rather than guarding it.
   Recorded 2026-08-22 so that a reader applying I-028 mechanically does not "fix" a guard into
   being bypassable.
+- I-032 · **The third species of false green: the instrument works, the method works, and the
+  specimen never arrived.** I-027 and I-028 cover a broken *instrument* (the host's `grep` aborts)
+  and a broken *method* (a scanner whose degenerate value equals its expected value). This is
+  neither: `/tests export-ignore` was a correct packaging decision, `COMPOSER_MIRROR_PATH_REPOS=1`
+  was a correct isolation decision, PHPUnit behaved exactly as documented, and the workflow was
+  written by the Drupal Association. **Every component worked as designed, and the suite still
+  reported nothing for nine consecutive green runs** — because the defect lived in the **seam**
+  between two correct decisions, and no component owns a seam. That is the diagnostic: species 3 is
+  the only false green in which nothing is broken, which is why no amount of hardening `tests/bin/`
+  could ever have found it. Rules: (a) every gate asserts **what it measured**, by count and by
+  identity, not merely that the measurement ran — `find … -name '*Test.php' | wc -l` before
+  phpunit, not after; (b) whenever two correct decisions meet at a packaging, checkout or install
+  boundary, **the seam gets its own check**, owned by name; (c) prefer the tool's own guard where
+  one exists — `--fail-on-empty-test-suite` is PHPUnit's, verified in `ShellExitCodeCalculator`,
+  and it survives every runner we might migrate to. Found by the `ejecutor`, T-212, 2026-08-22.
+- I-033 · **`export-ignore` has more consumers than the release tarball, and one of them is
+  Composer.** I-021 is true but incomplete: *"only affects the packaged tarball, never a clone"*
+  describes drupal.org's packaging, and it made `export-ignore` look inert outside release time. It
+  is not. Composer's `PathDownloader`, when `COMPOSER_MIRROR_PATH_REPOS=1`, mirrors through
+  `ArchivableFilesFinder`, which chains `GitExcludeFilter` and `ComposerExcludeFilter` — the same
+  filters `composer archive` uses — so **any** consumer of Composer's archive machinery honours
+  `.gitattributes`. Two consequences: (a) moving an exclusion from `.gitattributes` to
+  `composer.json`'s `archive.exclude` changes **nothing**, because both filters sit in the same
+  chain; (b) a path-repository mirror is a faithful simulation of the packaged artefact — which is
+  a **feature** worth keeping, and the reason the fix is to copy tests back in rather than to stop
+  mirroring. Verified at source 2026-08-22: `PathDownloader.php:157-160`,
+  `ArchivableFilesFinder.php:26,60-61`.
+- I-034 · **A green CI badge is an exit code, so I-007 applies to CI itself.** Ten runs were read as
+  green; nine had executed nothing. The trigger that should have forced a log read was visible in
+  the diff: the commit that broke it, `975b263`, changed **packaging** — not code, not tests. Rule:
+  whenever a change touches how the artefact is built, checked out, packaged or installed —
+  `.gitattributes`, `.gitignore`, installer paths, path repositories, `composer.json` `extra` —
+  **read one full CI log end to end before trusting the next green**, and quote the count. A badge
+  answers "did it exit 0", never "what did it do". Corollary on why nobody noticed: the three
+  published site templates ship **no tests at all**, so a site-template pipeline that runs zero
+  tests is the ecosystem's normal appearance. **When the broken state is indistinguishable from the
+  ecosystem norm, only a count can tell them apart.**
+- I-035 · **Before engineering around a defect in inherited scaffolding, check whether the canonical
+  pipeline already solved it.** The GitHub workflow's blindness looked like a problem to design
+  against; verification at source showed `gitlab_templates` has carried `.recipe-replace-symlinks`
+  for exactly this — it never composer-mirrors a recipe, and it force-copies `tests/` from the clone
+  regardless. That reframes the fix from *architecture* to **a disposable shim with an expiry date**,
+  and it argues for prioritising the move to drupalcode over hardening a surface that is scheduled
+  for deletion. Rule: locate the defect's blast radius before sizing the fix — *"does the place we
+  are going have this problem?"* is a cheaper question than any solution to it, and it is answerable
+  with `curl`.

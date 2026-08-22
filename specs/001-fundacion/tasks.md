@@ -140,6 +140,22 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       *Success:* `ddev start` from scratch on a clean machine, with no manual steps.
 - [ ] **T-202** · Review `.gitlab-ci.yml`: keep the `gitlab_templates` include, set only
       the necessary variables. *Success:* no job is defined by hand.
+      > **Rider [orquestador] 2026-08-22, adopted by [ejecutor] under [andres]'s delegation —
+      > amendment to the T-202 success criterion.** The criterion *"no job is defined by hand"* was
+      > written against a failure mode the DA documents: a project that copies `gitlab_templates`'
+      > jobs into its own file and then drifts from upstream. It was never meant to forbid Ágora
+      > from testing something upstream does not test at all — and as written it forbids the only
+      > available fix for the open blocker *"`tests/bin/` runs in no CI"*. **A criterion that
+      > forbids its own remedy has stopped describing the goal** (I-020).
+      > **Amended criterion:** no job may redefine, copy or override a job that `gitlab_templates`
+      > provides; the `include:` block stays byte-identical to upstream and upstream jobs are
+      > configured **only** through documented `variables:`. Ágora **MAY** add jobs that upstream
+      > does not provide at all, and each such job must (a) carry a comment naming which upstream
+      > job would otherwise cover it and why none does, (b) print real counts, and (c) appear in
+      > T-203's inventory.
+      > *Success, checkable:* `.gitlab-ci.yml` contains exactly one `include:` block, unchanged from
+      > upstream's three files; the set of locally defined job keys is **disjoint** from the set
+      > `gitlab_templates` defines; every locally defined job prints a count.
 - [ ] **T-203** · Read `include.drupalci.variables.yml` and document in the README which jobs remain
       active (phpcs, phpstan, cspell, eslint, stylelint, phpunit). *Success:* a real list, not an assumed one.
 - [ ] **T-204** · Create `.cspell-project-words.txt` with the project vocabulary.
@@ -166,6 +182,84 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > inside wave 3. The tick is NOT wave 2 progress: wave 2 remains blocked by the
       > T-201/T-207/T-208 conflict. Dirty case run 2026-08-21 (T-312): mentions 7→8,
       > definitions 0→1, `RequirementsTest.php` correctly remaining a mention.
+
+- [✓ 2026-08-22] **T-210** · 🔒 **Retroactive record.** `tests/bin/doctor` (D-019 rider b) was
+      delivered in commit `1954a44` with no task number. It detects the platform and **exercises**
+      every required tool rather than locating it (I-026), reports what is missing and how to
+      install it, and is the first step of `/retomar`. Recorded here rather than left unnumbered:
+      work that no task owns is work no gate can be held to.
+      *Success (as delivered):* `tests/bin/doctor` exists and is executable; it reports
+      `CLI present, daemon unreachable` for a down Docker daemon rather than passing silently.
+- **T-211** · **NOT ISSUED.** Recorded so that a future reader does not hunt for a missing task.
+      The number was skipped when T-212 was referenced by number in dispatch before it was written
+      to disk. Append-only forbids renumbering; a recorded gap is cheaper than a rename that makes
+      the transcript lie.
+- [✓ 2026-08-22] **T-212** · 🔴 **Audit of the GitHub Actions run history — the finding that
+      reopened wave 4.** Executed with `gh` against every run of `.github/workflows/phpunit.yml`.
+      **Nine of the ten green runs executed ZERO tests.** `1b4a48f` (2026-08-21 10:05) reported
+      `Tests: 3, Assertions: 36`; every run from `577b23e` (10:20) onward, including `e54caa3`
+      (2026-08-22 13:07) on the then-current HEAD, reported `No tests executed!` **and exited 0**.
+      Bisected to the single relevant commit between them: `975b263`, which added
+      `/tests export-ignore` at `.gitattributes:18`.
+      **Mechanism, verified at source 2026-08-22, not inferred:** the workflow installs the package
+      as a path repository with `COMPOSER_MIRROR_PATH_REPOS=1`; Composer's `PathDownloader`
+      (`:157-160`) mirrors through `ArchivableFilesFinder`, which chains `GitExcludeFilter` and
+      `ComposerExcludeFilter` (`:26,60-61`) and therefore honours `export-ignore`. `tests/` never
+      reached `recipes/agora_transparency`; PHPUnit found nothing and returned success.
+      **Consequences recorded, not softened:** `RequirementsTest` — the assertion that decides
+      whether this package is publishable at all — had not executed for two days; T-406 had no
+      evidence; the `Tests: 3` of `1b4a48f` were the **kit's own** tests under the kit's name,
+      predating the rename in `e6197ed`.
+      *Success:* the mechanism reproduced end to end from source, the responsible commit named, and
+      the class recorded as **I-032** rather than patched as an instance.
+- [ ] **T-213** · 🔴 Restore test execution in `.github/workflows/phpunit.yml` by copying the tests
+      into the installed package, mirroring `gitlab_templates`' `.recipe-replace-symlinks`
+      (`include.drupalci.main.yml:1605-1611`). **`/tests export-ignore` is NOT removed** (D-020(d)).
+      The copy step is the **last** step before phpunit — any `composer` command after it re-mirrors
+      and silently deletes the tests again; that trap is written into the file as a comment.
+      `--testdox` is added, so the log names each test instead of counting them.
+      *Success:* the workflow step prints `3` for
+      `find "$RECIPE_DIR/tests" -name '*Test.php' | wc -l` and FATALs if
+      `tests/src/Kernel/RequirementsTest.php` is absent; and the run for the resulting commit
+      reports `Tests: N, Assertions: M` with **N ≥ 3** and **no** `No tests executed!`, with
+      `RequirementsTest`, `InstallTest` and `ValidationTest` all named in the log. Counts quoted
+      from `gh run view <RUN_ID> --log`, never from the badge.
+      **Owns the automatic 🔴 raised by T-212. If it cannot produce a count, the workflow is
+      deleted under D-020 rider (a), not kept.**
+- [ ] **T-214** · The invariant that was missing: **a PHPUnit run that executed zero tests must fail
+      the build.** Two layers, neither sufficient alone.
+      **(a)** `--fail-on-empty-test-suite` on the workflow's phpunit invocation. Verified at source
+          in PHPUnit 11.5: `ShellExitCodeCalculator` →
+          `if ($failOnEmptyTestSuite && !$result->hasTests()) { $returnCode = FAILURE_EXIT; }`.
+      **(b)** `tests/bin/no-blind-phpunit`: scans the working tree (never `git grep` — I-018) over
+          `.gitlab-ci.yml` and `.github/workflows/*.yml`; finds phpunit invocations and
+          `_PHPUNIT_EXTRA` assignments; reports as findings any unguarded invocation, any
+          `--do-not-fail-on-empty-test-suite`, and `_PHPUNIT_CONCURRENT` set to `1` (which routes
+          `_PHPUNIT_EXTRA` to `run-tests.sh` and voids the guard silently). FATALs on
+          `files scanned == 0` and on `phpunit invocations == 0`, both with defaulted inputs
+          (I-031) and no summary line printed. `wc -l`, never `grep -c`, for any value feeding a
+          comparison — T-321's house rule adopted at birth rather than retrofitted.
+      **(c)** `.gitlab-ci.yml` gains `variables: _PHPUNIT_EXTRA: '--fail-on-empty-test-suite'` and
+          does **not** set `_PHPUNIT_CONCURRENT` (default `'0'`). Depends on the T-202 rider above.
+      *Success:* clean tree → exit 0,
+      `files scanned: 2 · phpunit invocations: 2 · guarded: 2 · unguarded: 0`; four dirty cases in
+      the **same commit** (D-019 rider e) — flag removed → exit 1 with `file:line`; negation flag →
+      exit 1; `_PHPUNIT_CONCURRENT: '1'` → exit 1; scope collapse in a throwaway copy → exit 1 with
+      `FATAL: phpunit invocations: 0 …` **and no summary line** — each reverted with
+      `git status --porcelain` empty. Added to `gate-a-wave3.sh` as two checks:
+      **29 → 31 checks · 0 failures**, stated as a number so the change cannot be silent.
+      `gate-a-wave1.sh` unchanged at **61 · 0**.
+- [ ] **T-215** · Prove T-214 in the place it has to work: a CI run that executes nothing must go
+      **red**. Executed by an actor other than whoever wrote T-213/T-214 (I-030).
+      *Success:* on a throwaway branch with only the T-213 copy step removed, `gh run watch
+      --exit-status` returns **non-zero** and the log names the cause (`No tests executed!` or
+      `FATAL: tests did not reach …`); the branch is deleted locally and on the remote afterwards.
+      **Until this run exists, T-214 is decoration, not an invariant** (I-027).
+- [ ] **T-216** · The record for this turn, in one commit: sign **D-020** (a/b/c/d); append the
+      T-202 criterion rider; append **I-032…I-035**; the risk-status update under `plan.md` §7; the
+      gate A job list in `CLAUDE.md`.
+      *Success:* `grep -c 'D-020' specs/000-proyecto/DECISIONES.md` ≥ 1;
+      `grep -cE '^- I-03[2-5]' specs/000-proyecto/IDIOMS.md` = 4; no line deleted from either file.
 
 **Gate A wave 2**
 ```bash
@@ -470,9 +564,10 @@ Sign here: `[ ]`
 | D-010 v1 demo content scope | 🔴 **OPEN** | unit 003 | 👤 Andrés |
 | **Wave 2 deadlock** | ✅ **RESOLVED 2026-08-22 by D-019** · the incompatibility was two needs conflated: running the invariants (→ container) and running the install smoke (→ a Drupal site set up separately, this package added as a path repository — the T-207 flow, already executed by `.github/workflows/phpunit.yml`). **T-201 superseded by T-207**; **T-208 redefined** to version the gate's container definition, not a `.ddev/config.yaml` for a site this repository does not contain. Task-level rewiring owned by the `orquestador` | — | — |
 | T-205 first green pipeline | 🔴 **OPEN** · **there is no project on drupalcode** (`git.drupalcode.org/api/v4/projects/project%2Fagora_transparency` → **404**, verified 2026-08-21). Without a project there is no pipeline, no canary MR (D-009 rider b) and nothing to apply D-009 to | T-205, and the application of T-206 | 👤 Andrés (creates the project) |
+| **`phpunit.yml` executed ZERO tests** | 🔴 **OPEN** · nine of ten green runs ran nothing, bisected to `975b263` (`/tests export-ignore`) · Composer's path-repo mirroring honours `export-ignore`, so `tests/` never reached the installed package (I-032, I-033). `RequirementsTest` has not executed since 2026-08-21 — **no unit 001 closure verdict is possible without it** | T-402, T-406, T-404 | owner **T-213**; exit gate = a run reporting `Tests: N ≥ 3` |
 | T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
-| **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants execute only when a human types them; `no-boilerplate` was a no-op for two commits and only a hand-dispatched injection caught it. **T-202's criterion "no job is defined by hand" forbids the fix** — needs an amendment to that signed criterion. Unfixable today (no drupalcode project, T-205); automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | 👤 Andrés (criterion amendment) |
+| **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants execute only when a human types them; `no-boilerplate` was a no-op for two commits and only a hand-dispatched injection caught it. The criterion clash is **RESOLVED 2026-08-22** by the T-202 rider (Ágora may add jobs upstream does not provide). The blocker itself still needs a drupalcode project (T-205); automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | — |
 | T-316 grep rc-blindness | 🔴 **OPEN** · no scanner inspects grep's exit status, so rc ≥ 2 reads as "no match". A **false green**, reproduced in the repaired `no-boilerplate` with an invalid-BRE deny term. Debt with an owner and an exit gate (I-020) | wave 4 | — |
 | T-317 toolchain floor | 🟡 **OPEN** · unblocked by D-019, which requires the floor to be pinned and documented · `-Fin` and the CRLF assumptions are measured **only on the Windows dev host**. The CI/DDEV image and the **macOS dev host** are both unmeasured, and macOS is a different question (BSD grep, not GNU). Do not assume either covers for the other | — | blocked by D-019 |
 | **second dev host (macOS)** | 🟡 **OPEN** · a second agent works this repo from a Mac. The wave 3 gate is certified on the Windows host **only** (see the closure note): its toolchain floor, its `grep` flavour and its line endings are all unverified there. First action on that host is T-317's measurement, before trusting any invariant's green | T-317 | — |

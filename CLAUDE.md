@@ -119,9 +119,18 @@ Canonical layout: skill `drupal-site-template` + the research in `specs/001-fund
 ## Gate A (once the skeleton exists; unit 001 fixes the exact list)
 
 - `composer validate` + clean install
-- phpcs (Drupal + DrupalPractice), phpstan, cspell, eslint, stylelint (the same jobs as the
-  Drupal.org gitlab_templates — the drupalcode pipeline IS the gate, not an approximation)
-- PHPUnit (kernel/functional of the recipes)
+- The **drupalcode pipeline IS the gate, not an approximation.** Derived from `gitlab_templates`
+  `main` on 2026-08-22 for a **recipe** project with default variables on current core, the jobs
+  that run automatically are: **composer · composer-lint · phpcs (Drupal + DrupalPractice) ·
+  phpstan · stylelint · eslint · cspell · secret detection · phpunit**; `test-only changes` runs
+  manually on merge requests. NOT on by default: `twig-cs-fixer`, `nightwatch` (D-009 puts axe
+  there), `pages`, `upgrade status` (needs an `*.info.yml`, which a site template may not contain
+  — I-014), `Drupal CMS` (`OPT_IN_TEST_DRUPAL_CMS: '0'`, turned on by D-009), and every
+  previous/next/max-PHP variant. ⚠️ **This list is derived from the template, not observed in a
+  pipeline**: the authoritative inventory is **T-203**, against the first real run (**T-205**).
+- PHPUnit (kernel/functional of the recipes) runs with **`--fail-on-empty-test-suite`**, on every
+  runner. A suite that executed 0 tests is a **failed** gate, not a passed one (I-007, I-032).
+  `tests/bin/no-blind-phpunit` enforces that the flag is present in every versioned CI file.
 - **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render
 - Playwright: functional + visual regression of the demo pages
 - axe (a11y) with no violations on the demo pages
