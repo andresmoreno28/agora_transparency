@@ -97,6 +97,30 @@ test ! -f GET-STARTED.md && echo "kit docs clean"
 Sign here: `[✓ 2026-08-21 andres]` — package `drupal/agora_transparency`, visible identity "Ágora",
 description as recorded in `composer.json`. Gate A closed with **61 checks · 0 failures**.
 
+> **Note appended 2026-08-22 — what the wave 1 gate could not see (T-316).**
+> This note **does not amend the signature above**: gate A of wave 1 is signed
+> `[✓ 2026-08-21 andres]` at **61 checks · 0 failures**, and that number stands.
+>
+> What was later discovered: of those 61 checks, **two could have passed on a `grep` that
+> never ran.** Both compared a counter against the expected value `0`, and both had a
+> degenerate value of `0` — so a `grep` that exited ≥ 2 and printed nothing was
+> indistinguishable from a `grep` that ran and found nothing (I-028). One of the two was
+> `files DEFINING CI_ALLOW_DEV`, which `CLAUDE.md` designates an automatic 🔴.
+> Confirmed reproducible at `c3dc9f5`: with a probe file whose name contains a **space**,
+> `xargs` word-split it into two non-existent paths, `grep` exited 2 silently, and the gate
+> printed `0 | 0 | OK` and `61 checks · 0 failures`, exit 0 — while `tests/bin/no-ci-allow-dev`,
+> on the identical tree, reported `definitions: 1`, exit 1.
+>
+> **Why the signature stands.** The defect was in the check's *power*, not in its *result*.
+> On the tree that was signed, the invariant independently confirms the same verdict
+> (`definitions: 0`, `findings: 0`), and — decisively — **the repaired runner reproduces the
+> same count on the same tree: 61 checks · 0 failures.** An instrument that can now say "no"
+> says "yes" to the reading that was signed.
+>
+> Repaired by **T-316** (2026-08-22): 28 `rc >= 2` guards across 27 call sites in 9 files,
+> plus the removal of two fallback-zero sites. Clean-path output verified **byte-identical**
+> to `c3dc9f5`. Lessons recorded as **I-028** and **I-029**.
+
 ---
 
 ## Wave 2 · Environment and CI
@@ -237,16 +261,24 @@ Sign here: `[ ]`
       > **Note:** this invalidates the *original* evidence for **T-310**, whose criterion is
       > "0 findings from `tests/bin/no-boilerplate`" — that zero was produced by the no-op.
       > T-310 is signed on **post-T-315 evidence**, re-verified 2026-08-21.
-- [ ] **T-316** · The class behind T-315: **no scanner in `tests/bin/` inspects grep's exit
-      status**, so any grep error (≥2) is silently read as "no match". Demonstrated live in the
-      *repaired* `no-boilerplate`: with an eighth deny term `[unclosed` (an invalid BRE) and a
-      matching line present in a scanned file, it reports `deny-list terms: 8 · findings: 0`,
-      exit 0. Also **correct the comment added by T-315**, which states that a metacharacter term
-      "would over-match … a false positive, i.e. the safe direction": that is true for a *valid*
-      BRE and **false for an invalid one**, which fails in the unsafe direction.
-      *Success:* every scanning grep in `tests/bin/` treats rc ≥ 2 as a FATAL, not as zero
-      findings; the `[unclosed` injection produces a loud failure instead of a green;
-      `gate-a-wave3.sh` still reports 0 failures on a clean tree.
+- [✓ 2026-08-22] **T-316** · The class behind T-315: 28 `rc >= 2` guards across 27 call sites in
+      9 files; helpers running inside command substitutions write a marker honoured by
+      `assert_grep_ok` **before any summary is printed** (an `exit` there would end only the
+      subshell); `no-boilerplate` gains a deny-list preflight that compiles every term in the
+      parent shell, plus per-file exit status, each proven to fire with the other disabled; the
+      two gate runners use **sentinels, not aborts** (I-029); the incorrect T-315 comment is
+      corrected in place, stating which of its claims was false.
+      Two residual holes found by the `tester` and closed in the same wave:
+      **R2** `FINDINGS=$(grep -cve '^$' "$HITS_FILE") || FINDINGS=0` printed `findings: 0`,
+      exit 0, with a real finding present, and `gate-a-wave3.sh` reported 28 checks · 0 failures
+      — invisible at every level; replaced by `wc -l`, which **deletes** the failure mode rather
+      than guarding it. **R1** `no-boilerplate` was the only invariant with no `scanned > 0`
+      self-guard despite its header claiming that contract.
+      *Success:* every scanning grep treats rc ≥ 2 as FATAL; the `[unclosed` deny-term injection
+      fails loudly (`FATAL: deny-list term is not a pattern grep can compile (exit 2)`, exit 1);
+      `gate-a-wave3.sh` still 28 checks · 0 failures on a clean tree; the two silent passes at
+      `c3dc9f5` now FAIL (`61 checks · 1 failures`, exit 1); **clean-path output byte-identical
+      to `c3dc9f5`** across all invariants. Verified independently by `orquestador` 2026-08-22.
 - [ ] **T-317** · Determine whether the `-Fin` abort, and the toolchain assumptions generally, hold
       on **every platform this project is developed or gated on** — Docker was unavailable on
       2026-08-21, so this is **unverified in every direction** and must not be assumed either way.
@@ -265,6 +297,17 @@ Sign here: `[ ]`
       dirty-case matrix (T-312) re-run in full on each platform declared first-class by D-019 —
       a no-op on one platform is a no-op nobody sees.
       **Blocked by D-019.**
+
+- [ ] **T-318** · Close the two survivors of T-316, both of the I-028 shape:
+      (a) `gate-a-wave3.sh` asserts `no-boilerplate`'s exit status and scanned count but **not**
+      its deny-term count, so a degenerate `TERM_COUNT=0` would print
+      `deny-list terms: 0 · findings: 0` and pass at 28 checks · 0 failures — add
+      `check_positive 'no-boilerplate (deny terms)'`;
+      (b) `sbom-check`'s `grep_failed` messages hard-code a literal duplicate of the pattern
+      being searched, correct today and silently misleading after any edit to the pattern —
+      pass the pattern through a variable so the message cannot drift from the search.
+      *Success:* the deny-term count is asserted positive in the wave 3 gate; no `grep_failed`
+      call site repeats a pattern literal; `gate-a-wave3.sh` still 0 failures on a clean tree.
 
 **Gate A wave 3**
 ```bash

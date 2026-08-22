@@ -145,3 +145,36 @@
   from a decoration; (b) **any criterion of the form "invariant X reports 0 findings" is worth
   exactly as much as X's most recent dirty-case run** — cite that date when signing, not the clean
   run. Found by the `tester`, wave 3, 2026-08-21.
+- I-028 · **A check whose degenerate value equals its expected value cannot fail.** Every
+  broken counter in a shell returns the same thing: `0`. A `grep` that exited ≥ 2 and printed
+  nothing, a `wc -l` over an empty stream, an `xargs` that word-split a filename into
+  non-existent paths, a `${VAR:-0}` fallback, a `|| COUNT=0` — all of them are `0`, which is
+  exactly what a check written as *"expected: 0"* is hoping to see. At `c3dc9f5` the wave 1
+  gate ran 61 checks; **exactly two were silent, and they were precisely the two whose
+  degenerate value equalled their expected value.** That is analysis, not luck: the other
+  `grep -c` sites were probed and failed loudly, because they expected something that a
+  failure could not counterfeit. Rules: (a) an *expect-zero* check must, in the same breath,
+  assert that the scan actually happened — `check 'files scanned > 0' … 'yes'` is safe because
+  its degenerate value is `no`, never `yes`; (b) prefer expected values a failure cannot
+  produce (`yes`, `present`) over `0`; (c) when a tool's status is the only witness, capture it
+  and substitute a **sentinel string** that cannot collide with any legitimate value.
+  Trigger worth remembering on its own: **a space in a filename** was enough — `xargs`
+  word-splits it, `grep` exits 2, the count is 0, the gate is green.
+  Corollary on provenance: commit `a462235`, *"count findings without concatenating a fallback
+  zero"*, removed the string concatenation and **kept the rc-blindness** — so the defect
+  survived under a commit message that reads like its cure. A fix aimed at a symptom leaves the
+  defect *and* removes the evidence that it is still there. Found by the `tester`, wave 3,
+  2026-08-22.
+- I-029 · **An invariant's product is a verdict; a gate runner's product is a count** — so they
+  fail differently, on purpose. An invariant that cannot scan **FATALs and stops**: a verdict it
+  cannot support is worth nothing. A gate runner **never aborts**; it degrades the individual
+  check to `FAIL` via a sentinel and preserves the `N checks - M failures` line. Reason: an
+  abort mid-run does not produce a red gate, it produces a **smaller gate that still looks
+  green** — the `6 checks - 2 failures` preflight abort that made the wave 1 record
+  non-reproducible is the same shape, and it was reproduced accidentally again on 2026-08-22 by
+  a truncated `PATH`. Sentinels must be unable to collide with any legitimate expected value
+  (they begin with `<` and contain spaces), comparison must happen on the raw value with
+  truncation applied **only** at display time, and a sentinel `FAIL` must stay visually
+  distinguishable from an ordinary `FAIL`, so a reader can tell *"this check failed"* from
+  *"this check could not run."* Recorded 2026-08-22 so that a future contributor enforcing
+  uniformity does not "fix" the runners into aborting.
