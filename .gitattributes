@@ -36,3 +36,12 @@
 # --- Deliberately NOT export-ignored (D-015.1) ----------------------------------------
 # AGENTS.md is product, not process: it ships with the template and guides AI assistants
 # working on a site built WITH Ágora. Do not add it to this file.
+
+# --- Line endings (checkout attribute, not export-ignore) ------------------------------
+# `core.autocrlf=true` is set at system scope by the Git for Windows installer, so a
+# fresh clone checks these shell scripts out as CRLF on any default Windows machine,
+# breaking their shebang. `eol` governs checkout in every clone, unlike `export-ignore`
+# above, which only shapes the packaged tarball. Scoped to shell scripts, never a
+# blanket `* text=auto`.
+tests/bin/** text eol=lf
+*.sh text eol=lf
