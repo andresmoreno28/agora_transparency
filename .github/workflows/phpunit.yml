@@ -57,5 +57,38 @@ jobs:
           ddev composer config allow-plugins.drupal/site_template_helper true
           ddev composer require --update-with-all-dependencies "$PACKAGE_NAME:@dev"
 
+      # Copy this repository's tests into the installed recipe so PHPUnit can find them.
+      #
+      # `/tests` is deliberately excluded from the packaged release (.gitattributes,
+      # D-020 rider d) - end users of this site template must not receive tests. But
+      # COMPOSER_MIRROR_PATH_REPOS=1 (set above) makes Composer mirror this package into
+      # ./recipes/ through the same export-ignore-aware machinery release packaging uses, so
+      # the installed copy never gets a tests/ directory either. Left unfixed, PHPUnit finds
+      # nothing under ./recipes/<name>, prints "No tests executed!" and exits 0 - a build that
+      # looks green while testing nothing (T-212, I-032, I-033). This mirrors what the
+      # canonical drupalcode pipeline already does for the same reason: gitlab_templates'
+      # `.recipe-replace-symlinks` (include.drupalci.main.yml:1605-1611) force-copies tests/
+      # from the clone, where export-ignore does not apply.
+      #
+      # TRAP: this must stay the LAST step before "Run tests". Any composer command placed
+      # after this one re-mirrors the path repository and silently deletes
+      # ./recipes/<name>/tests again - the exact defect this step exists to fix, reintroduced
+      # by an innocent-looking edit.
+      - name: Copy the recipe's tests into the installed package
+        run: |
+          RECIPE_DIR="./recipes/$(basename "$PACKAGE_NAME")"
+          rm -rf "$RECIPE_DIR/tests"
+          cp -R ./source/tests "$RECIPE_DIR/"
+          test -f "$RECIPE_DIR/tests/src/Kernel/RequirementsTest.php" \
+            || { echo "FATAL: tests did not reach $RECIPE_DIR"; exit 1; }
+          find "$RECIPE_DIR/tests" -name '*Test.php' | wc -l
+
+      # A run that executes zero tests must FAIL, not pass silently: nine of ten prior runs
+      # of this workflow did exactly that and nothing caught it (T-212). --fail-on-empty-test-suite
+      # is PHPUnit's own guard for this (PHPUnit 11.5, ShellExitCodeCalculator: "if
+      # ($failOnEmptyTestSuite && !$result->hasTests()) { $returnCode = FAILURE_EXIT; }"), so it
+      # holds even if this workflow's runner changes later. A suite that executed 0 tests is a
+      # FAILED gate, not a passed one (I-007, I-032). --testdox names each test in the log
+      # instead of only counting them (T-406).
       - name: Run tests
-        run: ddev exec phpunit --configuration=./web/core ./recipes/$(basename $PACKAGE_NAME)
+        run: ddev exec phpunit --configuration=./web/core --testdox --fail-on-empty-test-suite ./recipes/$(basename $PACKAGE_NAME)
