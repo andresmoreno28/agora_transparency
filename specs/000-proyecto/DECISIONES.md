@@ -596,36 +596,81 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   that every packaged file naming the product be declared as identity or prose — a new undeclared
   one is a finding, not a silent pass.
 
-- **D-022** · **First push to the canonical remote.** ⚠️ **FRAMED, NOT SIGNED — awaiting [andres].**
-  Prepared by `orquestador` 2026-08-22.
+- **D-022** · **Canonical git topology and the first push.** Replaces the framing of earlier the
+  same day, whose option A is **withdrawn**: it rested on the belief that pushing any branch would
+  produce a pipeline. That belief is **false** (see (6)), and [andres] ruled 2026-08-22:
+  *"la metodología de git que utiliza toda la comunidad de Drupal … haz primer push en la rama
+  principal y luego crea las ramas que consideres."* Clauses (1)-(6) are signed **[ejecutor] under
+  his delegation**; the three reserved acts are marked 👤.
 
-  *Context:* `project/agora_transparency` exists and its **repository is empty — 0 branches, 0
-  commits** (GitLab API, 2026-08-22), so `default_branch: main` is a pointer to a ref that does not
-  exist. Read literally, rule 10 reserves *"merges to the canonical branch, tags, releases and
-  creation of the project"*, and pushing a working branch is none of those — so the literal answer
-  is "delegated". **The literal answer is rejected**: on an empty repository the first push may also
-  set the default branch, and an act that may perform the reserved thing without asking is, for that
-  reason alone, not delegated. GitLab's behaviour here was **not verified** and will not be deduced
-  (I-027, T-317: measure, do not reason).
+  *Context:* `project/agora_transparency` exists, repository **empty — 0 branches, 0 commits**, and
+  `default_branch: main` points at a ref that does not exist.
 
-  - **A ★** · Push **only** `001-fundacion/scaffolding`; create no other branch; re-query
-    `default_branch` immediately afterwards and **report whatever it says**, escalating rather than
-    quietly fixing. Cost: if GitLab retargets, the public default branch is briefly a Spanish-named
-    working branch — reversible. Gain: the pipeline runs today and nothing reserved is decided.
-  - **B** · Create `1.0.x` from the current tip and push it first. Cost: decides the release-branch
-    name today on unverified ground — Drupal.org's naming-conventions doc 302s and then **404s**, so
-    both `1.0.x` and `1.x` are attested in the ecosystem but neither is confirmed as the rule (I-016).
-  - **C** · Push the tip as `main`. Cost: `main` is not a release branch and two of the four
-    comparable projects do not have one; the history would move twice.
-  ★ **A**, with the rule-10 line stated: **the first push on an empty repository needs a signature;
-  every subsequent working-branch push does not.**
+  **(1) The branch name is a rule, not a preference.** Release branches are `{major}.x` or
+  `{major}.{minor}.x` — `/docs/develop/git/git-for-drupal-project-maintainers/release-naming-conventions`,
+  updated 2026-01-11 — and a branch outside that shape **cannot host a release**: *"If you fail to
+  do so, you will not be able to add a new release from your project page."* `main`/`master` are
+  ruled out by the same page: *"Git's default `master` branch should be avoided and no downloadable
+  releases can be tied to that branch … Use a release branch like `7.x-1.x`, `8.x-1.x`, or `1.x` as
+  your main development branch."*
+  ⚠️ This doc was reported *unfindable* in the previous turn. It was not deleted — the slug guessed
+  from its title 404s while the real page serves 200. See **I-041**.
 
-  *"The history moves whole" (D-016), in git terms:* all **40** commits from `553c580` to the tip on
-  one branch · **the same SHAs** — no rebase, no filter-branch, no amend, or the mirror would hold a
-  different history and D-016's own claim becomes false · original author, dates and messages
-  preserved · **never `--force` to this remote**. Proof: `git ls-remote` shows the same SHA as local
-  HEAD. If it differs, stop — do not force.
+  **(2) `1.x`, not `1.0.x`.** ★ The elective choice of this decision, made on **mechanism, not
+  frequency**. Behaviour sample of 31 projects: 11 use `{major}.x`, 14 `{major}.{minor}.x`, 6 remain
+  on legacy `8.x-1.x`. A `{major}.x` branch publishes any three-component tag — the docs' own
+  example is *"3.x and 3.4.2"* — so `1.x` carries the whole 1.* series with **no branch migration
+  at any minor**, and the docs describe adding `1.0.x` **later** *"for those commits, if needed"*.
+  The converse is not true: starting at `1.0.x` and later wanting `1.x` strands a `1.0.x-dev`
+  release node and costs a default-branch move. **`1.x` is the option that keeps the other option
+  open.**
+  ⚠️ Counter-evidence, recorded against ourselves: the two published marketplace site templates,
+  `caresphere` and `convene`, both use `{major}.{minor}.x`. Choosing `1.x` is a mechanical argument,
+  not a conformist one.
 
+  **(3) `main` is never created.** Beyond (1), it is mechanically dangerous here. Gitaly resolves a
+  default branch as: HEAD's target → `refs/heads/main` → `refs/heads/master` → the first ref of
+  `git for-each-ref --count=1 refs/heads/` (read at source 2026-08-22,
+  `internal/git/localrepo/refs.go`). While HEAD is unpinned, a `main` branch would **silently
+  outrank `1.x`** and drag `$CI_DEFAULT_BRANCH` with it.
+
+  **(4) `001-fundacion/scaffolding` is never pushed to drupalcode.** Not because the name breaks a
+  rule — day-to-day names are explicitly free (*"You are free to name your branches whatever you
+  like"*) — but because it cannot host a release, it triggers no pipeline, and
+  `refs/heads/001-…` sorts **before** `refs/heads/1.x` bytewise, so it would capture the fallback
+  default branch. Verified locally 2026-08-22 with `sort`. `1.x` is created with
+  `git branch 1.x 001-fundacion/scaffolding` — a pointer to the same commit object. **All 41
+  commits keep their SHAs, authors, dates and messages; nothing is rebased, amended, filtered or
+  forced.** D-016 is satisfied by construction, not by care.
+
+  **(5) The public topology is one branch.** After the push, `project/agora_transparency` holds
+  **`1.x` and nothing else**. The GitHub mirror is retargeted to `1.x` so the two remotes agree, and
+  the old working branch is deleted there once `1.x` is verified on both — with `git branch -d`,
+  **never `-D`**, so git itself refuses if any commit would become unreachable.
+
+  **(6) Why `1.x` first, and why option A could not have worked.** `gitlab_templates`' workflow
+  rules, read at source 2026-08-22 (`includes/include.drupalci.workflows.yml`), run a branch
+  pipeline only when ``($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_BRANCH =~
+  /^[78]\.x-\d+\.x$|^[\d+.]+\.x$/) && $CI_PROJECT_ROOT_NAMESPACE == "project"``. `1.x` matches the
+  regex, so pushing it triggers a pipeline **regardless of what the default branch says** — the only
+  first move whose CI does not depend on Gitaly's fallback. `001-fundacion/scaffolding` matches
+  nothing. Option A's claimed gain, *"the pipeline runs today"*, was false. See **I-040**.
+  ⚠️ The include is pinned by `$_GITLAB_TEMPLATES_REF`, an instance variable we cannot read. These
+  rules are read from `main`, **not observed in our pipeline**. T-203/T-218 are the authority.
+
+  **👤 Reserved to [andres] — three acts, none delegable:**
+  (a) **The push credentials.** The maintainer URL and a PAT or registered SSH key, from the
+      project's Version control tab. Rule 10 restated: *the first push to an empty canonical
+      repository needs a signature; every subsequent push to `1.x` does not.*
+  (b) **Pinning the default branch to `1.x`** — GitLab → Settings → Repository → Branch defaults.
+      Requires `Administer maintainers` + `Write to VCS` (the GitLab Maintainer role). **Mandatory,
+      not cosmetic:** until HEAD is pinned the default branch is merely *resolved* and flips the
+      moment a second branch exists. `git ls-remote --symref drupalcode HEAD` tells pinned from
+      resolved; the API's `default_branch` cannot.
+  (c) **Whether to create a `1.x-dev` release node.** Optional, no deadline.
+
+  **Never `--force` to either remote.** If `git ls-remote` ever disagrees with local `1.x`, stop and
+  report; do not reconcile with a force push.
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21

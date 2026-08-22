@@ -102,6 +102,41 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       `no-boilerplate` **scanned 18 · terms 8 · findings 0** unchanged; `composer validate --strict`
       exit 0; `recipe.yml` still parses with `type: Site`, 10 recipes / 3 install unchanged.
 
+- [ ] **T-117** · `.mailmap` at the repository root, canonicalising the two author names that share
+      one mailbox. `git shortlog -sne` reports `Andrés Moreno <andresmrubio28@gmail.com>` **×22** and
+      `andresmoreno28 <andresmrubio28@gmail.com>` **×19** — one person, two identities, visible to
+      anyone who opens the project cold. History is **not** rewritten (D-016); `.mailmap` is git's
+      own non-rewriting mechanism for exactly this. Also set the forward identity so the split does
+      not resume: `git config user.name "Andrés Moreno"` in this repository.
+      *Success:* `git shortlog -sne --all` prints **exactly one** author line with count **41**;
+      `git log --format='%aN' | sort -u | wc -l` prints **1**; `git rev-parse HEAD` **unchanged**
+      — note **`%aN`, not `%an`**: lowercase is the *raw* recorded name and never consults
+      `.mailmap`; only uppercase is mapped. This criterion was written with `%an` and was
+      unsatisfiable by any correct `.mailmap`; the `desarrollador` caught it rather than
+      declaring the task done against a check that could not pass.
+      from before the task — that is the proof nothing was rewritten.
+      *Do NOT* `export-ignore` it: it is 200 bytes and answers a question the tarball's recipient
+      may also ask. **Land before the first push**, so the public repository never shows the split.
+- [ ] **T-118** · Amend **`CLAUDE.md` rule 7** to the Drupal convention verified at source
+      (`…/git-for-drupal-project-maintainers/the-format-of-the-git-commit-message`, updated
+      2026-04-24): *"As of November 2025, the Drupal Core project adopted Git commit messages
+      formatted to comply with the Conventional Commits specification"*, format
+      `{type}: #{issue ID} One line summary`, with `By:` trailers for co-contributors. Allowed types
+      are exactly **fix · feat · ci · docs · perf · refactor · test · task · revert** — note
+      **`task`, not `chore`**. Three changes for us: (a) `chore:` → `task:` from now on (the 8
+      existing `chore:` commits stay — D-016); (b) `#{issue ID}` becomes mandatory once an issue
+      exists for the work; (c) the no-AI-trailer rule **stands and is reinforced** — `By:` names
+      humans.
+      *Success:* rule 7 quotes the doc and its URL; `git log --format=%s | grep -c '^chore'` is
+      **8 and does not grow**; the next 3 commits after T-118 carry a type from the list.
+      *Note:* deliberately **not** enforced by a `tests/bin/` invariant yet — one over commit
+      subjects would have to scan history, which a lane forbidden to rewrite history cannot certify
+      green (I-030). If wanted, it belongs in unit 002 as a **forward-only** check over
+      `drupalcode/1.x..HEAD`, with its own task.
+      > **Good news worth recording:** our 41 commits are already in the right family. The gap is
+      > `chore` vs `task` and the missing issue IDs — both forward-only. A reviewer opening the log
+      > sees the format Drupal core itself uses.
+
 **Gate A wave 1**
 ```bash
 composer validate --strict
@@ -357,6 +392,16 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       as local HEAD**; `git rev-list --count HEAD` = **40**; **`default_branch` re-queried from the
       API and reported verbatim, whatever it says**; no branch created other than the one pushed;
       no `--force`, ever, to this remote.
+      > **Rider [orquestador] 2026-08-22 — REDEFINED by the D-022 replacement.** The branch pushed
+      > is **`1.x`**, created as a pointer with `git branch 1.x 001-fundacion/scaffolding` (same 41
+      > SHAs), pushed **alone and first**; `001-fundacion/scaffolding` is **never** pushed to
+      > drupalcode. Success is four counts, not an exit code: `git ls-remote --heads drupalcode`
+      > prints **1** line · that SHA equals local `git rev-parse 1.x` ·
+      > `git rev-list --count drupalcode/1.x` prints **41** · `git log --oneline drupalcode/1.x |
+      > tail -1` prints `553c580`. Two further readings are recorded **verbatim whatever they say**:
+      > the API's `default_branch`, and `git ls-remote --symref drupalcode HEAD` — the second tells
+      > a *pinned* HEAD from a *resolved* one, and only pinned is stable (I-039). **T-217 does not
+      > close until [andres] has pinned Branch defaults to `1.x` and both readings agree.**
 - [ ] **T-218** · Observe the first pipeline end to end — this is T-203's and T-205's evidence, and
       it runs against an **unmodified** `.gitlab-ci.yml` deliberately: an inventory taken from a
       modified include is an inventory of us, not of upstream, and a red pipeline would then have two
@@ -365,6 +410,16 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       `--fail-on-empty-test-suite` **in the executed command line** (closes T-214c); `Tests: N,
       Assertions: M` with **N ≥ 3** and `RequirementsTest` named; every outcome quoted from the log,
       **never from the badge** (I-034).
+      > **Rider [orquestador] 2026-08-22.** The first pipeline is now expected to be triggered by
+      > the **release-branch regex** `^[\d+.]+\.x$`, not by the default-branch rule — so it must
+      > appear **even if `default_branch` still reads `main`**. **An empty `/pipelines` response is a
+      > FAILURE, not "nothing to report"**: it means the instance's `$_GITLAB_TEMPLATES_REF` differs
+      > from `main`, or CI is disabled on the project — check **Settings → General → Visibility →
+      > CI/CD** before concluding anything. The job inventory (name + status for all N jobs)
+      > supersedes the **derived** list in `CLAUDE.md`'s Gate A block and closes **T-203**. The
+      > `--fail-on-empty-test-suite` half must be evidenced per I-038: the flag in the **executed
+      > command line**, paired with the positive `Tests: N, Assertions: M` from the same log. Green
+      > with `Tests: 0` is a failed gate.
       > **Note:** this run is a **measurement, not a gate.** Nothing closes on it. Two failure modes
       > to expect, neither ours: the `include:` uses `$_GITLAB_TEMPLATES_REPO`/`_REF`, which are
       > group-level variables on drupalcode — a config-load error is those not inheriting, not our
@@ -375,6 +430,17 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       after T-202 adds the job its own amended rider permits.
       *Success:* the `tests/bin/` job's log shows `gate-a-wave1.sh` **61 · 0** and `gate-a-wave3.sh`
       **33 · 0** (31 after T-214, +2 after T-322).
+- [ ] **T-220** · Confirm the 41 commits are **attributable** on Drupal.org once pushed. Commit
+      authorship on drupalcode attaches to a user account only when the author email is a **verified
+      email on that account**; otherwise the commit list shows a bare string and the maintainer gets
+      no contribution record. Our author email is a personal address, not the drupal.org
+      `NNNNNN-noreply@drupal.org` form.
+      *Success (👤 [andres], after the push):* on
+      `git.drupalcode.org/project/agora_transparency/-/commits/1.x`, the author of the tip and of
+      the root commit `553c580` both render as a **linked GitLab user with an avatar**, not a plain
+      email string; the commit count shown is **41**.
+      *If it fails:* add that email to the drupal.org account — retroactive, no history change.
+      **Never** rewrite the author fields.
 
 **Gate A wave 2**
 ```bash
@@ -711,7 +777,7 @@ Sign here: `[ ]`
 ## Active blockers
 
 > A table of **state**, not of signed tasks: it is rewritten on each update.
-> Last updated: 2026-08-22, after the drupalcode project was created.
+> Last updated: 2026-08-22, after D-022 fixed the git topology.
 
 | Blocker | State | Blocks | Who resolves |
 |---|---|---|---|

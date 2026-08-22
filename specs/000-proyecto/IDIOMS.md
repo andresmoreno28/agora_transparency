@@ -279,3 +279,40 @@
   `No tests executed!` **present** and phpunit's exit status naming the flag; (b) before citing an
   absence, ask whether the code that would have produced the string was even reachable in that run.
   A CI log is an instrument like any other, and I-007 applies to reading it. Recorded 2026-08-22.
+- I-039 · **On an empty GitLab repository the default branch is *resolved*, not *stored* — and the
+  resolution is a fallback chain a later branch can hijack.** `project/agora_transparency` reported
+  `default_branch: main` while holding zero refs. Gitaly's `GetDefaultBranch` tries, in order:
+  HEAD's target → `refs/heads/main` → `refs/heads/master` → **the first ref of
+  `git for-each-ref --count=1 refs/heads/`**, which git sorts by refname bytewise when `--sort` is
+  absent. Three consequences we would have walked into: (a) push only a working branch and it
+  silently becomes the public default; (b) push `1.x` and `001-fundacion/scaffolding` together and
+  **`001-…` wins**, because `'0'` (0x30) precedes `'1'` (0x31) — *push order is irrelevant, byte
+  order decides*; (c) create a `main` branch at any later date and it outranks the release branch
+  two steps earlier in the chain. The only stable state is a **pinned** HEAD, set in GitLab →
+  Settings → Repository → Branch defaults. And the API cannot tell you which state you are in:
+  `default_branch` reports the *resolution*; `git ls-remote --symref <remote> HEAD` reports the
+  *symref*. When a value can be either stored or derived, find the instrument that reads the store.
+  Verified locally with `sort` before acting. Recorded 2026-08-22.
+- I-040 · **A branch name is a CI trigger, so a badly-named branch produces a seventh species of
+  false green: no red, because no run.** `gitlab_templates` gates branch pipelines on
+  ``($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_BRANCH =~
+  /^[78]\.x-\d+\.x$|^[\d+.]+\.x$/) && $CI_PROJECT_ROOT_NAMESPACE == "project"``. Push to
+  `001-fundacion/scaffolding` and **nothing happens at all** — no job, no pipeline, no badge, no
+  notification. On a project page that is indistinguishable from "nothing is broken". The same guard
+  means pushes to an **issue fork** (namespace `issue`) never run either: only the merge-request
+  rules fire, which is why an MR must be opened *early*, not when the work is finished. Two rules:
+  (a) before believing a branch is tested, confirm the branch **name** satisfies the workflow rules,
+  reading `include.drupalci.workflows.yml` at source — the public documentation page shows an older,
+  simpler rule set **without** the release-branch regex or the namespace guard; (b) I-007 again:
+  "the pipeline is not red" is worthless until you have counted the pipelines that ran.
+  Recorded 2026-08-22.
+- I-041 · **A drupal.org doc URL that 302s to `new.drupal.org` and then 404s is a stale redirect,
+  not a deleted page — the page usually lives at a different slug on `www`.** A previous turn
+  reported the branch-naming convention as unsettleable and declined to name one, on the strength of
+  a 404. The page exists, updated 2026-01-11, at `…/git-for-drupal-project-maintainers/
+  release-naming-conventions`. The error was guessing the slug from the page's *title* and then
+  treating the 404 as evidence about the *content*. Method that works, and is cheap: fetch the
+  **parent** guide page, which does resolve, and enumerate its child links — the real slug is in
+  that list. Corollary: `new.drupal.org` and `www.drupal.org` redirect to each other page by page in
+  both directions, so a 302 in either direction says nothing about where the content is. **Never
+  conclude "undocumented" from one 404 on a URL you constructed.** Recorded 2026-08-22.
