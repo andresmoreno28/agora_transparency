@@ -296,6 +296,19 @@ if [ "$SCANNED" -eq 0 ]; then
   exit 1
 fi
 
+# The other half of the same degenerate scope (T-320a): this invariant's scope
+# is files x terms, and TERM_COUNT - fixed at parse time from the DENY_TERMS
+# heredoc above, never touched by the scan itself - can collapse to zero just
+# as SCANNED can. A run with no terms would still scan every file, find
+# nothing to match anything against, and print `deny-list terms: 0 - findings:
+# 0`, exit 0 - a clean-looking result for a scan that had nothing to look for.
+# TERM_COUNT == 0 is a FAILURE for the same reason SCANNED == 0 is (I-007).
+if [ "$TERM_COUNT" -eq 0 ]; then
+  printf '\n%sFATAL:%s deny-list terms: 0 - the scope collapsed to nothing.\n' "$C_BAD" "$C_OFF"
+  printf 'A scan with no deny-list terms is not a clean result (I-007).\n'
+  exit 1
+fi
+
 # ---------------------------------------------------------------- findings ---
 # T-316 / I-027, second bite: `grep -cve '^$' "$HITS_FILE" || FINDINGS=0` fixed
 # the concatenation bug but kept the `||` itself, which still turns a grep that

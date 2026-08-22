@@ -22,6 +22,14 @@ type: Site
 # contrib recipes for the future paid template, extraction is MOVING lines, not
 # rewriting them.
 #
+# Guardrail for that extraction: none of the extracted recipes may themselves
+# declare `type: Site` — a site template built on another site template.
+# Confirmed 2026-08-22, independently, in both the upstream recipe this
+# repository was copied from (T-101) and the Drupal.org site-templates RFC
+# (issue 3534752), which phrases it as a SHOULD-NOT design choice — site
+# templates stay comprehensive and opinionated, not composable — rather than
+# a rule enforced by the installer's own mechanics.
+#
 #   base        content model, taxonomies, roles and permissions     unit 002
 #   publishing  editorial workflow with ECA                          unit 004
 #   foi         freedom-of-information requests (Webform + ECA)      unit 004
