@@ -97,7 +97,10 @@ number of findings**, and each finding with `file:line`.
 > · **Row 3 — machine name taken: CLOSED by D-007** (`agora_transparency`, 404 on the GitLab API
 >   oracle, I-012; re-verified free 2026-08-22).
 > · **Row 4 — drupalcode runners without Playwright/axe: SUPERSEDED by D-009 = C.** The row's
->   *verification* remains open; the canary MR cannot run until the project exists.
+>   *verification* remains open. **Updated 2026-08-22: the project now exists**
+>   (`project/agora_transparency`, created 18:17:19Z, public, repository empty), so the canary MR of
+>   D-009 rider (b) is no longer blocked by its absence. It is blocked by the first push (T-217)
+>   and, substantively, by unit 002 — until a theme exists there is nothing for axe to audit.
 > **New risk, added 2026-08-22:** a gate surface whose result nobody reads as a count.
 > Sev 🔴 · **CLOSED for the GitHub surface** (T-213 run `32582950414` reports `Tests: 3,
 > Assertions: 38`; T-215 run `32583207616` proves the empty case red), **OPEN for drupalcode**

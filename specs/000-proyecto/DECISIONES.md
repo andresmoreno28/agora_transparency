@@ -508,6 +508,124 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
       the packaged artefact, so `RequirementsTest` scans, and `ValidationTest` applies, what the end
       user actually receives. That is stronger evidence than drupalcode's own symlinked variant.
 
+- **Amendment to D-007 — the visible title, corrected by the event.** Signed by [andres] 2026-08-22.
+  D-007 records above that *"The composer package will be `drupal/agora_transparency`; the project's
+  visible title remains 'Ágora'."* **The second half did not survive contact with the form.**
+
+  *What happened, 2026-08-22:* on submitting the project-creation form, Drupal.org rejected the
+  **Name** field with **"This project name is already in use."** The **Short name**
+  `agora_transparency` was accepted without complaint. **The machine-name half of D-007 is untouched
+  and confirmed**; only the title half is amended.
+
+  *The title actually accepted, read from the project page rather than assumed:* **`Ágora
+  Transparency`** — `<title>Ágora Transparency | Drupal.org</title>` and
+  `<h1 id="page-title">Ágora Transparency</h1>`, identical on `www.drupal.org` and `new.drupal.org`.
+  It was recommended before the fact and **verified after it**: a recommendation is not a record
+  (I-037).
+
+  *The colliding project, verified at source 2026-08-22:*
+  `git.drupalcode.org/api/v4/projects/project%2Fagora` → **200**, created **2018-12-21**,
+  `last_activity_at` **2019-01-08T17:15:39Z** — dormant for seven and a half years —
+  `visibility: public`, `archived: null`, `default_branch: master`. It predates site templates
+  entirely and therefore cannot appear in the Drupal CMS installer's template selector.
+
+  ⚠️ **Its title is `Agora`, without the accent**, and Drupal.org still rejected `Ágora` as already
+  in use: **the name check is accent-insensitive.** Recorded because it is the fact that decides
+  D-021 — to Drupal.org's own matching logic `Ágora` and `Agora` are one name, so a bare `Ágora` on
+  any of Ágora's own surfaces is a string that resolves, on the site we are publishing to, to a
+  stranger's 2019 project.
+
+  *What this amendment does NOT do:* it changes no string in the repository. "What the project is
+  called on Drupal.org" and "what the installer shows the user" are two questions, and conflating
+  them is what produced this divergence in the first place. **D-021 rules on the repository**,
+  separately and on its own evidence.
+
+  *Consequence for the record, stated so nobody edits it:* the **Gate B wave 1** signature in
+  `specs/001-fundacion/tasks.md` — `[✓ 2026-08-21 andres]`, *"visible identity 'Ágora'"* — **is not
+  edited.** It recorded what was true and decided on 2026-08-21. Its package-name half stands; its
+  identity half is superseded by this amendment and by D-021.
+
+- **D-021** · **Naming coherence: identity strings carry the full name, prose keeps the short form.**
+  Signed 2026-08-22 by **[ejecutor] under [andres]'s explicit delegation** (*"cambia lo que tengas
+  que cambiar para que todo esté en sintonía y no haya malentendidos"*). [andres] raised the risk
+  and delegated the fix; he did not write this text.
+
+  *The rule:* **a string whose job is to name the product to someone who has no other context
+  carries the full name `Ágora Transparency`. A string that refers back to a product already named
+  on the same surface may use `Ágora`.** Identity vs. prose.
+
+  *Why the "Drupal CMS"/"Drupal" analogy does not license a bare title:* that pattern works because
+  the full name is established first, where the reader cannot miss it, and the short form is then a
+  pronoun. `recipe.yml`'s `name:` has **no line above it** — in the installer's template selector
+  that string *is* the entire user interface for "what is this and where do I find out more". A user
+  who reads `Ágora` and searches drupal.org lands on a project last touched in January 2019, under
+  a name-matching rule Drupal.org has already demonstrated treats the two as identical.
+
+  *Ecosystem evidence, verified 2026-08-22 — `recipe.yml` `name:` against the Drupal.org title:*
+  `caresphere` → `CareSphere` / `CareSphere`, exact · `convene` → `Convene` / `Convene`, exact ·
+  `provus_edu` → **`Drush Site-Install`** / `Provus®EDU`. Two of three are byte-identical; the third
+  ships a `drush site:install` artefact in the installer's selector that nobody ever read. **The norm
+  is that the two match, and where it diverges it is a defect that proves nobody checked** — which
+  is exactly the kind of self-audit this template sells.
+
+  *Identity strings (full name):* `recipe.yml` `name:` · `README.md` H1 and its first prose mention ·
+  `AGENTS.md` audience header and first body mention · `recommended.yml` header. `AGENTS.md` and
+  `recommended.yml` are load-bearing here for a structural reason: `AGENTS.md` is scaffolded into the
+  **end user's** site root by `composer.json`'s `drupal-scaffold.file-mapping`, and `recommended.yml`
+  is consumed by Project Browser **by permalink** — both are read with no README adjacent.
+
+  *The two `description` fields drop the name rather than expanding it* — `recipe.yml` and
+  `composer.json`, kept byte-identical to each other. A description's job is to describe, not to
+  name; the name is rendered immediately adjacent in every surface that shows the field. It also
+  avoids reading "transparency" twice in six words, and it is what both well-formed published
+  templates already do.
+
+  *Prose keeps `Ágora`* everywhere below a surface that has already named it in full, and the whole
+  process layer (`CLAUDE.md`, `.claude/**`, `specs/**`) is untouched: it is `export-ignore`d, it
+  names the product to nobody evaluating it, and append-only forbids rewriting signed text.
+
+  *A deny term in `no-boilerplate` was considered and **rejected**, with reasons recorded so it is
+  not re-proposed:* (1) `Ágora` is a legitimate substring of the correct value and of ~33 prose
+  occurrences, so the term would report ~35 findings on a clean tree and the only way to green would
+  be deleting the product's name from its own documentation; (2) that list's header defines its
+  terms as verbatim starter-kit strings, and a term filed under a header that does not describe it
+  is a term the next maintainer is entitled to delete as miscategorised; (3) decisively, a deny term
+  is an **expect-zero** assertion, and I-028 says to prefer an expected value a failure cannot
+  counterfeit. "The identity strings are correct" is naturally **expect-present**. The guard is
+  therefore **T-322**, `tests/bin/identity-strings`, which also closes the I-024 class by requiring
+  that every packaged file naming the product be declared as identity or prose — a new undeclared
+  one is a finding, not a silent pass.
+
+- **D-022** · **First push to the canonical remote.** ⚠️ **FRAMED, NOT SIGNED — awaiting [andres].**
+  Prepared by `orquestador` 2026-08-22.
+
+  *Context:* `project/agora_transparency` exists and its **repository is empty — 0 branches, 0
+  commits** (GitLab API, 2026-08-22), so `default_branch: main` is a pointer to a ref that does not
+  exist. Read literally, rule 10 reserves *"merges to the canonical branch, tags, releases and
+  creation of the project"*, and pushing a working branch is none of those — so the literal answer
+  is "delegated". **The literal answer is rejected**: on an empty repository the first push may also
+  set the default branch, and an act that may perform the reserved thing without asking is, for that
+  reason alone, not delegated. GitLab's behaviour here was **not verified** and will not be deduced
+  (I-027, T-317: measure, do not reason).
+
+  - **A ★** · Push **only** `001-fundacion/scaffolding`; create no other branch; re-query
+    `default_branch` immediately afterwards and **report whatever it says**, escalating rather than
+    quietly fixing. Cost: if GitLab retargets, the public default branch is briefly a Spanish-named
+    working branch — reversible. Gain: the pipeline runs today and nothing reserved is decided.
+  - **B** · Create `1.0.x` from the current tip and push it first. Cost: decides the release-branch
+    name today on unverified ground — Drupal.org's naming-conventions doc 302s and then **404s**, so
+    both `1.0.x` and `1.x` are attested in the ecosystem but neither is confirmed as the rule (I-016).
+  - **C** · Push the tip as `main`. Cost: `main` is not a release branch and two of the four
+    comparable projects do not have one; the history would move twice.
+  ★ **A**, with the rule-10 line stated: **the first push on an empty repository needs a signature;
+  every subsequent working-branch push does not.**
+
+  *"The history moves whole" (D-016), in git terms:* all **40** commits from `553c580` to the tip on
+  one branch · **the same SHAs** — no rebase, no filter-branch, no amend, or the mirror would hold a
+  different history and D-016's own claim becomes false · original author, dates and messages
+  preserved · **never `--force` to this remote**. Proof: `git ls-remote` shows the same SHA as local
+  HEAD. If it differs, stop — do not force.
+
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21

@@ -86,6 +86,22 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       > process-layer task: it touches no artefact the wave 1 gate measures, so it does not
       > reopen that gate.
 
+- [ ] **T-116** · Apply **D-021** to the packaged identity strings, and correct the two README
+      statements that the project's creation made false the same day.
+      **Identity (full name `Ágora Transparency`):** `recipe.yml` `name:` · `README.md` H1 and first
+      prose mention · `AGENTS.md` audience header and first body mention · `recommended.yml` header.
+      **Both `description` fields drop the name** (`recipe.yml` and `composer.json`), kept
+      byte-identical to each other. **Prose keeps `Ágora`** — do not sweep it.
+      **Truth fixes (I-024 shape — text in a shipped artefact outliving the state it described):**
+      `README.md:55` says *"There is no project on Drupal.org"* — false since 18:17 today;
+      `README.md:130` says *"no public issue queue and no support channel"* — false, verified:
+      `drupal.org/project/issues/agora_transparency` → 200, `<h1>Issues for Ágora Transparency</h1>`.
+      *Not in this task:* `README.md:71`'s `git clone <this-repository>` — it waits for the push, or
+      the README would document a clone that 404s. Owned by T-217.
+      *Success:* the identity strings exact; `gate-a-wave1.sh` **61 · 0** unchanged;
+      `no-boilerplate` **scanned 18 · terms 8 · findings 0** unchanged; `composer validate --strict`
+      exit 0; `recipe.yml` still parses with `type: Site`, 10 recipes / 3 install unchanged.
+
 **Gate A wave 1**
 ```bash
 composer validate --strict
@@ -333,6 +349,33 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > **I-028's sixth appearance and its first outside `tests/bin/`**: the class has escaped from
       > our scanners into how we read logs. See I-038.
 
+- [ ] **T-217** · 🔒 First push to the canonical remote. **Blocked by D-022** (👤 [andres]).
+      Rename `origin` → `github`, add `drupalcode`, push `001-fundacion/scaffolding` to both. After
+      the rename there is **no remote named `origin`**, so a bare `git push` from a fresh clone fails
+      loudly instead of guessing. Then update `README.md:71` to the real clone URL.
+      *Success:* `git ls-remote drupalcode refs/heads/001-fundacion/scaffolding` shows **the same SHA
+      as local HEAD**; `git rev-list --count HEAD` = **40**; **`default_branch` re-queried from the
+      API and reported verbatim, whatever it says**; no branch created other than the one pushed;
+      no `--force`, ever, to this remote.
+- [ ] **T-218** · Observe the first pipeline end to end — this is T-203's and T-205's evidence, and
+      it runs against an **unmodified** `.gitlab-ci.yml` deliberately: an inventory taken from a
+      modified include is an inventory of us, not of upstream, and a red pipeline would then have two
+      candidate causes.
+      *Success:* **N jobs executed, N > 0, each named**; the phpunit job log shows
+      `--fail-on-empty-test-suite` **in the executed command line** (closes T-214c); `Tests: N,
+      Assertions: M` with **N ≥ 3** and `RequirementsTest` named; every outcome quoted from the log,
+      **never from the badge** (I-034).
+      > **Note:** this run is a **measurement, not a gate.** Nothing closes on it. Two failure modes
+      > to expect, neither ours: the `include:` uses `$_GITLAB_TEMPLATES_REPO`/`_REF`, which are
+      > group-level variables on drupalcode — a config-load error is those not inheriting, not our
+      > file; and cspell scans the **clone**, so it sees `specs/`, `CLAUDE.md` and `.claude/`
+      > (`export-ignore` does not affect a clone — I-021, I-033). Expect a wall of findings; that is
+      > T-204's workload.
+- [ ] **T-219** · The second pipeline — the run that actually closes the `tests/bin/`-in-no-CI 🔴,
+      after T-202 adds the job its own amended rider permits.
+      *Success:* the `tests/bin/` job's log shows `gate-a-wave1.sh` **61 · 0** and `gate-a-wave3.sh`
+      **33 · 0** (31 after T-214, +2 after T-322).
+
 **Gate A wave 2**
 ```bash
 ddev start && ddev drush status          # expected: Drupal bootstrap = Successful
@@ -570,6 +613,30 @@ Sign here: `[ ]`
       input; a blank injected into any counter produces a loud failure, never a skipped guard;
       `gate-a-wave1.sh` still 61 · 0 and `gate-a-wave3.sh` still 29 · 0 on a clean tree, with
       clean-path output byte-identical to the commit before the sweep.
+- [ ] **T-322** · `tests/bin/identity-strings` — the guard D-021 chose **instead of** a deny term,
+      because "the identity strings are correct" is naturally **expect-present**, whose degenerate
+      value is `no` and never `yes` (I-028).
+      Single source of truth at the top: `FULL_NAME='Ágora Transparency'`,
+      `PACKAGE='drupal/agora_transparency'`. Asserts: (1) `recipe.yml` has exactly one `^name:` line
+      and its value is exactly `$FULL_NAME`; (2) `composer.json` `.name` == `$PACKAGE`; (3) the two
+      `description` fields are **byte-identical**; (4) for each identity file, the **first line
+      containing `Ágora` contains `Ágora Transparency`` — D-021's rule as one check instead of five
+      line numbers that rot; (5) **closed world**: the set of packaged files naming the product must
+      be a subset of {identity files} ∪ {declared prose-only}. **An undeclared new packaged file
+      naming the product is a finding** — that is I-024 made impossible rather than remembered.
+      Born with the house rules: `wc -l` never `grep -c` for a compared value, defaulted numeric
+      guards, `grep` rc ≥ 2 fatal, no `-F` with `-i`.
+      *Success:* clean → exit 0, `identity files checked: 5 · prose-only declared: 2 · packaged files
+      naming the product: 7 · findings: 0`; five dirty cases **in the same commit** (D-019 rider e),
+      each reverted — name shortened to `Ágora`, the two descriptions made to diverge, README's first
+      mention made bare, a new undeclared packaged file, an identity file deleted (FATAL, **no
+      summary line**). `gate-a-wave3.sh` **31 → 33 checks · 0 failures**.
+      **Ordering: lands AFTER T-116.** Run against today's tree it correctly reports findings, and a
+      lane that writes it first will be tempted to "fix" them.
+      *Predicted unchanged, so a move is itself a finding:* `gate-a-wave1.sh` **61 · 0** (its identity
+      assertions are on the package name and the `^name:` line count, not the value) and
+      `no-boilerplate` **18 · 8 · 0**.
+
 **Gate A wave 3**
 ```bash
 for s in no-unstable-deps no-patches no-secrets sbom-check; do
@@ -644,7 +711,7 @@ Sign here: `[ ]`
 ## Active blockers
 
 > A table of **state**, not of signed tasks: it is rewritten on each update.
-> Last updated: 2026-08-22, after T-213/T-214/T-215/T-406 were signed.
+> Last updated: 2026-08-22, after the drupalcode project was created.
 
 | Blocker | State | Blocks | Who resolves |
 |---|---|---|---|
@@ -661,13 +728,14 @@ Sign here: `[ ]`
 | D-018 baseline SBOM | ✅ **SIGNED 2026-08-21** — the 9 packages in `require`, all stable and `covered="1"`, verified against `updates.drupal.org`. Baseline **CLOSED**: any later change needs its own D-NNN | — gives `sbom-check` (T-304/T-306) its `D-NNN` oracle | — |
 | D-010 v1 demo content scope | 🔴 **OPEN** | unit 003 | 👤 Andrés |
 | **Wave 2 deadlock** | ✅ **RESOLVED 2026-08-22 by D-019** · the incompatibility was two needs conflated: running the invariants (→ container) and running the install smoke (→ a Drupal site set up separately, this package added as a path repository — the T-207 flow, already executed by `.github/workflows/phpunit.yml`). **T-201 superseded by T-207**; **T-208 redefined** to version the gate's container definition, not a `.ddev/config.yaml` for a site this repository does not contain. Task-level rewiring owned by the `orquestador` | — | — |
-| T-205 first green pipeline | 🔴 **OPEN** · **there is no project on drupalcode** (`git.drupalcode.org/api/v4/projects/project%2Fagora_transparency` → **404**, verified 2026-08-21). Without a project there is no pipeline, no canary MR (D-009 rider b) and nothing to apply D-009 to | T-205, and the application of T-206 | 👤 Andrés (creates the project) |
+| T-205 first green pipeline | 🟡 **OPEN, unblocked 2026-08-22** · the drupalcode project **exists** (API 200, created `2026-08-22T18:17:19Z`, public, `default_branch: main`) — and the repository is **empty: 0 branches, 0 commits**, so `main` is a pointer to a ref that does not exist. What is missing is no longer a project but a **push** (T-217) and an **observed run** (T-218) | T-205, T-206, the D-009(b) canary | 👤 Andrés signs the first push (D-022) |
 | **`phpunit.yml` executed ZERO tests** | ✅ **CLOSED 2026-08-22 by T-213** · run `32582950414` reports `Tests: 3, Assertions: 38` with 0 occurrences of `No tests executed`, paths resolving under `recipes/agora_transparency/`; the recurrence is guarded by `--fail-on-empty-test-suite` and proven red by T-215 (run `32583207616`, exit 1) | — | — |
-| **`_PHPUNIT_EXTRA` guard unobserved** | 🟡 **OPEN** · T-214(c) is verified statically (`include.drupalci.main.yml:1638` appends it; `_PHPUNIT_CONCURRENT` defaults `'0'`) but **no run has seen it**. Folded into T-205's criterion: the first pipeline's phpunit job log must show `--fail-on-empty-test-suite` in the executed command line | T-205 | 👤 Andrés (creates the project) |
+| **`_PHPUNIT_EXTRA` guard unobserved** | 🟡 **OPEN** · verified statically but **no run has seen it**. No longer blocked by the absence of a project: folded into **T-218**, whose criterion is that the first pipeline's phpunit job log shows `--fail-on-empty-test-suite` in the **executed command line** | T-218 | — |
 | **`simpleConfigUpdate` → exception in Drupal 12** | 🟡 **OPEN** · an upstream Drupal CMS recipe that Ágora composes calls `simpleConfigUpdate` on a config **entity**; deprecated in 11.2, **throws** in 12.0 (verified at source). **Not Ágora's** — its two uses target `system.site` and `system.theme`, simple config with no entity type, which cannot trigger it (I-037). Re-checked at unit 007's dependency review | unit 007 | — |
 | T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
-| **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants execute only when a human types them; `no-boilerplate` was a no-op for two commits and only a hand-dispatched injection caught it. The criterion clash is **RESOLVED 2026-08-22** by the T-202 rider (Ágora may add jobs upstream does not provide). The blocker itself still needs a drupalcode project (T-205); automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | — |
+| **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants (nine with T-322) execute only when a human types them. The criterion clash was RESOLVED 2026-08-22 by the T-202 rider. **Unblocked 2026-08-22** by the project's creation, and deliberately **sequenced after** the baseline pipeline: a local job added before the first run makes T-203's inventory an inventory of a modified file rather than of upstream, and gives any red two candidate causes. Closes at **T-219**. Automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | — |
+| **first push to drupalcode** | 🔴 **OPEN** · the canonical remote exists and is empty; no local remote for it. On an **empty** repository the first push may also set the default branch, which rule 10 reserves — so the **first** push needs a signature even though pushing a working branch is otherwise delegated. Subsequent working-branch pushes need none | T-217 and everything downstream | 👤 Andrés (D-022) |
 | T-316 grep rc-blindness | ✅ **CLOSED 2026-08-22** · signed — 28 `rc >= 2` guards across 27 call sites in 9 files; residuals R1/R2 closed in the same wave; clean-path output byte-identical to `c3dc9f5` | — | — |
 | T-317 toolchain floor | 🟡 **OPEN** · unblocked by D-019, which requires the floor to be pinned and documented · `-Fin` and the CRLF assumptions are measured **only on the Windows dev host**. The CI/DDEV image and the **macOS dev host** are both unmeasured, and macOS is a different question (BSD grep, not GNU). Do not assume either covers for the other | — | blocked by D-019 |
 | **second dev host (macOS)** | 🟡 **OPEN** · a second agent works this repo from a Mac. The wave 3 gate is certified on the Windows host **only** (see the closure note): its toolchain floor, its `grep` flavour and its line endings are all unverified there. First action on that host is T-317's measurement, before trusting any invariant's green | T-317 | — |

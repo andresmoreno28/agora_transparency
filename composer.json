@@ -1,6 +1,6 @@
 {
     "name": "drupal/agora_transparency",
-    "description": "Ágora: a transparency and open government site template for Drupal CMS, for councils, public bodies and organisations that publish accountability information. In development — see README.md for what is implemented today.",
+    "description": "A transparency and open government site template for Drupal CMS, for councils, public bodies and organisations that publish accountability information. In development — see README.md for what is implemented today.",
     "type": "drupal-recipe",
     "license": "GPL-2.0-or-later",
     "require": {

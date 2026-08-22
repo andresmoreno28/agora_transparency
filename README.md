@@ -1,8 +1,8 @@
-# Ágora — a transparency site template for Drupal CMS
+# Ágora Transparency
 
-Ágora is a site template for Drupal CMS aimed at **transparency and open government portals**: small
-local councils, public bodies, foundations and any organisation that has to publish what it decides,
-what it spends and who works for it.
+Ágora Transparency — **Ágora** for short — is a site template for Drupal CMS aimed at **transparency
+and open government portals**: small local councils, public bodies, foundations and any organisation
+that has to publish what it decides, what it spends and who works for it.
 
 ![Placeholder image, not a screenshot: Ágora has no demo site yet, so there is nothing real to capture. It will be replaced once the demo content exists.](screenshot.webp)
 
@@ -52,9 +52,11 @@ this point.**
 
 ## Installation
 
-> **Ágora is not published yet.** There is no project on Drupal.org and no released package, so
-> `composer require drupal/agora_transparency` does not resolve today. Publication is a later unit of
-> work. Until then, install it from a local checkout, as shown below.
+> **Ágora is not released yet.** The project exists on Drupal.org —
+> [drupal.org/project/agora_transparency](https://www.drupal.org/project/agora_transparency) — but it
+> has no released package, so `composer require drupal/agora_transparency` does not resolve today.
+> The first release is a later unit of work. Until then, install it from a local checkout, as shown
+> below.
 
 Create a Drupal CMS project, but do not install the site yet:
 
@@ -127,9 +129,10 @@ building pages.
 
 ## Support
 
-Ágora has no project on Drupal.org yet, so there is no public issue queue and no support channel to
-point you to. Both come with publication. Until then, the repository you are reading this in is the
-only place this work exists.
+Bugs and questions go to the project's issue queue on Drupal.org:
+[Issues for Ágora Transparency](https://www.drupal.org/project/issues/agora_transparency). It is open
+and currently empty. There is no release yet, so there is no supported version to report against —
+anything filed today is about work in progress.
 
 ## License
 

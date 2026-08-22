@@ -1,8 +1,12 @@
 # The visible title of the site template, as shown in the Drupal CMS installer.
-name: Ágora
+name: Ágora Transparency
+# Kept byte-identical to the Drupal.org project title (D-021), so that a user who
+# reads this string in the installer can find the project by searching for it.
+# Do not shorten it: the bare word "Ágora" is a different, dormant 2019 project
+# (drupal.org/project/agora), and Drupal.org's name check treats the two as one.
 
 # A short description that will be visible in the Drupal CMS installer.
-description: 'Ágora: a transparency and open government site template for Drupal CMS, for councils, public bodies and organisations that publish accountability information. In development — see README.md for what is implemented today.'
+description: 'A transparency and open government site template for Drupal CMS, for councils, public bodies and organisations that publish accountability information. In development — see README.md for what is implemented today.'
 
 # All site templates must have the `Site` type (case-sensitive); don't change this.
 type: Site
