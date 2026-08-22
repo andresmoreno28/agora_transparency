@@ -284,12 +284,22 @@ if [ -x "$INV" ]; then
   # own summary line: "scope: packaged tree (N entries) + their working copies -
   # scanned: N - deny-list terms: N - findings: N"
   CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  # T-318 / I-028: exit code and scanned count were both asserted, but the
+  # deny-term count itself never was - a degenerate TERM_COUNT=0 would print
+  # "deny-list terms: 0 - findings: 0" and this gate would still pass at
+  # 28 checks - 0 failures. Parsed the same way as every other metric here,
+  # from the invariant's own summary line, and only asserted positive - never
+  # pinned to a specific number, so a legitimate change to the deny-list size
+  # elsewhere cannot break this check.
+  TERMCNT=$(extract_count "$INV_OUT" 'deny-list terms:[[:space:]]*[0-9]+')
   note "$(printf '%s' "$INV_OUT" | grep -E '^scope:' | tail -1)"
   check 'no-boilerplate (exit)'            "$INV_RC" '0'
   check_positive 'no-boilerplate (scanned)' "$CNT"
+  check_positive 'no-boilerplate (deny terms)' "$TERMCNT"
 else
   check 'no-boilerplate present'           "$(trunc "$INV" 24)" 'present'
   check_positive 'no-boilerplate (scanned)' ''
+  check_positive 'no-boilerplate (deny terms)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

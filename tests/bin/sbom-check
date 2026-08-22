@@ -157,14 +157,22 @@ count_findings() {
 # pipeline: a pipeline's exit status is `head`'s, and grep's own status is what
 # distinguishes "no such line" (rc 1, a real answer) from "grep failed" (rc >= 2,
 # no answer at all).
+#
+# T-318 / I-028: each pattern is held once, in `_pat`, and reused for both the
+# grep call and the grep_failed() message. Before this, the message repeated
+# the pattern as a second literal - correct on the day it was written, with no
+# way to guarantee it stayed the day the search pattern changed and the second
+# copy did not.
 decision_line() { # <short project name>
-  _dl=$(grep -nE 'D-[0-9]{3}' "$DECISIONS" 2>/dev/null)
+  _pat='D-[0-9]{3}'
+  _dl=$(grep -nE "$_pat" "$DECISIONS" 2>/dev/null)
   _rc=$?
-  [ "$_rc" -ge 2 ] && grep_failed "$_rc" 'D-[0-9]{3}' "$DECISIONS"
+  [ "$_rc" -ge 2 ] && grep_failed "$_rc" "$_pat" "$DECISIONS"
   [ "$_rc" -eq 0 ] || return 0
-  _dl=$(printf '%s\n' "$_dl" | grep -E "drupal/$1([^A-Za-z0-9_]|\$)" 2>/dev/null)
+  _pat="drupal/$1([^A-Za-z0-9_]|\$)"
+  _dl=$(printf '%s\n' "$_dl" | grep -E "$_pat" 2>/dev/null)
   _rc=$?
-  [ "$_rc" -ge 2 ] && grep_failed "$_rc" "drupal/$1([^A-Za-z0-9_]|\$)" "the D-NNN lines of $DECISIONS"
+  [ "$_rc" -ge 2 ] && grep_failed "$_rc" "$_pat" "the D-NNN lines of $DECISIONS"
   [ "$_rc" -eq 0 ] || return 0
   printf '%s\n' "$_dl" | head -1
 }
