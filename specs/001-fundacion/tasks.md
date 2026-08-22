@@ -351,23 +351,59 @@ Sign here: `[ ]`
       *Success:* `git check-attr text eol -- tests/bin/no-boilerplate` → `text: set / eol: lf`,
       while `recipe.yml`, `composer.json` and `.gitattributes` remain `unspecified`.
       Scope confirmed narrow by `orquestador` 2026-08-22.
-- [ ] **T-320** · The last three loose ends of wave 3, all small, all in one commit.
-      **(a)** `no-boilerplate` must **self-guard its deny-term count**, as its six siblings already
-      self-guard their scope (I-007). Run standalone with an emptied deny list it currently prints
-      `deny-list terms: 0 · findings: 0` and exits **0**; only `gate-a-wave3.sh` catches it, so
-      anyone running the invariant by hand gets a false green. This invariant's scope is
-      *files × terms*: zero terms is a degenerate scope exactly as zero files is. The runner
-      assertion from T-318(a) **stays** — this is defence in depth, not a replacement.
-      **(b)** Record the *"a site template is not built on another site template"* rule, either
-      verified at source or explicitly marked unverified, in the seam-convention block of
-      `recipe.yml` or in `ROADMAP.md` beside the D-011(b) extraction note. One line.
-      **(c)** ✅ DONE 2026-08-22 in the record commit: a note is appended to the **Gate A wave 1**
-      block (the signed block itself unedited) recording that its `python3 -c "import yaml…"`
-      one-liner fails on any host whose Python defaults to a non-UTF-8 encoding, and why gate A
-      deliberately does not parse YAML.
-      *Success:* the emptied-deny-list case fails from the invariant alone, exit 1; the rule is
-      recorded with its verification status stated; the wave 1 note is appended with the signed
-      block unedited; `gate-a-wave1.sh` still 61 · 0 and `gate-a-wave3.sh` still 29 · 0.
+- [✓ 2026-08-22] **T-320** · The last three loose ends of wave 3.
+      **(a)** `no-boilerplate` now **self-guards its deny-term count**, immediately after the
+      existing `SCANNED` guard, same idiom and message shape: this invariant's scope is
+      *files × terms*, so zero terms is a degenerate scope exactly as zero files is. The
+      `gate-a-wave3.sh` assertion from T-318(a) **stays** — defence in depth, not a replacement.
+      **(b)** The *"a site template is not built on another site template"* rule, dropped by
+      T-314, is recorded in `recipe.yml`'s seam-convention block — **not** in `ROADMAP.md`, which
+      on inspection has no D-011(b) extraction note at all (only a wave-001 blocker line and a
+      risk row); the location named in this task did not exist, and the seam block is where a
+      reader editing `recipes:` during the extraction is already looking. It cites `T-101` rather
+      than the upstream machine name so as not to trip its own deny list inside a packaged file.
+      It came back **verified, not hedged**: confirmed 2026-08-22 at two independent sources — the
+      upstream recipe this repository was copied from, and Drupal.org issue **3534752**,
+      *"RFC: The architecture and philosophy of site templates"*. A **third source was silent**:
+      the Recipes Initiative "Recipe Author Guide" does not mention the rule. That 2-of-3 result
+      is why the shipped wording says *SHOULD-NOT design choice … rather than a rule enforced by
+      the installer's own mechanics* instead of flattening it to "confirmed".
+      **(c)** A note is appended beside the **Gate A wave 1** block — the signed block itself
+      unedited, same treatment as the superseded wave 3 gate block — recording that its
+      `python3 -c "import yaml…"` one-liner fails on any host whose Python defaults to a
+      non-UTF-8 encoding, and why gate A deliberately does not parse YAML.
+      *Success:* emptied deny list → `FATAL: deny-list terms: 0 - the scope collapsed to
+      nothing.`, exit 1, **and no summary line printed**; `recipe.yml` still parses
+      (`type: Site`, 10 recipes / 3 install / 22 config actions, unchanged);
+      `gate-a-wave1.sh` **61 · 0**; `gate-a-wave3.sh` **29 · 0**; `no-boilerplate`
+      `scanned: 18 · deny-list terms: 8 · findings: 0`.
+      Verified independently by `orquestador` 2026-08-22, including re-running the (a) probe and
+      re-deriving source 1 of (b) verbatim from the upstream URL.
+      > **Note (orquestador, 2026-08-22) — the limit of the (a) guard, recorded so nobody reads
+      > "self-guarded" as absolute.** It catches `TERM_COUNT == 0`, which is the reachable case.
+      > It does **not** catch a *blank* `TERM_COUNT`: verified, `[ "" -eq 0 ]` exits 2 with
+      > `integer expression expected` and the branch is simply **not taken**, so execution
+      > continues past the guard — and `grep -c` provably emits blank on rc >= 2. No reproduction
+      > exists for that path here (hardcoded pattern, in-memory input), so it is **not** a finding.
+      > It is the fifth appearance of the I-028 class and is escalated as a pattern, not patched
+      > as an instance: **T-321**.
+- [ ] **T-321** · 🔒 **Pattern escalation, unit 002 — deliberately NOT wave 3 work.** Five times
+      now the same class has surfaced in a different place (`-Fin` no-op → fallback zeros →
+      expect-zero gate checks → the deny-term counter → blank-vs-zero). Each individual patch was
+      correct; the recurrence is the finding. Stop patching sites and close the class by
+      construction, using the move this codebase has already proven at T-316/R2 — **delete the
+      failure mode rather than guard it**:
+      (a) inventory every counter in `tests/bin/` and replace `grep -c` with `wc -l` wherever the
+          value feeds a comparison, so a broken scanner cannot yield a non-numeric value;
+      (b) default every numeric guard input (`[ "${X:-0}" -eq 0 ]`), so a blank trips the guard
+          instead of skipping it — see I-031 for why that defaulting is safe *here* and unsafe in
+          the cases I-028 warns about;
+      (c) state both as a house rule in the invariant header convention, so the next invariant
+          inherits it instead of rediscovering it.
+      *Success:* no `grep -c` in `tests/bin/` feeds a comparison; every numeric guard defaults its
+      input; a blank injected into any counter produces a loud failure, never a skipped guard;
+      `gate-a-wave1.sh` still 61 · 0 and `gate-a-wave3.sh` still 29 · 0 on a clean tree, with
+      clean-path output byte-identical to the commit before the sweep.
 **Gate A wave 3**
 ```bash
 for s in no-unstable-deps no-patches no-secrets sbom-check; do

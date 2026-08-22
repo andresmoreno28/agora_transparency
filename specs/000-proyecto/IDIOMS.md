@@ -190,3 +190,15 @@
   collision with *"the desarrollador does not close its own task"* is that rule enforced by the
   tooling instead of by discipline. Rule: for packaged-file work, "done" is a **two-step verdict**,
   and the hand-off carries a falsifiable prediction rather than a promise. Recorded 2026-08-22.
+- I-031 · **`${VAR:-0}` is safe when zero means FAIL and dangerous when zero means PASS — the same
+  three characters, opposite consequences.** I-028 warns about fallback zeros, and it is right:
+  `${HITS:-0}` and `|| FINDINGS=0` turned broken scanners into clean bills of health, because
+  there `0` was the *expected* value. But in a guard written `[ "$COUNT" -eq 0 ] && FATAL`, a
+  blank `COUNT` does not fail the comparison — it makes `[` exit **2** with
+  `integer expression expected`, the branch is **not taken**, and execution walks straight past
+  the guard. There, defaulting to `0` is the safe direction: it trips the guard. Rule: before
+  adding or removing a `:-0`, ask what `0` *does* at that line, never what it looks like. Better
+  than either: make the value incapable of being blank in the first place — `wc -l`, not
+  `grep -c` — which is the T-316/R2 move of deleting a failure mode rather than guarding it.
+  Recorded 2026-08-22 so that a reader applying I-028 mechanically does not "fix" a guard into
+  being bypassable.
