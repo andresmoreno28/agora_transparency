@@ -178,3 +178,15 @@
   distinguishable from an ordinary `FAIL`, so a reader can tell *"this check failed"* from
   *"this check could not run."* Recorded 2026-08-22 so that a future contributor enforcing
   uniformity does not "fix" the runners into aborting.
+- I-030 · **An invariant that scans `HEAD` cannot be certified green by a lane forbidden to
+  commit — and that is the design working, not friction to remove.** `no-boilerplate` runs two
+  passes, `git show HEAD:<path>` and the working-tree copy, because the packaged artefact is
+  literally `git archive HEAD`: that is what ships. So when a lane cleans a packaged file under a
+  "do not commit" mandate, the HEAD pass necessarily still sees the old content and the invariant
+  correctly reports findings; the lane must hand off at exit 1 **stating the predicted
+  post-commit result**, and a different actor commits and re-runs. The tempting fix — make the
+  invariant worktree-only — is a silent weakening: a boilerplate string could then sit **committed**
+  while the invariant went green the moment someone edited their local copy. What looks like a
+  collision with *"the desarrollador does not close its own task"* is that rule enforced by the
+  tooling instead of by discipline. Rule: for packaged-file work, "done" is a **two-step verdict**,
+  and the hand-off carries a falsifiable prediction rather than a promise. Recorded 2026-08-22.

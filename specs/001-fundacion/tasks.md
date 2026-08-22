@@ -93,6 +93,17 @@ python3 -c "import yaml,sys; d=yaml.safe_load(open('recipe.yml')); assert d['typ
 grep -c '_comment' composer.json          # expected: 0
 test ! -f GET-STARTED.md && echo "kit docs clean"
 ```
+> **Note appended 2026-08-22 — the `python3 -c "import yaml…"` line above is broken on this host**
+> (T-320c). This note **does not edit the signed block**; same treatment as the superseded wave 3
+> gate block. Verified 2026-08-22: that one-liner raises
+> `UnicodeDecodeError: 'charmap' codec can't decode byte 0x81 in position 88` on any host whose
+> Python defaults to a non-UTF-8 encoding — position 88 is the `Á` of `name: Ágora`. It needs
+> `encoding='utf-8'` (or `PYTHONUTF8=1`). Nobody noticed because **`tests/bin/gate-a-wave1.sh`
+> supersedes this block** and deliberately does **not** parse YAML: `ValidationTest::testApply()`
+> applies the recipe through Drupal itself in wave 4 (T-402/T-406), and adding PyYAML to gate A
+> would put a pip dependency inside the gate — which `sbom-check`'s own header already refuses
+> in writing for `defusedxml`, and which would need a signed D-NNN.
+
 **Gate B wave 1** 👤 · Andrés confirms package name, visible description and identity.
 Sign here: `[✓ 2026-08-21 andres]` — package `drupal/agora_transparency`, visible identity "Ágora",
 description as recorded in `composer.json`. Gate A closed with **61 checks · 0 failures**.
@@ -247,11 +258,31 @@ Sign here: `[ ]`
       > enumerated only `no-unstable-deps no-patches no-secrets sbom-check` and left three
       > invariants in no gate at all. That block is left unedited as the historical record of what
       > the gate was when it was written; `gate-a-wave3.sh` is what it is now.
-- [ ] **T-314** · 🔒 RESERVED → wave 4. `recipe.yml` ships commented starter-kit boilerplate
-      (`https://www.example.com/my-site-template/demo`, `my-site-template`) inside a **packaged**
-      file, and `no-boilerplate`'s deny list does not carry that string (I-024 shape).
-      *Success:* the commented block is resolved or removed; `my-site-template` is added to the
-      deny list; `no-boilerplate` still reports 0 findings; `gate-a-wave3.sh` still 0 failures.
+- [✓ 2026-08-22] **T-314** · Strip inherited starter-kit comments from the packaged `recipe.yml`
+      and close the deny-list gap that let them through. Surveyed with `git blame` against the kit
+      import (`e8d1fd3`) to separate untouched kit text from what Ágora had already rewritten,
+      rather than by eye.
+      **Removed:** the "this file MUST be named `recipe.yml`" packaging mechanic; the `recipes:`
+      authoring rule about not building on another site template; the entire commented
+      `drupal_cms_installer` block with its `example.com` placeholder URLs.
+      **Kept, deliberately:** the schema documentation on `description`/`type`/`strict`/`install`
+      (including the `type: Site` guard), every per-recipe description, and the Canvas mechanism
+      notes — accurate, and true of Ágora. *Inherited* is not the test; *inaccurate or
+      author-facing* is. No functional key touched.
+      *Success:* `my-site-template` added to the `no-boilerplate` deny list (7 → 8) **and proven
+      to fire on the uncleaned file before the cleanup** — 4 findings at `recipe.yml:189,192` —
+      then quiet after: `scanned: 18 · deny-list terms: 8 · findings: 0`, exit 0. `recipe.yml`
+      still parses, still `type: Site`, 10 recipes / 3 install unchanged.
+      `gate-a-wave3.sh` 29 checks · 0 failures. Verified independently by `orquestador`
+      2026-08-22, including re-injecting the exact removed string and confirming the term fires.
+      > **Note (orquestador, 2026-08-22):** the removal of the *"you shouldn't build a site
+      > template on top of another site template"* rule is accepted, but the rule is now recorded
+      > in **no file under `specs/`** and it becomes load-bearing at D-011 rider (b), when
+      > functional areas are extracted into independent contrib recipes. It is upstream guidance
+      > from the kit, **unverified by us**. T-320(b) owns recording it — verified, or explicitly
+      > marked unverified. The test applied ("is it a checkable constraint recorded in `specs/`?")
+      > is the wrong test for a comment in a shipped file; the right one is "is it true, and
+      > useful to whoever reads this file?"
 - [✓ 2026-08-21] **T-315** · 🔴 `tests/bin/no-boilerplate` was a **total no-op**: line 119 used
       `grep -Iin -F`, and GNU grep 3.0 on this host SIGABRTs on `-F` combined with `-i`. Repair:
       drop `-F`, keep `-Iin`. See I-027.
@@ -298,17 +329,45 @@ Sign here: `[ ]`
       a no-op on one platform is a no-op nobody sees.
       **Blocked by D-019.**
 
-- [ ] **T-318** · Close the two survivors of T-316, both of the I-028 shape:
-      (a) `gate-a-wave3.sh` asserts `no-boilerplate`'s exit status and scanned count but **not**
-      its deny-term count, so a degenerate `TERM_COUNT=0` would print
-      `deny-list terms: 0 · findings: 0` and pass at 28 checks · 0 failures — add
-      `check_positive 'no-boilerplate (deny terms)'`;
-      (b) `sbom-check`'s `grep_failed` messages hard-code a literal duplicate of the pattern
-      being searched, correct today and silently misleading after any edit to the pattern —
-      pass the pattern through a variable so the message cannot drift from the search.
-      *Success:* the deny-term count is asserted positive in the wave 3 gate; no `grep_failed`
-      call site repeats a pattern literal; `gate-a-wave3.sh` still 0 failures on a clean tree.
-
+- [✓ 2026-08-22] **T-318** · Close the two survivors of T-316, both of the I-028 shape.
+      **(a)** `gate-a-wave3.sh` now asserts `no-boilerplate`'s deny-term count positive, parsed
+      through the existing `extract_count` helper from the invariant's own summary — **not pinned
+      to a number**, so a legitimate change to the deny-list size cannot break it — and added to
+      **both** the if and the else branch so the total is consistent regardless of failure mode.
+      **(b)** `sbom-check`: of 3 `grep_failed` call sites, the two in `decision_line()` duplicated
+      the pattern literal and now pass `"$_pat"`; the third, in `line_of()`, already passed the
+      same variable used in its own grep and was left alone and reported as sound.
+      *Success:* deny-term count asserted positive; no `grep_failed` site repeats a pattern
+      literal; runner still 0 failures on a clean tree — **29 checks · 0 failures**. Falsifiability
+      verified independently by `orquestador` 2026-08-22: with the deny list emptied,
+      `no-boilerplate (deny terms) 0 | >0 | FAIL` → **29 checks · 1 failures, exit 1**.
+- [✓ 2026-08-22] **T-319** · Pin shell scripts to LF on checkout: `tests/bin/** text eol=lf` and
+      `*.sh text eol=lf` in `.gitattributes`, in **its own section, explicitly labelled a checkout
+      attribute and not filed under the `export-ignore` heading** (I-021: the two do entirely
+      different things and conflating them in one list is how they get confused). `core.autocrlf=true`
+      is set at **system** scope by the Git for Windows installer, so a fresh clone checked these
+      scripts out as CRLF on any default Windows machine. No `git add --renormalize` (the index was
+      already LF); never a blanket `* text=auto`.
+      *Success:* `git check-attr text eol -- tests/bin/no-boilerplate` → `text: set / eol: lf`,
+      while `recipe.yml`, `composer.json` and `.gitattributes` remain `unspecified`.
+      Scope confirmed narrow by `orquestador` 2026-08-22.
+- [ ] **T-320** · The last three loose ends of wave 3, all small, all in one commit.
+      **(a)** `no-boilerplate` must **self-guard its deny-term count**, as its six siblings already
+      self-guard their scope (I-007). Run standalone with an emptied deny list it currently prints
+      `deny-list terms: 0 · findings: 0` and exits **0**; only `gate-a-wave3.sh` catches it, so
+      anyone running the invariant by hand gets a false green. This invariant's scope is
+      *files × terms*: zero terms is a degenerate scope exactly as zero files is. The runner
+      assertion from T-318(a) **stays** — this is defence in depth, not a replacement.
+      **(b)** Record the *"a site template is not built on another site template"* rule, either
+      verified at source or explicitly marked unverified, in the seam-convention block of
+      `recipe.yml` or in `ROADMAP.md` beside the D-011(b) extraction note. One line.
+      **(c)** ✅ DONE 2026-08-22 in the record commit: a note is appended to the **Gate A wave 1**
+      block (the signed block itself unedited) recording that its `python3 -c "import yaml…"`
+      one-liner fails on any host whose Python defaults to a non-UTF-8 encoding, and why gate A
+      deliberately does not parse YAML.
+      *Success:* the emptied-deny-list case fails from the invariant alone, exit 1; the rule is
+      recorded with its verification status stated; the wave 1 note is appended with the signed
+      block unedited; `gate-a-wave1.sh` still 61 · 0 and `gate-a-wave3.sh` still 29 · 0.
 **Gate A wave 3**
 ```bash
 for s in no-unstable-deps no-patches no-secrets sbom-check; do
