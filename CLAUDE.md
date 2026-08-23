@@ -127,6 +127,26 @@ environment sets up a separate Drupal and adds the template as a *path repositor
 (see `specs/001-foundation/`).
 Canonical layout: skill `drupal-site-template` + the research in `specs/001-foundation/research/`.
 
+## Where the work happens — read this before touching anything
+
+**There is exactly ONE working copy, and it is this repository on Windows:**
+`C:\Users\andresmrubio\Documents\projects\agora`. All editing, committing and pushing happens here.
+Remotes: **`drupalcode`** (canonical, `git.drupalcode.org/project/agora_transparency`) and
+**`github`** (read-only mirror, D-016). **There is deliberately no remote named `origin`**, so a
+bare `git push` fails loudly instead of reaching the mirror by accident.
+
+**`~/agora-smoke` inside WSL2 is a throwaway TEST RIG, never a second working copy.** It holds a
+full Drupal plus a `source/` directory that is a **complete clone of this repository** — so it
+*looks* like a working copy, which makes it more dangerous, not less. **Never edit it, never commit
+from it, never open a session against it.** Refresh it with `git pull`, or delete and rebuild it —
+rebuilding is the only thing that keeps a clean-install smoke actually clean.
+
+**Docker and DDEV live INSIDE WSL2 Ubuntu on this machine**, not in Docker Desktop, whose distro is
+stopped on purpose — the two conflict, and the WSL setup is the one DDEV itself recommends for
+Windows. Reach it with `wsl.exe -e bash -lc '...'`. **Never report Docker as unavailable from the
+Windows side alone**: that mistake cost a day (I-046). Run `tests/bin/doctor` — it probes WSL and
+distinguishes the four states, and **its output beats any memory and beats this file**.
+
 ## Gate A (the drupalcode pipeline IS the gate — **job list observed**, 2026-08-23)
 
 - `composer validate` + clean install.
