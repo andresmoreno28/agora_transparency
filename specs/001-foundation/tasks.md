@@ -924,7 +924,7 @@ Sign here: `[ ]`
       display-only, and two are probes where `grep -c` **is the subject being tested** and the
       comparison is against a string, where a blank fails loudly rather than skipping a branch.
       Numeric guards defaulted **only where zero means FAIL** — I-031's safe direction. Guards where
-      zero means PASS were deliberately left undefaulted, and **two pre-existing `${HITS:-0}` in
+      zero means PASS were deliberately left as they were, and **two pre-existing `${HITS:-0}` in
       `gate-a-wave1.sh`'s expect-zero packaging check were removed**: that is precisely where `:-0`
       turns a blank into a green.
       Two blank injections, on different scripts, each shown before and after: `no-boilerplate`'s
