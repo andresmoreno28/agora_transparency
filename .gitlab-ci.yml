@@ -45,13 +45,6 @@ variables:
 # override - the include: block above stays byte-identical to upstream.
   _ALL_VALIDATE_ALLOW_FAILURE: '0'
 
-# D-023(6): a stated, owned, temporary exception - changes no behaviour,
-# since cspell was already non-blocking by an inheritance stated nowhere.
-# Per-job '1' beats the global '0' above because the ladder is ordered
-# (include.drupalci.main.yml:1290-1294), so this is now the only thing
-# keeping cspell permissive: it cannot be forgotten silently. Owner
-# T-226; deleting this line is the exit gate.
-  _CSPELL_ALLOW_FAILURE: '1'
 
 # D-024(3): the repository's prose is British English (behaviour, licence,
 # organisation, artefacts, normalise). dict-en-gb-mit is bundled in the
