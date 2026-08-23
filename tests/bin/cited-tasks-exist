@@ -214,8 +214,8 @@ printf 'citations: %s - distinct cited: %s - definitions: %s - distinct defined:
   "$CITATIONS" "$UNIQUE_CITED" "$DEFINITIONS" "$UNIQUE_DEFINED" "$FINDINGS"
 
 if [ "$FINDINGS" -eq 0 ]; then
-  printf '%scited-tasks-exist: clean%s\n' "$C_OK" "$C_OFF"
+  printf '%s''cited-tasks-exist: clean%s\n' "$C_OK" "$C_OFF"
   exit 0
 fi
-printf '%scited-tasks-exist: %s finding(s)%s\n' "$C_BAD" "$FINDINGS" "$C_OFF"
+printf '%s''cited-tasks-exist: %s finding(s)%s\n' "$C_BAD" "$FINDINGS" "$C_OFF"
 exit 1
