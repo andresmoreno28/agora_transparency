@@ -272,6 +272,17 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > list, never against the pipeline's status field (D-023(5)).
 - [ ] **T-206** · Decide and apply D-009: what runs on drupalcode and what on GitHub Actions.
       **Blocked by D-009.**
+      > **Rider 2026-08-23 — SPLIT. The blocker line above is stale: D-009 was signed 2026-08-21,
+      > option C.** What remained was *apply*, and it is two unrelated jobs travelling as one.
+      > **(a) The canary is unblocked today, for the first time, and does NOT need a theme** —
+      > D-009 rider (b) says so in writing: *"as soon as the drupalcode project exists, run a canary
+      > MR that verifies the browser job really executes on the shared contrib runners — before unit
+      > 006."* Split out as **T-228**. It is the only item in this unit that gets more expensive the
+      > longer it waits, because the accessibility thesis rests on a browser job nobody has seen run.
+      > **(b) The axe test and the visual-regression workflow are deferred to unit 002**: there is
+      > provably nothing to audit — no theme, no Twig, no CSS, no components, no pages — and a test
+      > written now would pass with Ágora absent, which is the same reasoning already accepted for
+      > T-402.
 - [✓ 2026-08-23] **T-207** · Replace the assumption "`ddev start` in the repo" with the verified flow: set up
       Drupal separately and add the template as a *path repository*, following the kit's `.github/workflows/phpunit.yml`
       (`ddev config --project-type=drupal11 --docroot=web` → `ddev composer create-project
@@ -290,6 +301,19 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
 - [ ] **T-208** · Pin DDEV ≥ 1.25.0 and **version `.ddev/config.yaml`** (today `.gitignore` ignores
       `/.ddev/`, which makes the T-201 criterion unreachable).
       *Success:* `git ls-files .ddev/config.yaml | wc -l` = 1; requirement documented in the README.
+      > **Rider 2026-08-23 — the original text above is SUPERSEDED, not done** (the T-201
+      > treatment). As written it is unsatisfiable and directionally wrong: this repository is not a
+      > site, so versioning a `.ddev/config.yaml` would assert something false about the package.
+      > D-019 already redefined it and assigned the rewiring here.
+      > **Not moot** now that the invariants run in the DA's image — saying so would be I-042's
+      > exact shape, a capability observed in one installation asserted of another. The pipeline
+      > proves the toolchain in **CI**; it says nothing about the local half, and **all five of
+      > D-019's false greens came from the host**. The macOS blocker is still open and unmeasured.
+      > **Redefined scope:** a versioned, **digest-pinned** container reproducing the gate toolchain
+      > for local runs on any host (D-020 rider (c): the DA gate image; fallback
+      > `debian:bookworm-slim`; **never `alpine`**, whose BusyBox grep reintroduces I-027's class).
+      > Not a `.ddev/config.yaml`, not a second CI surface. **Owner: unit 002**, tied to the macOS
+      > host, which is the only thing that makes it urgent.
 - [✓ 2026-08-21] **T-209** · Invariant: `CI_ALLOW_DEV` is not defined in any versioned file.
       *Success:* 0 matches, printing the number of files scanned (> 0).
       > **Note (rider [andres] 2026-08-21):** *"specified as 'not DEFINED', never 'not mentioned' —
@@ -668,6 +692,17 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > byte" warning. They are stripped **inside** the pipeline instead. Same family as I-025:
       > normalise at the boundary, not after it.
 
+- [ ] **T-228** · The D-009 rider (b) canary: verify the browser job **really executes** on the
+      shared contrib runners. `OPT_IN_TEST_DRUPAL_CMS: '1'`, one push, one API read of the job list.
+      **Run it as a merge request, not on `1.x`** — per I-040 a plain branch triggers **no pipeline
+      at all**, so a throwaway branch would return a silent nothing and read as success; MR rules do
+      fire, and an MR leaves `1.x`'s observed gate untouched.
+      *Success:* the job list shows a browser job that **ran** — a skipped job is not a job that
+      ran — and its `allow_failure` is **recorded**. ⚠️ `nightwatch` sits in the **`test`** stage,
+      which `_ALL_VALIDATE_ALLOW_FAILURE: '0'` does **not** cover; if it arrives permissive, D-023(5)
+      requires a dated, owned exception named in `.gitlab-ci.yml`, or the gate rule is violated the
+      moment the job exists. **Do not merge the canary without settling that.**
+
 **Gate A wave 2**
 ```bash
 ddev start && ddev drush status          # expected: Drupal bootstrap = Successful
@@ -1027,6 +1062,27 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
       > `install:` and pins it in `system.theme`. That is an **install-UX finding**, exactly as the
       > task's rider required it be treated: reported, not patched silently. It is resolved for
       > real when the theme becomes `drupal/agora_theme` (D-014) and the generator is dropped.
+      > **PROOF OF THE SELECTOR CLAUSE, added 2026-08-23 after the T-404 audit found it missing.**
+      > The first evidence proved the recipe applies to a clean Drupal — abundant, real, and about
+      > the wrong thing: `plan.md` §1 defines this unit's done-criterion as *"sees the Ágora
+      > template in the installer's template selector"*, and the flow used started from
+      > `drupal/recommended-project`, which has no installer selector at all. Two clauses were
+      > unproven and the quantity of evidence hid it (**I-048**).
+      > Now proven, on a second rig built from `drupal/cms` with the package installed from a clone
+      > of the canonical remote: five recipes declare `type: Site` — `agora_transparency`, `byte`,
+      > `drupal_cms_site_template_base`, `drupal_cms_starter`, `haven` — and walking the web
+      > installer reaches `<title>Choose a site template | Drupal CMS`, where the page renders
+      > `value="agora_transparency"` with `alt="Ágora Transparency"` and our own
+      > `screenshot.webp` inlined. **Ágora appears in the selector beside Byte, Haven, Blank and
+      > Starter**, the real published templates.
+      > The non-interactive half also passes: `drush site:install --yes recipes/agora_transparency`
+      > → `[success] Installation complete.`
+      > **Finding D resolved, and it is a real discrepancy, not a display artefact:**
+      > `recipe.yml:125` declares `page.front: '/home'`, and the installed site reports
+      > `system.site:page.front` = **`/page/1`**. They resolve to the same node — the alias of
+      > `/page/1` is `/home`, verified — and the front page returns 200, so nothing is broken. But
+      > what the recipe declares is not what lands. Carried to unit 002 with the theme swap, which
+      > touches the same block. Attributed by mechanism, not inferred (I-037).
 - [⏸ deferred 2026-08-22 → unit 002 (content model)] **T-402** · 🔒 **Extending
       `InstallTest`/`ValidationTest` with Ágora's key routes presumes Ágora has routes. It has
       none.** There is no content model until unit 002/003: every route the site serves today comes
@@ -1055,9 +1111,40 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
       when the verified flow starts from `drupal/recommended-project` and Ágora's own
       `composer.json` is what pulls the Drupal CMS `^2` recipes in. A previous lane had flagged this
       and left it.
-- [ ] **T-404** · `orquestador` audit (read-only): standards, SBOM, licences, marketplace
+- [✓ 2026-08-23] **T-404** · `orquestador` audit (read-only): standards, SBOM, licences, marketplace
       requirements. *Success:* verdict with no open 🔴.
-- [ ] **T-405** · Promote the unit's lessons to `IDIOMS.md`.
+      *Verdict: initially **⛔ CONDITIONAL** — the audit refused to close the unit, and it was
+      right on both counts.* It found that `README.md` and `CLAUDE.md` published a **seven**-job CI
+      inventory falsified by our own next commit (**I-047**), and that **T-401 was signed on
+      evidence that did not meet its own criterion** (**I-048**). Both were remedied before this
+      signature; neither was argued away.
+      *On the criterion itself:* T-404 requires *"no open 🔴"*, and D-010 sat red in the blockers
+      table. The audit ruled it **does not block**, and not by softening anything — three places on
+      disk agree it belongs to unit 003 (`plan.md` §3 puts demo content in the explicit NO column,
+      D-010's own text says *"postponed to unit 003"*, and the row's own Blocks cell says unit 003).
+      **The finding underneath was that the blockers table used 🔴 to mean "unsigned" rather than
+      "blocking"**, which is how an unrelated decision came to sit in a closure criterion. Re-labelled.
+      *Dimensions audited, clean in one line each:* **SBOM** — 9 packages, all stable, all
+      `covered="1"`, all with a D-NNN line, verified live in this turn · **structure** — no
+      `recipes/`, `themes/` or `modules/`, 0 `*.info.yml`, `type: Site` exact, no pins, no patches ·
+      **standards** — 8/8 blocking, 8/8 success, zero exceptions · **licences** — code half clean
+      and mutually consistent; the asset half is 🟡 E below · **accessibility** — **nothing to
+      audit, and that is the correct state**: no theme, no Twig, no components, no demo pages, and
+      the README makes no conformance claim, which is I-023 applied to ourselves.
+      *Carried forward with owners, not as debt:* 🟡 E, no licence manifest for non-code assets —
+      the placeholder screenshot's typeface provenance lives only in an `export-ignore`d file and
+      never reaches the recipient. One row today; twenty in unit 003. Owner **unit 006**.
+- [✓ 2026-08-23] **T-405** · Promote the unit's lessons to `IDIOMS.md`.
+      *Evidence:* `IDIOMS.md` holds **I-001…I-049**. The audit checked each major episode of this
+      unit against the file and found the record **already complete** for the unit's body of work —
+      and said so rather than inventing entries to fill a task, which is the honest answer and the
+      one worth recording.
+      Three were genuinely missing, and all three came from the closure audit rather than from the
+      work: **I-047** (an "observed" fact is a dated measurement, and ours decayed within hours —
+      falsified not by a regression but by our own next commit), **I-048** (the ninth species of
+      false green: evidence abundant on the wrong axis, the only one where the evidence is genuinely
+      strong), and **I-049** (agentic speed compresses the work and leaves the round-trips untouched,
+      so latency becomes the schedule).
 - [✓ 2026-08-22] **T-406** · Verify that `InstallTest`, `ValidationTest` and `RequirementsTest` pass **without
       being modified**. *Success:* 0 lines deleted in those 3 files; phpunit output with number of
       tests **and** assertions.
@@ -1081,7 +1168,36 @@ ddev drush sql:drop --yes && ddev drush site:install --yes   # and check the sel
 ddev exec vendor/bin/phpunit --testdox tests/                 # number of tests and assertions
 ```
 **Gate B wave 4** 👤 · Andrés signs the closure of unit 001.
-Sign here: `[ ]`
+Sign here: `[ ]` — unit 001 CLOSED.
+
+Gate A, all counts **read rather than assumed**: drupalcode pipeline `933556`, ref `1.x`,
+**8 jobs · 8 success · 8 `allow_failure=false` · 0 named exceptions** (D-023(5));
+`gate-a-wave1.sh` **61 · 0**; `gate-a-wave3.sh` **35 · 0**; 10 invariants exit 0, each with its
+dirty case run.
+
+Clean install on a real Drupal 11.4.5 in WSL2, from a **clone of the canonical remote**: recipe
+applied in 78 steps, front page HTTP 200, `Tests: 3, Assertions: 38` — and **the template observed
+in the Drupal CMS installer's template selector**, rendering as `value="agora_transparency"` /
+`alt="Ágora Transparency"` beside Byte, Haven, Blank and Starter. That sentence is `plan.md` §1's
+criterion for done, and it was missing from T-401's first signature until the T-404 audit caught
+it (I-048).
+
+Independent verdict by `orquestador` (T-404): **no 🔴 open in unit 001**. It first returned
+⛔ CONDITIONAL and was right twice — a stale CI inventory in two files, and T-401 signed on
+evidence adjacent to its own criterion. Both remedied, neither argued away. **D-010 is confirmed
+NOT blocking**: it belongs to unit 003 and its red was the blockers table using 🔴 to mean
+*unsigned* rather than *blocking*.
+
+Carried forward with owners, **not as debt**: T-206 SPLIT (canary → **T-228**, run now via MR;
+axe + visual regression → unit 002) · T-208 REDEFINED, owner unit 002 · T-402 → unit 002 ·
+T-114 → unit 003 · licence manifest for non-code assets → unit 006 · macOS host NOT CERTIFIED
+(T-317) · `recipe.yml` declares `page.front: '/home'` and the installed site reports `/page/1`
+— same node, alias verified, front page 200, but declared ≠ landed → unit 002 with the theme swap.
+
+⚠️ **Release rider.** No tag, no release and no marketplace submission before unit 002's atomic
+theme swap lands. A package released today ships `extra.drupal-site-template`, generates a theme
+on the end user's machine, and needs a manual `allow-plugins` step or the install fails for a
+non-obvious reason (D-008 amendment, **proven** by T-401, not inferred).
 
 ---
 
@@ -1103,7 +1219,7 @@ Sign here: `[ ]`
 | D-017 language | ✅ SIGNED 2026-08-21 · entire repo in English, process layer included; amends D-005 and rule 6 | — unblocks T-113; **T-308** picks up `tests/bin/gate-a-wave1.sh`, which T-113 left out | — |
 | D-009 test split | ✅ **SIGNED 2026-08-21 · option C** — axe inside the existing `gitlab_templates` Nightwatch job on drupalcode (canonical, mandatory); visual regression on GitHub Actions, non-blocking | — unblocks **T-206**, but it cannot be *applied* until the drupalcode project exists; the axe↔Nightwatch integration is verified in unit 002 | — |
 | D-018 baseline SBOM | ✅ **SIGNED 2026-08-21** — the 9 packages in `require`, all stable and `covered="1"`, verified against `updates.drupal.org`. Baseline **CLOSED**: any later change needs its own D-NNN | — gives `sbom-check` (T-304/T-306) its `D-NNN` oracle | — |
-| D-010 v1 demo content scope | 🔴 **OPEN** | unit 003 | 👤 Andrés |
+| D-010 v1 demo content scope | 🟢 **DEFERRED, opens with unit 003** · re-labelled 2026-08-23 by the T-404 audit: it blocks no task, gate or non-negotiable in unit 001, and `plan.md` §3 puts demo content in this unit's explicit NO column. The 🔴 was the table using red to mean *unsigned* rather than *blocking* — which is how an unrelated decision came to sit in a closure criterion | unit 003 | 👤 Andrés |
 | **Wave 2 deadlock** | ✅ **RESOLVED 2026-08-22 by D-019** · the incompatibility was two needs conflated: running the invariants (→ container) and running the install smoke (→ a Drupal site set up separately, this package added as a path repository — the T-207 flow, already executed by `.github/workflows/phpunit.yml`). **T-201 superseded by T-207**; **T-208 redefined** to version the gate's container definition, not a `.ddev/config.yaml` for a site this repository does not contain. Task-level rewiring owned by the `orquestador` | — | — |
 | T-205 first green pipeline | 🟡 **OPEN, unblocked 2026-08-22** · the drupalcode project **exists** (API 200, created `2026-08-22T18:17:19Z`, public, `default_branch: main`) — and the repository is **empty: 0 branches, 0 commits**, so `main` is a pointer to a ref that does not exist. What is missing is no longer a project but a **push** (T-217) and an **observed run** (T-218) | T-205, T-206, the D-009(b) canary | 👤 Andrés signs the first push (D-022) |
 | **`phpunit.yml` executed ZERO tests** | ✅ **CLOSED 2026-08-22 by T-213** · run `32582950414` reports `Tests: 3, Assertions: 38` with 0 occurrences of `No tests executed`, paths resolving under `recipes/agora_transparency/`; the recurrence is guarded by `--fail-on-empty-test-suite` and proven red by T-215 (run `32583207616`, exit 1) | — | — |

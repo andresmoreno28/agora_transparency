@@ -150,8 +150,8 @@ distinguishes the four states, and **its output beats any memory and beats this 
 ## Gate A (the drupalcode pipeline IS the gate — **job list observed**, 2026-08-23)
 
 - `composer validate` + clean install.
-- **Observed inventory.** Pipeline `933342`, ref `1.x`, commit `fd8d3b2`, read from
-  `/api/v4/projects/project%2Fagora_transparency/pipelines/933342/jobs` — not from the UI, not from
+- **Observed inventory.** Pipeline `933556`, ref `1.x`, commit `5556bb3`, read from
+  `/api/v4/projects/project%2Fagora_transparency/pipelines/933556/jobs` — not from the UI, not from
   the badge:
 
   | job | stage | status | `allow_failure` |
@@ -163,13 +163,16 @@ distinguishes the four states, and **its output beats any memory and beats this 
   | `phpcs` | validate | success | false |
   | `phpstan` | validate | success | false |
   | `phpunit` | test | success | false |
+  | `agora-invariants` | validate | success | false |
 
-  **Seven jobs · all blocking · zero named exceptions.** This **supersedes the nine-job list derived
-  from `gitlab_templates` on 2026-08-22**, which was wrong in both directions: it predicted
-  `stylelint` and `secret detection`, neither of which runs, and omitted `composer-lint`, which
-  does. `stylelint` is absent because the package contains no CSS — and since the theme is a
-  **separate project** (D-014), it may never run in this repository at all. **Derived lists are
-  forbidden here: this table is replaced only by another observation.**
+  **Eight jobs · all blocking · zero named exceptions.** This **supersedes the seven-job table read
+  from pipeline `933342` on 2026-08-22**: `agora-invariants` landed as an eighth job that same day,
+  and this repository's own next commit is what made the seven-job table stale. `stylelint` remains
+  absent because the package contains no CSS — and since the theme is a **separate project**
+  (D-014), it may never run in this repository at all. **Derived lists are forbidden here: this
+  table is replaced only by another observation, and it is a dated measurement, not a promise: the
+  commit that changes the CI job list, the packaged file set or a gate's denominator is the commit
+  that updates it.**
 
 - **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
   non-negotiable rule 9's second sentence and D-006 on this point):
@@ -182,17 +185,21 @@ distinguishes the four states, and **its output beats any memory and beats this 
   containing a failed permissive job is a **failed** gate (I-043).
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** `cspell`
-  reports `Files checked: 36` against **63** tracked files. `phpcs`, `phpstan` and `eslint` print
-  **no denominator at all**. Until **T-222** makes those numbers visible, quote result and scope
-  together or not at all (I-045).
+  now reports `Files checked: 62` (pipeline `933556`), two of which are CI-generated files this
+  repository does not track. Of the repository's **65** tracked files, 60 are opened; the other five
+  (`.eslintrc.json`, `.gitignore`, `LICENSE.txt`, `composer.json`, `screenshot.webp`) are skipped by
+  the upstream `.cspell.json` defaults, not by omission — the 36-versus-63 gap **T-222** opened is
+  closed. `phpcs`, `phpstan` and `eslint` still print **no denominator at all**; quote result and
+  scope together or not at all (I-045).
 
 - PHPUnit runs with **`--fail-on-empty-test-suite`** on every runner — **observed on drupalcode**,
   not inferred: the flag in the executed command line, `_PHPUNIT_CONCURRENT=0`, and
   `OK (3 tests, 38 assertions)` from the same log. A suite that executed 0 tests is a **failed**
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
-- ⚠️ **`tests/bin/` runs in no CI job yet.** Nine invariants execute only when a human types them.
-  Owned by **T-221** (write the job) → **T-219** (observe it) → closes **T-202**.
+- **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
+  (61 checks · 0 failures) and `gate-a-wave3.sh` (35 checks · 0 failures), 10 invariants in total —
+  not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
 
 - **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render.
   Today this executes **only** on the GitHub workflow, which D-020 classifies as an **informative**

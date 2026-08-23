@@ -241,10 +241,10 @@ not.
 ## Continuous integration
 
 Ágora's pipeline is the shared `gitlab_templates` pipeline the Drupal Association maintains, run on
-[git.drupalcode.org](https://git.drupalcode.org) with no job of our own defined on top of it. This
-is the list of jobs that actually ran, taken from pipeline `933342` on branch `1.x`, commit
-`fd8d3b2`, read from the API on 2026-08-23 — not from the badge, and not from the set of jobs the
-template could in principle run:
+[git.drupalcode.org](https://git.drupalcode.org), plus one job of our own defined on top of it,
+`agora-invariants`. This is the list of jobs that actually ran, taken from pipeline `933556` on
+branch `1.x`, commit `5556bb3`, read from the API on 2026-08-23 — not from the badge, and not from
+the set of jobs the template could in principle run:
 
 | Job | Stage | Status | Blocking |
 |---|---|---|---|
@@ -255,27 +255,39 @@ template could in principle run:
 | `phpcs` | validate | success | yes |
 | `phpstan` | validate | success | yes |
 | `phpunit` | test | success | yes |
+| `agora-invariants` | validate | success | yes |
+
+**Eight jobs · all blocking · zero named exceptions.**
+
+This table is a dated measurement, not a promise: whichever commit changes the CI job list, the
+packaged file set or a gate's denominator is the commit that updates it.
 
 **Two checks are absent, and an absent check is not a passed one.**
 
 * `stylelint` did not run because there is no CSS in the package for it to read. Ágora's theme is a
   separate project, so this job may never run in this repository at all.
-* `secret detection` is not part of the three included template files, so nothing in this pipeline
-  looks for leaked credentials. The repository carries its own `tests/bin/no-secrets` check, but a
-  human has to run it: it is not wired into the pipeline yet.
+* `secret detection`, GitLab's own credential scanner, is not part of the three included template
+  files, so it still does not run as a job. The gap it would cover is narrower than it looks:
+  `tests/bin/no-secrets` runs on every push inside `agora-invariants`, which executes both gate
+  runners — `gate-a-wave1.sh` (61 checks · 0 failures) and `gate-a-wave3.sh` (35 checks · 0
+  failures), 10 invariants in total — not only when a human types them by hand.
 
 **The gate is the list of jobs, never the pipeline's status field.** This is not a preference. An
 earlier pipeline reported `success` while the spell check inside it had failed: four of the seven
-jobs were non-blocking by upstream default, so their failures were recorded and then rolled up into
-a green result that hid them. All seven are blocking now, with no exceptions —
+jobs then defined were non-blocking by upstream default, so their failures were recorded and then
+rolled up into a green result that hid them. All eight jobs are blocking now, with no exceptions —
 `_ALL_VALIDATE_ALLOW_FAILURE: '0'` in [`.gitlab-ci.yml`](.gitlab-ci.yml) is what makes the validate
 stage stop the pipeline. Read the job list; the status field has already been wrong here once.
 
-**What the green does not tell you.** `cspell` reported `Files checked: 36`, while the repository
-tracks 63 files. The gap is not explained yet, and until it is, we do not know which files were
-read. `phpcs`, `phpstan` and `eslint` print no file count at all. A passing check over an unknown
-number of files is a weaker statement than it looks, and it is written down here as one rather than
-counted as coverage.
+**What the green does not tell you.** The 36-versus-63 gap reported earlier is closed: `cspell` now
+reports `Files checked: 62`, two of which are files the CI runner generates and this repository does
+not track (`.editorconfig`, `gitlab_templates_version.txt`). Of the repository's 65 tracked files, 60
+are opened. The other five are skipped by the upstream `.cspell.json` defaults, not by omission:
+`.eslintrc.json` and `.gitignore` match its dotfile/`*ignore` ignore patterns, `LICENSE.txt` and
+`composer.json` match its case-insensitive filename list regardless of extension, and
+`screenshot.webp` is binary, which `cspell` does not open. `phpcs`, `phpstan` and `eslint` still
+print no file count at all. A passing check over an unknown number of files is a weaker statement
+than it looks, and it is written down here as one rather than counted as coverage.
 
 ### Checking spelling before you push
 

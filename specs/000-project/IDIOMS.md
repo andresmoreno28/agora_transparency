@@ -369,3 +369,45 @@
   WSL filesystem (`~/project`), never from `/mnt/c`, which DDEV documents as slow and
   permission-prone. Related to I-042: a capability absent from the installation you looked at is not
   a capability absent from the machine. Recorded 2026-08-23.
+- I-047 · **An "observed" fact is a dated measurement, and ours decayed within hours.** The README's
+  CI section and `CLAUDE.md`'s Gate A block were both written to be unfalsifiable-by-badge — *"read
+  from the API, not from the UI, not from the badge"* — and both were false by the end of the same
+  day, falsified **not by a regression but by our own next commit**, which added the eighth job the
+  README said did not exist. I-024 covers *inherited* boilerplate outliving its cleanup; this is the
+  mirror image, and harder, because the text is ours, was true, and was written with more rigour
+  than the text around it. Rule: any block quoting a pipeline ID, a job count or a file denominator
+  is **research under I-001** — it carries a date, and the commit that changes what it describes is
+  the commit that updates it. Corollary on blast radius: `README.md` **ships** and `CLAUDE.md`
+  **governs**, so a stale observation is either a false statement to a user or a false instruction to
+  the next session. There is no harmless copy. Recorded 2026-08-23.
+- I-048 · **Evidence abundant on the wrong axis reads as proof — the ninth species, and the only one
+  where the evidence is genuinely strong.** T-401's criterion had three clauses: `sql:drop`,
+  reinstallation, and *"the template appears in the selector"* — the same sentence `plan.md` §1 names
+  as the unit's definition of done. What was produced was a real Drupal 11.4.5, a clone of the
+  **canonical** remote, 78 recipe steps, HTTP 200, 58 modules and `Tests: 3, Assertions: 38`. Every
+  number real, every number verified, and **not one of them about the selector**, which could not
+  have appeared at all because the flow started from `drupal/recommended-project` rather than the
+  Drupal CMS installer. Distinguish it from its siblings: I-027 is a broken instrument, I-028 a
+  degenerate value, I-032 an absent specimen, I-043 a discarded finding — here instrument, method
+  and specimen were all sound, and the measurement was simply **of something adjacent**. That is what
+  makes it hard: quantity of evidence is the heuristic everyone uses for whether to look closer, and
+  this species maximises it. Rule: check a criterion **clause by clause**, marking each proven or
+  not, *before* reading the evidence as a whole. A criterion with three clauses and one impressive
+  proof is a criterion with **two unmet clauses**. Recorded 2026-08-23.
+- I-049 · **Agentic speed compresses the work and leaves the round-trips untouched, so latency
+  becomes the schedule.** Unit 001 ran ~58 commits across three days, and throughput inside a turn
+  was never the constraint — waves 1 and 3, roughly 28 tasks, landed in about a day. What set the
+  wall clock was the **count of round-trips**: a pipeline (minutes), a human signature (hours), an
+  environment discovery (**a day** — I-046). The single largest identifiable loss in the unit was a
+  `doctor` probe that answered a question nobody had asked it, and no amount of parallel lanes or
+  shorter records would have touched it. Rule: optimise the **number** of round-trips, not the speed
+  of the work between them — batch every pipeline-visible change into one push; **pre-delegate
+  mechanical signatures at wave start** rather than discovering the need mid-wave (this unit invented
+  `[ejecutor] under [andres]'s delegation` three separate times before it became a habit); and run
+  every environment probe **before** the wave that depends on it. Corollary this unit paid for twice:
+  an *unknown* environment is a round-trip of unbounded length, so probing it is never the thing to
+  defer. Two things worth naming beside the round-trips: the unit had quality gates and **no scope
+  gate** — planned at ~25 tasks, closed at 50-plus, every addition individually justified and none
+  ever asked *"does this belong in 001 or in 006?"*; and the dead weight in the record is not its
+  length but the **evidence blocks inside signed tasks** that restate what a linked pipeline log
+  already says. Recorded 2026-08-23.
