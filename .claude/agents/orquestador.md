@@ -94,7 +94,7 @@ Go through these dimensions and do not skip any:
 | Drupal.org standards | phpcs (Drupal + DrupalPractice), phpstan, cspell, eslint, stylelint — the real pipeline jobs |
 | SBOM | Stable only **with security coverage**, and each one with its line in `DECISIONS.md` |
 | Licenses | GPL for anything derived from Drupal, OFL for fonts, CC0/own for media; manifest up to date |
-| Publishability | Installs clean · no unstables or patches · degrades with no API key · accessibility statement present |
+| Publishability | Installs clean · no unstable releases or patches · degrades with no API key · accessibility statement present |
 | Code accessibility | Semantics, focus order, visible focus, token contrast, tables with `<th scope>` |
 | Structure | `recipe.yml` at the root with `type: Site`; no leftovers from the kit (`_comment`, `GET-STARTED.md`, `extra.drupal-site-template`) |
 

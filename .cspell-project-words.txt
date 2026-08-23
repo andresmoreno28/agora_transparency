@@ -142,3 +142,8 @@ encontró               # "no se encontró Python", quoted verbatim from the Mic
 proyecto               # survives only in D-024's own text, naming the pre-rename specs/000-proyecto/ path; rule 8 forbids editing it
 
 dlx                  # pnpm's one-off package runner, used in the README's local spell-check pre-flight (T-225)
+
+# Third-party identifiers reached once --dot put the hidden paths in scope (T-222).
+enmod                # Apache's a2enmod, invoked in .tugboat/config.yml
+tugboatqa            # Tugboat's own domain, docs.tugboatqa.com, cited in .tugboat/config.yml
+webprofiler          # the Drupal module, named in the clean-export skill as one to uninstall

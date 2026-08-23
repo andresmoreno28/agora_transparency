@@ -4,7 +4,7 @@ Run the next wave of the active unit according to tasks.md:
 2. Invoke the `orquestador` subagent for the wave plan: lanes (parallel/sequential), success
    criterion per task and what the tester must verify.
 3. Execute that plan by invoking `desarrollador` and `tester` (in parallel where the files are
-   disjoint). Runtime conflict → pause, sequentialize, report.
+   disjoint). Runtime conflict → pause, run the lanes in sequence, report.
 4. Complete gate A: linters/static + suites + tests/bin/ scripts + smoke if the unit closes.
    Everything exit 0 with real counts. Afterwards, invoke the `orquestador` in audit mode for the
    independent verdict. Without its ✓, the wave does NOT close; its 🔴 are resolved or escalated.
