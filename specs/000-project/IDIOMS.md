@@ -357,3 +357,15 @@
   jobs we do not own**, and it gets its own number for the same reason I-038 did: the class keeps
   finding new surfaces, and folding each one back into the parent hides the spread.
   Recorded 2026-08-23.
+- I-046 · **On Windows, DDEV's own recommended setup is docker-ce **inside WSL2**, not Docker
+  Desktop — and the two conflict.** T-401 sat blocked for a day on *"the Docker daemon is
+  unreachable"*, and the daemon was running the whole time: it was `docker-ce` inside a WSL2 Ubuntu,
+  with DDEV **already installed there too**. What was unreachable was Docker Desktop's named pipe,
+  which is a different product; its `docker-desktop` WSL distro sat stopped beside the working one.
+  `doctor` reported *"CLI present, daemon unreachable"* and that was accurate about the Windows
+  CLI — and useless, because it never asked whether a daemon existed **somewhere else on the same
+  machine**. Rules: (a) before recording a capability as absent, enumerate where it might live —
+  `wsl -l -v`, then `wsl -e bash -lc 'docker info'`, two commands; (b) run the project **inside** the
+  WSL filesystem (`~/project`), never from `/mnt/c`, which DDEV documents as slow and
+  permission-prone. Related to I-042: a capability absent from the installation you looked at is not
+  a capability absent from the machine. Recorded 2026-08-23.

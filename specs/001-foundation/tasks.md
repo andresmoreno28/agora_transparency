@@ -927,13 +927,45 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
 
 ## Wave 4 · Install smoke and closure
 
-- [ ] **T-401** · Clean install smoke: `sql:drop` + reinstallation, verifying that the template
+- [✓ 2026-08-23] **T-401** · Clean install smoke: `sql:drop` + reinstallation, verifying that the template
       appears in the selector. *Success:* a capture or output that demonstrates it.
       > **Note (rider [andres] 2026-08-21):** *"the clean-install assertion runs in
       > **non-interactive mode** (no composer prompts answered by hand), and must verify how
       > `site_template_helper` ends up authorised in the `allow-plugins` of the `composer.json` the
       > end user receives. If generation requires manual interaction → **escalate as an install-UX
       > finding, do not patch silently.**"* See the amendment to D-008.
+      *Evidence — a real, clean Drupal 11.4.5, 2026-08-23. Environment: WSL2 Ubuntu 24.04 with
+      docker-ce 28.1.1 and DDEV 1.24.4 **inside WSL**, which is DDEV's own recommended Windows
+      setup — not Docker Desktop, whose distro was the conflict that had blocked this task.*
+      **The package under test was cloned from the canonical remote**, not from the working copy:
+      `git clone https://git.drupalcode.org/project/agora_transparency.git` at `6aba924`. That
+      matters — it tests what a user receives, not what a developer has.
+      *What the installed package contained:* `AGENTS.md`, `LICENSE.txt`, `README.md`,
+      `composer.json`, `content/`, `recipe.yml`, `recommended.yml`, `screenshot.webp` — and
+      **0 test files**, because `/tests` is `export-ignore`d and Composer's path mirroring honours
+      it. Exactly the packaged artefact `git archive` predicts (I-033).
+      *Applying the recipe:* `drush recipe ../recipes/agora_transparency` → **78 steps**,
+      `[OK] Ágora Transparency applied successfully`, **exit 0**.
+      *The resulting site:* Drupal bootstrap **Successful** · front page **HTTP 200** ·
+      `system.theme:default` = `blank` · `system.site:page.front` = `/page/1` (the Canvas page the
+      recipe creates) · **58** non-core modules enabled.
+      *And the documented workaround verified end to end:* copying `source/tests` into the
+      installed package, exactly as the README's new section instructs, then
+      `phpunit --fail-on-empty-test-suite ./recipes/agora_transparency` → **`Tests: 3,
+      Assertions: 38`**, the same counts as CI. Without the copy it would have printed
+      `No tests executed!` and exited 0.
+      > **This closes the D-008 amendment's open consequence, which was recorded as UNVERIFIED and
+      > inherited by this task.** The amendment established from `Plugin.php` that
+      > `site_template_helper` has **no root-package check** and would therefore run on the end
+      > user's machine. It does: `web/themes/blank` was generated on this clean install, by
+      > `composer require` alone. The inference was correct, and it is now measured rather than
+      > deduced.
+      > **The `allow-plugins` half is also answered.** The install needed
+      > `composer config allow-plugins.drupal/site_template_helper true` — without it Composer
+      > refuses the plugin and `blank` is never generated, while `recipe.yml` both lists it in
+      > `install:` and pins it in `system.theme`. That is an **install-UX finding**, exactly as the
+      > task's rider required it be treated: reported, not patched silently. It is resolved for
+      > real when the theme becomes `drupal/agora_theme` (D-014) and the generator is dropped.
 - [⏸ deferred 2026-08-22 → unit 002 (content model)] **T-402** · 🔒 **Extending
       `InstallTest`/`ValidationTest` with Ágora's key routes presumes Ágora has routes. It has
       none.** There is no content model until unit 002/003: every route the site serves today comes
@@ -1016,4 +1048,5 @@ Sign here: `[ ]`
 | **second dev host (macOS)** | 🟡 **OPEN** · a second agent works this repo from a Mac. The wave 3 gate is certified on the Windows host **only** (see the closure note): its toolchain floor, its `grep` flavour and its line endings are all unverified there. First action on that host is T-317's measurement, before trusting any invariant's green | T-317 | — |
 | T-314 packaged `recipe.yml` boilerplate | ✅ **CLOSED 2026-08-22** · signed; deny list 7 → 8, proven to fire on the uncleaned file before the cleanup | — | — |
 | `.gitattributes` `text eol=lf` | ✅ **CLOSED 2026-08-22 by T-319** · `tests/bin/** text eol=lf` and `*.sh text eol=lf`, in their own labelled section, scope confirmed narrow | — | — |
+| **Docker for the smoke tests** | ✅ **RESOLVED 2026-08-23** · not absent, just elsewhere: `docker-ce` 28.1.1 and DDEV 1.24.4 live **inside WSL2 Ubuntu**, which is DDEV's own recommended Windows setup. The unreachable daemon was Docker Desktop's, a different product, whose stopped distro sat beside the working one. T-401 ran there (I-046) | — | — |
 | PHP 8.4 **ZTS** on the dev host | 🟡 **OPEN** · `gitlab_templates` and the Drupal CLI assume NTS. Inert today (no invariant executes PHP; `composer validate --strict` exit 0); surfaces at **T-406** | T-406 | — |
