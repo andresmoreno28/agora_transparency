@@ -189,7 +189,7 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
 
 - [ ] **T-201** · Reproducible DDEV configuration (≥ 1.25.0), documented in the README.
       *Success:* `ddev start` from scratch on a clean machine, with no manual steps.
-- [ ] **T-202** · Review `.gitlab-ci.yml`: keep the `gitlab_templates` include, set only
+- [✓ 2026-08-23] **T-202** · Review `.gitlab-ci.yml`: keep the `gitlab_templates` include, set only
       the necessary variables. *Success:* no job is defined by hand.
       > **Rider [orquestador] 2026-08-22, adopted by [ejecutor] under [andres]'s delegation —
       > amendment to the T-202 success criterion.** The criterion *"no job is defined by hand"* was
@@ -207,6 +207,15 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > *Success, checkable:* `.gitlab-ci.yml` contains exactly one `include:` block, unchanged from
       > upstream's three files; the set of locally defined job keys is **disjoint** from the set
       > `gitlab_templates` defines; every locally defined job prints a count.
+      *Evidence — the criterion is no longer satisfied vacuously.* Until today `.gitlab-ci.yml`
+      defined **zero** jobs, so "locally defined job keys are disjoint from upstream's" quantified
+      over an empty set and "every local job prints a count" over nothing — the I-028 family, a
+      check whose degenerate value equals its expected value. It now defines exactly one job,
+      `agora-invariants`, verified disjoint against the **42** keys parsed from upstream (which
+      carries both `secret detection` and `secret_detection`, and a `Pipeline set-up failed ⚠️`),
+      carrying the comment its criterion (a) requires and printing two real counts.
+      `diff` against upstream's `.gitlab-ci.yml`: **0 deletions**, additions only; one `include:`
+      block, byte-identical.
 - [ ] **T-203** · Read `include.drupalci.variables.yml` and document in the README which jobs remain
       active (phpcs, phpstan, cspell, eslint, stylelint, phpunit). *Success:* a real list, not an assumed one.
 - [✓ 2026-08-23] **T-204** · Create `.cspell-project-words.txt` with the project vocabulary.
@@ -477,10 +486,20 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > now 0. Recorded so the rider is not re-read later as an open worry.
       > **Correction to T-203's parenthetical**, which this inventory supersedes: it named
       > `stylelint`, which does **not** run, and omitted `composer` and `composer-lint`, which do.
-- [ ] **T-219** · The second pipeline — the run that actually closes the `tests/bin/`-in-no-CI 🔴,
+- [✓ 2026-08-23] **T-219** · The second pipeline — the run that actually closes the `tests/bin/`-in-no-CI 🔴,
       after T-202 adds the job its own amended rider permits.
       *Success:* the `tests/bin/` job's log shows `gate-a-wave1.sh` **61 · 0** and `gate-a-wave3.sh`
       **33 · 0** (31 after T-214, +2 after T-322).
+      *Evidence — pipeline `933415`, job `agora-invariants`, `allow_failure=false`:* the job's log
+      carries both summary lines, `61 checks - 0 failures` and `33 checks - 0 failures`.
+      **The criterion's `33 · 0` is met, but for a different reason than it predicted:** it assumed
+      31 + 2 from T-322, which is still unimplemented; the +2 came from T-223's `cited-tasks-exist`.
+      Recorded, because a criterion met by coincidence is worth exactly as much as one that is not.
+      > **First run went red, and correctly.** Four checks failed: `no-blind-phpunit` and
+      > `cited-tasks-exist` reported `present | FAIL` because both were committed **mode 644**, and
+      > the runner tests the file is executable. Every local invocation went through
+      > `bash tests/bin/x`, so the missing bit was invisible for the whole of wave 3 — **a habit in
+      > how we invoke a script masked a property of the script itself.** Four files `chmod +x`.
 - [ ] **T-220** · Confirm the 41 commits are **attributable** on Drupal.org once pushed. Commit
       authorship on drupalcode attaches to a user account only when the author email is a **verified
       email on that account**; otherwise the commit list shows a bare string and the maintainer gets
@@ -506,7 +525,7 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       either alone is the exception in disguise. Evidence: `933317` (green, still permissive) →
       **`933342`** (green, blocking). The exception lived **zero days beyond its purpose**, which is
       the outcome D-023(6) was designed for.
-- [ ] **T-221** · 🔴 Add the Ágora-local invariants job — the vehicle that closes the last open
+- [✓ 2026-08-23] **T-221** · 🔴 Add the Ágora-local invariants job — the vehicle that closes the last open
       🔴 of this unit, *`tests/bin/` runs in no CI*. Exactly one job key, disjoint from every key
       `gitlab_templates` defines (**42** verified by parsing upstream, not by assuming a list — it
       carries `secret detection` **and** `secret_detection`, plus `Pipeline set-up failed ⚠️`);
@@ -522,7 +541,13 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > only Python use pulls a *separate* `image: python:3.12` for the `pages` job, which implies
       > the PHP image is not assumed to have it. Deliberately **not** pre-installed: doing so would
       > convert an honest preflight failure into a hidden dependency of the job.
-- [ ] **T-222** · Make the denominators visible, then reconcile them. Four **blocking** checks
+      *Evidence — pipeline `933415`:* **8 jobs**, `agora-invariants` `success` and blocking, its
+      log carrying exactly two `N checks - M failures` lines, both `- 0 failures`.
+      **The predicted first red did not happen for the predicted reason.** `jq`, `composer` and
+      `python3` are all present in the runner image — the preflight passed, so both predictions
+      about missing tooling were wrong, and recording that is worth as much as recording a hit.
+      What did go red was the execute bit (see T-219).
+- [✓ 2026-08-23] **T-222** · Make the denominators visible, then reconcile them. Four **blocking** checks
       report a result with no idea how many files they opened: `cspell` printed `Files checked: 36`
       against **63** tracked; `phpcs` printed **nothing at all** between invocation and exit code;
       `phpstan` and `eslint` print no count. **A blocking check over an unknown denominator is not a
@@ -534,7 +559,19 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       should be in scope. Where the answer is "yes and it is not", that is its own finding —
       anything covering `.claude/` touches D-024(4) and needs its own line, so **do not fix it
       inside this task**.
-- [ ] **T-223** · `tests/bin/cited-tasks-exist` — I-044's guard. Extracts every `T-NNN` cited in
+      *Evidence — the gap is explained, not estimated.* `_CSPELL_SHOW_PROGRESS: '1'` made cspell
+      name every file it opens, and the 37-of-64 gap decomposes exactly: **25 dot-paths** —
+      `.claude/` (14 files), `.github/`, `.tugboat/` and the root dotfiles — plus `LICENSE.txt` and
+      `composer.json`, which upstream's `_CSPELL_IGNORE_COMMON` skips by default, and one binary.
+      **D-024(4) names `.claude/` as something that must NOT be excluded**, and a Spanish comment in
+      `.claude/settings.json` had survived there unseen until a human found it — so the exclusion
+      was arriving by **upstream default rather than by our choice**, which is worse than choosing
+      it. `--dot` put them back: **37 → 61 files checked**, at a cost of five words — three
+      third-party identifiers listed with justification, two coinages of mine reworded rather than
+      listed.
+      `_PHPCS_EXTRA: '-p'` is set; phpcs's own denominator is verified on the next run that has
+      PHP to lint.
+- [✓ 2026-08-23] **T-223** · `tests/bin/cited-tasks-exist` — I-044's guard. Extracts every `T-NNN` cited in
       `DECISIONS.md` and asserts each is **defined** in some `specs/*/tasks.md`. Scans the working
       tree, never `git grep` (I-018). FATAL on `citations == 0` with defaulted input (I-031) and no
       summary line. `wc -l` never `grep -c`; `grep` rc ≥ 2 fatal; no `-F` with `-i`.
@@ -547,12 +584,20 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > draft pattern capped a list-item prefix at 24 characters and **falsely** reported T-402
       > dangling, because its status marker is long (`[⏸ deferred 2026-08-22 → unit 002 …]`).
       > Caught before shipping, and documented in the script.
-- [ ] **T-224** · Complete T-217's rider: rename `origin` → `github`. Today `origin` points at the
+      *Evidence:* clean tree → exit 0, `citations: 31 · distinct cited: 21 · definitions: 72 ·
+      findings: 0`. Dirty case: a `T-999` citation injected into `DECISIONS.md` → exit 1 naming
+      `file:line`; reverted, `git status --porcelain` empty. `gate-a-wave3.sh` **31 → 33**.
+      **It found its reason for existing on its first run:** one dangling citation, `DECISIONS.md`
+      naming T-226 as the owner of an exception that no task list defined.
+- [✓ 2026-08-23] **T-224** · Complete T-217's rider: rename `origin` → `github`. Today `origin` points at the
       **read-only mirror**, so a bare `git push` from a fresh clone targets the derived remote
       rather than the canonical one — exactly backwards under D-016. After the rename there is no
       remote named `origin`, so the bare command fails loudly instead of guessing.
       *Success:* `git remote` lists `drupalcode` and `github`, and **no** `origin`.
-- [ ] **T-225** · Document a local cspell pre-flight. Load-bearing now: **cspell is blocking and it
+      *Evidence:* `git remote` → `drupalcode`, `github`. **No remote named `origin`.** Until now a
+      bare `git push` targeted the read-only mirror rather than the canonical remote — backwards
+      under D-016, and now impossible: the bare command fails loudly instead of guessing.
+- [✓ 2026-08-23] **T-225** · Document a local cspell pre-flight. Load-bearing now: **cspell is blocking and it
       reads `README.md` and `specs/`, so every prose commit is a gate.** `pnpm dlx cspell@9.8.0
       --locale en,en-GB` — pnpm exclusively (rule 5), version pinned to the runner's, locale
       matching `_CSPELL_EXTRA`.
@@ -573,6 +618,11 @@ Sign here: `[ ]`
 
 ## Wave 3 · Invariants (parallelizable with wave 2 — disjoint files)
 
+      *Evidence:* the README documents `pnpm dlx cspell@9.8.0 --locale en,en-GB`, pinned to the
+      runner's version and matching `_CSPELL_EXTRA`, and **labels itself an approximation**.
+      That label earned itself the same day: run locally over `.claude/**` it reported 82 issues
+      where CI reported 5, because the local run lacks upstream's `.cspell.json` and is therefore
+      **stricter** than the gate. An approximation that says so is a tool (I-042).
 - [✓ 2026-08-21] **T-301** · `tests/bin/no-unstable-deps` according to the spec in `plan.md` §6.
       *Success:* it detects a deliberately injected `-beta` and does **not** flag the starter kit.
 - [✓ 2026-08-21] **T-302** · `tests/bin/no-patches`. *Success:* it detects an injected `patches` section.
@@ -896,7 +946,7 @@ Sign here: `[ ]`
 ## Active blockers
 
 > A table of **state**, not of signed tasks: it is rewritten on each update.
-> Last updated: 2026-08-22, after D-022 fixed the git topology.
+> Last updated: 2026-08-23, after wave 2 closed.
 
 | Blocker | State | Blocks | Who resolves |
 |---|---|---|---|
@@ -919,7 +969,7 @@ Sign here: `[ ]`
 | **`simpleConfigUpdate` → exception in Drupal 12** | 🟡 **OPEN** · an upstream Drupal CMS recipe that Ágora composes calls `simpleConfigUpdate` on a config **entity**; deprecated in 11.2, **throws** in 12.0 (verified at source). **Not Ágora's** — its two uses target `system.site` and `system.theme`, simple config with no entity type, which cannot trigger it (I-037). Re-checked at unit 007's dependency review | unit 007 | — |
 | T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
-| **`tests/bin/` runs in no CI** | 🔴 **OPEN** · the eight invariants (nine with T-322) execute only when a human types them. The criterion clash was RESOLVED 2026-08-22 by the T-202 rider. **Unblocked 2026-08-22** by the project's creation, and deliberately **sequenced after** the baseline pipeline: a local job added before the first run makes T-203's inventory an inventory of a modified file rather than of upstream, and gives any red two candidate causes. Closes at **T-219**. Automatic 🔴 at unit 001 closure (T-404) if it reaches wave 4 unowned | T-404 | — |
+| **`tests/bin/` runs in no CI** | ✅ **CLOSED 2026-08-23 by T-221** · pipeline `933415` runs `agora-invariants` as an eighth job, blocking, printing `61 checks - 0 failures` and `33 checks - 0 failures`. Nine invariants that ran only when a human typed them now run on every push | — | — |
 | **first push to drupalcode** | 🔴 **OPEN** · the canonical remote exists and is empty; no local remote for it. On an **empty** repository the first push may also set the default branch, which rule 10 reserves — so the **first** push needs a signature even though pushing a working branch is otherwise delegated. Subsequent working-branch pushes need none | T-217 and everything downstream | 👤 Andrés (D-022) |
 | T-316 grep rc-blindness | ✅ **CLOSED 2026-08-22** · signed — 28 `rc >= 2` guards across 27 call sites in 9 files; residuals R1/R2 closed in the same wave; clean-path output byte-identical to `c3dc9f5` | — | — |
 | T-317 toolchain floor | 🟡 **OPEN** · unblocked by D-019, which requires the floor to be pinned and documented · `-Fin` and the CRLF assumptions are measured **only on the Windows dev host**. The CI/DDEV image and the **macOS dev host** are both unmeasured, and macOS is a different question (BSD grep, not GNU). Do not assume either covers for the other | — | blocked by D-019 |
