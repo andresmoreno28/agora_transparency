@@ -86,7 +86,7 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       > process-layer task: it touches no artefact the wave 1 gate measures, so it does not
       > reopen that gate.
 
-- [ ] **T-116** · Apply **D-021** to the packaged identity strings, and correct the two README
+- [✓ 2026-08-23] **T-116** · Apply **D-021** to the packaged identity strings, and correct the two README
       statements that the project's creation made false the same day.
       **Identity (full name `Ágora Transparency`):** `recipe.yml` `name:` · `README.md` H1 and first
       prose mention · `AGENTS.md` audience header and first body mention · `recommended.yml` header.
@@ -102,7 +102,12 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       `no-boilerplate` **scanned 18 · terms 8 · findings 0** unchanged; `composer validate --strict`
       exit 0; `recipe.yml` still parses with `type: Site`, 10 recipes / 3 install unchanged.
 
-- [ ] **T-117** · `.mailmap` at the repository root, canonicalising the two author names that share
+      *Evidence — commit `3476164`:* `recipe.yml` `name: Ágora Transparency`, byte-identical to the
+      Drupal.org project title; both `description` fields identical to each other and name-free;
+      README H1 and first mention, `AGENTS.md` audience header, `recommended.yml` header all
+      carrying the full name. Prose keeps `Ágora` deliberately. The two false README statements
+      corrected. `gate-a-wave1.sh` 61 · 0 and `no-boilerplate` unchanged, as required.
+- [✓ 2026-08-23] **T-117** · `.mailmap` at the repository root, canonicalising the two author names that share
       one mailbox. `git shortlog -sne` reports `Andrés Moreno <andresmrubio28@gmail.com>` **×22** and
       `andresmoreno28 <andresmrubio28@gmail.com>` **×19** — one person, two identities, visible to
       anyone who opens the project cold. History is **not** rewritten (D-016); `.mailmap` is git's
@@ -117,7 +122,13 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       from before the task — that is the proof nothing was rewritten.
       *Do NOT* `export-ignore` it: it is 200 bytes and answers a question the tarball's recipient
       may also ask. **Land before the first push**, so the public repository never shows the split.
-- [ ] **T-118** · Amend **`CLAUDE.md` rule 7** to the Drupal convention verified at source
+      *Evidence:* `git shortlog -sne --all` → one line. `git rev-parse HEAD` unchanged across the
+      change, which is the proof nothing was rewritten.
+      > **The criterion itself was wrong and the lane caught it.** It specified
+      > `git log --format='%an'`; lowercase `%an` is the **raw** recorded name and never consults
+      > `.mailmap`. Only `%aN` is mapped. Corrected in place rather than declared met against a
+      > check that could not pass.
+- [✓ 2026-08-23] **T-118** · Amend **`CLAUDE.md` rule 7** to the Drupal convention verified at source
       (`…/git-for-drupal-project-maintainers/the-format-of-the-git-commit-message`, updated
       2026-04-24): *"As of November 2025, the Drupal Core project adopted Git commit messages
       formatted to comply with the Conventional Commits specification"*, format
@@ -187,8 +198,19 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
 
 ## Wave 2 · Environment and CI
 
-- [ ] **T-201** · Reproducible DDEV configuration (≥ 1.25.0), documented in the README.
+      *Evidence:* rule 7 now quotes the doc and its URL, lists the nine allowed types, and names
+      `task` over `chore`. `git log --format=%s | grep -c '^chore'` → **9** as of this commit, and that number does
+      not grow: the nine existing ones stay under rule 8, and the change is forward-only.
+      > **The good news is the larger half.** The 45 commits were already in the right family —
+      > Drupal core adopted Conventional Commits in November 2025, so a reviewer opening this log
+      > sees the format their own core project uses. The gap was `chore` vs `task` and the missing
+      > issue IDs, both of which only apply going forward.
+- [⏸ superseded 2026-08-23 → T-207 (D-019)] **T-201** · Reproducible DDEV configuration (≥ 1.25.0), documented in the README.
       *Success:* `ddev start` from scratch on a clean machine, with no manual steps.
+      > **Superseded, not done.** D-019 states it: this repository is **not a site** and is never
+      > `ddev start`ed on its own. T-201 assumed it could be. The need it was written for — a
+      > reproducible environment — is met by **T-207**'s path-repository flow, which is what CI
+      > actually executes. Recorded rather than silently dropped.
 - [✓ 2026-08-23] **T-202** · Review `.gitlab-ci.yml`: keep the `gitlab_templates` include, set only
       the necessary variables. *Success:* no job is defined by hand.
       > **Rider [orquestador] 2026-08-22, adopted by [ejecutor] under [andres]'s delegation —
@@ -216,8 +238,15 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       carrying the comment its criterion (a) requires and printing two real counts.
       `diff` against upstream's `.gitlab-ci.yml`: **0 deletions**, additions only; one `include:`
       block, byte-identical.
-- [ ] **T-203** · Read `include.drupalci.variables.yml` and document in the README which jobs remain
+- [✓ 2026-08-23] **T-203** · Read `include.drupalci.variables.yml` and document in the README which jobs remain
       active (phpcs, phpstan, cspell, eslint, stylelint, phpunit). *Success:* a real list, not an assumed one.
+      *Evidence:* the README now carries the **observed** seven-job table with its pipeline ID,
+      branch and commit, the two absences explained (`stylelint` — no CSS, and the theme is a
+      separate project; `secret detection` — not among the three included files), the gate rule from
+      D-023(5), and the denominator caveat.
+      > **Its own parenthetical was the assumption it existed to replace.** The task text listed
+      > *"phpcs, phpstan, cspell, eslint, stylelint, phpunit"*: `stylelint` does not run, and
+      > `composer` and `composer-lint` do. "A real list, not an assumed one" — working as intended.
 - [✓ 2026-08-23] **T-204** · Create `.cspell-project-words.txt` with the project vocabulary.
       *Success:* the cspell job passes without disabling it.
       *Evidence — pipeline `933342`, job `cspell`:* `Issues found: 0 in 0 files`,
@@ -243,13 +272,21 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > list, never against the pipeline's status field (D-023(5)).
 - [ ] **T-206** · Decide and apply D-009: what runs on drupalcode and what on GitHub Actions.
       **Blocked by D-009.**
-- [ ] **T-207** · Replace the assumption "`ddev start` in the repo" with the verified flow: set up
+- [✓ 2026-08-23] **T-207** · Replace the assumption "`ddev start` in the repo" with the verified flow: set up
       Drupal separately and add the template as a *path repository*, following the kit's `.github/workflows/phpunit.yml`
       (`ddev config --project-type=drupal11 --docroot=web` → `ddev composer create-project
       --no-install drupal/recommended-project` → `ddev composer repository add source path source` →
       `ddev composer require "<package>:@dev"`, with `COMPOSER_MIRROR_PATH_REPOS=1`).
       *Success:* one command reproduces the environment from scratch; `ddev exec drush status` →
       `Drupal bootstrap : Successful`; `./recipes/agora_transparency` exists.
+      *Evidence:* the README carries the verified path-repository flow with its two assertions
+      (`./recipes/agora_transparency` exists after the require; `Drupal bootstrap : Successful`
+      after the site install), attributed to `.github/workflows/phpunit.yml`, which executes it on
+      every push and is the authority.
+      **And the trap that cost two days is written down:** the tests do not travel with the package
+      — `/tests` is `export-ignore`d and Composer's path mirroring honours it — so anyone running
+      PHPUnit against the installed package must copy `tests/` in first, or it finds nothing,
+      prints `No tests executed!` and **exits 0**.
 - [ ] **T-208** · Pin DDEV ≥ 1.25.0 and **version `.ddev/config.yaml`** (today `.gitignore` ignores
       `/.ddev/`, which makes the T-201 criterion unreachable).
       *Success:* `git ls-files .ddev/config.yaml | wc -l` = 1; requirement documented in the README.
@@ -395,7 +432,7 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       --exit-status` returns **non-zero** and the log names the cause (`No tests executed!` or
       `FATAL: tests did not reach …`); the branch is deleted locally and on the remote afterwards.
       **Until this run exists, T-214 is decoration, not an invariant** (I-027).
-- [ ] **T-216** · The record for this turn, in one commit: sign **D-020** (a/b/c/d); append the
+- [✓ 2026-08-23] **T-216** · The record for this turn, in one commit: sign **D-020** (a/b/c/d); append the
       T-202 criterion rider; append **I-032…I-035**; the risk-status update under `plan.md` §7; the
       gate A job list in `CLAUDE.md`.
       *Success:* `grep -c 'D-020' specs/000-project/DECISIONS.md` ≥ 1;
@@ -418,6 +455,9 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > **I-028's sixth appearance and its first outside `tests/bin/`**: the class has escaped from
       > our scanners into how we read logs. See I-038.
 
+      *Evidence:* D-020 signed with riders (a)–(d); the T-202 criterion rider appended; I-032…I-035
+      appended; `plan.md` §7 status lines; the `CLAUDE.md` install-smoke qualifier. All present on
+      disk and pushed.
 - [✓ 2026-08-23] **T-217** · 🔒 First push to the canonical remote. **Blocked by D-022** (👤 [andres]).
       Rename `origin` → `github`, add `drupalcode`, push `001-fundacion/scaffolding` to both. After
       the rename there is **no remote named `origin`**, so a bare `git push` from a fresh clone fails
@@ -970,7 +1010,7 @@ Sign here: `[ ]`
 | T-106 theme approach | ⏸️ DEFERRED to unit 002 (see T-110) | — | — |
 | definitive `screenshot.webp` | ⏸️ DEFERRED to unit 003 (see T-114) · provisional placeholder in its place, deliberately does not imitate a real site | — | — |
 | **`tests/bin/` runs in no CI** | ✅ **CLOSED 2026-08-23 by T-221** · pipeline `933415` runs `agora-invariants` as an eighth job, blocking, printing `61 checks - 0 failures` and `33 checks - 0 failures`. Nine invariants that ran only when a human typed them now run on every push | — | — |
-| **first push to drupalcode** | 🔴 **OPEN** · the canonical remote exists and is empty; no local remote for it. On an **empty** repository the first push may also set the default branch, which rule 10 reserves — so the **first** push needs a signature even though pushing a working branch is otherwise delegated. Subsequent working-branch pushes need none | T-217 and everything downstream | 👤 Andrés (D-022) |
+| **first push to drupalcode** | ✅ **CLOSED 2026-08-23 by T-217** · `1.x` pushed, remote tip identical to local, root `553c580`, HEAD **pinned** (`ls-remote --symref` → `ref: refs/heads/1.x`) and the API agreeing. `origin` renamed to `github` by T-224, so no bare push can reach the mirror by accident | — | — |
 | T-316 grep rc-blindness | ✅ **CLOSED 2026-08-22** · signed — 28 `rc >= 2` guards across 27 call sites in 9 files; residuals R1/R2 closed in the same wave; clean-path output byte-identical to `c3dc9f5` | — | — |
 | T-317 toolchain floor | 🟡 **OPEN** · unblocked by D-019, which requires the floor to be pinned and documented · `-Fin` and the CRLF assumptions are measured **only on the Windows dev host**. The CI/DDEV image and the **macOS dev host** are both unmeasured, and macOS is a different question (BSD grep, not GNU). Do not assume either covers for the other | — | blocked by D-019 |
 | **second dev host (macOS)** | 🟡 **OPEN** · a second agent works this repo from a Mac. The wave 3 gate is certified on the Windows host **only** (see the closure note): its toolchain floor, its `grep` flavour and its line endings are all unverified there. First action on that host is T-317's measurement, before trusting any invariant's green | T-317 | — |

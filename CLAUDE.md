@@ -54,7 +54,15 @@ noise), publishable (everything meets the marketplace terms from day 1).
    included: `CLAUDE.md`, `.claude/`, `specs/`, commit messages, identifiers, code and public docs.
    Spanish is the language of orchestration **outside** the repository (conversation with the human).
    Demo content stays bilingual ES/EN. Supersedes D-005 on this point.
-7. **Commits:** conventional, in English, **without AI co-authorship trailers**. Role labels in
+7. **Commits: the Drupal convention, verified at source** (`/docs/develop/git/
+   git-for-drupal-project-maintainers/the-format-of-the-git-commit-message`, updated 2026-04-24):
+   *"As of November 2025, the Drupal Core project adopted Git commit messages formatted to comply
+   with the Conventional Commits specification."* Format `{type}: #{issue ID} One line summary`,
+   with `By:` trailers for co-contributors. Allowed types, exactly:
+   **fix · feat · ci · docs · perf · refactor · test · task · revert** — note **`task`, not
+   `chore`**. Three consequences for us: `chore:` becomes `task:` from 2026-08-23 (the 8 existing
+   `chore:` commits stay — rule 8); `#{issue ID}` is mandatory once an issue exists for the work;
+   and **the no-AI-trailer rule stands and is reinforced** — `By:` names humans. Role labels in
    docs: `[ejecutor]`, `[andres]` — never AI tool names.
 8. **Append-only:** signed tasks in `tasks.md` are not renumbered. Signed ADRs/decisions are not
    edited: they are amended or a new one is created.
