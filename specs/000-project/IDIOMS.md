@@ -321,7 +321,7 @@
   and **not among the 59 dictionaries `@cspell/cspell-bundled-dicts` ships** on the Drupal runner —
   a plan was built on `"language": "en,es"` resolving to something, and it resolves to nothing.
   Then the word list's own header claimed cspell's `stripCaseAndAccents` folds accents onto one
-  entry; `fundacion` was listed and <!-- cspell:disable -->`fundación`<!-- cspell:enable --> was **still flagged** in pipeline 933311 (scoped, not dictionaried: a word-list entry would make the accented form correct everywhere, forever). Method:
+  entry; `fundacion` was listed and <!-- cspell:disable -->`fundación`<!-- cspell:enable --> was **still flagged** in pipeline 933311 (scoped out, not added to the word list: an entry there would make the accented form correct everywhere, forever). Method:
   before planning against a capability, **enumerate the installed set** — the bundled-dicts
   manifest, or the job's own `--version`/`-i`/`-e` echo lines, which every `gitlab_templates` job
   prints for exactly this reason. Corollary, and the harder half: when documented behaviour turns
