@@ -59,7 +59,10 @@ noise), publishable (everything meets the marketplace terms from day 1).
 8. **Append-only:** signed tasks in `tasks.md` are not renumbered. Signed ADRs/decisions are not
    edited: they are amended or a new one is created.
 9. **Nothing broken moves forward:** a wave does not close without a complete gate A in green
-   (exit 0 + real counts). A red CI pipeline blocks everything else.
+   (exit 0 + real counts). ~~A red CI pipeline blocks everything else.~~
+   **(Second sentence superseded by D-023(5), 2026-08-23.)** A pipeline's *status field* is not the
+   gate and never was: pipeline `933270` reported `success` with a **failed** `cspell` job inside
+   it. The gate is a statement about the **job list** — see the Gate A block below.
 10. **Git hands:** you may commit and push to working branches if the dispatch delegates it.
     Merges to the canonical branch, tags, releases and creation of the project on Drupal.org: human.
 
@@ -116,30 +119,59 @@ environment sets up a separate Drupal and adds the template as a *path repositor
 (see `specs/001-foundation/`).
 Canonical layout: skill `drupal-site-template` + the research in `specs/001-foundation/research/`.
 
-## Gate A (once the skeleton exists; unit 001 fixes the exact list)
+## Gate A (the drupalcode pipeline IS the gate — **job list observed**, 2026-08-23)
 
-- `composer validate` + clean install
-- The **drupalcode pipeline IS the gate, not an approximation.** Derived from `gitlab_templates`
-  `main` on 2026-08-22 for a **recipe** project with default variables on current core, the jobs
-  that run automatically are: **composer · composer-lint · phpcs (Drupal + DrupalPractice) ·
-  phpstan · stylelint · eslint · cspell · secret detection · phpunit**; `test-only changes` runs
-  manually on merge requests. NOT on by default: `twig-cs-fixer`, `nightwatch` (D-009 puts axe
-  there), `pages`, `upgrade status` (needs an `*.info.yml`, which a site template may not contain
-  — I-014), `Drupal CMS` (`OPT_IN_TEST_DRUPAL_CMS: '0'`, turned on by D-009), and every
-  previous/next/max-PHP variant. ⚠️ **This list is derived from the template, not observed in a
-  pipeline**: the authoritative inventory is **T-203**, against the first real run (**T-205**).
-- PHPUnit (kernel/functional of the recipes) runs with **`--fail-on-empty-test-suite`**, on every
-  runner. A suite that executed 0 tests is a **failed** gate, not a passed one (I-007, I-032).
-  `tests/bin/no-blind-phpunit` enforces that the flag is present in every versioned CI file.
+- `composer validate` + clean install.
+- **Observed inventory.** Pipeline `933342`, ref `1.x`, commit `fd8d3b2`, read from
+  `/api/v4/projects/project%2Fagora_transparency/pipelines/933342/jobs` — not from the UI, not from
+  the badge:
+
+  | job | stage | status | `allow_failure` |
+  |---|---|---|---|
+  | `composer` | build | success | false |
+  | `composer-lint` | validate | success | false |
+  | `cspell` | validate | success | false |
+  | `eslint` | validate | success | false |
+  | `phpcs` | validate | success | false |
+  | `phpstan` | validate | success | false |
+  | `phpunit` | test | success | false |
+
+  **Seven jobs · all blocking · zero named exceptions.** This **supersedes the nine-job list derived
+  from `gitlab_templates` on 2026-08-22**, which was wrong in both directions: it predicted
+  `stylelint` and `secret detection`, neither of which runs, and omitted `composer-lint`, which
+  does. `stylelint` is absent because the package contains no CSS — and since the theme is a
+  **separate project** (D-014), it may never run in this repository at all. **Derived lists are
+  forbidden here: this table is replaced only by another observation.**
+
+- **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
+  non-negotiable rule 9's second sentence and D-006 on this point):
+  > *Green when, and only when: the pipeline's **job list** is read from the API; `jobs >= 7`;
+  > every job's `status == "success"`; and every job's `allow_failure == false` except those named
+  > in a dated, owned exception in `.gitlab-ci.yml`. **`jobs: 0` is a failure, not "nothing to
+  > report."** The pipeline's own status field is never the evidence.*
+
+  The exception list in `.gitlab-ci.yml` is **empty** as of 2026-08-23 (T-226). A `success` pipeline
+  containing a failed permissive job is a **failed** gate (I-043).
+
+- ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** `cspell`
+  reports `Files checked: 36` against **63** tracked files. `phpcs`, `phpstan` and `eslint` print
+  **no denominator at all**. Until **T-222** makes those numbers visible, quote result and scope
+  together or not at all (I-045).
+
+- PHPUnit runs with **`--fail-on-empty-test-suite`** on every runner — **observed on drupalcode**,
+  not inferred: the flag in the executed command line, `_PHPUNIT_CONCURRENT=0`, and
+  `OK (3 tests, 38 assertions)` from the same log. A suite that executed 0 tests is a **failed**
+  gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
+
+- ⚠️ **`tests/bin/` runs in no CI job yet.** Nine invariants execute only when a human types them.
+  Owned by **T-221** (write the job) → **T-219** (observe it) → closes **T-202**.
+
 - **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render.
-  ⚠️ Today this executes **only** on the GitHub workflow, which D-020 classifies as an
-  **informative** surface — it may fail without blocking, but it may never lie. It becomes a
-  **gate** when the drupalcode pipeline runs it (T-205). Until then, no wave closes on its green,
-  and its counts are quoted as evidence, never as authority.
-- Playwright: functional + visual regression of the demo pages
-- axe (a11y) with no violations on the demo pages
-- `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches
-
+  Today this executes **only** on the GitHub workflow, which D-020 classifies as an **informative**
+  surface — it may fail without blocking, but it may never lie. No wave closes on its green.
+- Playwright: functional + visual regression of the demo pages.
+- axe (a11y) with no violations on the demo pages.
+- `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches.
 ## Available commands
 
 `/retomar` — rebuild state from disk and report · `/wave` — run the next wave with gates ·

@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+#
+# cited-tasks-exist - Agora - unit 001, task T-223.
+#
+# What it enforces: every task number cited by a signed decision in
+# specs/000-project/DECISIONS.md is actually DEFINED as a task in some
+# specs/*/tasks.md.
+#
+# Why it exists: D-024 named T-226 as the owner of a documented exception
+# ("owner T-226; deleting the line is the exit gate"). T-226 was never written
+# to tasks.md. The citation was a dangling pointer - an accountability record
+# whose accountability did not exist. Nothing detected it, because a decision
+# record and a task list are two files that no tool read together. This script
+# is that tool.
+#
+# Contract (shared by every invariant in tests/bin/):
+#   scope:    the exact set of files inspected
+#   counts:   citations, definitions, distinct ids - all printed, always
+#   findings: M, each printed as  path:line  reason
+#   exit 0 if and only if M == 0
+#
+# The scan reads the WORKING TREE with `find`, never `git grep` (I-018/I-019):
+# `git grep` only sees tracked files, so a citation written this minute and not
+# yet `git add`ed would pass invisibly - and that is exactly the moment this
+# guard is supposed to fire, since a dangling citation is created by writing,
+# not by committing.
+#
+# Anti-I-007 canary: "0 findings" over 0 citations is not a clean result, it is
+# no result. A DECISIONS.md that cites no task at all means the extractor
+# stopped matching what the file actually contains, not that the record became
+# clean. That case is FATAL and prints NO summary line - a summary line is a
+# claim about a completed scan, and such a scan did not complete.
+#
+# Usage: tests/bin/cited-tasks-exist   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# ---------------------------------------------------------------- repo root --
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+FINDINGS=0
+
+finding() {
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "${1#./}" "$2" "$C_OFF" "$3"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+# ------------------------------------------------------- grep's third state --
+# T-316 / I-027. `grep` has THREE exit states: 0 = matched, 1 = no match,
+# >= 2 = grep itself FAILED. Inferring "no match" from "no stdout" makes a
+# scanner that could not scan read exactly like a clean record. rc >= 2 is
+# FATAL here, never a finding: a finding says "the record contains an
+# offender", this says "the record was never read".
+fatal() { # <reason>
+  printf '\nFATAL: %s\n' "$1"
+  printf 'The scan did not complete: this run has NO result, which is not a clean result.\n'
+  printf '(T-316 / I-027)\n'
+  exit 1
+}
+
+grep_failed() { # <rc> <pattern> <subject>
+  fatal "$(printf 'grep failed (exit %s) on %s while matching: %s' "$1" "$3" "$2")"
+}
+
+# ------------------------------------------------------------------ inputs --
+DECISIONS='specs/000-project/DECISIONS.md'
+
+# A citation: the bare task id, anywhere in the decision record.
+CITATION_PATTERN='T-[0-9]{3}'
+
+# A DEFINITION: a markdown list item in a tasks.md whose leading bold token is
+# the task id, with an OPTIONAL status marker in square brackets in between.
+#
+# The bracket content is allowed to be anything except `]` and is deliberately
+# NOT length-capped. A first draft of this pattern capped the prefix at 24
+# characters and reported T-402 dangling - T-402 is defined; its status marker
+# is simply long, reading "deferred 2026-08-22 -> unit 002 (content model)".
+# A guard that invents dangling citations is worse than no guard: it teaches
+# its readers that its reds are noise (I-020). Marker shapes present on disk
+# today: "[ ]", "[<tick> 2026-08-21]", "[<tick> 2026-08-22]",
+# "[<pause> deferred ... ]", and the bare "- **T-211** - NOT ISSUED." record,
+# which IS a definition: it is the task list answering for the number, which is
+# all a citation needs.
+#
+# Requiring the id in **bold** at the head of a list item is what separates a
+# definition from a mere mention: tasks.md mentions T-402 in prose at line 154
+# and inside a rider at line 762, and neither of those makes T-402 exist.
+DEFINITION_ANY='^[-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3}\*\*'
+
+# ---------------------------------------------------------------- preflight --
+for tool in find grep sort wc cut mktemp; do
+  command -v "$tool" >/dev/null 2>&1 || fatal "required tool not available: $tool"
+done
+
+printf '=========================================================================================================\n'
+printf 'cited-tasks-exist - Agora invariant T-223\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+TMPDIR_RUN=$(mktemp -d 2>/dev/null) || { echo "FATAL: cannot create a temp dir"; exit 1; }
+trap 'rm -rf "$TMPDIR_RUN"' EXIT
+
+[ -f "$DECISIONS" ] || fatal "the decision record is absent: $DECISIONS"
+
+# The task lists are located in the WORKING TREE with `find`, so a tasks.md
+# created this turn and never staged still counts as a definition source.
+TASKS_LIST="$TMPDIR_RUN/tasks-files"
+find specs -type f -name tasks.md 2>/dev/null | LC_ALL=C sort > "$TASKS_LIST"
+# wc -l, never grep -c, for any value that feeds a comparison.
+TASKS_FILES=$(wc -l < "$TASKS_LIST" | tr -d ' ')
+
+printf '\nscope:    citations in   %s\n' "$DECISIONS"
+printf '          definitions in %s file(s) named tasks.md under specs/:\n' "$TASKS_FILES"
+if [ "${TASKS_FILES:-0}" -eq 0 ]; then
+  fatal 'no tasks.md found under specs/ - every citation would be reported dangling'
+fi
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  printf '            %s\n' "$f"
+done < "$TASKS_LIST"
+
+# --------------------------------------------------------------- citations --
+# `grep -n -o` yields one "LINE:T-NNN" record per occurrence, so a line citing
+# two task numbers produces two records and each can be reported at its own
+# line.
+CITE_RECS="$TMPDIR_RUN/citations"
+LC_ALL=C grep -noE "$CITATION_PATTERN" "$DECISIONS" > "$CITE_RECS" 2>/dev/null
+CITE_RC=$?
+[ "$CITE_RC" -ge 2 ] && grep_failed "$CITE_RC" "$CITATION_PATTERN" "$DECISIONS"
+
+CITATIONS=$(wc -l < "$CITE_RECS" | tr -d ' ')
+
+CITED_IDS="$TMPDIR_RUN/cited-ids"
+cut -d: -f2 < "$CITE_RECS" | LC_ALL=C sort -u > "$CITED_IDS"
+UNIQUE_CITED=$(wc -l < "$CITED_IDS" | tr -d ' ')
+
+printf '\ncitations found in the decision record: %s occurrence(s), %s distinct id(s)\n' \
+  "$CITATIONS" "$UNIQUE_CITED"
+
+# Anti-I-007. The default matters: an empty CITATIONS makes `[` exit 2 and the
+# branch is simply NOT TAKEN, so this canary would silently stop existing at
+# exactly the moment it is needed. "${CITATIONS:-0}" makes a blank read as zero.
+if [ "${CITATIONS:-0}" -eq 0 ]; then
+  # Deliberately no summary line: a summary is a claim about a completed scan.
+  fatal "zero task citations extracted from $DECISIONS - the extractor no longer matches the record it polices, so '0 findings' would prove nothing"
+fi
+
+# ------------------------------------------------------------- definitions --
+DEF_IDS="$TMPDIR_RUN/defined-ids"
+: > "$DEF_IDS"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  # The grep runs HERE and its status is read immediately: piped into the next
+  # stage, the status read back would be the pipeline's last command, never
+  # grep's - and grep's is the one separating "this file defines nothing"
+  # (rc 1) from "this file was never searched" (rc >= 2).
+  DEF_HITS=$(LC_ALL=C grep -noE "$DEFINITION_ANY" "$f" 2>/dev/null)
+  DEF_RC=$?
+  [ "$DEF_RC" -ge 2 ] && grep_failed "$DEF_RC" "$DEFINITION_ANY" "$f"
+  [ "$DEF_RC" -eq 0 ] || continue
+  ID_HITS=$(printf '%s\n' "$DEF_HITS" | LC_ALL=C grep -oE "$CITATION_PATTERN" 2>/dev/null)
+  ID_RC=$?
+  [ "$ID_RC" -ge 2 ] && grep_failed "$ID_RC" "$CITATION_PATTERN" "the definition lines of $f"
+  [ "$ID_RC" -eq 0 ] || continue
+  printf '%s\n' "$ID_HITS" >> "$DEF_IDS"
+done < "$TASKS_LIST"
+
+DEFINITIONS=$(wc -l < "$DEF_IDS" | tr -d ' ')
+LC_ALL=C sort -u "$DEF_IDS" -o "$DEF_IDS"
+UNIQUE_DEFINED=$(wc -l < "$DEF_IDS" | tr -d ' ')
+
+printf 'definitions found in the task lists:    %s line(s), %s distinct id(s)\n' \
+  "$DEFINITIONS" "$UNIQUE_DEFINED"
+
+if [ "${DEFINITIONS:-0}" -eq 0 ]; then
+  fatal 'zero task definitions extracted - the definition pattern no longer matches tasks.md, so every citation would be reported dangling'
+fi
+
+# ---------------------------------------------------------------- findings --
+printf '\ndangling citations: a task id cited by a decision and defined by no task list\n'
+while IFS= read -r id; do
+  [ -n "$id" ] || continue
+  # -x anchors the whole line. The ids are literal "T-NNN" with no regex
+  # metacharacters, so ERE matching is exact here. -F is never combined with
+  # -i anywhere in this file (GNU grep 3.0 on this host aborts on that pair).
+  LC_ALL=C grep -qxE -e "$id" "$DEF_IDS" 2>/dev/null
+  HIT_RC=$?
+  [ "$HIT_RC" -ge 2 ] && grep_failed "$HIT_RC" "$id" "$DEF_IDS"
+  [ "$HIT_RC" -eq 0 ] && continue
+  # Report EVERY line that cites it, so the fix has an address, not a needle.
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    [ "${rec#*:}" = "$id" ] || continue
+    finding "$DECISIONS" "${rec%%:*}" \
+      "cites $id, which is defined by no task list - the citation is a dangling pointer"
+  done < "$CITE_RECS"
+done < "$CITED_IDS"
+[ "$FINDINGS" -eq 0 ] && note 'none'
+
+# ----------------------------------------------------------------- summary ---
+printf '\n---------------------------------------------------------------------------------------------------------\n'
+printf 'citations: %s - distinct cited: %s - definitions: %s - distinct defined: %s - findings: %s\n' \
+  "$CITATIONS" "$UNIQUE_CITED" "$DEFINITIONS" "$UNIQUE_DEFINED" "$FINDINGS"
+
+if [ "$FINDINGS" -eq 0 ]; then
+  printf '%scited-tasks-exist: clean%s\n' "$C_OK" "$C_OFF"
+  exit 0
+fi
+printf '%scited-tasks-exist: %s finding(s)%s\n' "$C_BAD" "$FINDINGS" "$C_OFF"
+exit 1

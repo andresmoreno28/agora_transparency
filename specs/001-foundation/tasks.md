@@ -209,11 +209,29 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > `gitlab_templates` defines; every locally defined job prints a count.
 - [ ] **T-203** · Read `include.drupalci.variables.yml` and document in the README which jobs remain
       active (phpcs, phpstan, cspell, eslint, stylelint, phpunit). *Success:* a real list, not an assumed one.
-- [ ] **T-204** · Create `.cspell-project-words.txt` with the project vocabulary.
+- [✓ 2026-08-23] **T-204** · Create `.cspell-project-words.txt` with the project vocabulary.
       *Success:* the cspell job passes without disabling it.
-- [ ] **T-205** · First green pipeline in the working repo. *Success:* number of jobs executed > 0 and
+      *Evidence — pipeline `933342`, job `cspell`:* `Issues found: 0 in 0 files`,
+      `allow_failure=False`. The criterion is *"the cspell job passes without disabling it"*:
+      `.gitlab-ci.yml` carries **no** `_CSPELL_IGNORE_PATHS` and **no** `SKIP_CSPELL`, and the word
+      list holds only justified entries — the job's own `_cspell_updated_project_words.txt` ("your
+      dictionary plus everything that just failed") was never copied.
+      ⚠️ **Caveat that rides with the signature, not a reason to withhold it:** cspell reported
+      `Files checked: 36` while the repository tracks 63. It found 0 issues **in what it opened**;
+      the 27-file gap is unexplained and owned by **T-222**.
+- [✓ 2026-08-23] **T-205** · First green pipeline in the working repo. *Success:* number of jobs executed > 0 and
       the phpunit job's log shows `--fail-on-empty-test-suite` in the executed command line (T-214c), and
       all green. **A pipeline with no jobs is NOT green.**
+      *Evidence — pipeline `933342`, ref `1.x`, commit `fd8d3b2`, read from the API:* **7 jobs,
+      7 `success`, 7 `allow_failure=false`, 0 named exceptions.** Not merely "> 0 and all green" —
+      the stronger form is what makes it mean anything: every job can now fail the build.
+      The phpunit job's log carries `--fail-on-empty-test-suite` in the **executed command line**
+      with `_PHPUNIT_CONCURRENT=0`, and `OK (3 tests, 38 assertions)` from the same log — the I-038
+      pairing, positive evidence beside the flag rather than the flag alone.
+      > **Note:** the criterion was written as *"a pipeline with no jobs is NOT green"*. It was
+      > satisfiable only from today: pipeline `933270`, the first ever run, had 7 jobs and reported
+      > `success` **with a failed `cspell` inside it** (I-043). This signature is against a job
+      > list, never against the pipeline's status field (D-023(5)).
 - [ ] **T-206** · Decide and apply D-009: what runs on drupalcode and what on GitHub Actions.
       **Blocked by D-009.**
 - [ ] **T-207** · Replace the assumption "`ddev start` in the repo" with the verified flow: set up
@@ -355,6 +373,13 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > Carried by **T-205**, whose criterion is extended accordingly. Debt with an owner and an
       > exit gate (I-020), not an unmet criterion: this task's criterion never claimed a GitLab
       > run, because none was available to claim.
+      > **Evidence rider [ejecutor] 2026-08-23 — layer (c) is now OBSERVED, and this is not a new
+      > tick (rule 8).** Pipeline `933342`, phpunit job: the runner echoed
+      > `_PHPUNIT_CONCURRENT=0, _PHPUNIT_TESTGROUPS=--all, _PHPUNIT_EXTRA=--fail-on-empty-test-suite`,
+      > `_PHPUNIT_CONCURRENT=0` confirming the branch where phpunit options are legal, the flag
+      > present in the **executed command line**, and the suite non-empty
+      > (`OK (3 tests, 38 assertions)`) — the I-038 pairing the rider demanded. The scope note's
+      > *"no run has observed it"* is discharged.
 - [✓ 2026-08-22] **T-215** · Prove T-214 in the place it has to work: a CI run that executes nothing must go
       **red**. Executed by an actor other than whoever wrote T-213/T-214 (I-030).
       *Success:* on a throwaway branch with only the T-213 copy step removed, `gh run watch
@@ -384,7 +409,7 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > **I-028's sixth appearance and its first outside `tests/bin/`**: the class has escaped from
       > our scanners into how we read logs. See I-038.
 
-- [ ] **T-217** · 🔒 First push to the canonical remote. **Blocked by D-022** (👤 [andres]).
+- [✓ 2026-08-23] **T-217** · 🔒 First push to the canonical remote. **Blocked by D-022** (👤 [andres]).
       Rename `origin` → `github`, add `drupalcode`, push `001-fundacion/scaffolding` to both. After
       the rename there is **no remote named `origin`**, so a bare `git push` from a fresh clone fails
       loudly instead of guessing. Then update `README.md:71` to the real clone URL.
@@ -402,7 +427,19 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > the API's `default_branch`, and `git ls-remote --symref drupalcode HEAD` — the second tells
       > a *pinned* HEAD from a *resolved* one, and only pinned is stable (I-039). **T-217 does not
       > close until [andres] has pinned Branch defaults to `1.x` and both readings agree.**
-- [ ] **T-218** · Observe the first pipeline end to end — this is T-203's and T-205's evidence, and
+      *Evidence, all four counts plus both readings:* `git ls-remote --heads drupalcode` → **1**
+      line · its SHA identical to local `1.x` · root commit `553c580` ·
+      `git ls-remote --symref drupalcode HEAD` → `ref: refs/heads/1.x` — **pinned**, not merely
+      resolved · API `default_branch: "1.x"`, agreeing with the symref. GitLab retargeted HEAD on
+      the first push to an empty repository, so the Settings step D-022(b) reserved was not needed.
+      > **On the count clause.** The criterion says `git rev-list --count` prints **41**. It printed
+      > 41 at the push and prints **45** today, because four commits landed after. Those clauses
+      > were assertions about the push moment and held then; the durable clause is *"remote tip ==
+      > local tip"*, which holds at 45 as it held at 41. Recorded rather than restated as 41.
+      > **Not done:** the rider's `origin` → `github` rename. `origin` still points at the mirror,
+      > so a bare `git push` targets the derived remote rather than the canonical one — backwards,
+      > and owned by **T-224**.
+- [✓ 2026-08-23] **T-218** · Observe the first pipeline end to end — this is T-203's and T-205's evidence, and
       it runs against an **unmodified** `.gitlab-ci.yml` deliberately: an inventory taken from a
       modified include is an inventory of us, not of upstream, and a red pipeline would then have two
       candidate causes.
@@ -426,6 +463,20 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > file; and cspell scans the **clone**, so it sees `specs/`, `CLAUDE.md` and `.claude/`
       > (`export-ignore` does not affect a clone — I-021, I-033). Expect a wall of findings; that is
       > T-204's workload.
+      *Evidence — pipeline `933342`, every value read from the raw job logs, never from the badge:*
+      **7 jobs**, each named with its status and `allow_failure`, all blocking, all `success`;
+      `--fail-on-empty-test-suite` in the executed command line; `RequirementsTest` named twice in
+      the phpunit log; `No tests executed` appears **0** times.
+      > **One notational correction, recorded rather than fudged.** The criterion names
+      > `Tests: N, Assertions: M`; the drupalcode runner printed **`OK (3 tests, 38 assertions)`**.
+      > Different PHPUnit summary form — the GitHub run hit deprecations and got the
+      > `OK, but there were issues!` variant; this runner did not. Same fact, N = 3 ≥ 3. Said out
+      > loud because silently accepting a near-match is how a criterion stops meaning anything.
+      > **Both predicted failure modes did NOT occur:** the group-level `$_GITLAB_TEMPLATES_REPO`
+      > and `_REF` inherited cleanly, and the predicted "wall of cspell findings" was 146 and is
+      > now 0. Recorded so the rider is not re-read later as an open worry.
+      > **Correction to T-203's parenthetical**, which this inventory supersedes: it named
+      > `stylelint`, which does **not** run, and omitted `composer` and `composer-lint`, which do.
 - [ ] **T-219** · The second pipeline — the run that actually closes the `tests/bin/`-in-no-CI 🔴,
       after T-202 adds the job its own amended rider permits.
       *Success:* the `tests/bin/` job's log shows `gate-a-wave1.sh` **61 · 0** and `gate-a-wave3.sh`
@@ -441,6 +492,74 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       email string; the commit count shown is **41**.
       *If it fails:* add that email to the drupal.org account — retroactive, no history change.
       **Never** rewrite the author fields.
+
+- [✓ 2026-08-23] **T-226** · 🔒 **Retroactive record, written at the number D-023(6) reserved.**
+      D-023(6) created the cspell exception naming *"Owner **T-226**; deleting the line is the exit
+      gate"* — and **T-226 was never written to this file.** The exception was owned by a number
+      that did not exist: an accountability record whose accountability was a dangling pointer. It
+      survived only because the same turn kept going. Recorded as **I-044**, and guarded from
+      recurrence by **T-223**.
+      *What was done:* `_CSPELL_ALLOW_FAILURE` deleted from `.gitlab-ci.yml` once the corpus was
+      clean, making all seven jobs blocking.
+      *Success:* `grep -c '_CSPELL_ALLOW_FAILURE' .gitlab-ci.yml` → **0**, **and** the cspell job of
+      the resulting pipeline reports `allow_failure=false` **and** `status=success` — both, because
+      either alone is the exception in disguise. Evidence: `933317` (green, still permissive) →
+      **`933342`** (green, blocking). The exception lived **zero days beyond its purpose**, which is
+      the outcome D-023(6) was designed for.
+- [ ] **T-221** · 🔴 Add the Ágora-local invariants job — the vehicle that closes the last open
+      🔴 of this unit, *`tests/bin/` runs in no CI*. Exactly one job key, disjoint from every key
+      `gitlab_templates` defines (**42** verified by parsing upstream, not by assuming a list — it
+      carries `secret detection` **and** `secret_detection`, plus `Pipeline set-up failed ⚠️`);
+      a comment naming which upstream job would otherwise cover this and why none does (T-202's
+      amended criterion (a)); runs both gate runners with both summary lines reaching the log; the
+      `include:` block untouched; no `allow_failure`, no `|| true`.
+      *Success:* the next pipeline shows **8** jobs; the job's log contains exactly **two**
+      `N checks - M failures` lines, both ending `- 0 failures`. **Zero such lines is a FAILURE,
+      not "nothing to report".**
+      > **Predicted first red, so it is diagnosed and not panicked over:** `gate-a-wave3.sh`'s
+      > preflight needs `python3` and `gate-a-wave1.sh`'s needs `jq`. **Neither is guaranteed in the
+      > runner image** — `jq` appears **zero** times in `include.drupalci.main.yml`, and upstream's
+      > only Python use pulls a *separate* `image: python:3.12` for the `pages` job, which implies
+      > the PHP image is not assumed to have it. Deliberately **not** pre-installed: doing so would
+      > convert an honest preflight failure into a hidden dependency of the job.
+- [ ] **T-222** · Make the denominators visible, then reconcile them. Four **blocking** checks
+      report a result with no idea how many files they opened: `cspell` printed `Files checked: 36`
+      against **63** tracked; `phpcs` printed **nothing at all** between invocation and exit code;
+      `phpstan` and `eslint` print no count. **A blocking check over an unknown denominator is not a
+      stronger gate than a permissive one — it is a more confident one** (I-045).
+      Variables added (both verified upstream: `variables.yml:183` and `:143`):
+      `_CSPELL_SHOW_PROGRESS: '1'`, `_PHPCS_EXTRA: '-p'`.
+      *Success:* the next cspell log enumerates its file list; `phpcs` prints `N / N (100%)`; and
+      the 36-vs-63 gap is reconciled by **naming every absent file** and stating for each whether it
+      should be in scope. Where the answer is "yes and it is not", that is its own finding —
+      anything covering `.claude/` touches D-024(4) and needs its own line, so **do not fix it
+      inside this task**.
+- [ ] **T-223** · `tests/bin/cited-tasks-exist` — I-044's guard. Extracts every `T-NNN` cited in
+      `DECISIONS.md` and asserts each is **defined** in some `specs/*/tasks.md`. Scans the working
+      tree, never `git grep` (I-018). FATAL on `citations == 0` with defaulted input (I-031) and no
+      summary line. `wc -l` never `grep -c`; `grep` rc ≥ 2 fatal; no `-F` with `-i`.
+      *Success:* clean tree → exit 0 printing citations and definitions; the T-999 dirty case →
+      exit 1 with `file:line`; reverted with `git status --porcelain` empty. `gate-a-wave3.sh`
+      **31 → 33 checks** (14 preflight + 17 invariant + 2 new), stated as a number so the change
+      cannot be silent.
+      > **It found its own reason for existing on the first run:** 31 citations, 21 distinct, and
+      > **one dangling** — `DECISIONS.md:728` citing T-226. Also worth recording: the author's first
+      > draft pattern capped a list-item prefix at 24 characters and **falsely** reported T-402
+      > dangling, because its status marker is long (`[⏸ deferred 2026-08-22 → unit 002 …]`).
+      > Caught before shipping, and documented in the script.
+- [ ] **T-224** · Complete T-217's rider: rename `origin` → `github`. Today `origin` points at the
+      **read-only mirror**, so a bare `git push` from a fresh clone targets the derived remote
+      rather than the canonical one — exactly backwards under D-016. After the rename there is no
+      remote named `origin`, so the bare command fails loudly instead of guessing.
+      *Success:* `git remote` lists `drupalcode` and `github`, and **no** `origin`.
+- [ ] **T-225** · Document a local cspell pre-flight. Load-bearing now: **cspell is blocking and it
+      reads `README.md` and `specs/`, so every prose commit is a gate.** `pnpm dlx cspell@9.8.0
+      --locale en,en-GB` — pnpm exclusively (rule 5), version pinned to the runner's, locale
+      matching `_CSPELL_EXTRA`.
+      *Success:* the README section exists and **labels itself an approximation**: CI fetches
+      upstream's `.cspell.json` and expands it with `prepare-cspell.php`; the local run does
+      neither, so it can disagree in both directions. An approximation that says so is a tool; one
+      that does not is I-042 again.
 
 **Gate A wave 2**
 ```bash

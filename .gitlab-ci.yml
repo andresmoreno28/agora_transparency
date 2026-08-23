@@ -51,3 +51,95 @@ variables:
 # runner's cspell; dict-es-es is not (D-024(1)). Declaring the actual
 # language of the text is not silencing a check.
   _CSPELL_EXTRA: '--locale en,en-GB'
+
+
+# T-222: make the blocking checks state their DENOMINATOR. Pipeline 933342 ran
+# seven blocking jobs green, and four of them reported a verdict without ever
+# saying how many files they opened: cspell printed "Files checked: 36" against
+# a tree of 63 tracked files, phpcs printed nothing at all between its
+# invocation and its exit code, and phpstan/eslint printed "no errors" over an
+# unstated denominator. A blocking check over an unknown denominator is not a
+# stronger gate than a permissive one, it is a more confident one (I-007).
+# The two variables below are upstream's own, not job overrides.
+#
+# include.drupalci.variables.yml:183 - default '0'. "Set to 1 to show the
+# progress of the `CSpell` job, displaying the name of each file as it is
+# checked." Consumed at include.drupalci.main.yml:1312, where '1' drops
+# cspell's --no-progress flag. This turns the unexplained 36-vs-63 gap into a
+# named list; the reconciliation itself needs that log and is NOT done here.
+  _CSPELL_SHOW_PROGRESS: '1'
+
+# include.drupalci.variables.yml:143 - default ''. "Additional options that are
+# appended to the `phpcs` job call." Appended at include.drupalci.main.yml:1027.
+# `-p` makes phpcs print its progress line, "N / N (100%)", so a green phpcs
+# stops being a bare exit code and becomes a count.
+  _PHPCS_EXTRA: '-p'
+
+
+################
+# Ágora-local job (T-221). This is the ONLY job defined by hand in this file,
+# and it is permitted by the amended T-202 success criterion: the original
+# criterion, "no job is defined by hand", would have left the eight - now nine -
+# invariants in tests/bin/ running in no CI job at all, executing only when a
+# human types them.
+#
+# The `include:` block above stays byte-identical to upstream. No upstream job
+# is redefined, copied or overridden; this key is disjoint from every job
+# `gitlab_templates` defines. Verified 2026-08-23 by PARSING the included files
+# on `main` rather than assuming: include.drupalci.main.yml and
+# include.drupalci.workflows.yml define 42 non-hidden job keys between them -
+# composer and its 5 matrix variants, the 6 `deprecation - composer` variants,
+# phpunit (+5), phpstan (+4), nightwatch (+5), composer-lint, phpcs, stylelint,
+# eslint, cspell, twig-cs-fixer, `secret detection` AND `secret_detection`
+# (upstream carries both spellings), pages, `Drupal CMS`, `test-only changes`,
+# `upgrade status`, and `Pipeline set-up failed`. None is `agora-invariants`.
+# Only 7 of the 42 actually ran in pipeline 933342; the rest are opt-in or
+# skipped, which is precisely why a name must be disjoint from ALL of them and
+# not merely from the ones observed running.
+#
+# WHICH UPSTREAM JOB WOULD OTHERWISE COVER THIS, AND WHY NONE DOES (a literal
+# requirement of the amended T-202 criterion - the burden is to prove the local
+# job is necessary, not merely convenient):
+#   * `secret_detection` is the closest analogue, and only to ONE of the nine:
+#     tests/bin/no-secrets. It is GitLab's own credential scanner over the git
+#     history, it is opt-in (.skip-secret-detection-rule), and it knows nothing
+#     about the recipe's config/ and content/ trees or Ágora's own patterns. It
+#     covers none of the other eight.
+#   * `composer-lint` runs `composer validate` and parallel-lint. That is JSON
+#     and PHP syntax; no-unstable-deps, no-patches and sbom-check read
+#     composer.json semantically (release stability, a forbidden `patches`
+#     section, security-coverage status queried from updates.drupal.org).
+#     A valid composer.json can violate all three.
+#   * `phpunit` runs PHP test classes. The nine invariants are POSIX shell
+#     scripts, not PHPUnit cases. RequirementsTest overlaps one rule
+#     (no pinned/dev versions) and nothing else.
+#   * `phpcs`, `phpstan`, `eslint`, `cspell`, `stylelint`, `twig-cs-fixer` lint
+#     source files against language rules. None executes a repository script.
+# No upstream job runs an arbitrary script from the project, so no upstream job
+# can carry these checks. Hence exactly one local job, and no more.
+################
+agora-invariants:
+  stage: validate
+  # No dependency on the built environment: the invariants read the checked-out
+  # working tree, not an installed Drupal. `needs: []` starts the job at once
+  # and, more importantly, avoids naming an upstream job here.
+  needs: []
+  script:
+    - cd $CI_PROJECT_DIR && pwd
+    # Both runners must REACH the log. GitLab aborts a script at the first
+    # non-zero line, so running them back to back would hide wave 3's
+    # "N checks - M failures" line whenever wave 1 failed - and that summary
+    # line is the evidence the gate exists (I-007: an exit code without counts
+    # proves nothing). The exit status of each runner is therefore captured,
+    # printed, and asserted below. This is not `allow_failure` and not
+    # `|| true`: nothing is tolerated, the verdict is merely deferred by two
+    # lines so that both denominators are on record.
+    - RC_WAVE1=0; bash tests/bin/gate-a-wave1.sh || RC_WAVE1=$?
+    - RC_WAVE3=0; bash tests/bin/gate-a-wave3.sh || RC_WAVE3=$?
+    - echo "gate-a-wave1.sh exit=$RC_WAVE1 - gate-a-wave3.sh exit=$RC_WAVE3"
+    - |
+      if [ "$RC_WAVE1" -ne 0 ] || [ "$RC_WAVE3" -ne 0 ]; then
+        echo "agora-invariants: FAILED - see the two summary lines above."
+        exit 1
+      fi
+      echo "agora-invariants: both runners exited 0."

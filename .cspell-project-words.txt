@@ -140,3 +140,5 @@ arte                  # same research filename
 flujo                 # specs/001-foundation/research/2026-08-21-flujo-tema-y-marketplace.md
 encontró               # "no se encontró Python", quoted verbatim from the Microsoft Store stub in IDIOMS.md and gate-a-wave3.sh
 proyecto               # survives only in D-024's own text, naming the pre-rename specs/000-proyecto/ path; rule 8 forbids editing it
+
+dlx                  # pnpm's one-off package runner, used in the README's local spell-check pre-flight (T-225)

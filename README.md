@@ -58,13 +58,26 @@ this point.**
 > The first release is a later unit of work. Until then, install it from a local checkout, as shown
 > below.
 
-Create a Drupal CMS project, but do not install the site yet:
+**This repository is not a site, and it cannot be brought up on its own.** It is a recipe package:
+a `recipe.yml`, its configuration and its metadata. There is no Drupal in it, so there is nothing
+here to start. What you do instead is set up a Drupal site somewhere else and add this package to
+it as a Composer *path repository*. The sequence below is the one in the project's own
+[`.github/workflows/phpunit.yml`](.github/workflows/phpunit.yml), which runs it on every push —
+that file, not this section, is the authority, because it is the copy that gets exercised.
+
+Create the project directory and a Drupal codebase inside it, without installing the site yet:
 
 ```shell
 mkdir agora-site
 cd agora-site
 ddev config --project-type=drupal11 --docroot=web
-ddev composer create-project drupal/cms
+
+# Copy the path repository into the project rather than symlinking it, so the
+# installed package is the one an end user would get.
+ddev config --web-environment-add="COMPOSER_MIRROR_PATH_REPOS=1"
+
+ddev start
+ddev composer create-project --no-install drupal/recommended-project
 ```
 
 Clone this repository into the project directory, as `source/`, and add it as a path repository:
@@ -73,13 +86,17 @@ Clone this repository into the project directory, as `source/`, and add it as a 
 git clone <this-repository> source
 ddev composer repository add source path source
 ddev composer config allow-plugins.drupal/site_template_helper true
-ddev composer require --update-with-all-dependencies drupal/agora_transparency:@dev
+ddev composer require --update-with-all-dependencies "drupal/agora_transparency:@dev"
 ```
 
-Composer places the template in `recipes/agora_transparency`. The `allow-plugins` line is needed
-because Ágora depends on `drupal/site_template_helper`, the Composer plugin that generates the blank
-theme; without it, Composer will stop and ask. This is the same sequence the project's own CI uses to
-install the template before running its tests.
+Composer places the template in `recipes/agora_transparency`, outside the docroot. The
+`allow-plugins` line is needed because Ágora depends on `drupal/site_template_helper`, the Composer
+plugin that generates the blank theme; without it, Composer will stop and ask. Check that the
+package arrived:
+
+```shell
+test -d ./recipes/agora_transparency && echo present
+```
 
 Then install Drupal with the template applied — either through the web installer, choosing **Ágora**
 at the site template step:
@@ -94,8 +111,45 @@ ddev launch
 ddev drush site:install --yes recipes/agora_transparency
 ```
 
-Once Ágora is published on Drupal.org, the first two commands of the second block are replaced by a
+Once the site is installed, `ddev exec drush status` reports `Drupal bootstrap : Successful`. Those
+two checks — the directory and the bootstrap line — are the whole of what "it worked" means here.
+
+Once Ágora is published on Drupal.org, the clone and the `repository add` line are replaced by a
 plain `ddev composer require drupal/agora_transparency`, and this section will say so.
+
+### Running the tests against an installed package
+
+**The tests do not travel with the package.** `/tests` is `export-ignore`d in
+[`.gitattributes`](.gitattributes) — an end user of a site template has no use for its test suite —
+and Composer's path-repository mirroring honours `export-ignore` through the same machinery that
+builds a release. So the copy under `./recipes/agora_transparency` has no `tests/` directory in it,
+no matter how many times you look.
+
+That is a trap with a green face on it: point PHPUnit at the installed package as it stands and it
+finds nothing, prints `No tests executed!` and **exits 0**.
+
+Running the tests also needs two things the plain install does not: PHPUnit itself, and the two
+environment variables Drupal's functional tests read. Both belong to the setup step above, before
+the `composer require` that installs the template:
+
+```shell
+ddev config --web-environment-add='SIMPLETEST_BASE_URL=$DDEV_PRIMARY_URL'
+ddev config --web-environment-add='SIMPLETEST_DB=$DDEV_DATABASE_FAMILY://db:db@db/db'
+ddev composer require --no-update --dev drupal/core-dev
+```
+
+Then copy the tests in, from the clone, where `export-ignore` does not apply:
+
+```shell
+rm -rf ./recipes/agora_transparency/tests
+cp -R ./source/tests ./recipes/agora_transparency/
+ddev exec phpunit --configuration=./web/core --fail-on-empty-test-suite ./recipes/agora_transparency
+```
+
+`--fail-on-empty-test-suite` is what turns the silent version of that failure into a loud one; the
+CI workflow passes it for the same reason. Any `ddev composer` command run after the copy
+re-mirrors the path repository and deletes the tests again, so keep the copy as the last step
+before you run them.
 
 ## What the template applies
 
@@ -126,6 +180,70 @@ building pages.
 * **`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
   installed site.
 * **No demo content**, beyond the empty home page.
+
+## Continuous integration
+
+Ágora's pipeline is the shared `gitlab_templates` pipeline the Drupal Association maintains, run on
+[git.drupalcode.org](https://git.drupalcode.org) with no job of our own defined on top of it. This
+is the list of jobs that actually ran, taken from pipeline `933342` on branch `1.x`, commit
+`fd8d3b2`, read from the API on 2026-08-23 — not from the badge, and not from the set of jobs the
+template could in principle run:
+
+| Job | Stage | Status | Blocking |
+|---|---|---|---|
+| `composer` | build | success | yes |
+| `composer-lint` | validate | success | yes |
+| `cspell` | validate | success | yes |
+| `eslint` | validate | success | yes |
+| `phpcs` | validate | success | yes |
+| `phpstan` | validate | success | yes |
+| `phpunit` | test | success | yes |
+
+**Two checks are absent, and an absent check is not a passed one.**
+
+* `stylelint` did not run because there is no CSS in the package for it to read. Ágora's theme is a
+  separate project, so this job may never run in this repository at all.
+* `secret detection` is not part of the three included template files, so nothing in this pipeline
+  looks for leaked credentials. The repository carries its own `tests/bin/no-secrets` check, but a
+  human has to run it: it is not wired into the pipeline yet.
+
+**The gate is the list of jobs, never the pipeline's status field.** This is not a preference. An
+earlier pipeline reported `success` while the spell check inside it had failed: four of the seven
+jobs were non-blocking by upstream default, so their failures were recorded and then rolled up into
+a green result that hid them. All seven are blocking now, with no exceptions —
+`_ALL_VALIDATE_ALLOW_FAILURE: '0'` in [`.gitlab-ci.yml`](.gitlab-ci.yml) is what makes the validate
+stage stop the pipeline. Read the job list; the status field has already been wrong here once.
+
+**What the green does not tell you.** `cspell` reported `Files checked: 36`, while the repository
+tracks 63 files. The gap is not explained yet, and until it is, we do not know which files were
+read. `phpcs`, `phpstan` and `eslint` print no file count at all. A passing check over an unknown
+number of files is a weaker statement than it looks, and it is written down here as one rather than
+counted as coverage.
+
+### Checking spelling before you push
+
+`cspell` is blocking, and it reads `README.md` and everything under `specs/`. That makes every prose
+commit a gate, so it is worth a look before you push:
+
+```shell
+pnpm dlx cspell@9.8.0 --locale en,en-GB README.md "specs/**/*.md"
+```
+
+`pnpm` is the only JavaScript package manager this project uses, in documentation as well as in
+tooling. The version is pinned to the one the CI job runs, and `--locale en,en-GB` matches the
+`_CSPELL_EXTRA` variable set in `.gitlab-ci.yml`: the prose here is British English, and declaring
+the language of the text is not the same as switching the check off.
+
+**Treat this as an approximation, because that is what it is.** The CI job fetches the upstream
+`.cspell.json` from `gitlab_templates` and expands it with a PHP script before running; the command
+above does neither. It can therefore disagree with the pipeline in both directions. It is a way to
+catch typos early, not a second opinion on the gate.
+
+Words that are genuinely words go in
+[`.cspell-project-words.txt`](.cspell-project-words.txt), one at a time, each with the reason it
+belongs there written beside it. The job offers an artefact that is "this dictionary plus everything
+that just failed"; importing that wholesale is one command away from a green pipeline and is
+forbidden here, because it declares the next real misspelling correct before anyone has seen it.
 
 ## Support
 

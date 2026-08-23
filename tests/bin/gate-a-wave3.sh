@@ -2,14 +2,17 @@
 #
 # gate-a-wave3.sh - Agora - Unit 001, wave 3 gate A verification.
 #
-# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the EIGHT
+# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the NINE
 # invariants that exist on disk today - the tasks.md "Gate A wave 3" block
 # still loops over only four (no-unstable-deps no-patches no-secrets
-# sbom-check); no-code-in-template, no-ci-allow-dev, no-boilerplate and
-# no-blind-phpunit landed later (T-307, T-308 area, T-309, T-214) and are
-# exercised by no gate runner at all. Closing wave 3 on the stale four-item
-# loop would close it on a stale gate. This script is that missing runner
-# (T-313).
+# sbom-check); no-code-in-template, no-ci-allow-dev, no-boilerplate,
+# no-blind-phpunit and cited-tasks-exist landed later (T-307, T-308 area,
+# T-309, T-214, T-223) and are exercised by no gate runner at all. Closing
+# wave 3 on the stale four-item loop would close it on a stale gate. This
+# script is that missing runner (T-313).
+#
+# Check count, stated so a silent change is impossible: 14 preflight + 17
+# invariant checks = 31 before T-223; G9 adds 2, for 33.
 #
 # Contract (mirrors gate-a-wave1.sh on purpose - one house style):
 #   - every check prints:  obtained | expected | OK/FAIL
@@ -30,7 +33,7 @@
 # that only checks presence would wave that stub through and every invariant
 # that needs python3 (sbom-check) would fail later with a confusing error
 # instead of a clear, loud preflight failure. This script EXERCISES every
-# tool the seven invariants actually call (a real, minimal invocation whose
+# tool the nine invariants actually call (a real, minimal invocation whose
 # output or exit code is checked), not merely locates it.
 #
 # sbom-check needs the network (queries updates.drupal.org). If the network is
@@ -112,7 +115,7 @@ printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 printf '=========================================================================================================\n'
 
 # ------------------------------------------------------------- G0 preflight --
-# I-026: EXERCISE every tool the seven invariants actually call, do not merely
+# I-026: EXERCISE every tool the nine invariants actually call, do not merely
 # locate it with `command -v`. Each check runs a real, minimal invocation and
 # compares its actual output or exit code - a resolvable-but-broken stub
 # (like the python3 case above) fails here, loudly, instead of surfacing as a
@@ -317,6 +320,30 @@ if [ -x "$INV" ]; then
 else
   check 'no-blind-phpunit present'         "$(trunc "$INV" 24)" 'present'
   check_positive 'no-blind-phpunit (scanned)' ''
+fi
+
+# ------------------------------------------------------ G9 - cited-tasks-exist (T-223) --
+group 'G9 - cited-tasks-exist'
+INV=tests/bin/cited-tasks-exist
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary line: "citations: N - distinct cited: N - definitions: N -
+  # distinct defined: N - findings: N". Its scope metric is the CITATION count,
+  # not a file count: this invariant reads exactly one decision record plus the
+  # task lists, so "files scanned" would be a constant that proves nothing,
+  # while "citations extracted" is the number that actually goes to zero when
+  # the extractor stops matching the record.
+  #
+  # The invariant's own anti-I-007 canary makes zero citations FATAL and prints
+  # NO summary line in that case, so the parse below legitimately yields nothing
+  # and check_positive FAILS - which is the intended outcome, not a gap.
+  CNT=$(extract_count "$INV_OUT" 'citations:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^citations:' | tail -1)"
+  check 'cited-tasks-exist (exit)'         "$INV_RC" '0'
+  check_positive 'cited-tasks-exist (citations)' "$CNT"
+else
+  check 'cited-tasks-exist present'        "$(trunc "$INV" 24)" 'present'
+  check_positive 'cited-tasks-exist (citations)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

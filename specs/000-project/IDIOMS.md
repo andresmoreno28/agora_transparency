@@ -316,3 +316,44 @@
   that list. Corollary: `new.drupal.org` and `www.drupal.org` redirect to each other page by page in
   both directions, so a 302 in either direction says nothing about where the content is. **Never
   conclude "undocumented" from one 404 on a URL you constructed.** Recorded 2026-08-22.
+- I-042 · **A capability read from documentation is not a capability present in the installation
+  that will run.** Two instances in one turn, same root. `@cspell/dict-es-es` is documented, real,
+  and **not among the 59 dictionaries `@cspell/cspell-bundled-dicts` ships** on the Drupal runner —
+  a plan was built on `"language": "en,es"` resolving to something, and it resolves to nothing.
+  Then the word list's own header claimed cspell's `stripCaseAndAccents` folds accents onto one
+  entry; `fundacion` was listed and `fundación` was **still flagged** in pipeline 933311. Method:
+  before planning against a capability, **enumerate the installed set** — the bundled-dicts
+  manifest, or the job's own `--version`/`-i`/`-e` echo lines, which every `gitlab_templates` job
+  prints for exactly this reason. Corollary, and the harder half: when documented behaviour turns
+  out false, correct the claim to what was **observed** and mark the untested neighbouring claims
+  as untested rather than quietly leaving them. Recorded 2026-08-23.
+- I-043 · **`allow_failure: true` is the eighth species of false green: the job ran, the job
+  failed, and the pipeline was green.** Pipeline `933270`: seven jobs, `cspell` **failed**, pipeline
+  `success` in 309s, because four of seven carried `allow_failure: true` by upstream default.
+  Distinguish it from its siblings: I-040 is *no run at all*; I-032 is *ran and found nothing*;
+  this one is *ran, found it, and the finding was discarded on the way up*. What makes it the
+  nastiest of the three is that **both readers are reading correctly** — open the job and it is red,
+  look at the pipeline and it is green, and neither is lying. Rule: never read a pipeline's
+  `status`; read the job list with per-job `status` **and** `allow_failure` (D-023(5)). Second half,
+  which cost the most here: **upstream permissiveness is invisible in your own config** — cspell was
+  non-blocking by an inheritance stated in no file we own. Recorded 2026-08-23.
+- I-044 · **A decision that names a task number must not reach disk before that task does.** D-023(6)
+  created the cspell exception with an owner and an exit gate — *"Owner **T-226**; deleting the line
+  is the exit gate"* — and **T-226 was never written to `tasks.md`**. It survived only because the
+  same turn kept going. Had the turn ended there, `grep T-226 DECISIONS.md` would return a confident
+  citation and `grep T-226 tasks.md` would return nothing: an accountability record whose
+  accountability is a dangling pointer. This is **I-036 (*text is not disk*) applied to forward
+  references**, which is the direction nobody was watching. Guarded by `tests/bin/cited-tasks-exist`
+  (T-223), which found exactly one dangling citation on its first run. Recorded 2026-08-23.
+- I-045 · **A green linter is a statement about the set it opened, and the set is usually not
+  printed.** `cspell` says `Files checked: 36`; the repository tracks **63**. `phpcs`, `phpstan` and
+  `eslint` say nothing at all about how many files they touched — phpcs emitted **zero bytes**
+  between its invocation and its verdict. Every one of them is now **blocking** (D-023), which
+  raises the stakes: **a blocking check over an unknown denominator is not a stronger gate than a
+  permissive one, it is a more confident one.** Rule: for every gate job, record the denominator
+  beside the result; where the tool will not print one, make it print one through a documented
+  variable (`-p` for phpcs, `_CSPELL_SHOW_PROGRESS` for cspell) — never by inferring it.
+  *"0 issues in N files"* is a gate; *"0 issues"* is a badge. This is **I-028's escape into upstream
+  jobs we do not own**, and it gets its own number for the same reason I-038 did: the class keeps
+  finding new surfaces, and folding each one back into the parent hides the spread.
+  Recorded 2026-08-23.
