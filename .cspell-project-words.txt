@@ -19,9 +19,15 @@
 #     cspell:disable markers around each quoted block.
 #   - Real misspellings. Those get fixed, not declared — D-024(3), fourth bucket.
 #
-# Mechanic: cspell's dictionary parser sets `stripCaseAndAccents: true`, so a single entry
-# `Ágora` also matches `ágora`/`agora`/`AGORA`, and a base form covers its possessive and
-# plural. Base form listed once; no case or accent variants.
+# Mechanic — corrected, verified against pipeline 933311: cspell's dictionary parser sets
+# `stripCaseAndAccents: true`, and its docs read as if that folds both case and accents onto a
+# single entry. It does not, for accents: `fundacion` was already listed here and `fundación`
+# was still reported as an unknown word in the same pipeline run. An unaccented entry does NOT
+# cover its accented form; each accented form that needs to pass either gets its own entry or,
+# where the dictionary is the wrong tool (see the D-024(3) bucket-4 row in DECISIONS.md), a
+# scoped `cspell:disable`/`cspell:enable` pair instead. Whether case folding actually works
+# (`agora` covering `AGORA`) was not exercised by this finding and stays an untested claim, not
+# a verified one — do not assume it holds just because the accent claim turned out false.
 
 # --- Proper nouns --------------------------------------------------------------------
 # Our own identity, plus the third-party projects, vendors and tools cited as evidence in
@@ -90,6 +96,7 @@ cand                  # doctor, $_cand candidate executable path
 lver                  # no-unstable-deps, $_lver locked version
 filt                  # no-blind-phpunit, CMD_FILT_RC / EXTRA_FILT_RC
 fagora                # from the URL-encoded remote path project%2Fagora in the D-002 evidence
+existe                # agora_no_existe_xyz, deliberately non-existent project name proving release-history returns HTTP 200 with an <error> body (I-013)
 
 # --- English coinages we use deliberately ----------------------------------------------
 # Regularly derived English words the bundled dictionary happens not to carry. Each is

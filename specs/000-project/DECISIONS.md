@@ -758,7 +758,7 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
 | British-English spellings — `behaviour`, `licence`, `colour`, `organisation`, `artefacts`, `normalise` | 30 | **`_CSPELL_EXTRA: '--locale en,en-GB'`**; `dict-en-gb-mit` **is** bundled | We do write British English. Declaring the actual language of the text is not silencing a check |
 | Project vocabulary and proper nouns — `Ágora`, `Andrés`, `drupalcode`, `gitaly`, `caresphere`, plus our own shell/Python identifiers | 75 | `.cspell-project-words.txt`, **one justified line each** | The file's documented purpose |
 | Spanish identifiers — `proyecto`, `fundacion`, `decisiones`, `contenido`, `publicacion`, `tema` | 40 | **Rename the paths to English** | A standing violation of **D-017** (*"the ENTIRE repository is in English"*) that cspell has now made public. The token leaves the corpus; nothing is declared |
-| Real misspellings | ≥ 2 | **Fix them** | `encontro` coexists with `encontró`, `fundacion` with `fundación`. This is the bucket that justifies the exercise |
+| Real misspellings | ≥ 2 | **Fix them** | <!-- cspell:disable -->`encontro` coexists with `encontró`, `fundacion` with `fundación`<!-- cspell:enable --><!-- this cell quotes real misspellings verbatim as its own subject matter; rule 8 forbids rewording the row, so the misspelled forms are scoped out here rather than "corrected" -->. This is the bucket that justifies the exercise |
 
   **(4) Explicitly forbidden.** `_CSPELL_IGNORE_PATHS` covering `specs/`, `CLAUDE.md`, `AGENTS.md` or
   `.claude/` — those are our own English prose, D-017 puts them in scope, and excluding them would
