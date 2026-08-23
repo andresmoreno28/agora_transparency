@@ -46,11 +46,17 @@ variables:
   _ALL_VALIDATE_ALLOW_FAILURE: '0'
 
 
+# T-222: --dot adds hidden paths to the scan. Without it cspell opened 37 of
+# 64 tracked files and skipped every dot-path - .claude/ (14 files), .github/,
+# .tugboat/ and the root dotfiles. D-024(4) names .claude/ as something that
+# must NOT be excluded, and a Spanish comment in .claude/settings.json had
+# survived there unseen, so the exclusion was arriving by upstream default
+# rather than by our choice - which is worse than choosing it.
 # D-024(3): the repository's prose is British English (behaviour, licence,
 # organisation, artefacts, normalise). dict-en-gb-mit is bundled in the
 # runner's cspell; dict-es-es is not (D-024(1)). Declaring the actual
 # language of the text is not silencing a check.
-  _CSPELL_EXTRA: '--locale en,en-GB'
+  _CSPELL_EXTRA: '--locale en,en-GB --dot'
 
 
 # T-222: make the blocking checks state their DENOMINATOR. Pipeline 933342 ran
