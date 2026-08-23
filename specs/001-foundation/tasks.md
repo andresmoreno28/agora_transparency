@@ -646,6 +646,28 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       neither, so it can disagree in both directions. An approximation that says so is a tool; one
       that does not is I-042 again.
 
+- [✓ 2026-08-23] **T-227** · `tests/bin/doctor` probes WSL before declaring Docker unavailable.
+      It reported `CLI present, daemon unreachable` — accurate about the Windows CLI, and useless,
+      because a working daemon was on the same machine the whole time. **T-401 lost a day to that
+      report** (I-046).
+      Four states now reported distinctly, and the distinction is the whole value: usable on
+      Windows · usable **inside WSL** (naming the distro, server version and whether `ddev` is
+      there too) · **a stopped `docker-desktop` distro beside a working one** — the exact shape
+      that produced the wrong conclusion · no daemon anywhere, which is the only case that now
+      says Docker is unavailable.
+      It also states that the WSL setup **is DDEV's own recommended one, not a degraded one**, so
+      nobody "fixes" it by installing Docker Desktop, and that a project must live in the WSL
+      filesystem, never `/mnt/c`.
+      *Success:* on this host `doctor` reports `available in WSL distro 'Ubuntu' (server 28.1.1)`
+      and exit 0; forced to fail the WSL probe it degrades to the honest "no working daemon found"
+      rather than crashing or claiming success (falsified, then reverted byte-identical).
+      `gate-a-wave1.sh` 61 · 0 and `gate-a-wave3.sh` 33 · 0, unchanged. Windows-only probe: no
+      added latency on Linux or macOS.
+      > **Boundary handling worth keeping:** `wsl.exe -l -v` emits UTF-16 with embedded NULs, and
+      > stripping them *after* the command substitution still triggers bash's own "ignored null
+      > byte" warning. They are stripped **inside** the pipeline instead. Same family as I-025:
+      > normalise at the boundary, not after it.
+
 **Gate A wave 2**
 ```bash
 ddev start && ddev drush status          # expected: Drupal bootstrap = Successful

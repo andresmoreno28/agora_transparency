@@ -511,12 +511,109 @@ else
   note "ddev CLI:      not found - $(install_hint ddev)"
 fi
 
+# ---- WSL probe (I-046) -----------------------------------------------
+# A capability absent from the installation just checked above is not a
+# capability absent from the machine. DDEV's OWN recommended Windows setup
+# is docker-ce running INSIDE WSL2 - a different, valid path, not a
+# degraded one - and it conflicts with Docker Desktop's named pipe. Only
+# probe here, so Linux/macOS and the already-reachable-on-Windows case stay
+# exactly as fast as before: nothing below runs unless the Windows-side
+# daemon just came back unreachable AND this is a Windows host.
+WSL_STATE=n/a
+if [ "$PLATFORM_FAMILY" = windows ] && [ "$DOCKER_DAEMON" != reachable ]; then
+  note ''
+  note 'Windows-side docker daemon not reachable - probing WSL before concluding anything (I-046):'
+  WSL_EXE=$(command -v wsl.exe 2>/dev/null)
+  [ -z "$WSL_EXE" ] && WSL_EXE=$(command -v wsl 2>/dev/null)
+  if [ -z "$WSL_EXE" ]; then
+    WSL_STATE=no_wsl
+    note '  wsl.exe: not found on PATH - no WSL on this host (or it is not installed). Nothing more to probe.'
+  else
+    note "  wsl.exe: $WSL_EXE"
+    # `wsl -l -v` prints UTF-16 with embedded NULs on a Windows console
+    # (I-025's family) - strip NULs (and any CR) INSIDE the same pipeline
+    # that captures it, before bash's own command substitution ever sees a
+    # NUL byte (which it would otherwise warn about on stderr), or the
+    # parsing silently produces nonsense.
+    WSL_LIST=$("$WSL_EXE" -l -v 2>&1 | tr -d '\0' | tr -d '\r')
+    WSL_DISTRO_LINES=$(printf '%s\n' "$WSL_LIST" | grep -E 'Running|Stopped' 2>/dev/null)
+    WSL_GREP_RC=$?
+    if [ "$WSL_GREP_RC" -ge 2 ]; then
+      note "  wsl.exe -l -v: grep failed parsing the distro list (rc=$WSL_GREP_RC) - raw output:"
+      note "    $(printf '%s' "$WSL_LIST" | tr '\n' ' ' | cut -c1-150)"
+      WSL_DISTRO_LINES=''
+    fi
+    if [ -z "$WSL_DISTRO_LINES" ]; then
+      WSL_DISTRO_COUNT=0
+    else
+      WSL_DISTRO_COUNT=$(printf '%s\n' "$WSL_DISTRO_LINES" | wc -l | tr -d ' ')
+    fi
+    note "  distros found: ${WSL_DISTRO_COUNT:-0}"
+    if [ "${WSL_DISTRO_COUNT:-0}" -eq 0 ]; then
+      WSL_STATE=no_distros
+      note '  no WSL distros are installed - nothing to run docker or ddev inside.'
+    else
+      printf '%s\n' "$WSL_DISTRO_LINES" | while IFS= read -r _dl; do note "    $_dl"; done
+      WSL_DEFAULT_LINE=$(printf '%s\n' "$WSL_DISTRO_LINES" | grep '^\*' 2>/dev/null)
+      WSL_DEFAULT_NAME=$(printf '%s' "$WSL_DEFAULT_LINE" | sed -E 's/^\*? *//' | tr -s ' ' | cut -d' ' -f1)
+      [ -z "$WSL_DEFAULT_NAME" ] && WSL_DEFAULT_NAME='<no default set>'
+      WSL_DD_LINE=$(printf '%s\n' "$WSL_DISTRO_LINES" | grep 'docker-desktop' 2>/dev/null | grep -v 'docker-desktop-data' 2>/dev/null)
+      WSL_DD_STATE=''
+      if [ -n "$WSL_DD_LINE" ]; then
+        WSL_DD_STATE=$(printf '%s' "$WSL_DD_LINE" | sed -E 's/^\*? *//' | tr -s ' ' | cut -d' ' -f2)
+      fi
+
+      note "  probing default distro '$WSL_DEFAULT_NAME' for a docker daemon..."
+      WSL_DOCKER_OUT=$("$WSL_EXE" -e bash -lc 'docker info --format "{{.ServerVersion}}"' 2>&1)
+      WSL_DOCKER_RC=$?
+      WSL_DOCKER_OUT=$(printf '%s' "$WSL_DOCKER_OUT" | tr -d '\0' | tr -d '\r')
+
+      if [ "$WSL_DOCKER_RC" -eq 0 ] && [ -n "$WSL_DOCKER_OUT" ]; then
+        note "  docker inside WSL:  reachable (server $WSL_DOCKER_OUT, distro '$WSL_DEFAULT_NAME')"
+        WSL_DDEV_OUT=$("$WSL_EXE" -e bash -lc 'command -v ddev && ddev version' 2>&1)
+        WSL_DDEV_RC=$?
+        WSL_DDEV_OUT=$(printf '%s' "$WSL_DDEV_OUT" | tr -d '\0' | tr -d '\r')
+        if [ "$WSL_DDEV_RC" -eq 0 ] && [ -n "$WSL_DDEV_OUT" ]; then
+          WSL_DDEV_STATUS="ddev present ($(printf '%s' "$WSL_DDEV_OUT" | tr '\n' ' ' | cut -c1-80))"
+        else
+          WSL_DDEV_STATUS='ddev not found inside this distro'
+        fi
+        note "  ddev inside WSL:    $WSL_DDEV_STATUS"
+
+        if [ -n "$WSL_DD_LINE" ] && [ "$WSL_DD_STATE" != Running ]; then
+          WSL_STATE=docker_ok_dd_stopped
+          note "  ${C_WARN}NOTE:${C_OFF} a docker-desktop WSL distro exists and is $WSL_DD_STATE, while distro"
+          note "  '$WSL_DEFAULT_NAME' has a working daemon of its own - this is the exact shape"
+          note "  that produced the false 'daemon unreachable' report in I-046. The stopped"
+          note "  docker-desktop distro belongs to Docker Desktop, a different product from the"
+          note "  one that is actually running - leave it stopped, it is not the problem."
+        else
+          WSL_STATE=docker_ok
+        fi
+        note "  this IS DDEV's own recommended Windows setup, not a degraded one - do not"
+        note "  install Docker Desktop to 'fix' this; the two conflict."
+        note "  run project work there, e.g.: wsl.exe -e bash -lc 'cd ~/agora-smoke && ddev ...'"
+        note "  the project must live IN the WSL filesystem (~/project) - never under /mnt/c,"
+        note "  which DDEV documents as slow and permission-prone."
+      else
+        WSL_STATE=no_daemon
+        note "  docker inside WSL:  NOT reachable in default distro '$WSL_DEFAULT_NAME' either"
+        note "    ($(printf '%s' "$WSL_DOCKER_OUT" | tr '\n' ' ' | cut -c1-100))"
+      fi
+    fi
+  fi
+fi
+
 if [ -n "$DOCKER_PATH" ] && [ "$DOCKER_DAEMON" = reachable ]; then
-  CONTAINER_SUMMARY='available (docker daemon reachable)'
+  CONTAINER_SUMMARY='available (docker daemon reachable on Windows)'
+elif [ "$WSL_STATE" = docker_ok ]; then
+  CONTAINER_SUMMARY="available in WSL distro '$WSL_DEFAULT_NAME' (server $WSL_DOCKER_OUT) - DDEV's recommended Windows setup, not degraded; work inside WSL (~/project), not /mnt/c"
+elif [ "$WSL_STATE" = docker_ok_dd_stopped ]; then
+  CONTAINER_SUMMARY="available in WSL distro '$WSL_DEFAULT_NAME' (server $WSL_DOCKER_OUT) - a separate, stopped docker-desktop distro is expected and NOT the problem (I-046)"
 elif [ -n "$DOCKER_PATH" ]; then
-  CONTAINER_SUMMARY='CLI present, daemon unreachable - start Docker Desktop (or the daemon) and re-run'
+  CONTAINER_SUMMARY='CLI present, daemon unreachable on Windows, and no working daemon found in WSL either - start Docker Desktop, or set up docker-ce inside WSL2 (see notes above), and re-run'
 else
-  CONTAINER_SUMMARY='unavailable - no docker CLI on PATH'
+  CONTAINER_SUMMARY='unavailable - no docker CLI on PATH, and no working daemon found in WSL either'
 fi
 note "verdict: $CONTAINER_SUMMARY"
 note '(informational only - D-019 rider (c) keeps host mode valid with no container at all)'
