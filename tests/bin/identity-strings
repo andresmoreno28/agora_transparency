@@ -1,0 +1,433 @@
+#!/usr/bin/env bash
+#
+# identity-strings - Agora - unit 001, task T-322.
+#
+# What it enforces: D-021, "a string whose job is to name the product to
+# someone who has no other context carries the full name `Ágora Transparency`;
+# a string that refers back to a product already named on the same surface may
+# use `Ágora`."
+#
+# Why a guard and not a deny term (D-021, and this is the load-bearing part):
+# `Ágora` is a LEGITIMATE substring of the correct value and of ~33 prose
+# occurrences, so a deny term would report ~35 findings on a clean tree and the
+# only route to green would be deleting the product's name from its own
+# documentation. Decisively: a deny term is an EXPECT-ZERO assertion, and I-028
+# says to prefer an expected value that a failure cannot counterfeit. "The
+# identity strings are correct" is naturally EXPECT-PRESENT, whose degenerate
+# value is `no` and never `yes`.
+#
+# FIVE assertions:
+#   1. recipe.yml has exactly ONE `^name:` line, and its value is exactly
+#      $FULL_NAME. In the installer's template selector that string IS the
+#      entire user interface for "what is this"; a bare `Ágora` sends the
+#      reader to a dormant 2019 project of that name.
+#   2. composer.json `.name` == $PACKAGE.
+#   3. the two `description` fields - recipe.yml and composer.json - are
+#      BYTE-IDENTICAL to each other. D-021 has them drop the name rather than
+#      expand it, and keeping them in step is the only thing stopping the two
+#      surfaces from describing two different products.
+#   4. for each identity file, the FIRST mention of `Ágora` names it in full.
+#      Expressed as ONE rule rather than as five line numbers, which rot the
+#      first time a paragraph is rewrapped.
+#   5. CLOSED WORLD: every packaged file that names the product must be
+#      declared, either as an identity file or as prose-only. An UNDECLARED
+#      new packaged file naming the product is a FINDING. This is the half
+#      that matters most: I-024 - "inherited boilerplate outlives the task
+#      that was supposed to clean it up whenever no task owns the WHOLE file"
+#      - made impossible rather than remembered.
+#
+# WHY ASSERTION 4 NORMALISES BEFORE MATCHING. A naive "the first line
+# containing `Ágora` also contains `Ágora Transparency`" is wrong on this tree
+# TODAY, and not because the tree is wrong: AGENTS.md's first mention is a
+# Markdown blockquote whose full name WRAPS across the newline, so `Ágora` ends
+# line 5 and `Transparency` begins line 6 behind a `> ` marker. A line-oriented
+# check would report a finding against correct prose, and the tempting repair -
+# a hand-placed line break - is the rot the rule exists to avoid. So each file
+# is read as ONE stream with line-leading `>` and `#` markers dropped and all
+# runs of whitespace collapsed to a single space; the assertion is then that
+# the text FOLLOWING the first `Ágora` begins with ` Transparency`.
+#
+# An identity file containing NO accented mention at all is NOT a finding -
+# composer.json is exactly that case, and it is covered by assertion 2 instead.
+# But if NO identity file has one, the accent match itself has broken and every
+# assertion 4 has silently stopped discriminating: that is FATAL (I-028).
+#
+# SCOPE, in two parts, mirroring no-code-in-template:
+#   (1) AUTHORITATIVE: the packaged tree, literally `git archive HEAD`, which
+#       is what Drupal.org ships.
+#   (2) EARLY WARNING: untracked, non-ignored working-tree files that are not
+#       under an `export-ignore`d root, so a new undeclared file naming the
+#       product is caught BEFORE it is committed rather than after (I-030).
+# Part 2 reads the RULE in .gitattributes rather than its effect, which is
+# weaker than part 1 on purpose and is never the only witness; part 1 reads the
+# effect. CONTENT is read from the working tree wherever the path exists there,
+# so an uncommitted edit is seen (I-018).
+#
+# Contract (shared by every invariant in tests/bin/):
+#   scope:    the exact set of files inspected
+#   scanned:  N files, and N must be > 0 or this script fails
+#   findings: M, each printed as  path:line  reason
+#   exit 0 if and only if M == 0
+#
+# FATAL, not an ordinary finding, and printing NO summary line (I-029): a
+# declared identity file missing from the working tree; `git archive HEAD`
+# producing nothing; zero identity files declared; zero packaged files naming
+# the product; zero identity files carrying an accented mention; any `grep`
+# exiting >= 2. The closing metrics line is a claim about a scan that happened.
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. This script was born under those rules rather than
+# swept into them: there is no `grep -c` anywhere below.
+#
+# Usage: tests/bin/identity-strings   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# ---------------------------------------------------------------- repo root --
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+# ------------------------------------------------- single source of truth ----
+# Every assertion below reads these three and nothing else. Changing the
+# product's name is one edit here plus the files it polices - never a hunt.
+FULL_NAME='Ágora Transparency'
+SHORT_NAME='Ágora'
+PACKAGE='drupal/agora_transparency'
+
+# The ERE that decides whether a file NAMES the product, for the closed world.
+# The bare form without the accent is included deliberately: a packaged file
+# that spells the name wrong is still a file naming the product, and the closed
+# world should surface it rather than let it pass for something unrelated.
+PRODUCT_ERE='Ágora|Agora|agora_transparency'
+
+# Identity files: read by someone with no other context on the same surface.
+# AGENTS.md and recommended.yml are load-bearing for a structural reason
+# (D-021): AGENTS.md is scaffolded into the END USER's site root by
+# composer.json's drupal-scaffold.file-mapping, and recommended.yml is consumed
+# by Project Browser BY PERMALINK - both are read with no README adjacent.
+IDENTITY_FILES='recipe.yml
+composer.json
+README.md
+AGENTS.md
+recommended.yml'
+
+# Prose-only: packaged files that legitimately mention the product below a
+# surface that has already named it, or in a comment addressed to a maintainer
+# rather than to an evaluator. Adding a file here is a DECLARATION, and it is
+# printed on every run so it cannot be made quietly.
+PROSE_ONLY='.gitattributes
+.gitignore'
+
+# The two quote characters as variables, so no pattern below needs a backslash.
+SQ="'"
+DQ='"'
+
+FINDINGS=0
+WORKDIR=$(mktemp -d -t identity-strings.XXXXXX) || { echo "FATAL: mktemp -d failed"; exit 1; }
+trap 'rm -rf "$WORKDIR"' EXIT INT TERM
+
+finding() { # <file> <line> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "${1#./}" "$2" "$C_OFF" "$3"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+fatal() { # <reason>
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run has NO result, which is not a clean result (I-029).\n'
+  exit 1
+}
+
+grep_fatal() { # <rc> <pattern> <subject>
+  fatal "grep exited $1 on $3 while matching: $2 - a file that could not be searched is NOT a file that is correct (I-027)."
+}
+
+printf '=========================================================================================================\n'
+printf 'identity-strings - Agora - D-021: identity strings carry the full name (T-322)\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf '=========================================================================================================\n'
+printf '\nsource of truth\n'
+note "FULL_NAME:  $FULL_NAME"
+note "SHORT_NAME: $SHORT_NAME"
+note "PACKAGE:    $PACKAGE"
+
+# ------------------------------------------------------------- preflight -----
+command -v jq >/dev/null 2>&1 || fatal 'jq is not available - assertions 2 and 3 read composer.json with it and cannot be evaluated.'
+command -v git >/dev/null 2>&1 || fatal 'git is not available - the packaged scope cannot be resolved.'
+
+IDENTITY_COUNT=0
+MISSING_IDENTITY=''
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  IDENTITY_COUNT=$((IDENTITY_COUNT + 1))
+  [ -r "$f" ] || MISSING_IDENTITY="$MISSING_IDENTITY $f"
+done <<EOF
+$IDENTITY_FILES
+EOF
+
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${IDENTITY_COUNT:-0}" -eq 0 ]; then
+  fatal 'zero identity files declared - the scope collapsed to nothing (I-007).'
+fi
+if [ -n "$MISSING_IDENTITY" ]; then
+  fatal "declared identity file(s) not readable in the working tree:$MISSING_IDENTITY - the assertions about them cannot be evaluated, and absent is not correct."
+fi
+
+PROSE_COUNT=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  PROSE_COUNT=$((PROSE_COUNT + 1))
+done <<EOF
+$PROSE_ONLY
+EOF
+
+printf '\ndeclared scope\n'
+note "identity files ($IDENTITY_COUNT): $(printf '%s' "$IDENTITY_FILES" | tr '\n' ' ')"
+note "prose-only ($PROSE_COUNT): $(printf '%s' "$PROSE_ONLY" | tr '\n' ' ')"
+
+# ----------------------------------------------------- YAML scalar reader ----
+# recipe.yml is read with sed, never with a YAML parser: gate A deliberately
+# owns no YAML dependency (T-320(c)). The reader therefore handles exactly the
+# three forms a scalar can take on one line - bare, single-quoted,
+# double-quoted - and REFUSES anything else loudly instead of guessing.
+yaml_scalar() { # <key> <file>  -> prints the value
+  _key=$1; _file=$2
+  _matched=$(grep "^$_key:" "$_file" 2>/dev/null)
+  _rc=$?
+  [ "$_rc" -ge 2 ] && grep_fatal "$_rc" "^$_key:" "$_file"
+  [ "$_rc" -eq 0 ] || return 1
+  _v=$(printf '%s\n' "$_matched" | head -1 | sed "s/^$_key:[[:space:]]*//")
+  case "$_v" in
+    '|'* | '>'*)
+      fatal "$_file: $_key: is a YAML block scalar, which this reader does not parse. Assertions 1 and 3 would compare a marker instead of a value; fix the reader or the file, never let it pass."
+      ;;
+  esac
+  case "$_v" in
+    "$SQ"*"$SQ")
+      _v=${_v#"$SQ"}
+      _v=${_v%"$SQ"}
+      _v=$(printf '%s' "$_v" | sed "s/$SQ$SQ/$SQ/g")
+      ;;
+    "$DQ"*"$DQ")
+      _v=${_v#"$DQ"}
+      _v=${_v%"$DQ"}
+      ;;
+  esac
+  printf '%s' "$_v"
+}
+
+# ------------------------------------------ 1. recipe.yml name: exactly one --
+printf '\n1. recipe.yml name: - exactly one line, value is the full name\n'
+NAME_MATCHED=$(grep '^name:' recipe.yml 2>/dev/null)
+NAME_RC=$?
+[ "$NAME_RC" -ge 2 ] && grep_fatal "$NAME_RC" '^name:' recipe.yml
+if [ "$NAME_RC" -eq 0 ]; then
+  NAME_LINES=$(printf '%s\n' "$NAME_MATCHED" | wc -l | tr -d ' ')
+else
+  NAME_LINES=0
+fi
+note "^name: lines: $NAME_LINES"
+if [ "${NAME_LINES:-0}" -ne 1 ]; then
+  finding recipe.yml '<name>' "expected exactly one ^name: line, found $NAME_LINES - the installer shows one of them and nobody can say which"
+else
+  RECIPE_NAME=$(yaml_scalar name recipe.yml)
+  note "value: $RECIPE_NAME"
+  if [ "$RECIPE_NAME" != "$FULL_NAME" ]; then
+    finding recipe.yml '<name>' "is [$RECIPE_NAME], expected [$FULL_NAME] - D-021: this string IS the template selector's whole user interface"
+  fi
+fi
+
+# ------------------------------------------------- 2. composer.json .name ----
+printf '\n2. composer.json .name - the package identifier\n'
+COMPOSER_NAME=$(jq -r '.name // empty' composer.json 2>/dev/null | tr -d '\r')
+JQ_RC=$?
+if [ "$JQ_RC" -ne 0 ]; then
+  fatal 'composer.json could not be parsed by jq - assertions 2 and 3 have no value to compare.'
+fi
+note "value: $COMPOSER_NAME"
+if [ "$COMPOSER_NAME" != "$PACKAGE" ]; then
+  finding composer.json '<name>' "is [$COMPOSER_NAME], expected [$PACKAGE]"
+fi
+
+# ------------------------------------- 3. the two descriptions, byte-equal ---
+printf '\n3. description - recipe.yml and composer.json byte-identical\n'
+RECIPE_DESC=$(yaml_scalar description recipe.yml) || RECIPE_DESC=''
+COMPOSER_DESC=$(jq -r '.description // empty' composer.json 2>/dev/null | tr -d '\r')
+note "recipe.yml:    [$RECIPE_DESC]"
+note "composer.json: [$COMPOSER_DESC]"
+if [ -z "$RECIPE_DESC" ]; then
+  finding recipe.yml '<description>' 'empty or absent - two surfaces cannot be kept in step when one of them says nothing'
+elif [ -z "$COMPOSER_DESC" ]; then
+  finding composer.json '<description>' 'empty or absent - two surfaces cannot be kept in step when one of them says nothing'
+elif [ "$RECIPE_DESC" != "$COMPOSER_DESC" ]; then
+  finding recipe.yml '<description>' 'differs from composer.json .description - D-021 keeps the two byte-identical, or the template describes two different products depending on which surface you read'
+fi
+
+# -------------------------------- 4. first mention names the product in full --
+printf '\n4. first mention of %s in each identity file names it in full\n' "$SHORT_NAME"
+WITH_MENTION=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  NORM=$(sed -e 's/^[[:space:]]*[>#]*[[:space:]]*//' "$f" 2>/dev/null | tr '\n\t' '  ' | tr -s ' ')
+  case "$NORM" in
+    *"$SHORT_NAME"*) ;;
+    *) note "$f: no accented mention (covered by assertion 2 where it applies)"; continue ;;
+  esac
+  WITH_MENTION=$((WITH_MENTION + 1))
+  AFTER=${NORM#*"$SHORT_NAME"}
+  case "$AFTER" in
+    ' Transparency'*)
+      note "$f: first mention is the full name"
+      ;;
+    *)
+      finding "$f" '<first mention>' "the first $SHORT_NAME is not followed by Transparency (next 40 characters: [$(printf '%s' "$AFTER" | cut -c1-40)]) - D-021: the first mention on a surface carries the full name"
+      ;;
+  esac
+done <<EOF
+$IDENTITY_FILES
+EOF
+note "identity files carrying an accented mention: $WITH_MENTION of $IDENTITY_COUNT"
+# I-028 canary. If NO identity file matched, the accent match itself has broken
+# - a locale, an encoding or a mangled checkout - and every assertion above
+# stopped discriminating while still reporting zero findings. That degenerate
+# run must not be reported as clean. Zero means FAIL here, so the `:-0` is the
+# safe direction (I-031).
+if [ "${WITH_MENTION:-0}" -eq 0 ]; then
+  fatal "no identity file contains $SHORT_NAME at all - the accent match has broken and assertion 4 discriminated nothing (I-028)."
+fi
+
+# ------------------------------------------------- 5. the closed world -------
+printf '\n5. closed world - every packaged file naming the product is declared\n'
+git rev-parse --verify HEAD >/dev/null 2>&1 || fatal 'no git HEAD - the packaged scope cannot be resolved.'
+ARCHIVE_LIST=$(git archive --format=tar HEAD 2>/dev/null | tar -tf - 2>/dev/null)
+ARCHIVE_RC=$?
+if [ "$ARCHIVE_RC" -ne 0 ] || [ -z "$ARCHIVE_LIST" ]; then
+  fatal "git archive HEAD produced nothing (exit $ARCHIVE_RC) - an empty archive would pass every closed-world check through the back door."
+fi
+PACKAGED_MATCHED=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '/$' 2>/dev/null)
+PKG_RC=$?
+[ "$PKG_RC" -ge 2 ] && grep_fatal "$PKG_RC" 'directory entries' 'the archive listing'
+printf '%s\n' "$PACKAGED_MATCHED" | grep -v '^$' > "$WORKDIR/scope" 2>/dev/null
+
+# Early-warning half: untracked, non-ignored files that are not under an
+# export-ignored root. Roots are read from .gitattributes; `git check-attr` is
+# NOT usable here, verified 2026-08-23 - it reports nothing for a file inside a
+# directory whose DIRECTORY entry carries the attribute, which is exactly how
+# every root below is written.
+IGNORED_ROOTS=''
+if [ -r .gitattributes ]; then
+  IGNORED_ROOTS=$(grep -E '^/[^[:space:]]+[[:space:]]+export-ignore' .gitattributes 2>/dev/null | sed 's|^/||' | sed 's|[[:space:]].*$||')
+  IGN_RC=$?
+  [ "$IGN_RC" -ge 2 ] && grep_fatal "$IGN_RC" 'export-ignore roots' .gitattributes
+fi
+UNTRACKED_ADDED=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  _skip=no
+  while IFS= read -r r; do
+    [ -n "$r" ] || continue
+    case "$f" in "$r" | "$r"/*) _skip=yes ;; esac
+  done <<EOF
+$IGNORED_ROOTS
+EOF
+  [ "$_skip" = yes ] && continue
+  printf '%s\n' "$f" >> "$WORKDIR/scope"
+  UNTRACKED_ADDED=$((UNTRACKED_ADDED + 1))
+done <<EOF
+$(git ls-files --others --exclude-standard 2>/dev/null)
+EOF
+
+sort -u "$WORKDIR/scope" > "$WORKDIR/sorted" && mv "$WORKDIR/sorted" "$WORKDIR/scope"
+SCOPE_COUNT=$(wc -l < "$WORKDIR/scope" | tr -d ' ')
+note "packaged at HEAD plus $UNTRACKED_ADDED untracked candidate(s) = $SCOPE_COUNT file(s) in scope"
+if [ "${SCOPE_COUNT:-0}" -eq 0 ]; then
+  fatal 'the packaged scope listed 0 files - the result proves nothing (I-007).'
+fi
+
+NAMING=0
+UNREADABLE=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  if [ -r "$f" ]; then
+    _src=$f
+  else
+    _src="$WORKDIR/blob"
+    git show "HEAD:$f" > "$_src" 2>/dev/null || { UNREADABLE=$((UNREADABLE + 1)); continue; }
+  fi
+  LC_ALL=C grep -qIE "$PRODUCT_ERE" "$_src" 2>/dev/null
+  _rc=$?
+  [ "$_rc" -ge 2 ] && grep_fatal "$_rc" "$PRODUCT_ERE" "$f"
+  [ "$_rc" -eq 0 ] || continue
+  NAMING=$((NAMING + 1))
+  _declared=no
+  while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    [ "$f" = "$d" ] && _declared=identity
+  done <<EOF
+$IDENTITY_FILES
+EOF
+  if [ "$_declared" = no ]; then
+    while IFS= read -r d; do
+      [ -n "$d" ] || continue
+      [ "$f" = "$d" ] && _declared=prose
+    done <<EOF
+$PROSE_ONLY
+EOF
+  fi
+  case "$_declared" in
+    identity) note "$f: names the product - declared IDENTITY" ;;
+    prose)    note "$f: names the product - declared PROSE-ONLY" ;;
+    *)        finding "$f" '<undeclared>' 'packaged file names the product but is declared neither as an identity file nor as prose-only - declare it in tests/bin/identity-strings, or stop naming the product in it (I-024)' ;;
+  esac
+done < "$WORKDIR/scope"
+
+[ "$UNREADABLE" -gt 0 ] && note "$UNREADABLE packaged path(s) readable from neither the working tree nor HEAD"
+
+# I-028 canary, the other direction: if NOTHING in the packaged tree names the
+# product, the matcher has broken and the closed world enclosed nothing while
+# still reporting zero findings. Zero means FAIL, so `:-0` is the safe
+# direction here too (I-031).
+if [ "${NAMING:-0}" -eq 0 ]; then
+  fatal 'no packaged file names the product at all - the matcher has broken and the closed world enclosed nothing (I-028).'
+fi
+
+# A declared identity file that is not packaged is a real regression, but it is
+# a finding rather than a FATAL: the scan itself still discriminated.
+while IFS= read -r d; do
+  [ -n "$d" ] || continue
+  if ! grep -qxF "$d" "$WORKDIR/scope" 2>/dev/null; then
+    finding "$d" '<not packaged>' 'declared as an identity file but absent from the packaged scope - either it stopped shipping, or the declaration has rotted'
+  fi
+done <<EOF
+$IDENTITY_FILES
+EOF
+
+# ----------------------------------------------------------------- summary ---
+printf '\n=========================================================================================================\n'
+printf 'identity files checked: %s · prose-only declared: %s · packaged files naming the product: %s · findings: %s\n' \
+  "$IDENTITY_COUNT" "$PROSE_COUNT" "$NAMING" "$FINDINGS"
+printf '=========================================================================================================\n'
+
+if [ "$FINDINGS" -eq 0 ]; then
+  # The colour token is passed as its own conversion, never glued to the word
+  # that follows it: a format specifier followed immediately by lowercase
+  # letters reads to a spell checker as ONE token, which is how `snone` and
+  # `smention` ended up as entries in .cspell-project-words.txt. Keeping the
+  # literal in its own argument costs nothing and adds no dictionary entry.
+  printf '%s%s%s\n' "$C_OK" 'identity-strings: clean' "$C_OFF"
+  exit 0
+fi
+printf '%s%s%s%s%s\n' "$C_BAD" 'identity-strings: ' "$FINDINGS" ' finding(s)' "$C_OFF"
+exit 1

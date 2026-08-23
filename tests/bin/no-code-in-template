@@ -39,6 +39,13 @@
 # a FINDING, never a skip (I-007). Scopes come from `find` and `tar -t`, never
 # from a shell glob, which would silently miss dotfiles (I-019).
 #
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
 # Usage: tests/bin/no-code-in-template   (run from anywhere; it cd's to the repo root)
 
 set -u
@@ -139,7 +146,9 @@ else
 fi
 
 printf 'packaged: %s entries\n' "$PACKAGED"
-if [ "$PACKAGED" -eq 0 ]; then
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${PACKAGED:-0}" -eq 0 ]; then
   finding '<packaged>' '0' 'the packaged tree listed 0 entries - the result proves nothing'
 fi
 
@@ -182,7 +191,9 @@ printf '\nscope 2 (early warning): working tree of %s\n' "$REPO_ROOT"
 printf '          pruned: %s\n' "$PRUNED"
 printf '          not authoritative: export-ignore legitimately keeps files out of the release\n'
 printf 'working: %s files\n' "$WORKING"
-if [ "$WORKING" -eq 0 ]; then
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${WORKING:-0}" -eq 0 ]; then
   finding '<working>' '0' 'the working tree listed 0 files - the result proves nothing'
 fi
 

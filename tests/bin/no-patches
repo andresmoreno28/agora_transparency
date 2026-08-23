@@ -27,6 +27,13 @@
 # An empty scope, a missing tool or an unreadable file is a FAILURE, never a
 # skip (I-007). Every exclusion is printed on every run; there are none today.
 #
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
 # Usage: tests/bin/no-patches   (run from anywhere; it cd's to the repo root)
 
 set -u
@@ -161,7 +168,9 @@ printf 'keys:       extra.patches, extra.patches-file, extra.enable-patching, re
 printf 'patch vectors checked: %s\n' "$VECTORS"
 printf 'exclusions: none - prose about patching is out of scope, not excluded (see the header)\n'
 
-if [ "$SCANNED" -eq 0 ]; then
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${SCANNED:-0}" -eq 0 ]; then
   printf 'findings:   n/a\n'
   printf '\nFAILURE: 0 files scanned - an empty scope proves nothing (I-007).\n'
   exit 1

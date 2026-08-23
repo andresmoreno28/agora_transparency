@@ -43,10 +43,14 @@ this point.**
 
 ## Requirements
 
-* A **Drupal CMS 2.x** site — the Drupal CMS recipes Ágora builds on are constrained to `^2`, and
-  that line runs on Drupal core 11.
+* **A plain Drupal site, not a Drupal CMS one.** The installation flow below starts from
+  `drupal/recommended-project` — a bare Drupal core 11 codebase — and it is Ágora's own
+  `composer.json` that pulls in the Drupal CMS recipes it composes, all constrained to `^2`. You do
+  not need a Drupal CMS site to begin; you end up with one because Ágora requires its pieces.
 * **PHP:** whatever your Drupal CMS version requires. Ágora adds no constraint of its own; there is
-  no `php` entry in its `composer.json`.
+  no `php` entry in its `composer.json`. Drupal core `11.4.5` itself needs PHP `8.3`–`8.5` and
+  Composer `2.3.6` or later — see [Toolchain floor](#toolchain-floor) below for where those figures
+  come from and what else was measured alongside them.
 * Composer. [DDEV](https://ddev.com) is recommended for a local environment; see
   [DDEV's installation instructions](https://docs.ddev.com/en/stable/users/install).
 
@@ -91,8 +95,12 @@ ddev composer require --update-with-all-dependencies "drupal/agora_transparency:
 
 Composer places the template in `recipes/agora_transparency`, outside the docroot. The
 `allow-plugins` line is needed because Ágora depends on `drupal/site_template_helper`, the Composer
-plugin that generates the blank theme; without it, Composer will stop and ask. Check that the
-package arrived:
+plugin that generates the blank theme; without it, Composer will stop and ask. That is an
+install-UX finding, stated honestly rather than smoothed over: without this step the `blank` theme
+is never generated, while `recipe.yml` both installs it and pins it as the site's default theme, so
+the install fails later for a reason this step does not make obvious. It is resolved for good once
+Ágora's theme becomes its own project, `drupal/agora_theme` (see the table above) — until then,
+this step stays mandatory, not optional. Check that the package arrived:
 
 ```shell
 test -d ./recipes/agora_transparency && echo present
@@ -113,6 +121,19 @@ ddev drush site:install --yes recipes/agora_transparency
 
 Once the site is installed, `ddev exec drush status` reports `Drupal bootstrap : Successful`. Those
 two checks — the directory and the bootstrap line — are the whole of what "it worked" means here.
+
+### What a clean install actually does
+
+This is the strongest thing this project can currently say about itself, so it is measured, not
+described. Against a real, clean Drupal `11.4.5` on 2026-08-23, from a clone of the canonical
+repository at `git.drupalcode.org` — not the working copy, so this is what an end user receives, not
+what a developer has — applying the recipe produced **78 steps** and
+`[OK] Ágora Transparency applied successfully`, exit 0. The resulting site: Drupal
+bootstrap **Successful**, front page **HTTP 200**, the generated `blank` theme set as the site
+default, the front page pointed at the Canvas page the recipe creates, and **58** non-core modules
+enabled. With the test suite copied in as described in the next section,
+`phpunit --fail-on-empty-test-suite` reported **`Tests: 3, Assertions: 38`** — the same counts the
+CI pipeline reports.
 
 Once Ágora is published on Drupal.org, the clone and the `repository add` line are replaced by a
 plain `ddev composer require drupal/agora_transparency`, and this section will say so.
@@ -151,6 +172,19 @@ CI workflow passes it for the same reason. Any `ddev composer` command run after
 re-mirrors the path repository and deletes the tests again, so keep the copy as the last step
 before you run them.
 
+## What it ships
+
+The package a user receives — through the path-repository clone above, or later through a real
+Composer release — is eight entries: `AGENTS.md`, `LICENSE.txt`, `README.md`, `composer.json`,
+`content/`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. That is not a partial list; it is
+what the clean-install evidence above found on disk after Composer mirrored the package.
+
+**Tests do not ship, on purpose.** `/tests` is `export-ignore`d in
+[`.gitattributes`](.gitattributes) — an end user of a site template has no use for its test suite —
+so it is absent from every installed copy, not only from a tagged release. See
+["Running the tests against an installed package"](#running-the-tests-against-an-installed-package)
+above for what that means in practice and how to run them anyway, deliberately, when you need to.
+
 ## What the template applies
 
 Recipes, in the order `recipe.yml` applies them:
@@ -180,6 +214,29 @@ building pages.
 * **`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
   installed site.
 * **No demo content**, beyond the empty home page.
+
+## Toolchain floor
+
+What each platform this project is developed or gated on actually provides — measured, not
+reasoned about. A tool that silently changes behaviour between platforms is the kind of defect that
+fails *green*: the failure looks like a pass until someone runs it somewhere else.
+
+| Platform | Status |
+|---|---|
+| Windows dev host (MSYS2 / Git for Windows) | GNU grep **3.0**; `grep -IFin` returns **rc 134 (SIGABRT)** — combining `-F` with `-i` aborts it. `jq` 1.8.2, Python 3.12.6, PHP 8.4.24 **ZTS**, Composer 2.10.2. Windows Python defaults to **cp1252**, so any script opening a repository file needs `encoding='utf-8'` explicitly — the product is named *Ágora*, and the `Á` breaks the default. |
+| WSL2 Ubuntu 24.04 | `docker-ce` **28.1.1**, DDEV **1.24.4**. This is where the clean-install smoke above actually runs, and it is DDEV's own recommended Windows setup. |
+| drupalcode CI runner | `jq`, `python3`, `curl`, `git` and `composer` all present — verified by the invariants job passing its preflight, after this project predicted some might be missing and was wrong. |
+| macOS | **NOT MEASURED.** Ships BSD grep, not GNU grep, so its `-Fin` behaviour, its exit-status semantics and its handling of the patterns this repository's scripts use are all open questions. |
+
+Any platform not in this table, or listed with a gap in it, is **NOT MEASURED** — never a plausible
+guess. That is the entire point of keeping the table at all.
+
+Drupal itself has a floor independent of the row above: core `11.4.5` needs PHP `8.3`–`8.5` and
+Composer `2.3.6` or later.
+
+`tests/bin/doctor` is how a machine gets checked against all of this. Run it before trusting
+anything else on a new host, and trust its output over this table: a table decays, a probe does
+not.
 
 ## Continuous integration
 

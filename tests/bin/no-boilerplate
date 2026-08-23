@@ -34,6 +34,13 @@
 #   - a scope that cannot be read (no git, no HEAD) is a FAILURE, never a skip
 #     (I-007: an exit 0 without counts proves nothing).
 #
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
 # Usage: tests/bin/no-boilerplate   (run from anywhere; it cd's to the repo root)
 
 set -u
@@ -69,7 +76,17 @@ drupal_cms_site_template_base
 EOF
 )
 
-TERM_COUNT=$(printf '%s\n' "$DENY_TERMS" | grep -cve '^$')
+# T-321(a), house rule 1: `wc -l`, never `grep -c`. This value feeds the
+# TERM_COUNT == 0 guard further down, and `grep -c` prints NOTHING on rc >= 2 -
+# a blank would make `[ "" -eq 0 ]` exit 2, skip the branch, and walk straight
+# past the very guard T-320(a) added (I-031). `wc -l` cannot emit a non-number.
+TERM_MATCHED=$(printf '%s\n' "$DENY_TERMS" | grep -ve '^$')
+TERM_RC=$?
+if [ "$TERM_RC" -eq 0 ]; then
+  TERM_COUNT=$(printf '%s\n' "$TERM_MATCHED" | wc -l | tr -d ' ')
+else
+  TERM_COUNT=0
+fi
 
 FINDINGS=0
 SCANNED=0
@@ -157,6 +174,11 @@ fi
 ENTRIES=$(printf '%s\n' "$ARCHIVE_LIST" | wc -l | tr -d ' ')
 # Directory entries end in `/` and have no content to scan; files are the scope.
 PACKAGED_FILES=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '/$')
+# T-321(a) EXEMPTION, stated so it is not mistaken for an oversight: this is the
+# one `grep -c` left in this file, and it is DISPLAY-ONLY - FILE_COUNT feeds the
+# scope line below and nothing else. It never reaches a `[` test, so a blank
+# cannot skip a guard here. The real counter, SCANNED, is built in control flow,
+# and TERM_COUNT is `wc -l` above.
 FILE_COUNT=$(printf '%s\n' "$PACKAGED_FILES" | grep -cve '^$')
 
 printf '\nscope resolved from `git archive HEAD` (%s):\n' "$(git rev-parse --short HEAD)"
@@ -290,7 +312,12 @@ assert_grep_ok
 # was the only one of the seven invariants without this guard, even though the
 # CONTRACT at the top of this file already promises it. Match the other six:
 # SCANNED == 0 is a FAILURE, never a clean run over nothing (I-007).
-if [ "$SCANNED" -eq 0 ]; then
+#
+# T-321(b): the input is defaulted. Zero means FAIL here, which is the SAFE
+# direction of I-031 - a blank would make `[` exit 2 and the guard would be
+# stepped over rather than tripped. Do not copy this `:-0` to a guard where
+# zero means PASS.
+if [ "${SCANNED:-0}" -eq 0 ]; then
   printf '\n%sFATAL:%s scanned 0 files - the scope collapsed to nothing.\n' "$C_BAD" "$C_OFF"
   printf 'A scan of nothing is not a clean result (I-007).\n'
   exit 1
@@ -302,8 +329,10 @@ fi
 # as SCANNED can. A run with no terms would still scan every file, find
 # nothing to match anything against, and print `deny-list terms: 0 - findings:
 # 0`, exit 0 - a clean-looking result for a scan that had nothing to look for.
-# TERM_COUNT == 0 is a FAILURE for the same reason SCANNED == 0 is (I-007).
-if [ "$TERM_COUNT" -eq 0 ]; then
+# TERM_COUNT == 0 is a FAILURE for the same reason SCANNED == 0 is (I-007), and
+# T-321(b) defaults its input for the same reason as the guard above: zero means
+# FAIL here, so `:-0` trips the guard instead of letting a blank step over it.
+if [ "${TERM_COUNT:-0}" -eq 0 ]; then
   printf '\n%sFATAL:%s deny-list terms: 0 - the scope collapsed to nothing.\n' "$C_BAD" "$C_OFF"
   printf 'A scan with no deny-list terms is not a clean result (I-007).\n'
   exit 1

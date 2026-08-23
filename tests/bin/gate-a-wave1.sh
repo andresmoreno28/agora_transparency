@@ -14,6 +14,12 @@
 #     JSON) is a FAIL, never a skip. I-007: an exit 0 without counts proves
 #     nothing.
 #
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
 set -u
@@ -84,21 +90,38 @@ jq_raw() { # <filter> <file>
 # string that the caller could not tell from a count. Both readers now return a
 # sentinel naming the exit status, exactly like jq_raw() above: the check FAILS
 # with a legible reason instead of comparing an invisible value.
+#
+# T-321(a), house rule 1: the count itself is now produced by `wc -l` over the
+# matched lines, never by `grep -c`. The sentinel above covers the rc >= 2 path,
+# but only where a caller remembers to read it; `wc -l` removes the failure mode
+# instead of guarding it, because it cannot emit a non-number at all. Values are
+# unchanged - grep prints exactly one line per matching line, so counting its
+# output lines and counting its matches are the same number.
 grep_count() { # <ERE> <file>
   _f=$2
   [ -f "$_f" ] || { printf '<%s absent>' "$_f"; return; }
-  _n=$(grep -cE "$1" "$_f" 2>/dev/null)
+  _matched=$(grep -E "$1" "$_f" 2>/dev/null)
   _rc=$?
   [ "$_rc" -ge 2 ] && { printf '<grep exit %s on %s>' "$_rc" "$_f"; return; }
+  if [ "$_rc" -eq 0 ]; then
+    _n=$(printf '%s\n' "$_matched" | wc -l | tr -d ' ')
+  else
+    _n=0
+  fi
   printf '%s' "$_n"
 }
 
 grep_count_fixed() { # <fixed string> <file>
   _f=$2
   [ -f "$_f" ] || { printf '<%s absent>' "$_f"; return; }
-  _n=$(grep -cF "$1" "$_f" 2>/dev/null)
+  _matched=$(grep -F "$1" "$_f" 2>/dev/null)
   _rc=$?
   [ "$_rc" -ge 2 ] && { printf '<grep exit %s on %s>' "$_rc" "$_f"; return; }
+  if [ "$_rc" -eq 0 ]; then
+    _n=$(printf '%s\n' "$_matched" | wc -l | tr -d ' ')
+  else
+    _n=0
+  fi
   printf '%s' "$_n"
 }
 
@@ -246,10 +269,18 @@ group 'G4 - Structural invariants (mirrors the kit RequirementsTest)'
 SCANNED=$(scan_files | wc -l | tr -d ' ')
 note "scope: package tree without .git/ vendor/ node_modules/ - $SCANNED files scanned"
 check 'files scanned > 0'          "$([ "$SCANNED" -gt 0 ] && echo 'yes' || echo 'no')" 'yes'
-INFOYML=$(scan_files | grep -c '\.info\.yml$' 2>/dev/null)
+# T-321(a), house rule 1: `wc -l` over the matched lines, never `grep -c`.
+# rc 1 means "none" and yields 0; rc >= 2 printed nothing and yields the
+# sentinel, which cannot be mistaken for a count.
+INFO_MATCHED=$(scan_files | grep '\.info\.yml$' 2>/dev/null)
 INFO_RC=$?
-# rc 1 means "none", and grep -c already printed the 0. rc >= 2 printed nothing.
-[ "$INFO_RC" -ge 2 ] && INFOYML="<grep exit $INFO_RC on the file list>"
+if [ "$INFO_RC" -ge 2 ]; then
+  INFOYML="<grep exit $INFO_RC on the file list>"
+elif [ "$INFO_RC" -eq 0 ]; then
+  INFOYML=$(printf '%s\n' "$INFO_MATCHED" | wc -l | tr -d ' ')
+else
+  INFOYML=0
+fi
 check '*.info.yml files'           "$INFOYML" '0'
 if [ "$INFOYML" != "0" ]; then
   scan_files | grep '\.info\.yml$' | sed 's/^/      | /'
@@ -361,15 +392,30 @@ do
   # Prefix anchored at the start: 'tests/' matches 'tests/...' and the directory
   # entry 'tests/'; 'CLAUDE.md' matches the exact file entry.
   EXC_RE=$(printf '%s' "$excluded" | sed 's/[.[\*^$\/]/\\&/g')
-  HITS=$(printf '%s\n' "$ARCHIVE_LIST" | grep -c "^$EXC_RE" 2>/dev/null)
+  # rc 1 = no such entry, which is the clean answer and counts as 0.
+  # rc >= 2 printed nothing, and the `${HITS:-0}` these lines used to carry would
+  # have turned that empty string into the number 0: a grep that never ran
+  # PASSING this check, which is the exact defect T-316 repairs. The sentinel
+  # makes it FAIL and names it.
+  #
+  # T-321(a)/(b): the count now comes from `wc -l`, so HITS can never be blank,
+  # and the `:-0` defaults are GONE from both lines below on purpose. This is an
+  # EXPECT-ZERO site - zero means PASS - which is precisely where I-031 says a
+  # `:-0` is dangerous rather than safe: it would convert a blank into a green.
+  # With `wc -l` producing the number and the sentinel producing the error, a
+  # blank cannot arise; and if one ever did, an empty string is not "0", so the
+  # check FAILS loudly instead of passing.
+  HITS_MATCHED=$(printf '%s\n' "$ARCHIVE_LIST" | grep "^$EXC_RE" 2>/dev/null)
   HITS_RC=$?
-  # rc 1 = no such entry, and grep -c already printed the 0 - the clean answer.
-  # rc >= 2 printed nothing, and `${HITS:-0}` below would have turned that empty
-  # string into the number 0: a grep that never ran PASSING this check, which is
-  # the exact defect T-316 repairs. The sentinel makes it FAIL and names it.
-  [ "$HITS_RC" -ge 2 ] && HITS="<grep exit $HITS_RC on the archive list>"
-  check "NOT packaged: $excluded" "${HITS:-0}" '0'
-  if [ "${HITS:-0}" != "0" ]; then
+  if [ "$HITS_RC" -ge 2 ]; then
+    HITS="<grep exit $HITS_RC on the archive list>"
+  elif [ "$HITS_RC" -eq 0 ]; then
+    HITS=$(printf '%s\n' "$HITS_MATCHED" | wc -l | tr -d ' ')
+  else
+    HITS=0
+  fi
+  check "NOT packaged: $excluded" "$HITS" '0'
+  if [ "$HITS" != "0" ]; then
     printf '%s\n' "$ARCHIVE_LIST" | grep "^$EXC_RE" | sed 's/^/      | LEAKS INTO THE RELEASE: /'
   fi
 done
@@ -384,8 +430,15 @@ for included in \
   screenshot.webp \
   LICENSE.txt
 do
-  FOUND=$(printf '%s\n' "$ARCHIVE_LIST" | grep -cx -F "$included" 2>/dev/null)
+  # T-321(a), house rule 1. Expect-PRESENT site: the `${FOUND:-0}` further down
+  # STAYS, because here zero means FAIL (absent) - the safe direction of I-031.
+  FOUND_MATCHED=$(printf '%s\n' "$ARCHIVE_LIST" | grep -x -F "$included" 2>/dev/null)
   FOUND_RC=$?
+  if [ "$FOUND_RC" -eq 0 ]; then
+    FOUND=$(printf '%s\n' "$FOUND_MATCHED" | wc -l | tr -d ' ')
+  else
+    FOUND=0
+  fi
   if [ "$FOUND_RC" -ge 2 ]; then
     check "packaged: $included" "<grep exit $FOUND_RC on the archive list>" 'present'
   else

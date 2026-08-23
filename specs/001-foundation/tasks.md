@@ -816,7 +816,7 @@ Sign here: `[ ]`
       `gate-a-wave3.sh` still 28 checks · 0 failures on a clean tree; the two silent passes at
       `c3dc9f5` now FAIL (`61 checks · 1 failures`, exit 1); **clean-path output byte-identical
       to `c3dc9f5`** across all invariants. Verified independently by `orquestador` 2026-08-22.
-- [ ] **T-317** · Determine whether the `-Fin` abort, and the toolchain assumptions generally, hold
+- [✓ 2026-08-23] **T-317** · Determine whether the `-Fin` abort, and the toolchain assumptions generally, hold
       on **every platform this project is developed or gated on** — Docker was unavailable on
       2026-08-21, so this is **unverified in every direction** and must not be assumed either way.
       Three platforms are in play, not two:
@@ -835,6 +835,15 @@ Sign here: `[ ]`
       a no-op on one platform is a no-op nobody sees.
       **Blocked by D-019.**
 
+      *Evidence:* the README's toolchain floor table records **four** platforms from measurement,
+      not reasoning: the Windows dev host (GNU grep **3.0**, `-IFin` → rc **134**; jq 1.8.2, Python
+      3.12.6 defaulting to **cp1252**, PHP 8.4.24 ZTS, Composer 2.10.2), **WSL2 Ubuntu 24.04**
+      (docker-ce 28.1.1, DDEV 1.24.4 — where the smoke runs), the **drupalcode runner** (jq, python3,
+      curl, git, composer all present — verified by the invariants job passing preflight after we
+      predicted they might be missing and were **wrong**), and **macOS: NOT MEASURED**, stated as
+      such because it ships BSD grep and every question about it is open.
+      Drupal-side floor recorded: core 11.4.5, PHP 8.3–8.5, Composer 2.3.6.
+      One line says `tests/bin/doctor` beats the table — a table decays, a probe does not.
 - [✓ 2026-08-22] **T-318** · Close the two survivors of T-316, both of the I-028 shape.
       **(a)** `gate-a-wave3.sh` now asserts `no-boilerplate`'s deny-term count positive, parsed
       through the existing `extract_count` helper from the invariant's own summary — **not pinned
@@ -893,7 +902,7 @@ Sign here: `[ ]`
       > exists for that path here (hardcoded pattern, in-memory input), so it is **not** a finding.
       > It is the fifth appearance of the I-028 class and is escalated as a pattern, not patched
       > as an instance: **T-321**.
-- [ ] **T-321** · 🔒 **Pattern escalation, unit 002 — deliberately NOT wave 3 work.** Five times
+- [✓ 2026-08-23] **T-321** · 🔒 **Pattern escalation, unit 002 — deliberately NOT wave 3 work.** Five times
       now the same class has surfaced in a different place (`-Fin` no-op → fallback zeros →
       expect-zero gate checks → the deny-term counter → blank-vs-zero). Each individual patch was
       correct; the recurrence is the finding. Stop patching sites and close the class by
@@ -910,7 +919,20 @@ Sign here: `[ ]`
       input; a blank injected into any counter produces a loud failure, never a skipped guard;
       `gate-a-wave1.sh` still 61 · 0 and `gate-a-wave3.sh` still 29 · 0 on a clean tree, with
       clean-path output byte-identical to the commit before the sweep.
-- [ ] **T-322** · `tests/bin/identity-strings` — the guard D-021 chose **instead of** a deny term,
+      *Evidence:* 10 `grep -c` sites inventoried, **7 converted** to `wc -l` (every one feeding a
+      comparison), **3 left and annotated in place** so they are not read as oversights — one is
+      display-only, and two are probes where `grep -c` **is the subject being tested** and the
+      comparison is against a string, where a blank fails loudly rather than skipping a branch.
+      Numeric guards defaulted **only where zero means FAIL** — I-031's safe direction. Guards where
+      zero means PASS were deliberately left undefaulted, and **two pre-existing `${HITS:-0}` in
+      `gate-a-wave1.sh`'s expect-zero packaging check were removed**: that is precisely where `:-0`
+      turns a blank into a green.
+      Two blank injections, on different scripts, each shown before and after: `no-boilerplate`'s
+      term count and `no-code-in-template`'s packaged count both went from **exit 0 with a summary
+      printed** to **exit 1 with none**.
+      House rules written once into the shared contract block that eight scripts already point at.
+      Clean-path output byte-identical apart from file counts that moved because T-322 added a file.
+- [✓ 2026-08-23] **T-322** · `tests/bin/identity-strings` — the guard D-021 chose **instead of** a deny term,
       because "the identity strings are correct" is naturally **expect-present**, whose degenerate
       value is `no` and never `yes` (I-028).
       Single source of truth at the top: `FULL_NAME='Ágora Transparency'`,
@@ -949,6 +971,23 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
 
 ## Wave 4 · Install smoke and closure
 
+      *Evidence:* `identity files checked: 5 · prose-only declared: 2 · packaged files naming the
+      product: 7 · findings: 0`, exit 0. Five dirty cases, each reverted: bare `Ágora` in
+      `recipe.yml` → 2 findings (assertions 1 and 4 both fire); descriptions diverged → 1 with both
+      values printed; README's first mention made bare → 1; an **undeclared new packaged file** →
+      scope 11→12, naming 7→8, 1 finding; an identity file deleted → FATAL with **0 summary lines**.
+      `gate-a-wave3.sh` **33 → 35**.
+      > **One place the spec was interpreted rather than transcribed, flagged not hidden.**
+      > Assertion 4 as written is line-oriented, and `AGENTS.md`'s first mention is a blockquote
+      > where the full name **wraps across a newline** — so a literal implementation reports a
+      > finding against correct prose, and the tempting repair (a hand-placed line break) is exactly
+      > the rot D-021 exists to prevent. Implemented on a normalised stream instead: leading `>`/`#`
+      > dropped, whitespace collapsed, then assert the text after the first `Ágora` begins with
+      > ` Transparency`.
+      > **And `git check-attr export-ignore` turned out unusable** for deriving the packaged set: it
+      > reports nothing for a file inside a directory whose *directory* entry carries the attribute,
+      > which is how all nine roots are written — 60 files against the archive's 11. The
+      > authoritative half stays `git archive HEAD`.
 - [✓ 2026-08-23] **T-401** · Clean install smoke: `sql:drop` + reinstallation, verifying that the template
       appears in the selector. *Success:* a capture or output that demonstrates it.
       > **Note (rider [andres] 2026-08-21):** *"the clean-install assertion runs in
@@ -1003,10 +1042,19 @@ fail with garbage inside, it is useless. Silencing an invariant to pass = automa
       on a site where the Ágora recipe has not been applied.
       *Original text:* Extend `InstallTest`/`ValidationTest` with Ágora's key routes.
       *Success:* number of tests and assertions reported, > 0.
-- [ ] **T-403** · Project README **in English** (public docs in English, D-005): what it is, how it is
+- [✓ 2026-08-23] **T-403** · Project README **in English** (public docs in English, D-005): what it is, how it is
       installed, what it ships.
       > **Note 2026-08-21:** superseded in wave 3 by **T-310**; T-403 keeps whatever is left over
       > for wave 4.
+      *Evidence:* the README now carries **what it ships** (the eight packaged entries, and that
+      `/tests` is `export-ignore`d and never travels), **what a clean install actually does**
+      (78 steps, `[OK] … applied successfully`, front page 200, blank theme, Canvas front page, 58
+      non-core modules, `Tests: 3, Assertions: 38`), and the **`allow-plugins` install-UX finding**
+      stated honestly rather than smoothed over.
+      The Requirements section is corrected: it claimed the flow starts from a Drupal CMS 2.x site,
+      when the verified flow starts from `drupal/recommended-project` and Ágora's own
+      `composer.json` is what pulls the Drupal CMS `^2` recipes in. A previous lane had flagged this
+      and left it.
 - [ ] **T-404** · `orquestador` audit (read-only): standards, SBOM, licences, marketplace
       requirements. *Success:* verdict with no open 🔴.
 - [ ] **T-405** · Promote the unit's lessons to `IDIOMS.md`.

@@ -31,6 +31,13 @@
 # clean. That case is FATAL and prints NO summary line - a summary line is a
 # claim about a completed scan, and such a scan did not complete.
 #
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
 # Usage: tests/bin/cited-tasks-exist   (run from anywhere; it cd's to the repo root)
 
 set -u

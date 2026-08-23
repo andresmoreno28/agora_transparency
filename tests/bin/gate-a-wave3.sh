@@ -2,17 +2,19 @@
 #
 # gate-a-wave3.sh - Agora - Unit 001, wave 3 gate A verification.
 #
-# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the NINE
+# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the TEN
 # invariants that exist on disk today - the tasks.md "Gate A wave 3" block
 # still loops over only four (no-unstable-deps no-patches no-secrets
 # sbom-check); no-code-in-template, no-ci-allow-dev, no-boilerplate,
-# no-blind-phpunit and cited-tasks-exist landed later (T-307, T-308 area,
-# T-309, T-214, T-223) and are exercised by no gate runner at all. Closing
+# no-blind-phpunit, cited-tasks-exist and identity-strings landed later (T-307,
+# T-308 area, T-309, T-214, T-223, T-322) and are exercised by no gate runner at
+# all. Closing
 # wave 3 on the stale four-item loop would close it on a stale gate. This
 # script is that missing runner (T-313).
 #
 # Check count, stated so a silent change is impossible: 14 preflight + 17
-# invariant checks = 31 before T-223; G9 adds 2, for 33.
+# invariant checks = 31 before T-223; G9 (cited-tasks-exist, T-223) adds 2, for
+# 33; G10 (identity-strings, T-322) adds 2, for 35.
 #
 # Contract (mirrors gate-a-wave1.sh on purpose - one house style):
 #   - every check prints:  obtained | expected | OK/FAIL
@@ -33,13 +35,20 @@
 # that only checks presence would wave that stub through and every invariant
 # that needs python3 (sbom-check) would fail later with a confusing error
 # instead of a clear, loud preflight failure. This script EXERCISES every
-# tool the nine invariants actually call (a real, minimal invocation whose
+# tool the ten invariants actually call (a real, minimal invocation whose
 # output or exit code is checked), not merely locates it.
 #
 # sbom-check needs the network (queries updates.drupal.org). If the network is
 # unavailable, sbom-check's own preflight fails loudly and this gate reports
 # it as a FAILING invariant - it never skips it (see the sbom-check group
 # below; there is no special-casing here).
+#
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
 #
 # Usage: tests/bin/gate-a-wave3.sh   (run from anywhere; it cd's to the repo root)
 
@@ -115,7 +124,7 @@ printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 printf '=========================================================================================================\n'
 
 # ------------------------------------------------------------- G0 preflight --
-# I-026: EXERCISE every tool the nine invariants actually call, do not merely
+# I-026: EXERCISE every tool the ten invariants actually call, do not merely
 # locate it with `command -v`. Each check runs a real, minimal invocation and
 # compares its actual output or exit code - a resolvable-but-broken stub
 # (like the python3 case above) fails here, loudly, instead of surfacing as a
@@ -132,6 +141,10 @@ check 'python3 (python3 -c pass, exit)' "$(python3 -c 'pass' >/dev/null 2>&1; ec
 check 'curl (curl --version, exit)'  "$(curl --version >/dev/null 2>&1; echo $?)" '0'
 check 'git (rev-parse --is-inside-work-tree)' "$(git rev-parse --is-inside-work-tree 2>&1)" 'true'
 check 'find (find . -maxdepth 0, exit)' "$(find . -maxdepth 0 >/dev/null 2>&1; echo $?)" '0'
+# T-321(a) EXEMPTION: this `grep -c` is the SUBJECT of the probe, not a counter
+# feeding a guard - the whole point is to find out whether this host's grep can
+# still count. It is compared as a STRING against '1', so a blank fails loudly
+# instead of being stepped over the way a numeric test would be.
 check 'grep (printf a | grep -c a)' "$(printf 'a' | grep -c a 2>&1)" '1'
 check 'sort (printf b\na | sort)'   "$(printf 'b\na' | sort | tr '\n' ',' 2>&1)" 'a,b,'
 check 'wc (printf a\nb | wc -l)'    "$(printf 'a\nb\n' | wc -l | tr -d ' ' 2>&1)" '2'
@@ -162,7 +175,7 @@ run_invariant() { # <path>
 }
 
 # extract_count <output> <ERE for "label:">  -> last matching integer, or ''.
-# The seven scripts do not share one wording for their scope/scanned line
+# The ten scripts do not share one wording for their scope/scanned line
 # (see the per-group comments below), so each group passes the exact ERE that
 # matches what that script actually prints, read from its own summary line.
 #
@@ -344,6 +357,31 @@ if [ -x "$INV" ]; then
 else
   check 'cited-tasks-exist present'        "$(trunc "$INV" 24)" 'present'
   check_positive 'cited-tasks-exist (citations)' ''
+fi
+
+# ---------------------------------------------------- G10 - identity-strings (T-322) --
+group 'G10 - identity-strings'
+INV=tests/bin/identity-strings
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary line: "identity files checked: N - prose-only declared: N -
+  # packaged files naming the product: N - findings: N". Its scope metric is the
+  # number of PACKAGED FILES NAMING THE PRODUCT, not the identity-file count:
+  # the latter is a constant read straight back out of the script's own
+  # declaration and would stay 5 even if the scan reached nothing, while the
+  # former is derived by the scan and collapses to zero the moment the matcher
+  # or the archive listing breaks.
+  #
+  # That collapse is FATAL inside the invariant, which prints NO summary line in
+  # that case, so the parse below legitimately yields nothing and check_positive
+  # FAILS - the intended outcome, not a gap (same shape as G9).
+  CNT=$(extract_count "$INV_OUT" 'naming the product:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^identity files checked:' | tail -1)"
+  check 'identity-strings (exit)'          "$INV_RC" '0'
+  check_positive 'identity-strings (naming the product)' "$CNT"
+else
+  check 'identity-strings present'         "$(trunc "$INV" 24)" 'present'
+  check_positive 'identity-strings (naming the product)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

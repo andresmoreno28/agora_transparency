@@ -56,6 +56,13 @@
 #   findings: <M>            - each printed as  path:line  reason
 #   exit 0 iff M == 0
 #
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
 # Usage: tests/bin/sbom-check   (run from anywhere; it cd's to the repo root)
 
 set -u
@@ -310,14 +317,23 @@ fi
 
 # --------------------------------------------------- packages to be checked --
 PROJECTS=$(jq -r '(.require // {}) | keys[] | select(startswith("drupal/")) | sub("^drupal/"; "")' "$MANIFEST" | tr -d '\r')
-PROJECT_COUNT=$(printf '%s\n' "$PROJECTS" | grep -c '[^[:space:]]')
-PC_RC=$?
+# T-321(a), house rule 1: `wc -l` over the matched lines, never `grep -c`.
 # grep -c prints its count AND exits 1 when that count is zero, which the I-007
 # guard below handles. rc >= 2 prints nothing at all, and an empty PROJECT_COUNT
-# would make that guard compare an empty string instead of a number.
+# would make that guard compare an empty string instead of a number - `[` would
+# exit 2 and the guard would be stepped over, not tripped (I-031). The rc is
+# still read and still fatal; `wc -l` additionally makes the blank impossible.
+PROJECT_MATCHED=$(printf '%s\n' "$PROJECTS" | grep '[^[:space:]]')
+PC_RC=$?
 [ "$PC_RC" -ge 2 ] && fatal "grep failed (exit $PC_RC) counting the drupal/* entries of $MANIFEST"
+if [ "$PC_RC" -eq 0 ]; then
+  PROJECT_COUNT=$(printf '%s\n' "$PROJECT_MATCHED" | wc -l | tr -d ' ')
+else
+  PROJECT_COUNT=0
+fi
 
-if [ "$PROJECT_COUNT" -eq 0 ]; then
+# T-321(b): defaulted because zero means FAIL here - the safe direction (I-031).
+if [ "${PROJECT_COUNT:-0}" -eq 0 ]; then
   printf '\nsbom-check\n\nscope:      %s (require, drupal/* entries)\n' "$MANIFEST"
   printf 'scanned:    0 file(s)\nfindings:   n/a\n'
   printf '\nFAILURE: no drupal/* package found in require - an empty scope proves nothing (I-007).\n'
@@ -484,7 +500,9 @@ else
 fi
 printf 'exclusions: none - every drupal/* entry in require is queried\n'
 
-if [ "$QUERIED" -eq 0 ] || [ "$SCANNED" -eq 0 ]; then
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${QUERIED:-0}" -eq 0 ] || [ "${SCANNED:-0}" -eq 0 ]; then
   printf 'findings:   n/a\n'
   printf '\nFAILURE: nothing was queried - an empty scope proves nothing (I-007).\n'
   exit 1

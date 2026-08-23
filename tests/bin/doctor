@@ -68,6 +68,13 @@
 # (xargs appears only in a gate-a-wave1.sh comment describing what T-316
 # removed, not in live code).
 #
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
 # Usage: tests/bin/doctor   (run from anywhere; it cd's to the repo root)
 
 set -u
@@ -358,6 +365,9 @@ done <<< "$CERTIFIED_PLATFORMS"
 # ===================================================== 2. Required tools ---
 group '2. Required tools (grep, jq, python3, curl, git, composer)'
 
+# T-321(a) EXEMPTION, same reasoning as gate-a-wave3.sh: `grep -c` is the
+# SUBJECT of this probe, not a counter feeding a guard, and report_tool compares
+# it as a STRING against '1' - a blank fails loudly, never silently.
 GREP_GOT=$(printf 'a' | grep -c a 2>&1)
 if report_tool grep 'grep (printf a | grep -c a)' "$GREP_GOT" '1'; then GREP_OK=yes; else GREP_OK=no; fi
 

@@ -55,8 +55,11 @@
 # `git grep` only sees tracked files, so an offender written and never
 # `git add`ed would pass invisibly.
 #
-# House rules paid for the hard way (T-321 sweeps older scripts for these;
-# this one is born clean):
+# House rules paid for the hard way (T-321 has now swept the older scripts for
+# these; this one was born clean). The CANONICAL copy of the block lives in the
+# header of tests/bin/no-ci-allow-dev - this restatement is kept, not replaced by
+# a pointer, because it is the worked example the canonical block was derived
+# from. Keep the two in step:
 #   - `wc -l`, never `grep -c`, for any value that feeds a numeric
 #     comparison. `grep -c` prints blank on rc >= 2, and `[ "" -eq 0 ]` exits
 #     2 ("integer expression expected") - the branch is not taken and

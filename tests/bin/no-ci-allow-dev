@@ -30,6 +30,42 @@
 #   findings: M, each printed as  path:line  reason
 #   exit 0 if and only if M == 0
 #
+# ======================================================================
+# HOUSE RULES for tests/bin/ - THE CANONICAL COPY (T-321(c)).
+# Every other script here points at this block instead of restating it, so
+# the next invariant inherits the rules rather than rediscovering them. The
+# same five defects arrived five times in five different files (the `-Fin`
+# no-op, fallback zeros, expect-zero gate checks, the deny-term counter,
+# blank-vs-zero); these rules delete the failure mode instead of guarding
+# each new instance of it.
+#
+#   1. `wc -l`, NEVER `grep -c`, for any value that feeds a comparison.
+#      `grep -c` prints NOTHING on rc >= 2, and a blank left-hand side makes
+#      `[ "" -eq 0 ]` exit 2 with "integer expression expected" - the branch
+#      is simply NOT TAKEN and execution walks straight past the guard
+#      (I-031). `wc -l` cannot print a non-number, so the guard cannot be
+#      skipped. `grep -c` is allowed only where the value is DISPLAYED and
+#      never compared, and each such site says so on the line.
+#
+#   2. Default every numeric guard input whose zero means FAIL:
+#      `[ "${X:-0}" -eq 0 ] && FATAL`. Read I-031 before copying this: the
+#      same three characters are safe where 0 means FAIL and DANGEROUS where
+#      0 means PASS. A guard written `[ "$FINDINGS" -eq 0 ] && exit 0` must
+#      NEVER be defaulted - there a blank would be converted into a green.
+#      Ask what `0` DOES at that line, never what it looks like.
+#
+#   3. A `grep` exit status >= 2 is an ERROR, never "no match" (I-027).
+#      Read the status, and turn it into a FATAL or into a sentinel string
+#      that cannot collide with a legitimate value - never into a count.
+#
+#   4. Never combine `-F` and `-i` in one grep: GNU grep 3.0, shipped by
+#      Git for Windows/MSYS2, SIGABRTs on that pair (rc 134) and prints
+#      nothing at all on stderr (I-027).
+#
+#   5. An invariant that cannot scan FATALs and prints NO summary line: the
+#      closing metrics line is a claim about a scan that happened (I-029).
+# ======================================================================
+#
 # The scan reads the WORKING TREE with `find`, never `git grep` and never a
 # shell glob: `git grep` only sees tracked files, so an offender written and
 # never `git add`ed would pass invisibly, and globs do not match dotfiles at all
@@ -130,7 +166,9 @@ printf '\nscope:    working tree of %s\n' "$REPO_ROOT"
 printf '          pruned: %s\n' "$PRUNED"
 printf 'scanned:  %s files\n' "$SCANNED"
 
-if [ "$SCANNED" -eq 0 ]; then
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${SCANNED:-0}" -eq 0 ]; then
   finding '<scope>' '0' 'the scan found 0 files in scope - the result proves nothing'
 fi
 
@@ -156,7 +194,9 @@ while IFS= read -r f; do
 done < "$ALL_LIST"
 printf '  mentions in scope: %s\n' "$MENTIONS"
 
-if [ "$MENTIONS" -eq 0 ] && [ "$SCANNED" -gt 0 ]; then
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${MENTIONS:-0}" -eq 0 ] && [ "${SCANNED:-0}" -gt 0 ]; then
   # tests/src/Kernel/RequirementsTest.php reads the variable by design and T-406
   # forbids touching it, so at least one mention must always exist. Zero means
   # the scan did not reach the tree it claims to police.
