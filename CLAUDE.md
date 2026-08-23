@@ -129,8 +129,8 @@ Canonical layout: skill `drupal-site-template` + the research in `specs/001-foun
 
 ## Where the work happens — read this before touching anything
 
-**There is exactly ONE working copy, and it is this repository on Windows:**
-`C:\Users\andresmrubio\Documents\projects\agora`. All editing, committing and pushing happens here.
+**There is exactly ONE working copy: the Windows checkout you are already in.**
+There is no other. All editing, committing and pushing happens here.
 Remotes: **`drupalcode`** (canonical, `git.drupalcode.org/project/agora_transparency`) and
 **`github`** (read-only mirror, D-016). **There is deliberately no remote named `origin`**, so a
 bare `git push` fails loudly instead of reaching the mirror by accident.
