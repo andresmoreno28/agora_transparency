@@ -23,7 +23,7 @@ Three properties that govern every technical decision you make:
 2. Verify that what the task assumes **really exists**: files, paths, config, modules.
 3. If it diverges → **STOP and report**. Do not "adapt" the task so that it fits. The divergence is
    valuable information; forcing it is how a signed plan gets broken.
-4. Read `CLAUDE.md` and `specs/000-proyecto/DECISIONES.md` if you are going to touch dependencies or structure.
+4. Read `CLAUDE.md` and `specs/000-project/DECISIONS.md` if you are going to touch dependencies or structure.
 
 ## Real structure of the template (verified 2026-08-20)
 
@@ -50,7 +50,7 @@ tests/src/{Functional,Kernel}/
 | Stable only | No dev, no alpha, no beta, no rc. No relaxed `minimum-stability` |
 | No patches | No `composer-patches` and no `patches` section |
 | No pins | `^1.2`, never `1.2.3` |
-| Every dependency, justified | Its line in `DECISIONES.md` **in the same change**, not afterwards |
+| Every dependency, justified | Its line in `DECISIONS.md` **in the same change**, not afterwards |
 | Secrets never | Not in recipes, not in config, not in demo content, not in docs, not in git |
 | AI degrades | With no API key the site **installs and works**. CI runs with no keys (I-003) |
 | Tooling | Composer for PHP · **pnpm exclusively** for JS (neither npm nor yarn, not in docs or CI either) |
@@ -93,7 +93,7 @@ You deliver **diff + how to verify**. The gate is run by the `/wave` flow and au
 ## Red flags — STOP and report
 
 - You are about to write `-beta`, `-alpha`, `-rc`, `dev-` or an exact version in `composer.json`
-- You are about to add a module "and justify it later" in DECISIONES
+- You are about to add a module "and justify it later" in DECISIONS
 - You are about to put a real key, token or endpoint into something versioned
 - You are about to touch a file your task does not mention
 - The task assumes something that does not exist on disk and you are about to create it on your own

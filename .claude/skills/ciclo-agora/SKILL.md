@@ -25,7 +25,7 @@ the main session executes them with `desarrollador` and `tester`.
 
 ## Reconciliation pass — always, up front
 
-1. Read `CLAUDE.md`, `specs/000-proyecto/plan.md`, `DECISIONES.md`, `IDIOMS.md`.
+1. Read `CLAUDE.md`, `specs/000-project/plan.md`, `DECISIONS.md`, `IDIOMS.md`.
 2. Read `plan.md` + `tasks.md` of the active unit (the highest-numbered one with unsigned tasks).
 3. Verify **on disk**: branch, clean/dirty tree, last tag, last signed task `[✓]`,
    **next free D-NNN**.

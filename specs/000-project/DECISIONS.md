@@ -38,7 +38,7 @@
 
 ## Framing of pending decisions — prepared [ejecutor] 2026-08-20
 
-> After the research `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
+> After the research `specs/001-foundation/research/2026-08-20-estado-del-arte.md`.
 > None is closed without [andres]'s signature. ★ = recommendation from [ejecutor].
 > Next free D-NNN verified on disk: **D-011**.
 
@@ -256,7 +256,7 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   (a) The mechanical translation is executed **now**, in its own commit
       (`docs: translate process layer to English`), **with no semantic changes**. Any ambiguity that
       could alter meaning is **escalated, never resolved silently**.
-  (b) For `DECISIONES.md` and `IDIOMS.md` the translation **does not violate append-only**: the whole
+  (b) For `DECISIONS.md` and `IDIOMS.md` the translation **does not violate append-only**: the whole
       file is translated with a header note (date, *"semantic content unchanged"*), and the Spanish
       original is preserved in git history as the signed record.
   (c) **New entries are written directly in English** from this decision onward.
@@ -289,7 +289,7 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   The token `D-018` sits in the **first cell of every row** as a technical requirement: `sbom-check`
   (T-304/T-306) matches "short package name + a `D-[0-9]{3}` token on the same line".
 
-  *Why ONE decision and not nine:* rule 2 of `CLAUDE.md` asks for *"a line in `DECISIONES.md`"* per
+  *Why ONE decision and not nine:* rule 2 of `CLAUDE.md` asks for *"a line in `DECISIONS.md`"* per
   contrib module, not a decision per module. Seven of the nine are the base recipes that the starter
   kit itself composes — they are not choices Ágora made.
 
@@ -433,9 +433,12 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
 - **D-020** · **Interim CI: GitHub is an execution surface, never an authority — and tests reach the
   package under test by being copied in, not by being shipped.**
   Signed 2026-08-22 by **[ejecutor] under the explicit delegation of [andres]**
-  (*"aquí dejo a tu elección según lo que hemos hablado qué firmar y qué arreglar"*). Recorded this
+  <!-- cspell:disable -->(*"aquí dejo a tu elección según lo que hemos hablado qué firmar y qué arreglar"*)<!-- cspell:enable -->. Recorded this
   way deliberately: [andres] delegated the choice, he did not write this text, and the record must
   not imply otherwise.
+  *Spell-check rider (D-024):* the quotation above is a verbatim record of a delegation by [andres].
+  It is scoped out of the spell check rather than declared as vocabulary, and **must not be
+  reworded, translated or corrected**.
 
   *Context:* Ágora's canonical remote does not exist yet (`git.drupalcode.org/api/v4/projects/
   project%2Fagora_transparency` → 404). Throughout unit 001 the **only** remote, and the only place
@@ -541,14 +544,17 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   separately and on its own evidence.
 
   *Consequence for the record, stated so nobody edits it:* the **Gate B wave 1** signature in
-  `specs/001-fundacion/tasks.md` — `[✓ 2026-08-21 andres]`, *"visible identity 'Ágora'"* — **is not
+  `specs/001-foundation/tasks.md` — `[✓ 2026-08-21 andres]`, *"visible identity 'Ágora'"* — **is not
   edited.** It recorded what was true and decided on 2026-08-21. Its package-name half stands; its
   identity half is superseded by this amendment and by D-021.
 
 - **D-021** · **Naming coherence: identity strings carry the full name, prose keeps the short form.**
-  Signed 2026-08-22 by **[ejecutor] under [andres]'s explicit delegation** (*"cambia lo que tengas
-  que cambiar para que todo esté en sintonía y no haya malentendidos"*). [andres] raised the risk
+  Signed 2026-08-22 by **[ejecutor] under [andres]'s explicit delegation** <!-- cspell:disable -->(*"cambia lo que tengas
+  que cambiar para que todo esté en sintonía y no haya malentendidos"*)<!-- cspell:enable -->. [andres] raised the risk
   and delegated the fix; he did not write this text.
+  *Spell-check rider (D-024):* the quotation above is a verbatim record of a delegation by [andres].
+  It is scoped out of the spell check rather than declared as vocabulary, and **must not be
+  reworded, translated or corrected**.
 
   *The rule:* **a string whose job is to name the product to someone who has no other context
   carries the full name `Ágora Transparency`. A string that refers back to a product already named
@@ -599,9 +605,12 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
 - **D-022** · **Canonical git topology and the first push.** Replaces the framing of earlier the
   same day, whose option A is **withdrawn**: it rested on the belief that pushing any branch would
   produce a pipeline. That belief is **false** (see (6)), and [andres] ruled 2026-08-22:
-  *"la metodología de git que utiliza toda la comunidad de Drupal … haz primer push en la rama
-  principal y luego crea las ramas que consideres."* Clauses (1)-(6) are signed **[ejecutor] under
+  <!-- cspell:disable -->*"la metodología de git que utiliza toda la comunidad de Drupal … haz primer push en la rama
+  principal y luego crea las ramas que consideres."*<!-- cspell:enable --> Clauses (1)-(6) are signed **[ejecutor] under
   his delegation**; the three reserved acts are marked 👤.
+  *Spell-check rider (D-024):* the quotation above is a verbatim ruling by [andres]. It is scoped
+  out of the spell check rather than declared as vocabulary, and **must not be reworded,
+  translated or corrected**.
 
   *Context:* `project/agora_transparency` exists, repository **empty — 0 branches, 0 commits**, and
   `default_branch: main` points at a ref that does not exist.
@@ -671,6 +680,103 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
 
   **Never `--force` to either remote.** If `git ls-remote` ever disagrees with local `1.x`, stop and
   report; do not reconcile with a force push.
+- **D-023** · **A green pipeline is not a green gate: the validate stage becomes blocking, and gate A
+  is redefined as a statement about the job list.** Signed by [andres] 2026-08-23.
+
+  *Context, observed not assumed — pipeline `933270`, ref `1.x`:* seven jobs ran, **`cspell` FAILED**,
+  and the pipeline reported `success` in 309s. Four of the seven carry `allow_failure: true` by
+  upstream default. Non-negotiable rule 9 (*"a red CI pipeline blocks everything else"*) and D-006
+  (*"nothing advances with the pipeline red"*) therefore describe, for `phpcs`, `phpstan`, `eslint`
+  and `cspell`, a state that **cannot occur**.
+
+  **(1) The mechanism is a documented variable, not an override.** `_ALL_VALIDATE_ALLOW_FAILURE`
+  (`include.drupalci.variables.yml:127-129`): *"set to 0 for not allowing any failure."* Each validate
+  job carries a three-rule ladder (cspell at `include.drupalci.main.yml:1290-1294`) whose second rule
+  matches `== "0"` and sets `allow_failure: false`. **No job is redefined, copied or overridden; the
+  `include:` block is unchanged. T-202's amended criterion is untouched.**
+
+  **(2) Per-job `'1'` beats the global `'0'`** — the ladder is ordered and rule 1 matches on the
+  per-job variable alone. That asymmetry is what makes a scoped, named, dated exception expressible.
+
+  **(3) Precedent, both halves.** Fifteen actively-maintained contrib projects read 2026-08-23:
+  **zero** set this variable; the contrib norm is to *disable* checks (`devel`: `SKIP_CSPELL: 1`;
+  `ai`: `SKIP_ESLINT: 1`, `SKIP_STYLELINT: 1`, a nine-entry `_CSPELL_IGNORE_PATHS`). **Drupal core
+  does the opposite:** in `core/.gitlab-ci.yml` @ `11.x`, Spell-checking, PHPCS and PHPStan carry
+  **no `allow_failure` key at all** — GitLab's default `false`. Ágora follows core, not contrib: a
+  transparency template whose linters cannot fail is not defensible at review.
+
+  **(4) Accepted cost, stated before the benefit.** Blocking `phpcs`/`phpstan` means **upstream can
+  turn our branch red with no commit from us**: `$_GITLAB_TEMPLATES_REF` is an instance variable we
+  cannot read or pin (D-022(6)). A new sniff or a bumped `_PHPSTAN_LEVEL` default arrives
+  unannounced. This is precisely why the fifteen contrib projects decline. **We pay it.** It is the
+  price of rule 9 meaning something.
+
+  **(5) The variable alone is insufficient — gate A is redefined.** Even with all seven blocking, a
+  job that **never ran** still yields a green pipeline (I-040): `skip-*-rule` and the
+  `php-files-exist` guards can silently reduce N, and `stylelint` and `twig-cs-fixer` are absent from
+  the observed seven for exactly that reason. **Amended rule, superseding rule 9's second sentence
+  and D-006 on this point:**
+  > *Gate A on drupalcode is green when, and only when: the pipeline's **job list** is read from the
+  > API; `jobs >= 7`; every job's `status == "success"`; and every job's `allow_failure == false`
+  > except those named in a dated, owned exception in `.gitlab-ci.yml`. **`jobs: 0` is a failure, not
+  > "nothing to report."** The pipeline's own status field is never the evidence.*
+
+  **(6) `cspell` is exempted temporarily, with an owner and an exit gate.** `_CSPELL_ALLOW_FAILURE:
+  '1'` **changes no behaviour** — cspell is already non-blocking by an inheritance stated nowhere.
+  The line converts an *invisible* exception into a *stated* one, and because the global is now `'0'`
+  it is the **only** thing keeping cspell permissive, so it cannot be forgotten silently. Owner
+  **T-226**; deleting the line is the exit gate. A fully-blocking cspell today was considered and
+  rejected by the wave-1 rider: it would leave the public canonical branch deliberately red for the
+  duration of the triage, and *"a tolerated red degrades the gate"*.
+
+- **D-024** · **The cspell corpus: rename the Spanish, declare the vocabulary, scope the quotations —
+  never dump the artifact.** Signed by [andres] 2026-08-23.
+
+  *Context:* the cspell job reported **495 occurrences** over the **clone** (`export-ignore` is
+  irrelevant — I-021, I-033). The number that governs the work is the one the job itself computed and
+  saved as an artifact: **146 distinct unrecognised words**, read from
+  `_cspell_unrecognized_words.txt` of pipeline `933270` rather than estimated (I-037).
+
+  **(1) Declaring the Spanish dictionary is IMPOSSIBLE on this runner. The earlier ★ was wrong.**
+  Verified 2026-08-23: the job runs Drupal core's cspell install; `@cspell/cspell-bundled-dicts`
+  declares **59 dictionaries and no `@cspell/dict-es-es`** — the only natural-language dicts are
+  `dict-en_us`, `dict-en-gb-mit` and `dict-en-common-misspellings`. `"language": "en,es"` resolves to
+  no dictionary. Vendoring a Spanish word list is mechanically possible and **rejected**: shipping a
+  Spanish dictionary inside a site template to pass a spell check is not defensible at review. The
+  error corrected is asserting a capability without checking the installation — **I-042**.
+
+  **(2) No project `.cspell.json`.** The job honours one (`main.yml:1303-1309`), but the documented
+  variables cover everything we need, and a custom file both freezes us against upstream improvements
+  to `assets/.cspell.json` and triggers a `[WARNING]` banner if it omits any default flagged word
+  (`prepare-cspell.php:168-173`). We use `.cspell-project-words.txt` (the default value of
+  `_CSPELL_DICTIONARY`, registered only if the file exists) plus `_CSPELL_EXTRA`.
+
+  **(3) The 146 decompose into four buckets, and only one of them is a word list.**
+
+| Bucket | ~ | Treatment | Why it is honest |
+|---|---|---|---|
+| British-English spellings — `behaviour`, `licence`, `colour`, `organisation`, `artefacts`, `normalise` | 30 | **`_CSPELL_EXTRA: '--locale en,en-GB'`**; `dict-en-gb-mit` **is** bundled | We do write British English. Declaring the actual language of the text is not silencing a check |
+| Project vocabulary and proper nouns — `Ágora`, `Andrés`, `drupalcode`, `gitaly`, `caresphere`, plus our own shell/Python identifiers | 75 | `.cspell-project-words.txt`, **one justified line each** | The file's documented purpose |
+| Spanish identifiers — `proyecto`, `fundacion`, `decisiones`, `contenido`, `publicacion`, `tema` | 40 | **Rename the paths to English** | A standing violation of **D-017** (*"the ENTIRE repository is in English"*) that cspell has now made public. The token leaves the corpus; nothing is declared |
+| Real misspellings | ≥ 2 | **Fix them** | `encontro` coexists with `encontró`, `fundacion` with `fundación`. This is the bucket that justifies the exercise |
+
+  **(4) Explicitly forbidden.** `_CSPELL_IGNORE_PATHS` covering `specs/`, `CLAUDE.md`, `AGENTS.md` or
+  `.claude/` — those are our own English prose, D-017 puts them in scope, and excluding them would
+  delete the fourth bucket without looking at it. And copying `_cspell_updated_project_words.txt`
+  (the job's own "your dictionary plus everything that just failed") over the word list: **one
+  command to green, and an automatic 🔴**. Every line entering that file must survive the question
+  *"why is this a word this project legitimately uses?"*
+
+  **(5) Scope of the rename, bounded deliberately.** Only `specs/000-proyecto/` → `specs/000-project/`,
+  `specs/001-fundacion/` → `specs/001-foundation/`, `DECISIONES.md` → `DECISIONS.md`, with their
+  references swept — **including four shell scripts** that hard-code the paths
+  (`gate-a-wave1.sh`, `gate-a-wave3.sh`, `no-boilerplate`, `sbom-check`, whose T-306(g) clause names
+  `DECISIONES.md`). **Not renamed:** `.claude/agents/*` (their filenames are `subagent_type` names —
+  a functional change), `.claude/commands/decisiones.md` (renaming it changes the `/decisiones`
+  command), the four Spanish skill directories, and the not-yet-started unit directories
+  `002-base-tema` etc. Those go in the word list as signed identifiers, and `[ejecutor]` is pinned by
+  non-negotiable rule 7. The remaining inconsistency is **recorded rather than half-fixed**.
+
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21

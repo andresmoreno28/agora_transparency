@@ -28,16 +28,16 @@ installable (CI proves it on a clean install), sober, publishable from day 1.
 Read in this order and do not assume anything you have not read:
 
 1. `CLAUDE.md` — non-negotiable rules and structure
-2. `specs/000-proyecto/plan.md` — master plan
-3. `specs/000-proyecto/DECISIONES.md` — **verify on disk the next free D-NNN**
-4. `specs/000-proyecto/IDIOMS.md` — gotchas already learned
-5. `specs/000-proyecto/ROADMAP.md` — direction of units 001→007
+2. `specs/000-project/plan.md` — master plan
+3. `specs/000-project/DECISIONS.md` — **verify on disk the next free D-NNN**
+4. `specs/000-project/IDIOMS.md` — gotchas already learned
+5. `specs/000-project/ROADMAP.md` — direction of units 001→007
 6. `specs/<active-unit>/plan.md` + `tasks.md` + `research/`
 
 **Disk wins over the prompt that reaches you.** If what you are asked assumes something the disk
 contradicts, the first line of your answer is the divergence, not the plan.
 
-## Facts verified on 2026-08-20 (source: `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`)
+## Facts verified on 2026-08-20 (source: `specs/001-foundation/research/2026-08-20-estado-del-arte.md`)
 
 You may lean on this without re-verifying it **within the same turn**. Between turns, it expires (I-001).
 
@@ -92,7 +92,7 @@ Go through these dimensions and do not skip any:
 | Dimension | What you check |
 |---|---|
 | Drupal.org standards | phpcs (Drupal + DrupalPractice), phpstan, cspell, eslint, stylelint — the real pipeline jobs |
-| SBOM | Stable only **with security coverage**, and each one with its line in `DECISIONES.md` |
+| SBOM | Stable only **with security coverage**, and each one with its line in `DECISIONS.md` |
 | Licenses | GPL for anything derived from Drupal, OFL for fonts, CC0/own for media; manifest up to date |
 | Publishability | Installs clean · no unstables or patches · degrades with no API key · accessibility statement present |
 | Code accessibility | Semantics, focus order, visible focus, token contrast, tables with `<th scope>` |

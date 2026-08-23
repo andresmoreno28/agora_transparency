@@ -50,11 +50,11 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
 - [✓ 2026-08-21] **T-107** · Signatures for D-007, D-008, D-011, D-012, D-013, D-014 + amendments to `plan.md` §2 and
       `CLAUDE.md` §Structure, **in a single commit** (rider D-011a + rider D-014b).
       *Success:* `git show --stat HEAD` lists exactly 3 files;
-      `grep -c 'recipes/agora_base' specs/000-proyecto/plan.md` = 0;
-      `grep -c 'D-014' specs/000-proyecto/DECISIONES.md` ≥ 1.
+      `grep -c 'recipes/agora_base' specs/000-project/plan.md` = 0;
+      `grep -c 'D-014' specs/000-project/DECISIONS.md` ≥ 1.
 - [✓ 2026-08-21] **T-108** · Append I-011…I-017 to `IDIOMS.md`.
-      *Success:* `grep -cE '^- I-01[1-7]' specs/000-proyecto/IDIOMS.md` = 7; no previous line deleted.
-- [✓ 2026-08-21] **T-109** · Dated research `specs/001-fundacion/research/2026-08-21-flujo-tema-y-marketplace.md`.
+      *Success:* `grep -cE '^- I-01[1-7]' specs/000-project/IDIOMS.md` = 7; no previous line deleted.
+- [✓ 2026-08-21] **T-109** · Dated research `specs/001-foundation/research/2026-08-21-flujo-tema-y-marketplace.md`.
       *Success:* ≥ 6 source URLs cited and the 4 conclusions recorded.
 - [✓ 2026-08-21] **T-110** · 🔒 **T-106 is declared DEFERRED** to unit 002: it is redefined there against
       **D-014=B** (integrate the `drupal/agora_theme` theme as a dependency, not generate it in this
@@ -79,9 +79,9 @@ Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
       repository root; `shasum -a 256 screenshot.webp` differs from
       `98363dd5a77e8374d33666d2bbf905f15229a7c1aca9e82fc7c37542b3e02f1c` (the placeholder);
       the blockers table records this debt as closed. Signed off visually by 👤 [andres].
-- [✓ 2026-08-21] **T-115** · Amend D-008 in `DECISIONES.md` with the real `Plugin.php` code, and record D-009
-      and D-018. *Success:* `grep -c 'D-018' specs/000-proyecto/DECISIONES.md` >= 1;
-      `grep -c 'onPackageInstall' specs/000-proyecto/DECISIONES.md` >= 1.
+- [✓ 2026-08-21] **T-115** · Amend D-008 in `DECISIONS.md` with the real `Plugin.php` code, and record D-009
+      and D-018. *Success:* `grep -c 'D-018' specs/000-project/DECISIONS.md` >= 1;
+      `grep -c 'onPackageInstall' specs/000-project/DECISIONS.md` >= 1.
       > **Note:** added after wave 1's gate A closed (61 checks / 0 failures). It is a
       > process-layer task: it touches no artefact the wave 1 gate measures, so it does not
       > reopen that gate.
@@ -364,8 +364,8 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
 - [ ] **T-216** · The record for this turn, in one commit: sign **D-020** (a/b/c/d); append the
       T-202 criterion rider; append **I-032…I-035**; the risk-status update under `plan.md` §7; the
       gate A job list in `CLAUDE.md`.
-      *Success:* `grep -c 'D-020' specs/000-proyecto/DECISIONES.md` ≥ 1;
-      `grep -cE '^- I-03[2-5]' specs/000-proyecto/IDIOMS.md` = 4; no line deleted from either file.
+      *Success:* `grep -c 'D-020' specs/000-project/DECISIONS.md` ≥ 1;
+      `grep -cE '^- I-03[2-5]' specs/000-project/IDIOMS.md` = 4; no line deleted from either file.
 
       *Evidence — run `32583207616`, `3af759e`, branch `ci/prove-empty-suite-fails`, conclusion
       `failure`, `gh run watch --exit-status` → **1**:* `No tests executed!` ×1;
@@ -460,7 +460,7 @@ Sign here: `[ ]`
 - [✓ 2026-08-21] **T-303** · `tests/bin/no-secrets` over the whole repo except `.git/`.
       *Success:* it detects a fake key injected in `config/` and another in `content/`.
 - [✓ 2026-08-21] **T-304** · `tests/bin/sbom-check` against `updates.drupal.org` (method in research §10.4).
-      *Success:* it requires stable + `<security covered="1">` + a line in `DECISIONES.md`; it fails if one is missing.
+      *Success:* it requires stable + `<security covered="1">` + a line in `DECISIONS.md`; it fails if one is missing.
 - [✓ 2026-08-21] **T-305** · All four print scope, number of files scanned and number of findings.
       *Success:* none reports "0 files scanned".
 - [✓ 2026-08-21] **T-306** · **Amendment to the T-304 method** (`sbom-check`): the endpoint returns **HTTP 200
@@ -468,7 +468,7 @@ Sign here: `[ ]`
       (a) check the network at startup and **fail loudly if there is none** — "skip" forbidden;
       (b) parse the XML; (c) require `<title>` and the absence of `<error>`; (d) take as stable the
       first release without `dev|alpha|beta|rc`; (e) require `<security covered="1">` in that release;
-      (f) check `<core_compatibility>`; (g) require a `D-NNN` line in `DECISIONES.md` for each
+      (f) check `<core_compatibility>`; (g) require a `D-NNN` line in `DECISIONS.md` for each
       `drupal/*` in `require`.
       *Success:* with the real `require` → exit 0 and it prints
       `N projects queried · N with coverage · 0 findings`; with a non-existent project
@@ -501,7 +501,7 @@ Sign here: `[ ]`
       > **Note [ejecutor] 2026-08-21:** signed on **post-T-315 evidence**. The original 0 findings
       > were produced by `no-boilerplate` while it was a no-op (see T-315 / I-027). Re-verified
       > after the repair: 18 scanned, 7 deny terms, 0 findings. The four relative links
-      > (`LICENSE.txt`, `screenshot.webp`, `specs/`, `specs/000-proyecto/DECISIONES.md`) were
+      > (`LICENSE.txt`, `screenshot.webp`, `specs/`, `specs/000-project/DECISIONS.md`) were
       > resolved on disk; 2 external links (`ddev.com`) were not fetched.
 
 - [✓ 2026-08-21] **T-311** · `tests/bin/sbom-check`: normalise CRLF at the three tool-output

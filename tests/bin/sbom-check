@@ -7,7 +7,7 @@
 #   - the project exists and is published,
 #   - it has a stable release,
 #   - that release carries <security covered="1">,
-#   - and there is a line in specs/000-proyecto/DECISIONES.md that carries both a
+#   - and there is a line in specs/000-project/DECISIONS.md that carries both a
 #     D-NNN token and the qualified name `drupal/<short>` (CLAUDE.md rule 2: no
 #     dependency without a justification recorded in the same change).
 #
@@ -77,7 +77,7 @@ fi
 ENDPOINT="https://updates.drupal.org/release-history"
 MANIFEST="composer.json"
 LOCK="composer.lock"
-DECISIONS="specs/000-proyecto/DECISIONES.md"
+DECISIONS="specs/000-project/DECISIONS.md"
 
 fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
 
@@ -126,7 +126,7 @@ FINDINGS_FILE="$WORKDIR/findings"
 GREP_ERR_FILE="$WORKDIR/grep-errors"
 : > "$GREP_ERR_FILE"
 
-SCANNED=2   # composer.json + DECISIONES.md
+SCANNED=2   # composer.json + DECISIONS.md
 
 # Findings are appended to a file and counted from it at report time, never
 # accumulated in a variable that a subshell could silently drop. One finding is
@@ -139,7 +139,7 @@ count_findings() {
   wc -l < "$FINDINGS_FILE" | tr -d '[:space:]'
 }
 
-# The D-NNN justification for a package: the first line of DECISIONES.md that
+# The D-NNN justification for a package: the first line of DECISIONS.md that
 # carries BOTH a D-NNN token AND the qualified package name `drupal/<short>`.
 # Prints the `<line>:<content>` grep hit, or nothing.
 #
@@ -405,7 +405,7 @@ PARSED
     CORE_SHOWN="n/a"
   fi
 
-  # (i) a line in DECISIONES.md carrying both a D-NNN token and the package.
+  # (i) a line in DECISIONS.md carrying both a D-NNN token and the package.
   DEC_HIT=$(decision_line "$project")
   if [ -n "$DEC_HIT" ]; then
     WITH_DECISION=$((WITH_DECISION + 1))

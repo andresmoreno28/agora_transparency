@@ -31,7 +31,7 @@ feature list:
 | Editorial workflow and freedom-of-information requests | unit 004 |
 | AI assistant with citations, and configuration auditing | unit 005 |
 
-The full intended scope is written down in `specs/000-proyecto/plan.md` in this repository.
+The full intended scope is written down in `specs/000-project/plan.md` in this repository.
 
 ## Accessibility
 
@@ -146,7 +146,7 @@ open rather than tidied away before release.
 * **Decisions are signed before they are implemented.** Every load-bearing choice — the package
   name, the recipe architecture, where the theme lives, the dependency policy, the publication
   route — is recorded as a numbered, append-only entry in
-  [`specs/000-proyecto/DECISIONES.md`](specs/000-proyecto/DECISIONES.md) and approved by a human
+  [`specs/000-project/DECISIONS.md`](specs/000-project/DECISIONS.md) and approved by a human
   before any code depends on it. Signed entries are never rewritten: they are amended or superseded.
 * **Work is planned in units and waves.** Each unit under [`specs/`](specs/) carries a plan, an
   explicit task list and a verification gate that has to pass with real counts — an exit code of

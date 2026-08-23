@@ -1,6 +1,6 @@
 # Ágora · State of the art — 2026-08-20
 
-> Research from the DISPATCH-00 reconciliation pass (unit 001-fundación).
+> Research from the DISPATCH-00 reconciliation pass (unit 001-fundacion).
 > I-001 applies: **every statement here expires**. Re-verify before building on top.
 > Author: [ejecutor]. Capture date: **2026-08-20**.
 

@@ -74,7 +74,7 @@ number of findings**, and each finding with `file:line`.
 | `no-unstable-deps` | `-dev`, `-alpha`, `-beta`, `-rc`, `dev-` in constraints; `minimum-stability` other than `stable` | `composer.json`, `composer.lock` | **Exclude** the starter kit: it is copied, not declared (research §3.1) |
 | `no-patches` | `patches`, `composer-patches`, `patches-file` key | `composer.json` | Literal prohibition from the kit |
 | `no-secrets` | `api[_-]?key`, `secret`, `token`, `passwd`, `password`, `Bearer `, DSNs, private keys | the whole repo except `.git/` | Must also run over `config/` and `content/` |
-| `sbom-check` | For each `drupal/*` in `require`: queries `updates.drupal.org` and requires a **stable** release + `<security covered="1">` + a line in `DECISIONES.md` | `composer.json` + `DECISIONES.md` | Method verified in research §10.4 |
+| `sbom-check` | For each `drupal/*` in `require`: queries `updates.drupal.org` and requires a **stable** release + `<security covered="1">` + a line in `DECISIONS.md` | `composer.json` + `DECISIONS.md` | Method verified in research §10.4 |
 
 ## 7 · Risks
 
@@ -111,6 +111,6 @@ number of findings**, and each finding with `file:line`.
 
 ## 8 · Open questions → decisions to sign
 
-Written in plain language, with recommendation ★, in `DECISIONES.md` §Pending.
+Written in plain language, with recommendation ★, in `DECISIONS.md` §Pending.
 **D-007** machine name · **D-008** theme approach · **D-009** where the visual tests run ·
 **D-011** recipe architecture (blocking) · **D-012** publication route · **D-013** AI provider.

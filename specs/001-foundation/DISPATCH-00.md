@@ -1,4 +1,4 @@
-DISPATCH · Ágora · 001-fundación / Turn 00 — Scaffolding: research + plan, NO CODE
+DISPATCH · Ágora · 001-fundacion / Turn 00 — Scaffolding: research + plan, NO CODE
 Pure scaffolding turn. Baseline: repo freshly initialised with this kit. NO code is written, the
 project is NOT created on Drupal.org, NOTHING is installed yet beyond what is needed to verify. NO tag.
 
@@ -7,7 +7,7 @@ CONTEXT
 ═══════════════════════════════════════════
 Ágora is a Site Template for Drupal CMS (transparency portal) destined for the Drupal.org Site
 Template Marketplace. Identity, recipe architecture and marketplace constraints are encoded in
-`specs/000-proyecto/plan.md` and `CLAUDE.md` — read them first; they override this prompt.
+`specs/000-project/plan.md` and `CLAUDE.md` — read them first; they override this prompt.
 Decisions already signed by the human (do not reopen): start from the official **Drupal CMS Site
 Template Starter Kit**; development on **git.drupalcode.org** as a general project (GitHub mirror
 optional afterwards); only stable dependencies with security coverage; Config Guardian in, Midgard out;
@@ -17,10 +17,10 @@ site templates) and the state of the art MUST be verified fresh before fixing pl
 ═══════════════════════════════════════════
 RECONCILIATION PASS — MANDATORY, UP FRONT, NO CODE
 ═══════════════════════════════════════════
-1. Read `CLAUDE.md`, `specs/000-proyecto/plan.md`, `specs/000-proyecto/DECISIONES.md`. Tie everything
+1. Read `CLAUDE.md`, `specs/000-project/plan.md`, `specs/000-project/DECISIONS.md`. Tie everything
    you produce to this framework. Verify ON DISK the next free D-NNN number before proposing
    new decisions.
-2. FRESH ground truth on the web (all dated, with URL, saved in `specs/001-fundacion/research/`):
+2. FRESH ground truth on the web (all dated, with URL, saved in `specs/001-foundation/research/`):
    a. Current stable version of **Drupal CMS** and status of **Drupal Canvas** (what does a
       "Canvas-compatible" theme require today? is there a reference/starter theme?).
    b. The **Drupal CMS Site Template Starter Kit** (project drupal_cms_site_template_base on
@@ -54,8 +54,8 @@ STOPPING RULES:
 ═══════════════════════════════════════════
 SCOPE (YES / NO)
 ═══════════════════════════════════════════
-YES: dated research · `specs/001-fundacion/plan.md` (unit objective: skeleton from starter
-kit + green CI while empty + recipe structure created but minimal) · `specs/001-fundacion/tasks.md`
+YES: dated research · `specs/001-foundation/plan.md` (unit objective: skeleton from starter
+kit + green CI while empty + recipe structure created but minimal) · `specs/001-foundation/tasks.md`
 (numbered tasks, waves, A/B gates per wave) · open questions with options + recommendation ·
 proposal for the first invariant scripts (`tests/bin/`: no-unstable-deps, no-patches,
 no-secrets, sbom-check) AS A SPECIFICATION, not implemented.
@@ -75,7 +75,7 @@ GATE A · GATE B
 Gate A for this turn (docs-only): the three deliverables exist on disk, the research has a date and
 sources, tasks.md has A/B gates defined per wave with concrete commands.
 Gate B (human): Andrés reads plan.md + open questions and signs the new D-NNN decisions in
-DECISIONES.md. You prepare the EXACT list of decisions: one per point, options, recommendation
+DECISIONS.md. You prepare the EXACT list of decisions: one per point, options, recommendation
 marked, in plain language.
 
 ═══════════════════════════════════════════

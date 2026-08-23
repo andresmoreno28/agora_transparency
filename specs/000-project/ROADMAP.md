@@ -5,7 +5,7 @@
 > (dated research → `plan.md` → `tasks.md`), and there it may diverge from this one: disk wins, as
 > does the state of the art at that moment (I-001).
 >
-> Written [ejecutor] 2026-08-20, after the research `specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
+> Written [ejecutor] 2026-08-20, after the research `specs/001-foundation/research/2026-08-20-estado-del-arte.md`.
 
 ## Dependency map
 
@@ -24,7 +24,7 @@ disjoint. `006` requires the three of them closed. `007` belongs to the human.
 - **Gate A** = automatable green, with real counts (see the `gate-a-verde` skill).
 - **Gate B** = Andrés's signature.
 - Every unit starts with a reconciliation pass and closes with a report + HOLD.
-- Every contrib module that appears needs its line in `DECISIONES.md` **in the same change**.
+- Every contrib module that appears needs its line in `DECISIONS.md` **in the same change**.
 
 ---
 
@@ -34,7 +34,7 @@ disjoint. `006` requires the three of them closed. `007` belongs to the human.
 drupalcode pipeline green, still without its own identity or content.
 
 **Blocked by:** D-007 (machine name), D-008 (theme approach), **D-011 (recipe architecture)**
-and the re-verification of the marketplace requirements. See `specs/001-fundacion/plan.md`.
+and the re-verification of the marketplace requirements. See `specs/001-foundation/plan.md`.
 
 **Development points**
 1. Copy the starter kit's `1.x` branch and rename the package to `drupal/<machine_name>`.
@@ -160,7 +160,7 @@ installability. Treat the keyless smoke as the main test, not as an extra.
    (focus not obscured, target size, consistent help, redundant entry).
 2. **WCAG attestation** written and signed.
 3. **Final SBOM**: every component with a stable version, security coverage status and its line
-   in `DECISIONES.md`.
+   in `DECISIONS.md`.
 4. **Complete license manifest**: GPL code, OFL fonts, CC0/own media.
 5. **Binding smoke**: end-to-end clean installation, without keys, verifying routes and rendering.
 6. **Visual regression** stabilized across all the demo pages.

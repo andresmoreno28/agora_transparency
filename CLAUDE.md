@@ -42,7 +42,7 @@ noise), publishable (everything meets the marketplace terms from day 1).
    no exotic pins. (Literal marketplace requirement.) Midgard is OUT (it is in alpha);
    Config Guardian is IN (stable, with security coverage).
 2. **Minimal and justified SBOM:** every contrib module added needs a line in
-   `specs/000-proyecto/DECISIONES.md` (what it brings, security coverage status). When in doubt,
+   `specs/000-project/DECISIONS.md` (what it brings, security coverage status). When in doubt,
    solve it with what Drupal CMS already ships.
 3. **Secrets: NEVER** in recipes, exportable config, demo content, git or docs. The AI integration
    is configured through environment variables / post-install UI and degrades gracefully with no key.
@@ -69,12 +69,12 @@ noise), publishable (everything meets the marketplace terms from day 1).
 ```
 CLAUDE.md                  # this file
 specs/
-  000-proyecto/            # meta unit: identity, decisions, architecture
+  000-project/            # meta unit: identity, decisions, architecture
     plan.md                # master plan (ALWAYS read when resuming)
     ROADMAP.md             # units 001-007 fleshed out (direction, not signed scope)
-    DECISIONES.md          # append-only D-NNN record (verify the free no. ON DISK)
+    DECISIONS.md          # append-only D-NNN record (verify the free no. ON DISK)
     IDIOMS.md              # project lessons/gotchas, append-only
-  001-fundacion/           # active unit
+  001-foundation/           # active unit
     DISPATCH-00.md · plan.md · tasks.md
     research/              # dated research (prior-is-not-disk)
   002-base-tema/ … 007-publicacion/     # not planned; see ROADMAP.md
@@ -113,8 +113,8 @@ tests/                     # InstallTest · ValidationTest · RequirementsTest (
 
 The repository **is not a Drupal project**: you do not run `ddev start` inside it. The real
 environment sets up a separate Drupal and adds the template as a *path repository*
-(see `specs/001-fundacion/`).
-Canonical layout: skill `drupal-site-template` + the research in `specs/001-fundacion/research/`.
+(see `specs/001-foundation/`).
+Canonical layout: skill `drupal-site-template` + the research in `specs/001-foundation/research/`.
 
 ## Gate A (once the skeleton exists; unit 001 fixes the exact list)
 

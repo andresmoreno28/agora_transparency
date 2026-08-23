@@ -55,7 +55,7 @@ fi
 #
 # FORBIDDEN: deleting a term from this list to turn the invariant green. A term
 # leaves this list only when the string it guards can no longer be reintroduced,
-# and that reasoning is recorded in specs/000-proyecto/DECISIONES.md. Turning a
+# and that reasoning is recorded in specs/000-project/DECISIONS.md. Turning a
 # gate green by shrinking its input is the failure mode this file exists to stop.
 DENY_TERMS=$(cat <<'EOF'
 electrician

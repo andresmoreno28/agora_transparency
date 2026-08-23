@@ -12,7 +12,7 @@ the root and describes the whole template. Placing a `recipes/` directory with l
 NOT the starter kit pattern and there is no evidence that the installer resolves it.
 
 Verified against `drupal_cms_site_template_base` on 2026-08-20. See
-`specs/001-fundacion/research/2026-08-20-estado-del-arte.md`.
+`specs/001-foundation/research/2026-08-20-estado-del-arte.md`.
 
 ## Canonical layout
 

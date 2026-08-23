@@ -1,7 +1,7 @@
 # Ágora · Master plan (unit 000)
 
 > ALWAYS read this when resuming. This document encodes what was decided in the concept phase [andres, concept phase].
-> Nothing here is contradicted without a new decision in DECISIONES.md.
+> Nothing here is contradicted without a new decision in DECISIONS.md.
 
 ## 1 · Positioning
 

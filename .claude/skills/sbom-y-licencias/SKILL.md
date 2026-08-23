@@ -9,7 +9,7 @@ description: Use when adding, upgrading or evaluating any dependency for the sit
 
 In this project **every dependency is a signed decision, not a `composer require`**. The
 marketplace requires an SBOM with security coverage status, and forbids unstable releases and patches.
-A dependency without a justification in `specs/000-proyecto/DECISIONES.md` **does not exist**.
+A dependency without a justification in `specs/000-project/DECISIONS.md` **does not exist**.
 
 ## Gateway — the four questions
 
@@ -20,7 +20,7 @@ Before adding ANYTHING, in this order:
 3. **Does it have Drupal security team coverage?** If not → **out**, barring a signed escalation.
 4. **Is the licence compatible?** GPL-2.0-or-later for anything derived from Drupal.
 
-If all four pass → add it **and** write its line in `DECISIONES.md` in the same change.
+If all four pass → add it **and** write its line in `DECISIONS.md` in the same change.
 
 ## Absolute prohibitions
 
@@ -32,7 +32,7 @@ If all four pass → add it **and** write its line in `DECISIONES.md` in the sam
 | Relaxed `minimum-stability` | `"minimum-stability": "beta"` | Masks the previous problem |
 | Secrets in config or repo | AI keys, tokens | Non-negotiable #3 |
 
-## The `DECISIONES.md` line
+## The `DECISIONS.md` line
 
 Every contrib module needs, as a minimum:
 
@@ -73,7 +73,7 @@ A project in beta there will not be installable by most users (Composer's defaul
 | "It's only a development dependency" | If it is in `require`, it travels to the user |
 | "I'll pin it so it is reproducible" | Pins are explicitly forbidden |
 | "A small patch and I'll remove it later" | Patches are forbidden; the "later" never comes |
-| "I'll document it afterwards" | The DECISIONES line goes in the SAME change |
+| "I'll document it afterwards" | The DECISIONS line goes in the SAME change |
 | "It's what the starter kit ships in 2.x" | Whatever the kit ships does not excuse you; your SBOM is yours |
 
 ## Red flags — STOP and escalate

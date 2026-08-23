@@ -26,7 +26,7 @@
 # I-026 (appended this turn): wave 1's preflight only LOCATES tools with
 # `command -v`, which is not enough. On this host `python3` resolves to a
 # Microsoft Store stub that satisfies `command -v python3` and then prints
-# "no se encontro Python" and exits non-zero at first real use - a preflight
+# "no se encontró Python" and exits non-zero at first real use - a preflight
 # that only checks presence would wave that stub through and every invariant
 # that needs python3 (sbom-check) would fail later with a confusing error
 # instead of a clear, loud preflight failure. This script EXERCISES every
@@ -235,7 +235,7 @@ group 'G4 - sbom-check (needs network - not skipped if unavailable)'
 INV=tests/bin/sbom-check
 if [ -x "$INV" ]; then
   run_invariant "$INV"
-  # own summary line: "scanned:    N file(s)" (composer.json + DECISIONES.md)
+  # own summary line: "scanned:    N file(s)" (composer.json + DECISIONS.md)
   CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
   note "$(printf '%s' "$INV_OUT" | grep -E '^(scope|scanned|queried|findings):' | tr '\n' ' ')"
   check 'sbom-check (exit)'                "$INV_RC" '0'

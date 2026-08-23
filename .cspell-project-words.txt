@@ -1,0 +1,135 @@
+# Ágora — project word list for cspell
+#
+# Consumed as cspell's `project-words` dictionary: this path is the default value of
+# `_CSPELL_DICTIONARY` in the Drupal.org gitlab_templates cspell job, registered only if the
+# file exists. There is no project `.cspell.json` — see D-024(2).
+#
+# ENTRIES ARE JUSTIFIED, NEVER BULK-IMPORTED. The job leaves an artifact named
+# `_cspell_updated_project_words.txt` — "this dictionary plus everything that just failed".
+# Copying it is one command to green and an automatic red: D-024(4) forbids it by name.
+# Every line below survives the question "why is this a word this project legitimately uses?",
+# and the answer is on the line or in its group header.
+#
+# NOT here, deliberately:
+#   - British-English spellings (behaviour, licence, organisation, artefacts, normalise, ...).
+#     `_CSPELL_EXTRA: '--locale en,en-GB'` declares the actual language of the text and
+#     `dict-en-gb-mit` is bundled on the runner. Declaring a language is not silencing a check.
+#   - The verbatim Spanish quotations of [andres] in DECISIONS.md. Declaring those would make
+#     them permanently correct everywhere, forever; they are scoped in place instead, with
+#     cspell:disable markers around each quoted block.
+#   - Real misspellings. Those get fixed, not declared — D-024(3), fourth bucket.
+#
+# Mechanic: cspell's dictionary parser sets `stripCaseAndAccents: true`, so a single entry
+# `Ágora` also matches `ágora`/`agora`/`AGORA`, and a base form covers its possessive and
+# plural. Base form listed once; no case or accent variants.
+
+# --- Proper nouns --------------------------------------------------------------------
+# Our own identity, plus the third-party projects, vendors and tools cited as evidence in
+# the decision record. A name is not a spelling error.
+Ágora                 # the product
+Andrés                # the human who signs the decisions
+andresmoreno          # git author handle, in .mailmap and in shortlog evidence
+drupalcode            # git.drupalcode.org, the canonical remote
+gitaly                # GitLab's git RPC service, cited in D-022 on default-branch behaviour
+caresphere            # existing Drupal site template, surveyed as prior art
+provus                # existing Drupal site template, surveyed as prior art
+ripplemaker           # Drupal.org vendor cited in the site-template survey
+vaimo                 # Drupal.org vendor cited in the site-template survey
+szeidler              # Drupal.org maintainer handle cited in the survey
+drud                  # DDEV's original vendor namespace
+jqlang                # jq's upstream org, appears in the toolchain PATH
+winget                # Windows package manager, in the environment doctor output
+msys                  # MSYS2, the Git Bash runtime tests/bin/ must survive on
+ggrep                 # GNU grep under its coreutils-prefixed name
+defusedxml            # Python XML library named in the sbom-check parser notes
+bitstream             # font vendor named in the license inventory
+
+# --- Technical vocabulary --------------------------------------------------------------
+# Real terms of art in git, the shell, PHP tooling and Drupal, used correctly.
+subshell              # covers subshells, subshell's
+bytewise
+symref                # git symbolic ref, central to the default-branch analysis
+shortlog              # git shortlog
+worktree              # git worktree
+testdox               # PHPUnit --testdox
+coreutils
+findutils
+localrepo             # Gitaly's internal/git/localrepo package, cited in D-022
+etree                 # Python xml.etree, used by the sbom-check parser
+charmap               # Python's charmap codec, named in the encoding preflight
+webform               # the Drupal contrib project
+akia                  # AWS access-key prefix, a detection pattern in tests/bin/no-secrets
+baprs                 # the xox[baprs]- Slack token character class in no-secrets
+pousr                 # the gh[pousr]_ GitHub token character class in no-secrets
+
+# --- Identifiers from our own scripts --------------------------------------------------
+# Shell and Python variable, heredoc and function names that appear in tests/bin/ and in the
+# prose documenting those scripts. Renaming them to please a spell checker would be the tail
+# wagging the dog.
+termcnt               # gate-a-wave3.sh, deny-list term count
+oldifs                # doctor, saved $IFS
+denycheck             # no-boilerplate, heredoc delimiter
+lockentries           # no-unstable-deps, heredoc delimiter
+locknames             # sbom-check, heredoc delimiter
+projectlist           # sbom-check, heredoc delimiter
+pyeof                 # sbom-check, Python heredoc delimiter
+netcheck              # sbom-check, preflight XML fixture
+findtext              # Python ElementTree.findtext, called by the sbom-check parser
+fromstring            # Python ElementTree.fromstring, same parser
+getpreferredencoding  # Python locale.getpreferredencoding, in the encoding preflight
+pythonutf             # from PYTHONUTF8=1, the encoding fix recorded in 001-foundation/tasks.md
+decodeerror           # doctor, encoding-probe marker
+othererror            # doctor, exception-class probe marker
+msystem               # doctor, reports $MSYSTEM
+infoyml               # gate-a-wave1.sh, counts *.info.yml files
+ciallow               # gate-a-wave1.sh, CI_ALLOW_DEV check state
+snone                 # no-boilerplate, printf format token %snone%s
+smention              # no-ci-allow-dev, printf format token %smention
+oneline               # git log --oneline
+cand                  # doctor, $_cand candidate executable path
+lver                  # no-unstable-deps, $_lver locked version
+filt                  # no-blind-phpunit, CMD_FILT_RC / EXTRA_FILT_RC
+fagora                # from the URL-encoded remote path project%2Fagora in the D-002 evidence
+
+# --- English coinages we use deliberately ----------------------------------------------
+# Regularly derived English words the bundled dictionary happens not to carry. Each is
+# load-bearing in the decision record; none is a typo.
+publishability
+parallelizable
+idempotently
+bypassable
+unparseable
+unscannable
+unsettleable
+unfindable
+automatable
+overpromise
+negotiables           # as in "the non-negotiables", CLAUDE.md's standing rules
+desyncs
+desyncing
+retargeted
+metacharacter
+
+# --- Spanish that survives by decision --------------------------------------------------
+# D-024(5) bounds the rename deliberately and records the remainder rather than half-fixing
+# it. Every token below is a real, load-bearing identifier on disk that cannot be renamed
+# without changing behaviour or breaking a signed record.
+decisiones            # .claude/commands/decisiones.md — renaming it changes the /decisiones command
+retomar               # .claude/commands/retomar.md — renaming it changes the /retomar command
+orquestador           # .claude/agents/orquestador.md — the filename IS the subagent_type name
+desarrollador         # .claude/agents/desarrollador.md — likewise a subagent_type name
+ejecutor              # the [ejecutor] role label, pinned by CLAUDE.md non-negotiable rule 7
+ciclo                 # .claude/skills/ciclo-agora/ — skill directory name
+exportar              # .claude/skills/exportar-config-limpia/ — skill directory name
+limpia                # .claude/skills/exportar-config-limpia/ — skill directory name
+accesibilidad         # .claude/skills/accesibilidad-wcag-aa/ — skill directory name
+licencias             # .claude/skills/sbom-y-licencias/ — skill directory name
+fundacion             # the git branch 001-fundacion/scaffolding, recorded in D-022(4) and IDIOMS
+tema                  # specs/002-base-tema/ — unit directory, not yet started, not renamed
+contenido             # specs/003-contenido-demo/ — unit directory, not yet started, not renamed
+publicacion           # specs/007-publicacion/ — unit directory, not yet started, not renamed
+estado                # specs/001-foundation/research/2026-08-20-estado-del-arte.md
+arte                  # same research filename
+flujo                 # specs/001-foundation/research/2026-08-21-flujo-tema-y-marketplace.md
+encontró               # "no se encontró Python", quoted verbatim from the Microsoft Store stub in IDIOMS.md and gate-a-wave3.sh
+proyecto               # survives only in D-024's own text, naming the pre-rename specs/000-proyecto/ path; rule 8 forbids editing it

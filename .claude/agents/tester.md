@@ -59,7 +59,7 @@ scanned + no. of findings**, and each finding with `file:line`.
 | `no-unstable-deps` | `-dev`, `-alpha`, `-beta`, `-rc`, `dev-`, `minimum-stability` ≠ stable | `composer.json`, `composer.lock` | **Exclude the starter kit**: it is copied, not declared — flagging it is a false positive |
 | `no-patches` | `patches`, `composer-patches`, `patches-file` | `composer.json` | — |
 | `no-secrets` | `api[_-]?key`, `secret`, `token`, `passwd`, `password`, `Bearer `, DSNs, private keys | the whole repo except `.git/` | Must cover `config/` and `content/` |
-| `sbom-check` | For each `drupal/*` in `require`: stable + `<security covered="1">` + line in `DECISIONES.md` | `composer.json` + `DECISIONES.md` | Method below |
+| `sbom-check` | For each `drupal/*` in `require`: stable + `<security covered="1">` + line in `DECISIONS.md` | `composer.json` + `DECISIONS.md` | Method below |
 
 ```bash
 curl -s "https://updates.drupal.org/release-history/<project>/current"

@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "_comment": [
-    "Allowlist deliberadamente MÍNIMA y de comandos exactos.",
-    "Regla: nunca un glob final en un comando que acepte flags de salida",
-    "(-o, --output, --ext-diff, -c): eso convierte el permiso en escritura",
-    "arbitraria de ficheros. Ver IDIOMS I-010.",
-    "No allowlistar directorios cuyo contenido aún no existe ni está revisado."
+    "Deliberately MINIMAL allowlist, of exact commands.",
+    "Rule: never a trailing glob in a command that accepts output flags",
+    "(-o, --output, --ext-diff, -c): that turns the permission into",
+    "arbitrary file writing. See IDIOMS I-010.",
+    "Do not allowlist directories whose content does not yet exist or has not been reviewed."
   ],
   "permissions": {
     "allow": [

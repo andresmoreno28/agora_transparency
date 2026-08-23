@@ -199,7 +199,7 @@ check 'occurrences of _comment'    "$(grep_count_fixed '_comment' composer.json)
 # DEBT WITH AN OWNER AND AN EXIT GATE - THIS IS NOT A RELAXED CHECK.
 #
 # Expected = PRESENT, on purpose. Rider of the `blank` theme, signed by [andres]
-# on 2026-08-21 (specs/000-proyecto/DECISIONES.md, "Riders on wave 1"):
+# on 2026-08-21 (specs/000-project/DECISIONS.md, "Riders on wave 1"):
 #
 #   "`blank` and the `extra.drupal-site-template` block are kept until unit 002.
 #    T-103 deletes the three `_comment` arrays and `GET-STARTED.md`, but NOT the
@@ -308,8 +308,8 @@ done
 
 # ------------------------------------- G7 consistency with what is signed ----
 group 'G7 - Process layer consistency with what is signed'
-D011=$(grep_count_fixed 'D-011' specs/000-proyecto/DECISIONES.md)
-check 'D-011 in DECISIONES.md (>=1)' "$([ "${D011:-0}" -ge 1 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+D011=$(grep_count_fixed 'D-011' specs/000-project/DECISIONS.md)
+check 'D-011 in DECISIONS.md (>=1)' "$([ "${D011:-0}" -ge 1 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
 NAME_REF=$(grep_count_fixed 'agora_transparency' composer.json)
 check 'agora_transparency in composer.json (>=1)' "$([ "${NAME_REF:-0}" -ge 1 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
 
