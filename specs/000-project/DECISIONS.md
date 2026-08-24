@@ -820,6 +820,35 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   installation that grants it — and it is the third time this pattern has been caught by someone
   else rather than by me.
 
+- **D-031** · **The unit-002 scope gate is 2 over, and the overrun is accepted rather than
+  re-based.** **SIGNED by [andres] 2026-08-24** — he was given A/B/C and answered **A**.
+
+  *What happened, stated as the failure it is.* The unit's task count was carried in prose as "30"
+  and never computed. `grep -c '^| T-[5-8][0-9][0-9] '` returns **12 + 15 + 6 + 7 = 40**. So the
+  count was **six short before D-026 raised the ceiling this morning**, which means that morning's
+  +4 rider was reasoned from a number nobody had run — the scope gate's entire content is a number,
+  and it failed on its first use. This entry exists so that fact is on the record beside the
+  decision it distorted, rather than being quietly absorbed by a corrected total.
+
+  | | Option | Real cost |
+  |---|---|---|
+  | **A ★** | **Accept 40 against 38; record why; do not move rows and do not raise the ceiling** | Headroom −2. The reserve that existed for wave 7's atomic swap and wave 8's carried debts is gone, so the **next** unplanned task is a rider, not a shrug — which is the gate doing its job, late but honestly |
+  | B | Move two rows to a later unit | Would have to be two real rows. Every wave-5 and wave-6 row is either a gate, a measurement or a piece of the signed content model; the two cheapest to move are the two whose absence would be discovered in unit 006 as debt |
+  | C | Raise the ceiling to 40 | Makes the number follow the work, which is the definition of a scope gate that does not gate |
+
+  ★ **A, chosen by [andres].** The overrun is **2 tasks, and the +4 that preceded it bought exactly
+  the six-node content model** — the work is not padding, it is scope that was always there and was
+  miscounted. What A buys is the thing B and C both destroy: **the number keeps meaning something.**
+
+  *Binding consequence, not decoration:* the unit now runs with **negative headroom**. Any task
+  added from here needs a signed rider naming what it displaces — including tasks discovered by an
+  audit. **T-806 reports the count against 38 and states the −2**; it does not re-base to 40.
+
+  *Method fix, so this cannot recur silently:* every count in `tasks.md` and `plan.md` is now a
+  **quoted command with its output**, never a number in prose. Recorded as the rule; the invariant
+  that enforces it is unit 006's, because writing one today would be the 41st task.
+
+
 ## Decisions opened by unit 002
 
 > **Framed [ejecutor] 2026-08-24 in the unit 002 scaffolding turn, against

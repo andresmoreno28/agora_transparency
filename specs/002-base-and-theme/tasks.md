@@ -137,7 +137,7 @@ a number nobody had run. The scope gate's entire content is a number; a number c
 precisely the failure it was built to prevent, and it failed on its first use. Recorded here rather
 than quietly re-based.
 
-**This needs [andres], and deliberately gets no recommendation from the `orquestador`** — it said so
+✅ **RESOLVED — [andres] chose **A** on 2026-08-24, signed as D-031: accept 40 against 38, record why, move nothing, raise nothing. The unit runs at **headroom −2**; any further task needs a signed rider naming what it displaces, and T-806 reports against **38** with the −2 stated rather than re-basing to 40.** Options as put to him, kept for the record — the `orquestador` deliberately gave no recommendation — it said so
 itself: a recommendation here would be the failure mode the gate exists to catch. Options:
 **(A)** correct the count and accept −2 with a rider naming why · **(B)** correct the count and move
 two rows to a later unit · **(C)** correct the count and raise the ceiling again. (was 30/34/4; D-026 split the content model into five tasks and raised the budget by the same +4, so the reserve is unchanged — the increase was not spent on itself.)
