@@ -19,6 +19,13 @@
 > PHP 8.4.24 ZTS · Composer 2.10.2). It is **not** a claim about the drupalcode runners: no CI
 > executes `tests/bin/` today. See the blockers table.
 
+> ✅ **UNIT 001 CLOSED 2026-08-23.** Gate A: drupalcode pipeline `933593`, **8 jobs · 8 success ·
+> 8 blocking · 0 exceptions**; `gate-a-wave1.sh` 61 · 0; `gate-a-wave3.sh` 35 · 0; 10 invariants,
+> each with its dirty case. The template is **observed in the Drupal CMS installer's selector** —
+> `plan.md` §1's definition of done. Independent verdict by `orquestador` (T-404): no 🔴 open.
+> **No debt carried**; everything deferred has an owner and an exit gate. ⚠️ No release before
+> unit 002's theme swap — see the gate B wave 4 rider.
+
 Legend: `[ ]` pending · `[~]` in progress · `[✓ YYYY-MM-DD]` signed ·
 `[⏸ …]` deferred to a later unit, with owner · 👤 requires the human
 
@@ -1168,7 +1175,10 @@ ddev drush sql:drop --yes && ddev drush site:install --yes   # and check the sel
 ddev exec vendor/bin/phpunit --testdox tests/                 # number of tests and assertions
 ```
 **Gate B wave 4** 👤 · Andrés signs the closure of unit 001.
-Sign here: `[ ]` — unit 001 CLOSED.
+Sign here: `[✓ 2026-08-23 andres]` — **unit 001 CLOSED.**
+Signed on the evidence below, after the T-404 audit returned ⛔ CONDITIONAL and both of its
+findings were remedied rather than argued away. [andres]: *"si está probada y pasada y testeada,
+firma y sigue."*
 
 Gate A, all counts **read rather than assumed**: drupalcode pipeline `933556`, ref `1.x`,
 **8 jobs · 8 success · 8 `allow_failure=false` · 0 named exceptions** (D-023(5));
