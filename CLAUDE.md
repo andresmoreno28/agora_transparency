@@ -280,8 +280,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (61 checks · 0 failures) and `gate-a-wave3.sh` (35 checks · 0 failures), 10 invariants in total —
+  (61 checks · 0 failures) and `gate-a-wave3.sh` (**37** checks · 0 failures), **11** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  The wave 3 numbers moved from 35 · 10 on 2026-08-24: `config-inventory` (T-601) is the eleventh,
+  and it exists because a **kernel test cannot print a denominator** — PHPUnit turns any output a
+  test emits, STDERR included, into an error. Measured locally on Windows, not on the runner.
 
 - **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render.
   **Declared on drupalcode as the blocking `Drupal CMS` job since 2026-08-24 (T-511, Amendment to

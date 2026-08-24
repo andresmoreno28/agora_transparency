@@ -85,6 +85,18 @@ final class ContentModelTest extends KernelTestBase {
     $storage = new FileStorage($path . '/config');
     $assertions = 0;
 
+    // -- The census, asserted rather than printed ----------------------------
+    // D-026 fixes these two numbers, and they are the denominator every loop
+    // below runs over: a constant silently shortened to one entry would leave
+    // every one of those loops passing over almost nothing. Asserting the size
+    // is what stops "0 failures" from also meaning "0 subjects" (I-045).
+    // They are asserted rather than printed because a test cannot print here
+    // at all - see the closing block of this method.
+    $this->assertCount(5, self::VOCABULARIES, 'D-026 names five vocabularies and only five.');
+    $assertions++;
+    $this->assertCount(6, self::FIELD_STORAGES, 'T-601 ships six shared field storages.');
+    $assertions++;
+
     // -- The five vocabularies -----------------------------------------------
     foreach (self::VOCABULARIES as $vid) {
       $name = 'taxonomy.vocabulary.' . $vid;
@@ -155,22 +167,37 @@ final class ContentModelTest extends KernelTestBase {
     // -- The one thing that does NOT live in config/ -------------------------
     // D-032 step 4b: `SiteExporter::isAction()` routes core/System/User default
     // config into the export's regenerated `recipe.yml`, never into `config/`.
-    // Installing `datetime_range` is exactly such a change, and it is what makes
-    // `field_agora_base_period`'s `daterange` type resolvable on a clean
+    // Installing `datetime_range` is exactly such a change, and it is what
+    // makes `field_agora_base_period`'s `daterange` type resolvable on a clean
     // install. Copying `config/` alone would have dropped it with no error, so
     // the transplant gets an assertion rather than a promise.
     $recipe = Yaml::decode(file_get_contents($path . '/recipe.yml'));
     $this->assertContains('datetime_range', $recipe['install'], 'recipe.yml must install datetime_range, or field_agora_base_period cannot import.');
     $assertions++;
 
-    // I-045: a green test is a statement about the set it opened, so print the
-    // set. STDERR, because core's phpunit.xml sets beStrictAboutOutputDuringTests.
-    fwrite(STDERR, sprintf(
-      "\nContentModelTest: %d vocabularies, %d field storages, %d assertions performed.\n",
-      count(self::VOCABULARIES),
-      count(self::FIELD_STORAGES),
-      $assertions,
-    ));
+    // -- The assertion count, asserted rather than printed -------------------
+    // T-601 asks this test to state its assertion count, and a test cannot
+    // state anything by printing it: PHPUnit turns ANY output a test emits
+    // into a `PHPUnit\Framework\Exception`. Writing to STDERR does not dodge
+    // `beStrictAboutOutputDuringTests` - the first version of this file did
+    // exactly that and failed pipeline 934619 with all 50 of its assertions
+    // passing. The number is asserted here instead, reaches the CI log through
+    // PHPUnit's own "OK (N tests, N assertions)" line, and the config
+    // denominators are printed by tests/bin/config-inventory, in the
+    // agora-invariants job, where output is free.
+    //
+    // Derived from the two constants above rather than written as a literal,
+    // so that growing the model updates it: three assertions per vocabulary
+    // (shipped, own vid, non-empty label), five per field storage (shipped,
+    // own name, node, type, cardinality), plus the two census assertions, the
+    // two `target_type` checks, the two set-equality checks and the one
+    // `recipe.yml` check. What it still catches is the failure this whole file
+    // guards against - a loop that ran over nothing at all.
+    $expected_assertions = 2
+      + (3 * count(self::VOCABULARIES))
+      + (5 * count(self::FIELD_STORAGES))
+      + 2 + 2 + 1;
+    $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
   }
 
 }

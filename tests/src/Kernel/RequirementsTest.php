@@ -94,15 +94,38 @@ final class RequirementsTest extends KernelTestBase {
     // array, and the `_core`/`uuid` block passed with nothing built. It could
     // not distinguish a good export from no export at all — and every task row
     // from T-601 onward cites "RequirementsTest still green" as its criterion,
-    // so all of them inherited a check that could not fail. The denominator is
-    // now asserted and printed (I-045: a green check is a statement about the
-    // set it opened, so print the set). STDERR, because core's phpunit.xml sets
-    // beStrictAboutOutputDuringTests="true".
+    // so all of them inherited a check that could not fail.
+    //
+    // The denominator is therefore ASSERTED, and deliberately not printed: a
+    // test cannot print. PHPUnit turns any output a test emits into a
+    // `PHPUnit\Framework\Exception`, and writing to STDERR to dodge
+    // `beStrictAboutOutputDuringTests` does not work - it is what failed
+    // pipeline 934619 here, with every assertion in this method passing. The
+    // count itself is printed by tests/bin/config-inventory, in the
+    // agora-invariants job, where output is free and this project already
+    // states its denominators (I-045).
+    //
+    // Two assertions replace the one print. The first is that config/
+    // enumerates at all. The second BINDS that enumeration to the directory
+    // this file names: `listAll()` reads whatever `getCollectionDirectory()`
+    // returns, and if that ever stops being the `config/` counted on the line
+    // below - a changed path, a collection, a storage built over somewhere
+    // else - the loop would go quietly back to being a tautology over a
+    // shorter list. Read at source in core rather than assumed: `listAll()`
+    // is a `scandir()` filtered by `/.*\.yml$/` with dotfiles dropped, which
+    // is the same set `glob('*.yml')` returns for a real directory, so the two
+    // counts agree by construction and disagree only when they are no longer
+    // looking at the same place. What it does NOT catch is a config object
+    // parked in a SUBDIRECTORY: neither side recurses, so both miss it
+    // equally. That one belongs to tests/bin/config-inventory, which does
+    // recurse, and which is the only reason it recurses.
+    //
+    // No expected TOTAL is written here: T-612 through T-615 grow config/
+    // legitimately, and a number that must be relaxed on every growth is a
+    // gate that teaches people to relax gates.
     $this->assertNotEmpty($config_names, 'The site template must ship configuration in config/; an empty config/ makes the checks below vacuous.');
-    fwrite(STDERR, sprintf(
-      "\nRequirementsTest: %d config objects enumerated in config/.\n",
-      count($config_names),
-    ));
+    $config_files = glob($path . '/config/*.yml') ?: [];
+    $this->assertCount(count($config_files), $config_names, 'FileStorage must enumerate every config object shipped in config/.');
     foreach ($config_names as $name) {
       $data = $storage->read($name);
       // In general, the config shipped by a site template should not have a

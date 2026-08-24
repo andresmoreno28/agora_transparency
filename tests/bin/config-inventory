@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+#
+# config-inventory - Agora - unit 002, T-601.
+#
+# Prints the denominator that the two kernel tests assert over, and fails if
+# that denominator is degenerate or if config/ contains something that is not a
+# config object.
+#
+# WHY IT EXISTS. T-601's success criterion asks for the number of config objects
+# to be STATED, not merely for the checks over them to pass: a green check over
+# an unknown denominator is a badge, not a gate (I-045), and RequirementsTest
+# was a literal tautology for as long as config/ did not exist - it looped over
+# an empty list and passed with nothing built. The obvious place to print that
+# number was the test itself, and that is exactly where it cannot be printed:
+# PHPUnit converts ANY output a test emits into a
+# `PHPUnit\Framework\Exception`, STDOUT and STDERR alike. Two tests wrote their
+# counts to STDERR to dodge `beStrictAboutOutputDuringTests`; both failed
+# pipeline 934619 with every one of their assertions passing. So the assertions
+# stayed in PHP and the printing moved here, to a job whose whole contract is
+# printing counts.
+#
+# DIVISION OF LABOUR, so neither side is mistaken for the other:
+#   - here:  the counts are PRINTED - config objects, files, bytes - and the
+#            degenerate cases (no config/, an empty config/, a non-YAML file, a
+#            zero-byte object) are findings.
+#   - PHP:   RequirementsTest asserts that `FileStorage::listAll()` enumerates
+#            exactly as many objects as there are `.yml` files here, so a config
+#            object that Drupal silently declines to enumerate cannot pass as
+#            one; ContentModelTest asserts every object T-601 owns by name.
+# Neither side hard-codes an expected TOTAL. T-612 through T-615 grow config/
+# legitimately, and a number that has to be relaxed on every growth is a gate
+# that teaches people to relax gates.
+#
+# Contract:
+#   scope:    <exact list of directories inspected>
+#   scanned:  <N> file(s)    - N must be > 0 or this script exits 1
+#   findings: <M>            - each printed as  path:line  reason
+#   exit 0 iff M == 0
+#
+# An empty scope, a missing tool or an unreadable directory is a FAILURE, never
+# a skip (I-007). `line` is 0 for findings about a file as a whole: the finding
+# is the file's existence or its size, which no line carries.
+#
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
+# Usage: tests/bin/config-inventory   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# `CDPATH= cd` is an env-var prefix, not an assignment; shellcheck misreads it.
+# shellcheck disable=SC1007
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck disable=SC1007
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_BAD=""; C_OFF=""
+if [ -t 1 ]; then C_BAD=$(printf '\033[31m'); C_OFF=$(printf '\033[0m'); fi
+
+fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
+
+# ---------------------------------------------------------------- preflight --
+# Located AND exercised: a tool that resolves but does not run turns every
+# count below into a silent zero (I-026).
+for tool in find wc sort mktemp; do
+  command -v "$tool" >/dev/null 2>&1 || fatal "required tool not found: $tool"
+done
+[ "$(printf 'a\nb\n' | wc -l | tr -d '[:space:]')" = "2" ] \
+  || fatal "wc -l does not count lines on this host"
+[ "$(find . -maxdepth 0 -type d | wc -l | tr -d '[:space:]')" = "1" ] \
+  || fatal "find does not report directories on this host"
+
+CONFIG_DIR="config"
+[ -d "$CONFIG_DIR" ] || fatal "$CONFIG_DIR/ not found in $REPO_ROOT (empty scope)"
+[ -r "$CONFIG_DIR" ] || fatal "$CONFIG_DIR/ is not readable"
+
+FINDINGS_FILE=$(mktemp -t config-inventory.XXXXXX) || fatal "cannot create a temp file"
+FILE_LIST=$(mktemp -t config-inventory-files.XXXXXX) || fatal "cannot create a temp file"
+trap 'rm -f "$FINDINGS_FILE" "$FILE_LIST"' EXIT
+
+# Findings are appended to a file and counted from it at report time, never
+# accumulated in a variable that a subshell could silently drop. One finding is
+# always exactly one line.
+finding() { # <file> <line> <reason>
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3" >> "$FINDINGS_FILE"
+}
+
+count_findings() {
+  wc -l < "$FINDINGS_FILE" | tr -d '[:space:]'
+}
+
+# ------------------------------------------------------------------- scan ----
+# The WORKING TREE is scanned with `find`, never `git ls-files` (I-018/I-019):
+# an export written this minute and not yet staged is exactly the moment this
+# guard is meant to fire, and `git ls-files` cannot see it.
+#
+# Recursive on purpose. `FileStorage::listAll()` is NOT recursive, so a config
+# object parked in a subdirectory of config/ is a file Drupal will never
+# enumerate - it would inflate the file count here while leaving the object
+# count in PHP unchanged, which is precisely the asymmetry the two counts below
+# exist to surface.
+find "$CONFIG_DIR" -type f 2>/dev/null | LC_ALL=C sort > "$FILE_LIST" \
+  || fatal "the scan of $CONFIG_DIR/ did not complete"
+
+SCANNED=$(wc -l < "$FILE_LIST" | tr -d '[:space:]')
+OBJECTS=0
+NESTED=0
+EMPTY=0
+
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+
+  case "$f" in
+    *.yml)
+      OBJECTS=$((OBJECTS + 1))
+      ;;
+    *)
+      finding "$f" "0" \
+        "not a .yml file; config/ holds config objects and nothing else"
+      continue
+      ;;
+  esac
+
+  # A top-level object is `config/<name>.yml`; anything deeper is invisible to
+  # FileStorage::listAll() and would ship as dead weight.
+  case "${f#"$CONFIG_DIR"/}" in
+    */*)
+      NESTED=$((NESTED + 1))
+      finding "$f" "0" \
+        "nested below config/; FileStorage::listAll() will never enumerate it"
+      ;;
+  esac
+
+  # A zero-byte object enumerates and then carries nothing: it would pass every
+  # `_core`/`uuid` check in RequirementsTest by having no keys at all.
+  if [ ! -s "$f" ]; then
+    EMPTY=$((EMPTY + 1))
+    finding "$f" "0" "zero bytes; an empty config object carries no config"
+  fi
+done < "$FILE_LIST"
+
+# ------------------------------------------------------------------ report --
+printf '\nconfig-inventory - the denominator the kernel tests assert over\n\n'
+printf 'scope:      %s/ in the working tree, recursive\n' "$CONFIG_DIR"
+printf 'scanned:    %s file(s)\n' "$SCANNED"
+printf 'config objects: %s (%s/*.yml, the set FileStorage::listAll() enumerates)\n' \
+  "$OBJECTS" "$CONFIG_DIR"
+printf 'nested files:   %s (below %s/, enumerated by nothing)\n' "$NESTED" "$CONFIG_DIR"
+printf 'zero-byte objects: %s\n' "$EMPTY"
+printf 'exclusions: none - every file under %s/ is inspected\n' "$CONFIG_DIR"
+
+# T-321(b): defaulted because zero means FAIL here - the safe direction of
+# I-031. Do not copy the `:-0` to a guard where zero means PASS.
+if [ "${SCANNED:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: 0 files scanned - an empty config/ proves nothing (I-007).\n'
+  printf 'This is the tautology T-601 closed: RequirementsTest loops over\n'
+  printf 'FileStorage::listAll() and passes vacuously when it returns nothing.\n'
+  exit 1
+fi
+
+if [ "${OBJECTS:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: %s file(s) under config/ and NOT ONE config object.\n' "$SCANNED"
+  exit 1
+fi
+
+M=$(count_findings)
+printf 'findings:   %s\n' "$M"
+
+if [ "$M" -gt 0 ]; then
+  printf '\n'
+  cat "$FINDINGS_FILE"
+  printf '\nFAILURE: %s config-inventory finding(s).\n' "$M"
+  exit 1
+fi
+
+printf '\nOK: %s config object(s), all top-level, all non-empty.\n' "$OBJECTS"
+exit 0

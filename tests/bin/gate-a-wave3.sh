@@ -2,7 +2,7 @@
 #
 # gate-a-wave3.sh - Agora - Unit 001, wave 3 gate A verification.
 #
-# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the TEN
+# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the ELEVEN
 # invariants that exist on disk today - the tasks.md "Gate A wave 3" block
 # still loops over only four (no-unstable-deps no-patches no-secrets
 # sbom-check); no-code-in-template, no-ci-allow-dev, no-boilerplate,
@@ -14,7 +14,18 @@
 #
 # Check count, stated so a silent change is impossible: 14 preflight + 17
 # invariant checks = 31 before T-223; G9 (cited-tasks-exist, T-223) adds 2, for
-# 33; G10 (identity-strings, T-322) adds 2, for 35.
+# 33; G10 (identity-strings, T-322) adds 2, for 35; G11 (config-inventory,
+# T-601) adds 2, for 37.
+#
+# G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
+# It is not a dependency or process invariant like the other ten: it exists
+# because T-601 requires the number of config objects to be STATED, and the
+# kernel test that was stating it could not - PHPUnit turns any output a test
+# emits, STDERR included, into an error (pipeline 934619). The printing moved
+# to a job that prints for a living; the asserting stayed in PHP. Where the
+# other ten answer "is anything forbidden present?", this one answers "how big
+# was the set the tests just passed over?" - which is the question I-045 says a
+# green check must always be able to answer.
 #
 # Contract (mirrors gate-a-wave1.sh on purpose - one house style):
 #   - every check prints:  obtained | expected | OK/FAIL
@@ -35,7 +46,7 @@
 # that only checks presence would wave that stub through and every invariant
 # that needs python3 (sbom-check) would fail later with a confusing error
 # instead of a clear, loud preflight failure. This script EXERCISES every
-# tool the ten invariants actually call (a real, minimal invocation whose
+# tool the eleven invariants actually call (a real, minimal invocation whose
 # output or exit code is checked), not merely locates it.
 #
 # sbom-check needs the network (queries updates.drupal.org). If the network is
@@ -124,7 +135,7 @@ printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 printf '=========================================================================================================\n'
 
 # ------------------------------------------------------------- G0 preflight --
-# I-026: EXERCISE every tool the ten invariants actually call, do not merely
+# I-026: EXERCISE every tool the eleven invariants actually call, do not merely
 # locate it with `command -v`. Each check runs a real, minimal invocation and
 # compares its actual output or exit code - a resolvable-but-broken stub
 # (like the python3 case above) fails here, loudly, instead of surfacing as a
@@ -382,6 +393,25 @@ if [ -x "$INV" ]; then
 else
   check 'identity-strings present'         "$(trunc "$INV" 24)" 'present'
   check_positive 'identity-strings (naming the product)' ''
+fi
+
+# ---------------------------------------------------- G11 - config-inventory (T-601) --
+group 'G11 - config-inventory'
+INV=tests/bin/config-inventory
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary line: "scanned: N file(s)", with "config objects: N" beside it.
+  # Its scope metric is the FILE count under config/, and the note below puts
+  # both denominators in the CI log verbatim - the whole reason this invariant
+  # exists (I-045). The object count is not pinned to a number here: T-612
+  # through T-615 grow config/ legitimately, and only "> 0" is an invariant.
+  CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scanned|config objects|nested files|zero-byte objects|findings):' | tr '\n' ' ')"
+  check 'config-inventory (exit)'          "$INV_RC" '0'
+  check_positive 'config-inventory (scanned)' "$CNT"
+else
+  check 'config-inventory present'         "$(trunc "$INV" 24)" 'present'
+  check_positive 'config-inventory (scanned)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---
