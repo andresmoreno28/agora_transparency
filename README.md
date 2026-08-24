@@ -262,39 +262,34 @@ the set of jobs the template could in principle run:
 This table is a dated measurement, not a promise: whichever commit changes the CI job list, the
 packaged file set or a gate's denominator is the commit that updates it.
 
-### A ninth job, declared in this commit and not yet observed
+### The ninth job: the clean-install smoke, now on the canonical gate
 
-The commit that added this paragraph also added `OPT_IN_TEST_DRUPAL_CMS: '1'` and
-`_AUTORUN_DRUPAL_CMS: 'all'` to [`.gitlab-ci.yml`](.gitlab-ci.yml). Both are variables the shared
-`gitlab_templates` pipeline already understands, and together they turn on the **clean-install
-smoke**: a job named `Drupal CMS` that builds a fresh Drupal CMS site, installs this package into it
-from a Composer path repository, and runs Drupal CMS's own compatibility test against it. Until now
-that smoke ran only on the GitHub mirror, which is an informative surface — a reviewer on
-Drupal.org cannot re-run it.
+`.gitlab-ci.yml` sets `OPT_IN_TEST_DRUPAL_CMS: '1'` and `_AUTORUN_DRUPAL_CMS: 'all'` — two
+variables the shared `gitlab_templates` pipeline already understands, with no job defined or
+overridden here. Together they turn on a job named `Drupal CMS` that builds a fresh Drupal CMS
+site, installs this package into it from a Composer path repository, and runs Drupal CMS's own
+compatibility test against it.
 
-The row is written here **empty on purpose**. Its status and its blocking flag can only be read from
-the pipeline that this commit triggers, and this project publishes job lists it has observed or none
-at all:
+Observed in pipeline `934533` on branch `1.x`, commit `09fb47b`, read from the API on 2026-08-24:
 
 | Job | Stage | Status | Blocking |
 |---|---|---|---|
-| `Drupal CMS` | build | ⬜ not yet observed | ⬜ not yet observed |
+| `Drupal CMS` | build | success | yes |
 
-Two outcomes would be failures rather than passes, and they are written down in advance so that
-neither can be talked away afterwards. If the job does not appear in the job list at all, the gate's
-minimum of nine jobs is unmet and the work is not done — a job that was asked for and never
-materialised is not a job that passed. If it appears but is non-blocking, it needs a dated, owned
-exception recorded in `.gitlab-ci.yml`, and that exception list is empty today.
+**Nine jobs, all blocking, no exceptions.** The row was published empty in the commit that declared
+the job and filled in the commit that observed it, because this project publishes job lists it has
+watched run or none at all.
 
-**Two checks are absent, and an absent check is not a passed one.**
+Two outcomes would have been failures rather than passes, and both were written down before the
+pipeline ran: a job absent from the list would mean the minimum of nine is unmet and the work is
+not done, and a job present but non-blocking would need a dated, owned exception. Neither
+happened — the job appeared and arrived blocking on its own. Worth knowing why that was not
+automatic: the variable that makes the validate stage blocking does not reach this job, which is
+declared in the build stage.
 
-* `stylelint` did not run because there is no CSS in the package for it to read. Ágora's theme is a
-  separate project, so this job may never run in this repository at all.
-* `secret detection`, GitLab's own credential scanner, is not part of the three included template
-  files, so it still does not run as a job. The gap it would cover is narrower than it looks:
-  `tests/bin/no-secrets` runs on every push inside `agora-invariants`, which executes both gate
-  runners — `gate-a-wave1.sh` (61 checks · 0 failures) and `gate-a-wave3.sh` (35 checks · 0
-  failures), 10 invariants in total — not only when a human types them by hand.
+Until this landed, the clean-install smoke ran only on the GitHub mirror, which is an informative
+surface — a reviewer on Drupal.org can neither see nor re-run it. The mirror keeps running as a
+second opinion; what ended is its monopoly.
 
 **The gate is the list of jobs, never the pipeline's status field.** This is not a preference. An
 earlier pipeline reported `success` while the spell check inside it had failed: four of the seven

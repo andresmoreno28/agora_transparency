@@ -207,27 +207,33 @@ moving the working copy a session is running in, on the day wave 5 starts.
   commit that changes the CI job list, the packaged file set or a gate's denominator is the commit
   that updates it.**
 
-  ⚠️ **A NINTH JOB IS DECLARED IN THIS COMMIT AND IS NOT YET OBSERVED — T-511, Amendment to D-020,
-  2026-08-24.** `.gitlab-ci.yml` now sets `OPT_IN_TEST_DRUPAL_CMS: '1'` and
-  `_AUTORUN_DRUPAL_CMS: 'all'`, which should make the clean-install smoke materialise as a
-  `Drupal CMS` job in the very pipeline this commit triggers. The row below is a **placeholder,
-  deliberately left unfilled**: its two right-hand cells are knowable only after the push, and this
-  project publishes an observed job list or none at all. **The coordinator** reads
-  `/api/v4/projects/project%2Fagora_transparency/pipelines/<id>/jobs` after the push and replaces
-  this notice — and the identical placeholder in `README.md` — with the observation, quoting the
-  pipeline id and commit sha the way the eight rows above do.
+  ✅ **THE NINTH JOB IS OBSERVED. Pipeline `934533`, ref `1.x`, commit `09fb47b`, read from
+  `/api/v4/projects/project%2Fagora_transparency/pipelines/934533/jobs` on 2026-08-24** — not
+  from the UI, not from the badge. T-511, under the Amendment to D-020.
 
   | job | stage | status | `allow_failure` |
   |---|---|---|---|
-  | `Drupal CMS` | build | ⬜ NOT YET OBSERVED | ⬜ NOT YET OBSERVED |
+  | `Drupal CMS` | build | success | false |
 
-  **Two outcomes are failures, not passes**, named in advance so neither can be argued away when it
-  appears. If the job is **absent** from the job list, `jobs >= 9` is unmet and T-511 is **not
-  done** — that is I-050 exactly (*defined ≠ materialised ≠ collected ≠ executed*), and the
-  temptation will be to describe eight jobs as "still green". If the job is present but
-  **permissive**, D-023(5) requires a dated, owned exception written into `.gitlab-ci.yml`, and that
-  list is empty today; `_ALL_VALIDATE_ALLOW_FAILURE: '0'` does **not** cover it, because the job is
-  declared in the `build` stage, not `validate`.
+  **Nine jobs · all blocking · zero named exceptions.** The eight-row table above and this row are
+  the same observation split by the commit that produced each; the floor set by D-023(5) is now
+  **`jobs >= 9`**, not `7`. ⚠️ The quotation of D-023(5) below still reads `jobs >= 7` **because it
+  is a quotation** — the rule's text is not edited to match a later measurement (rule 8); the
+  operative floor is the number in this paragraph.
+
+  *Both failure modes named in advance did not occur, and saying so is the point of naming them:*
+  the job **materialised** (so `jobs >= 9` is met, and I-050's *defined ≠ materialised ≠ collected
+  ≠ executed* was checked rather than assumed), and it arrived **`allow_failure: false`** on its
+  own — `_ALL_VALIDATE_ALLOW_FAILURE: '0'` does **not** reach it, since it is declared in the
+  `build` stage. So **no exception was needed and the exception list stays empty**.
+
+  *What this job actually proves, stated narrowly:* it builds a fresh `drupal/cms` at `2.1.3`,
+  installs **this package** into it through a Composer path repository, and runs Drupal CMS's own
+  compatibility test against it. It is the clean-install smoke, and it now runs **where a
+  Drupal.org reviewer can re-run it**. The GitHub workflow keeps running and stays informative
+  (D-020); what ended is its monopoly. ⚠️ It resolves dependencies from `packages.drupal.org`,
+  which is why it was landed **today, on a tree that requires no theme** — wave 7 adds
+  `drupal/agora_theme` to `require`, and a red then is attributable to the swap and nothing else.
 
 - **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
   non-negotiable rule 9's second sentence and D-006 on this point):
