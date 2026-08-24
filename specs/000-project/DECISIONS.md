@@ -799,6 +799,119 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   installation that grants it — and it is the third time this pattern has been caught by someone
   else rather than by me.
 
+## Decisions opened by unit 002
+
+> **Framed [ejecutor] 2026-08-24 in the unit 002 scaffolding turn, against
+> `specs/002-base-and-theme/research/2026-08-24-canvas-theme-and-cross-repo-gates.md`.**
+> **D-027, D-028, D-029 and D-030 are SIGNED by [ejecutor] under [andres]'s standing delegation** —
+> each is methodology or a licence-constrained choice, not a product trade-off.
+> **D-025 and D-026 await [andres]:** D-025 imposes an ordering constraint that costs him a release
+> action, and D-026 decides the shape of the product itself. Neither is mine.
+> ⚠️ **D-027 is a material amendment to D-009**, which is signed: D-009 put the accessibility gate
+> in the template repository, and the mechanics make that impossible. Recorded as an amendment,
+> never as an edit (rule 8).
+
+- **D-025** · How `agora_transparency` depends on `agora_theme` before the theme has a release
+
+**Context in one line.** The template must name the theme in `require`, and today Composer cannot resolve `drupal/agora_theme` at any version — measured, not assumed: `packages.drupal.org/files/packages/8/p2/drupal/agora_theme.json` returns 404, and so does the same URL for `agora_transparency`, which has had a pushed branch since yesterday.
+
+| | Option | Real cost |
+|---|---|---|
+| A | Depend on `^1.0@dev` once a dev release exists | Violates non-negotiable rule 1. Upstream would not stop us (`RequirementsTest`'s pin regex does not match `^1.0@dev`), which makes it *more* dangerous, not less — nothing would catch it but us. Also forces `minimum-stability` on the end user. |
+| B ★ | **Sequence: the theme cuts a stable `1.0.0` before the template ever names it.** The template's `require` only ever holds `"drupal/agora_theme": "^1.0"` | Costs one ordering constraint: wave 7 cannot start until [andres] has tagged 1.0.0 (T-701). Costs nothing else. The theme's later `1.0.1`/`1.1.0` flow to new installs through the caret, which is exactly how it should work — site templates are apply-once and provide no update paths (RFC). |
+| C | Test the template against the unreleased theme via a build-time-only path repository (`_COMPOSER_EXTRA`) | Technically clean of the package. But the gate would then prove an installation *the end user cannot perform* — the I-048 pattern this project has been caught by before. |
+
+**★ B.** It is the only option where the gate proves the same thing the end user gets, and the only cost is an ordering constraint we control.
+
+**Riders needed from [andres]:** (i) confirm that `1.0.0` may be tagged before security-advisory coverage is granted — coverage is not a release prerequisite, only a 10-day-age one; (ii) confirm that a theme reaching 1.0.0 mid-unit is acceptable rather than waiting for unit 006.
+
+---
+
+- **D-026** · The shape of the content model
+
+**Context in one line.** The ROADMAP names five node types; five types means five editorial UIs, five accessible-table templates and five sets of demo content, and units 003 and 006 pay for each of them twice.
+
+| | Option | Real cost |
+|---|---|---|
+| A | Five node types as the ROADMAP says: Document, Person/Position, Contract, Budget line, Public call | Maximum per-type field precision. Maximum surface: ~5× the Twig, the a11y sweep, the demo content and the config export. This is the single largest scope multiplier available to unit 002. |
+| B | One `Publication` type + a `document type` taxonomy; Person as the only second type | Smallest surface. But contracts and budget lines lose their structured numeric fields, so unit 003's tables and figures have nowhere to come from, and facets carry the entire UX. |
+| C ★ | **Three: Document (with a `document type` vocabulary covering budget · contract · public call · report), Person, Dataset** | Middle. One shared facet spine (type · year · area · status) serves everything. Dataset exists because unit 003 point 5 requires a downloadable open-data record with its own page anyway — better to model it now than to retrofit. Cost: contract-specific fields live on Document as optional fields, which is slightly less tidy in the editor. |
+
+**★ C.** The transparency domain is overwhelmingly "a document with metadata"; modelling contracts and budget lines as separate node types buys field precision at the price of five editorial interfaces, and the units that pay that price are not this one.
+
+---
+
+- **D-027** · Where the accessibility gate physically lives — **a material amendment to D-009**
+
+**Context in one line.** D-009 (signed 2026-08-21, option C) put axe "inside the existing `gitlab_templates` Nightwatch job on drupalcode", assuming the template repository; the mechanics say that cannot work there.
+
+The evidence, both halves read at source today:
+
+- `include.drupalci.main.yml:118-127` — a `recipe` project is installed at `$CI_PROJECT_DIR/recipes/<name>`, a **sibling** of the docroot; every other project type goes **inside** it.
+- `core/tests/Drupal/Nightwatch/nightwatch.conf.js:16-21` — Nightwatch globs `**/tests/**/Nightwatch/**/*.js` with `cwd` resolved to **the docroot**.
+
+So in `agora_transparency` the CI job would materialise (its exists-rule reads `$CI_PROJECT_DIR`) and the harness would collect **zero** test files. A green Nightwatch job that ran nothing.
+
+| | Option | Real cost |
+|---|---|---|
+| A | Keep it in the template repo and set `DRUPAL_RECIPES_PATH` inside the docroot | Also moves where Composer installs the recipe. **NOT MEASURED**, and unpicking it later would touch the packaging. Fixing a test-collection problem by moving the product is backwards. |
+| B ★ | **Amend D-009: the blocking axe gate lives in `agora_theme`, where a theme is installed inside the docroot and the glob finds it.** The template repo's a11y surface is the `Drupal CMS` install smoke plus, from unit 003, axe over demo pages on the informative GitHub surface | The theme repo's axe test scans the theme rendering **core's** content, not Ágora's demo pages. Real gap — but the demo pages do not exist until unit 003, so the gap is not being introduced here, only made visible. |
+| C | Drive axe from PHPUnit `FunctionalJavascript` in the template repo, browser proven by T-228 | Needs axe-core reachable from PHP. Vendoring it into a package whose defining rule is "contains no code" is a fight with the reviewer we do not need. |
+
+**★ B**, with an explicit note that the demo-page axe coverage is unit 003's and is named there, so nobody reads today's arrangement as complete.
+
+---
+
+- **D-028** · Does `agora_theme` get its own `tests/bin/`, or inherit by copy?
+
+**Context in one line.** Four invariants apply to both repositories (`no-secrets`, `no-patches`, `no-blind-phpunit`, `identity-strings`); five do not (`sbom-check`, `no-code-in-template`, `no-boilerplate`, `no-ci-allow-dev`, `cited-tasks-exist`).
+
+| | Option | Real cost |
+|---|---|---|
+| A | Copy `tests/bin/` wholesale | Five scripts that assert things false about a theme. They would be adjusted to pass — which is the exact shape of weakening a gate, arrived at innocently. |
+| B ★ | **A named subset, copied, plus `shared-invariants.manifest` (sha256 per script + the source sha it came from) and an invariant that fails when a local copy has been edited** | Copy-with-a-detector. Local drift is caught mechanically; upstream drift is caught by a dated review task in unit 006, not by magic. Cost: one manifest to regenerate whenever a shared script legitimately changes. |
+| C | Extract the shared scripts into a third repository both consume | Correct at ten repositories. At two it is a third thing to release, version and gate, for four shell scripts. |
+
+**★ B.** It matches the house pattern — a detector with a dirty case — and it is honest that this is a copy rather than pretending it is sharing.
+
+---
+
+- **D-029** · Directory naming under D-017
+
+**Context in one line.** D-017 put the whole repository in English, unit 001's Spanish paths were renamed, and **four Spanish unit directories are still on disk**: `002-base-tema`, `003-contenido-demo`, `005-ia-governance`, `007-publicacion`.
+
+| | Option | Real cost |
+|---|---|---|
+| A | Rename only `002-*` now, leave the others | Guarantees the same discussion three more times, and leaves a repository that is visibly half-translated at exactly the moment two new reviewers (security coverage, marketplace) start reading it. |
+| B ★ | **Rename all four in T-501: `002-base-and-theme`, `003-demo-content`, `005-ai-and-governance`, `007-publication`** | Four `git mv`s and four one-line README edits. Each file is a 4-line placeholder; there is no history worth preserving and `--follow` handles what there is. |
+| C | Leave them; the paths are internal | D-017 says "the ENTIRE repository", process layer included, and D-015 keeps `specs/` **visible** in the public repository. These paths are published. |
+
+**★ B**, in T-501, before any unit-002 file is created under the old name.
+
+---
+
+- **D-030** · The typeface
+
+**Context in one line.** D-014 rider (a) requires self-hosted OFL typography — CDN fonts are a GDPR liability for EU public bodies — and this is an SBOM and licence-manifest entry, not a taste question.
+
+All three verified as SIL OFL 1.1 at source on 2026-08-24 (licence file URLs in the research).
+
+| | Option | Real cost |
+|---|---|---|
+| A | **Source Sans 3** (Adobe) | Excellent quality and coverage. Carries **Reserved Font Name `'Source'`** — a permanent rule that any modified build may not use the name. One more thing to remember forever. |
+| B ★ | **Public Sans** (US GSA, a fork of Libre Franklin) | Purpose-built for government interfaces. **No Reserved Font Name**; GSA's modifications are CC0 on top of OFL 1.1, and the licence explicitly says to treat the combined work as OFL 1.1. Institutional-sober by design, which is the brief. |
+| C | **Atkinson Hyperlegible** (Braille Institute) | The strongest accessibility narrative available — designed for low vision. Its display personality is more distinctive than "sober institutional", and it is a weaker workhorse for dense tables. |
+
+**★ B — Public Sans**, with the note that C is the right choice if [andres] wants the a11y story to be legible in the typeface itself rather than only in the audit. **Either way, T-607 must verify before adoption:** full Spanish diacritic coverage and tabular figures. That verification is a task criterion, not a decision.
+
+---
+
+### Amendment proposal to D-020 (not a new decision — rule 8)
+
+**D-020 classifies the install smoke's surface as informative.** Measured today: setting `OPT_IN_TEST_DRUPAL_CMS: '1'` and `_AUTORUN_DRUPAL_CMS: 'all'` makes the `Drupal CMS` job match `.autorun-drupal-cms-rule`, which ends `when: always` and declares no `allow_failure` — i.e. **automatic and blocking** on drupalcode. Proposal: **amend D-020** so the clean-install smoke becomes the ninth blocking job (T-511), and the GitHub workflow keeps its informative status as a second opinion. This changes gate A's job list, so per D-023(5) the CLAUDE.md table is updated in the same commit that makes it true.
+
+---
+
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21

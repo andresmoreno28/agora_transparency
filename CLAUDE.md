@@ -88,7 +88,7 @@ specs/
   001-foundation/           # active unit
     DISPATCH-00.md · plan.md · tasks.md
     research/              # dated research (prior-is-not-disk)
-  002-base-tema/ … 007-publicacion/     # not planned; see ROADMAP.md
+  002-base-and-theme/ … 007-publication/  # 002 scaffolded 2026-08-24; 003-007 see ROADMAP.md
 tests/bin/                 # invariant scripts + binding smokes (gate A)
 .claude/
   agents/                  # orquestador · desarrollador · tester

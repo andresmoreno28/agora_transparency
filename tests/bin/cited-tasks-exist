@@ -102,7 +102,11 @@ CITATION_PATTERN='T-[0-9]{3}'
 # Requiring the id in **bold** at the head of a list item is what separates a
 # definition from a mere mention: tasks.md mentions T-402 in prose at line 154
 # and inside a rider at line 762, and neither of those makes T-402 exist.
-DEFINITION_ANY='^[-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3}\*\*'
+# Two shapes count as a definition, because the house has two: unit 001 defines
+# tasks as list items, unit 002 defines them as rows of a table. Recognising only
+# the first would make the guard enforce a prose style it has no business having
+# an opinion about, and would report correct task lists as dangling.
+DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3}\*\*|\|[[:space:]]*T-[0-9]{3}[[:space:]]*\|)'
 
 # ---------------------------------------------------------------- preflight --
 for tool in find grep sort wc cut mktemp; do
