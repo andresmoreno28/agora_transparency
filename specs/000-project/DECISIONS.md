@@ -859,6 +859,29 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   eight jobs "still green".
 
 
+- **Corrections to D-032, measured the same day it was signed.** Three of its supporting numbers
+  were wrong and one of its arguments was aimed at the wrong target. **The holding stands** —
+  export authoritative for `config/` only, through a baseline diff — but a decision whose evidence
+  is not re-measured is a decision that decays (I-047), so:
+  · **Ten upstream recipes, not eleven.** Eleven only if Ágora counts itself. Corrected in place
+    above; the wrong number had already reached two files.
+  · **`drupal_cms_search` is not in the rig's `require` at all**, and `search_api` is not
+    installed. Four of the five packages I named are real; that one was invented by repetition.
+  · **The pollution argument was aimed at the wrong thing.** None of `byte`, `haven`,
+    `drupal_cms_ai`, `webform` or `search_api` is **enabled** on either rig, so an export would not
+    have captured their config. **The real thing that rules them out is different and worse:**
+    `recipes/agora_transparency` is a **copy, not a symlink**, in *both* rigs — so anything an
+    export loop writes lands in the rig's copy and **never reaches the working copy**, and the next
+    `composer install` deletes it. The purpose-built rig is still required; the reason is
+    mechanical, not hygienic.
+  · Worth recording rather than discarding: the rig's `require` carries **two unstable
+    constraints** (`drupal/webform` at beta, `drupal/drupal_cms_site_template_base ^1@dev`).
+    `tests/bin/no-unstable-deps` correctly does not see them — its scope is **this** repository's
+    `composer.json` — but D-032=A would have copied that `require` into the template, which is
+    exactly the rule-1 exposure the option was rejected for. The option was rejected on reasoning;
+    this is the measurement that would have proved it.
+
+
 - **D-032** · **What is the authoritative producer of `config/`, `recipe.yml` and
   `composer.json`?** **SIGNED [ejecutor] 2026-08-24 under standing delegation** — this is
   mechanics, not a product trade-off: it decides which tool writes which file, and every option
@@ -875,7 +898,7 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
     destination exists without `--overwrite`. The skill's flow therefore writes a recipe next door
     that nobody reads, and `config/` is untouched.
   · `recipe.yml` is **regenerated** from `name`/`type`/`install`/`config` via `Yaml::encode()`. So:
-    **there is no `recipes:` key in the output** — Ágora's eleven upstream recipes vanish and their
+    **there is no `recipes:` key in the output** — Ágora's ten upstream recipes vanish and their
     config is inlined; **every comment is destroyed**, and most of that 9,491-byte file is D-011's
     seam convention, the area labels and D-021's rationale for the exact `name:` string; `install:`
     becomes ~100 entries instead of three.
@@ -890,7 +913,7 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
 
   | | Option | Real cost |
   |---|---|---|
-  | A | The export is authoritative for all three files; the repository is regenerated from the site | Loses the eleven upstream recipes, the seam convention, D-021's rationale and deliberate SBOM control; performs half of T-702 by accident. **This is what T-601's row literally says today.** |
+  | A | The export is authoritative for all three files; the repository is regenerated from the site | Loses the ten upstream recipes, the seam convention, D-021's rationale and deliberate SBOM control; performs half of T-702 by accident. **This is what T-601's row literally says today.** |
   | **B ★** | **The export is authoritative for `config/` only, and only through a baseline diff. `recipe.yml` and `composer.json` stay hand-maintained and are never written by the tool** | One extra export (the baseline) per modelling session, plus a documented transplant step for `install:` entries and `require` additions |
   | C | Hand-write `config/` YAML directly; never run `site:export` | 60-100 files hand-authored including entity view and form displays, with schema keys wrong in ways only an install surfaces |
 
@@ -901,13 +924,13 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   ⚠️ **The reason the baseline is not optional, and it is the finding that decided this.**
   `_core.default_config_hash` is the marker that says *"this config came from an extension's
   default config, not from you"* — **and the exporter strips it**. After a `site:export`, Ágora's
-  own config is **indistinguishable by inspection** from the config the eleven upstream recipes
+  own config is **indistinguishable by inspection** from the config the ten upstream recipes
   supplied. The only discriminator left is a **diff against a baseline export of the same site
   without Ágora's changes**. Neither the skill nor any task row mentioned such a step.
 
   *The procedure B mandates:* (1) a purpose-built rig whose `require` is exactly Ágora's dependency
   closure — **not `~/agora-cms`**, whose `require` carries Byte, Haven, `drupal_cms_ai`,
-  `drupal_cms_forms`, `drupal_cms_search` and more, **none of which is in Ágora's SBOM** ·
+  `drupal_cms_forms` and more, **none of which is in Ágora's SBOM** ·
   (2) **baseline export first**, before touching anything · (3) model, then export again ·
   (4) **the artefact is `diff -r baseline after`, never `after`** — only files that appear or change
   are copied into `config/` · (5) `recipe.yml` and `composer.json` are **never taken from the
