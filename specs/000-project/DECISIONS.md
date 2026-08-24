@@ -820,6 +820,37 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   installation that grants it — and it is the third time this pattern has been caught by someone
   else rather than by me.
 
+- **Amendment to D-028 — `no-unstable-deps` is the fifth shared invariant. Its enumeration was
+  incomplete, and the gap was in the one place a gap is invisible.** Recorded [ejecutor]
+  2026-08-24, under standing delegation. **This completes D-028's own list; it does not add work
+  to the unit** — no new task row, so D-031's headroom −2 is untouched. Said explicitly because
+  "it's small" is the exemption this project does not grant, and the distinction being relied on
+  here is *completion of a signed enumeration* rather than *new scope*.
+
+  *How it surfaced:* the `desarrollador` implementing T-508 noticed that the template's
+  `tests/bin/` holds **14** files while D-028 names **9** — four shared, five excluded. Of the
+  remaining five, three are template-local tooling and one is `spellcheck` (a pre-flight, not an
+  invariant). **`no-unstable-deps` was in neither list**, so it was neither adopted nor rejected:
+  it had no verdict at all. It was never copied, which was the correct reading of "a named subset",
+  and it was reported instead of being quietly resolved in either direction. That is the behaviour
+  the reconciliation rule exists to produce.
+
+  *Why it belongs on the theme, and why now:* **non-negotiable rule 1 — no dev/alpha/beta/rc
+  dependency, ever — is a literal marketplace requirement, and it binds every package this
+  project publishes, not only the template.** The theme's `composer.json` has **no `require`
+  section at all** today, so the invariant passes **vacuously**. That is precisely the moment to
+  install it: it becomes load-bearing the first time anyone adds a dependency, and whoever adds
+  that dependency is the last person who will think to bring a guard along with it.
+  ⚠️ A vacuous pass is its own hazard (**I-028** — the degenerate case and the expected value
+  printing the same word), so the invariant must report **`0 entries`**, not merely `clean`.
+
+  *What is NOT amended:* the five deliberately excluded invariants stay excluded, and D-028's
+  central holding is untouched — **a copied invariant is never edited until it passes**; that is
+  the failure the manifest and its drift detector were bought to prevent. The new record enters
+  the manifest as `status=verbatim`, which the manifest itself asserts by requiring the local and
+  source hashes to be **equal** — so this amendment is enforced mechanically, not by memory.
+
+
 - **Note closing D-014(c) — the theme's identity is measured, and now it is on disk.** Recorded
   [ejecutor] 2026-08-24. D-014 rider (c) read *"theme machine name pending verification (proposal:
   `agora_theme`) — closed in unit 002"*. It is closed. Read from

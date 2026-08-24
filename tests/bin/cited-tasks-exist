@@ -106,7 +106,15 @@ CITATION_PATTERN='T-[0-9]{3}'
 # tasks as list items, unit 002 defines them as rows of a table. Recognising only
 # the first would make the guard enforce a prose style it has no business having
 # an opinion about, and would report correct task lists as dangling.
-DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3}\*\*|\|[[:space:]]*T-[0-9]{3}[[:space:]]*\|)'
+# The table alternative accepts an optional ✓ after the id - `| T-502 ✓ |`. Literal, not a
+# wildcard: `[^|]*` would also swallow `| T-106 (deferred unit 001) |` from the carried-debt
+# table, turning citations of debt into definitions and masking exactly what this script hunts.
+# Without it, SIGNING a task DELETED its definition: the row still existed, the id was still
+# cited by decisions, and the count of definitions silently fell by one per signature. Findings
+# stayed at 0 only because nothing cited those three ids yet, so the detector would have started
+# lying at the first decision that did. Caught by watching the DENOMINATOR move (115 -> 113)
+# rather than the verdict, which is I-045 applied to this repository's own invariant.
+DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3}\*\*|\|[[:space:]]*T-[0-9]{3}[[:space:]]*(✓[[:space:]]*)?\|)'
 
 # ---------------------------------------------------------------- preflight --
 for tool in find grep sort wc cut mktemp; do
