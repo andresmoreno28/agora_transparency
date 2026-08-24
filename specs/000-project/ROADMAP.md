@@ -58,7 +58,16 @@ and the re-verification of the marketplace requirements. See `specs/001-foundati
 **Goal:** the transparency data model and a sober, accessible Canvas-compatible theme.
 
 **Development points**
-1. **Content types**: Document, Position/Person, Contract, Budget line, Public call.
+1. ~~**Content types**: Document, Position/Person, Contract, Budget line, Public call.~~
+   **SUPERSEDED by D-026 (2026-08-24), which is signed scope; this line never was.** The list above
+   was wrong in **both** directions and the error is worth keeping visible. It **omitted**
+   *convenios* (art. 8.1.b) and *subvenciones* (art. 8.1.c) — two of the eight categories Ley
+   19/2013 enumerates, and subvenciones is the single most scrutinised item a small municipality
+   publishes. And it **added** “Budget line”, whose unit of publication is the budget of year N,
+   not the *partida*. Signed model: **`Document` · `Person` · `Contract` · `Agreement` (convenio)
+   · `Grant` (subvención) · `Dataset`**, budget being a Document plus a Dataset. “Public call”
+   folds into the `document type` vocabulary. See `specs/002-base-and-theme/tasks.md` T-601,
+   T-612–T-615.
 2. **Taxonomies and facets**: document type, year, area/department, status.
 3. **Roles and permissions**: editor, reviewer, publisher, administrator. Minimum permissions per role.
 4. **Base views**: document library with facets, listings by type, search box.

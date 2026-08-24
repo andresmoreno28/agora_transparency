@@ -30,3 +30,6 @@ node_modules/
 Thumbs.db
 *.swp
 .idea/
+
+# tests/bin/spellcheck caches the upstream cspell inputs here.
+.cspell-cache/

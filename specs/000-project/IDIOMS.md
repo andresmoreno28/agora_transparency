@@ -429,3 +429,23 @@
   list** — `database`, `selenium`, `chrome`. The shared contrib runners provision a real browser.
   A job's services tell you what the runner *can* do; its assertions tell you only what this test
   chose to do. Read both.
+- I-051 · **A local check that is documented as an approximation stops being read, and then the
+  gate it approximates fails unwatched.** The README offered a bare `cspell` command and said, in
+  writing, that it *"can disagree with the pipeline in both directions"*. It did — with no
+  `.cspell.json` in the repository it loaded neither the project dictionary nor Drupal core's two,
+  so it printed **905 findings where the job finds none**. Nobody reads a 905-line report, so
+  nobody read it, and `cspell` was **red on three consecutive pipelines** (`934242`, `934297`,
+  `934329`) while three commits were reported as landing clean. The honest warning did not help:
+  **a check with a known false-positive rate is not a weak signal, it is an absent one**, and it is
+  worse than no check because it occupies the slot where a real one would go. Distinguish it from
+  I-034 (*the badge is an exit code*): there the signal was read and meant less than it looked;
+  here the signal was never readable at all. Fix: `tests/bin/spellcheck` fetches the job's real
+  inputs and was verified against the very pipeline that had been failing. Rule: **a local
+  pre-flight either reproduces its gate or it is deleted** — shipping one with a disclaimer is
+  choosing the disclaimer over the gate. Recorded 2026-08-24.
+- I-052 · **An in-file `cspell:ignore` directive ends at the newline, not at the end of the HTML
+  comment.** 192 words wrapped across 22 lines inside one `<!-- cspell:ignore … -->` block silenced
+  **only the first line**; the other 21 lines were parsed as prose, so the same words were flagged
+  as the directive that was supposed to allow them. It fails quietly in the direction that looks
+  like success — the block is visibly *there*, and the count merely goes down. One directive per
+  line. Recorded 2026-08-24.

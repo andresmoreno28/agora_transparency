@@ -147,3 +147,65 @@ dlx                  # pnpm's one-off package runner, used in the README's local
 enmod                # Apache's a2enmod, invoked in .tugboat/config.yml
 tugboatqa            # Tugboat's own domain, docs.tugboatqa.com, cited in .tugboat/config.yml
 webprofiler          # the Drupal module, named in the clean-export skill as one to uninstall
+
+# ---------------------------------------------------------------------------
+# Spanish transparency-law vocabulary. D-026 makes these the project's permanent domain terms:
+# they name node types, fields and legal regimes, and every later unit will write them again.
+transparencia    # the domain itself; also the project machine name agora_transparency
+convenio         # Ley 19/2013 art. 8.1.b) - the Agreement node type
+convenios        # plural, same article
+Convenio         # sentence-initial and heading form
+convenidas       # art. 8.1.b) 'obligaciones económicas convenidas' - a field name
+obligaciones     # same phrase
+económicas       # same phrase
+subvención       # art. 8.1.c) - the Grant node type
+subvenciones     # plural, same article; also the name of the BDNS register
+adjudicación     # art. 8.1.a) 'importe de adjudicación' - a Contract field
+adjudicatario    # art. 8.1.a) - the counterparty the derived statistic aggregates
+licitación       # art. 8.1.a) 'importe de licitación' - a Contract field
+licitadores      # art. 8.1.a) 'nº de licitadores' - a Contract field
+procedimiento    # art. 8.1.a) - the procedure-type vocabulary
+modificaciones   # art. 8.1.a) - a Contract field
+importe          # the shared money field of the three financial regimes (T-601)
+objeto           # the shared subject field of the same pattern
+periodo          # the shared period field of the same pattern
+contraparte      # the shared counterparty field of the same pattern
+área             # the shared area/department field, and one third of the facet spine
+beneficiario     # art. 8.1.c) - the Grant counterparty
+partida          # the budget line D-026 rejects as a node type; the word survives in the reason
+organigrama      # art. 6.1 - what the Person node type publishes
+perfil           # art. 6.1 'perfil y trayectoria'
+trayectoria      # same phrase
+retribución      # art. 8.1.f) 'retribución anual' - a numeric Person field
+indemnización    # art. 8.1.f) - the second numeric Person field
+anual            # art. 8.1.f) 'retribución anual'
+anuales          # art. 8.1.e) 'cuentas anuales' - a Document
+cuentas          # same phrase
+declaración      # art. 8.1.h) 'declaración de bienes' - a Person attachment
+bienes           # same phrase
+pleno            # 'acta de pleno', a document type in the vocabulary
+plenos           # plural, as the autonomic regimes name it
+actas            # same, plural of acta
+
+# Institutions, statutes and registers named in D-026. Acronyms and proper nouns, not prose:
+LCSP             # the Spanish public-procurement act - what a convenio is legally excluded from
+BDNS             # the Spanish national grants register a subvencion must be declared to
+Reglamento       # Reglamento (UE) 2023/138, which binds Spanish local entities directly
+Reglamento's     # possessive of the same, used in T-614
+Andalucía's      # possessive; the autonomic regime D-026 declines to chase
+Cataluña's       # possessive, same sentence
+Gobierto         # the incumbent non-Drupal transparency platform (Populate)
+Terrassa         # a city running Gobierto, named as evidence of the incumbent
+
+# Third-party identifiers reached by the unit 002 theme research:
+Hyperlegible     # Atkinson Hyperlegible, an OFL typeface evaluated for T-607
+hyperlegible     # lower-case form in the font's own package name
+googlefonts      # the github.com/googlefonts organisation hosting the OFL sources
+gstatic          # fonts.gstatic.com, the host the no-external-font grep forbids
+lullabot         # Lullabot, cited as the source of a Drupal theming reference
+uswds            # the U.S. Web Design System, compared against as a public-sector design system
+opendata         # the drupal.org project of that name, measured and found unreleased
+hostable         # self-hostable, in the licence discussion of T-607
+Fdrupal          # a URL-encoded path fragment (%2Fdrupal) quoted from a drupalcode API call
+zbdnk            # an opaque asset hash in a quoted Google Fonts URL
+

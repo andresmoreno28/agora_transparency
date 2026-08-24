@@ -40,9 +40,23 @@ before the Nightwatch mechanics were read at source. Six changes, each with its 
 ### YES — in this unit
 
 **Template repository (`drupal/agora_transparency`)**
-- Content model: node types, fields, taxonomy vocabularies, exported to `config/`.
+- **Content model — six node types**, fixed by **D-026** (2026-08-24) against Ley 19/2013 arts. 6-8,
+  not chosen by us: `Document` · `Person` · `Contract` · `Agreement` (convenio) · `Grant`
+  (subvención) · `Dataset`. Fields and taxonomy vocabularies exported to `config/`.
+  **`Budget` is not a node type:** the approved budget, its execution reports and the cuentas
+  anuales are `Document`s; the machine-readable execution table is a `Dataset`, and that rendered
+  table — not a chart — is the accessible source of truth. The ROADMAP's “Budget line” was the
+  one genuinely wrong shape: the unit of publication is the budget of year N, not the *partida*.
+  Six bundles are **not** six units of work — the three financial regimes share one field pattern
+  built once in T-601 and attached three times.
+  ⚠️ **The art. 8.1.a) derived statistic** (percentage of contracts by procedure, and the volume
+  awarded per adjudicatario) is a **legal requirement and it is unit 003's**, not this unit's: it
+  needs contracts to aggregate, and this unit ships **no demo content** (NO-list item 1). It is
+  named here so it is carried rather than discovered later — the model must make it computable,
+  which is precisely why `importe` and `procedure type` are real fields on `Contract` and not
+  text on a PDF.
 - Roles and permissions: editor, reviewer, publisher — least privilege, asserted by test.
-- Base views: document library with facets, listings, search box.
+- Base views: **one table view per node type** (columns = that bundle's fields and no others), one shared facet spine (`área · año · estado`), and above them the document library and search box.
 - Canvas component enable/disable review for the front-end (not just the admin list
   inherited from the kit).
 - The **atomic swap**, in one commit: drop `extra.drupal-site-template`, drop `blank` from
@@ -71,8 +85,9 @@ This list is normative. If something below appears mid-wave, it does **not** get
    have a page to look at, created **by the test** and never exported. → unit 003.
 2. **Bilingual ES/EN anything.** No translations, no `lang` attributes beyond the theme's
    structural `{{ language.getId }}`. → unit 003.
-3. **Charts, visualisation, CSV/JSON download endpoints.** The Dataset node type may exist
-   as a model; nothing renders it beyond a table. → unit 003.
+3. **Charts, visualisation, CSV/JSON download endpoints, and the art. 8.1.a) derived statistic.**
+   The `Dataset` node type exists as a model; nothing renders it beyond a table — and the table is
+   the deliverable, not a fallback. → unit 003.
 4. **Editorial workflow, content moderation, ECA, Webform, FOI.** Roles and permissions
    are created; **no transitions and no automation**. → unit 004.
 5. **Anything AI, and Config Guardian.** → unit 005.

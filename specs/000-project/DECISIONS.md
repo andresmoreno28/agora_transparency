@@ -777,6 +777,27 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   `002-base-tema` etc. Those go in the word list as signed identifiers, and `[ejecutor]` is pinned by
   non-negotiable rule 7. The remaining inconsistency is **recorded rather than half-fixed**.
 
+- **Note on D-024 — the local pre-flight now reproduces the gate, because the version that did not
+  cost three red pipelines.** Recorded [ejecutor] 2026-08-24. D-024 settled *what* to do with each
+  bucket of unknown words and that part held: the buckets are still the four it named, and this
+  turn's ~250 new words were sorted into them without inventing a fifth. What D-024 did **not**
+  settle is how anyone would see the job's verdict before pushing, and the README's answer was a
+  bare `cspell` invocation that loads **no** dictionary this repository or Drupal core provides.
+  It printed 905 findings against a job that finds none, so it was unreadable, so it went unread,
+  and `cspell` failed on `934242`, `934297` and `934329` — three commits reported as clean.
+  `tests/bin/spellcheck` replaces it: it fetches `gitlab_templates`' `assets/.cspell.json`, Drupal
+  core's two dictionaries and this project's word list, applies `prepare-cspell.php`'s
+  transformations, reads tracked **and** stage-able files, and prints its denominator (I-045).
+  Verified against `934329` itself — same verdict before the fix, `65 files · 0 issues` after — with
+  a dirty case proving exit 1. **No decision is reversed here.** D-024(2) still holds (no project
+  `.cspell.json` is committed; the replica config is built in a git-ignored cache), D-024(4)'s
+  prohibitions still hold, and the new lines in the word list carry one reason each. The addition
+  is procedural: **a pre-flight either reproduces its gate or it is deleted** (I-051).
+  ⚠️ Scoped, not silenced: the research file that quotes four Spanish statutes carries ~190 words
+  in its own `cspell:ignore` header — D-024(3)'s *"scope the quotations"* applied literally — while
+  only the 53 terms Ágora itself uses as node types and fields entered the project dictionary.
+  `_CSPELL_IGNORE_PATHS` was **not** used on it: English spelling is still checked in that file.
+
 - **Note on D-014(e) — security advisory coverage has a waiting period, and it is a quality clock.**
   Recorded 2026-08-24 from [andres], who read it on the application page.
   D-014 rider (e) says *"when creating the theme project, opt in to security team coverage"*, and an
@@ -827,20 +848,95 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
 
 ---
 
-- **D-026** · The shape of the content model
+- **D-026** · **The shape of the content model: six node types, and budget is not one of them.**
+  **SIGNED [ejecutor] 2026-08-24 under [andres]'s delegation** — <!-- cspell:disable -->*"aquí como tú estimes oportuno, o
+  el orquestador"*<!-- cspell:enable -->, after he ruled that **cost is not the criterion**: <!-- cspell:disable -->*"debe tener sentido para un
+  producto final pulido, no quiero cosas de relleno pero tampoco quiero quitar cosas que tendrían
+  sentido añadir."*<!-- cspell:enable -->
+  ⚠️ **This REPLACES the framing of earlier the same day**, which recommended three types on a
+  surface-cost argument. That argument was answered and the recommendation was **refuted on its own
+  terms** — not because it was cheap, but because it was wrong. Research:
+  `specs/002-base-and-theme/research/2026-08-24-content-model-against-spanish-transparency-law.md`.
 
-**Context in one line.** The ROADMAP names five node types; five types means five editorial UIs, five accessible-table templates and five sets of demo content, and units 003 and 006 pay for each of them twice.
+  *Context in one line:* **Ley 19/2013 arts. 6-8 enumerate what a Spanish public body must publish
+  and, for each category, names the fields** — nine of them for contracts, including three amounts
+  and a legally required derived statistic. The model's shape is specified by law, not chosen by us.
 
-| | Option | Real cost |
-|---|---|---|
-| A | Five node types as the ROADMAP says: Document, Person/Position, Contract, Budget line, Public call | Maximum per-type field precision. Maximum surface: ~5× the Twig, the a11y sweep, the demo content and the config export. This is the single largest scope multiplier available to unit 002. |
-| B | One `Publication` type + a `document type` taxonomy; Person as the only second type | Smallest surface. But contracts and budget lines lose their structured numeric fields, so unit 003's tables and figures have nowhere to come from, and facets carry the entire UX. |
-| C ★ | **Three: Document (with a `document type` vocabulary covering budget · contract · public call · report), Person, Dataset** | Middle. One shared facet spine (type · year · area · status) serves everything. Dataset exists because unit 003 point 5 requires a downloadable open-data record with its own page anyway — better to model it now than to retrofit. Cost: contract-specific fields live on Document as optional fields, which is slightly less tidy in the editor. |
+  **The rule that decides every row:** *a category earns its own node type when the law names
+  **three or more fields that are neither prose nor a file**, at least one being a **number or a
+  counterparty a table must sort or filter on**. Otherwise it is a Document with a type, or a
+  Dataset.*
 
-**★ C.** The transparency domain is overwhelmingly "a document with metadata"; modelling contracts and budget lines as separate node types buys field precision at the price of five editorial interfaces, and the units that pay that price are not this one.
+  - **A** · Three: Document (+ vocabulary), Person, Dataset. **Refuted, and not on cost.** Putting
+    `importe de adjudicación`, `procedimiento`, `nº de licitadores` and `beneficiario` on `Document`
+    makes it a **union type**: its listing's columns become the union of every regime, so a third of
+    the cells are structurally empty — and an empty `<td>` that is empty *by design* is
+    indistinguishable from missing data to a screen-reader user. **It makes accessible tables
+    worse**, which is the one constraint that is not negotiable. It also puts `nº de licitadores` on
+    the form of the clerk adding a subvención.
+  - **B ★** · **Six, aligned to the law's regimes:** `Document` · `Person` · `Contract` ·
+    `Agreement (convenio)` · `Grant (subvención)` · `Dataset`. **Budget is not a node type:** it is
+    a Document (the approved budget, execution reports, cuentas anuales) plus a Dataset (the
+    machine-readable execution table, which *is* the accessible table and feeds any chart).
+    Six bundles, **not six units of work**: the three financial regimes share one field pattern
+    (`objeto`, `importe`, `periodo`, `contraparte`, `área`, `estado`), created once and attached
+    three times; Contract adds four fields, Convenio one, Grant none. One facet spine
+    (`área · año · estado`) serves all six.
+  - **C** · Five, as the ROADMAP says. **Wrong in both directions.** It omits **convenios
+    (art. 8.1.b)** and **subvenciones (art. 8.1.c)** — two of the eight enumerated categories, and
+    subvenciones is the most politically scrutinised item a small municipality publishes. And it
+    adds **Budget line**, the one genuinely wrong shape.
+  - **D** · Four, with one `Financial record` type and a `regime` discriminator. **Fails on Spanish
+    administrative law, not on taste:** a convenio is legally defined by its **exclusion from the
+    LCSP** (Ley 40/2015 arts. 47-53); a subvención is its own regime under Ley 38/2003 with its own
+    national register (BDNS). Collapsing three distinct legal regimes into one bundle with a
+    dropdown is an error any Spanish reviewer sees immediately.
 
----
+  ★ **B.** The only option where every node type maps to a category the law names, every field on it
+  is a field the law names, and nothing is modelled that the law does not ask for. **Six is what the
+  specification yields — not a compromise between three and five.**
 
+  *Two things this deliberately does not do.*
+  (a) **It does not model everything at full depth in v1.** `Agreement` ships with six fields and
+      `Grant` with three — which is *all the law names for them*. They are small **because the law
+      is brief about them**, not because they were trimmed.
+  (b) **It does not chase the autonomic layer.** Every observed autonomic addition (Andalucía's
+      *actas de plenos*, Cataluña's extension to privately financed entities, plenary recordings) is
+      a document or a media file. The model does not change; the `document type` vocabulary gains
+      `acta de pleno`. A template that tries to be all seventeen autonomic regimes is one no
+      municipality recognises.
+
+  *The four questions, answered:*
+  · **Contract** — own type, the least arguable of the six: art. 8.1.a) names nine fields and then
+    requires a **statistic derived from them**. You cannot aggregate a taxonomy term on a PDF.
+  · **Budget line** — **not** a node type. The unit of publication is *the budget of year N*, not
+    the *partida*. This is the ROADMAP's one real error.
+  · **Grant and Agreement** — own types, and **the ROADMAP omitting them is a real gap**, not a
+    scoping choice. The plan simply had not read the law.
+  · **Dataset** — a real legal requirement, from a statute nobody in this project had cited:
+    **Ley 37/2007** as amended by Directive (UE) 2019/1024, plus **Reglamento (UE) 2023/138**, which
+    binds Spanish local entities **directly, without transposition**. It was in the plan for the
+    wrong reason and survives for a much better one. ⚠️ The six high-value categories are
+    **snippet-level only** — verified inside T-614 before any task cites them.
+  · **Person** — own type. Art. 6.1 requires the organigrama with *perfil y trayectoria*; art. 8.1.f)
+    requires **retribución anual** and **indemnización**, two numbers that must sit in a sortable
+    table; art. 8.1.h) attaches the *declaración de bienes* of **local representatives specifically**
+    — the most municipality-specific obligation in the statute.
+
+  *A finding for the marketplace pitch, measured not assumed:* **no Drupal content model for Spanish
+  transparency obligations exists.** `transparencia` and `open_data` are not projects on drupal.org;
+  `opendata`, `open_data_schema_map` and `datastore` have no release for current core; LocalGov
+  Drupal models services and directories and nothing financial. The incumbent is **Gobierto**
+  (Populate — Barcelona, Madrid, Terrassa), a commercial non-Drupal platform. Re-measure at unit 007
+  rather than quoting this date.
+
+  *Budget consequence, stated as a number rather than absorbed silently:* the model lands in wave 6
+  Lane A, which carried it in **one** task. Split into five (T-601 restated, plus T-612…T-615), the
+  unit goes 30 → **34 tasks against a 34 budget, headroom 0**. The headroom existed because wave 7's
+  atomic swap and wave 8's carried debts are the parts most likely to surprise. **The budget is
+  raised to 38** — 34 for the known work, 4 to preserve the reserve. The increase is +4 and it buys
+  exactly the content model, nothing else. Signed under the same delegation; recorded here because
+  a budget that absorbs work silently is the failure the scope gate was built to prevent.
 - **D-027** · Where the accessibility gate physically lives — **a material amendment to D-009**
 
 **Context in one line.** D-009 (signed 2026-08-21, option C) put axe "inside the existing `gitlab_templates` Nightwatch job on drupalcode", assuming the template repository; the mechanics say that cannot work there.

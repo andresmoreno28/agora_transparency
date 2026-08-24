@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+#
+# spellcheck - run the CI cspell gate locally, faithfully.
+#
+# WHY THIS EXISTS. The README used to offer this as the local pre-flight:
+#
+#     pnpm dlx cspell@9.8.0 --locale en,en-GB README.md "specs/**/*.md"
+#
+# and warned, correctly, that it was an approximation. It was worse than that: with no
+# .cspell.json in this repository, that command loads NO project dictionary and NONE of
+# Drupal core's, so it disagrees with the gate in both directions at once - hundreds of
+# false positives hiding the handful of real ones. Three consecutive pipelines went red on
+# cspell (934242, 934297, 934329) while the local check was reporting the same noise it
+# always reported, which is I-034 in its purest form: a signal nobody could read stopped
+# being a signal at all.
+#
+# WHAT IT DOES. It reproduces what the cspell job actually runs, by fetching the same
+# inputs rather than guessing them:
+#
+#   * gitlab_templates' assets/.cspell.json          - the base config the job copies in
+#   * Drupal core's core/misc/cspell/*.txt           - the two dictionaries the job registers
+#   * .cspell-project-words.txt                      - this project's own, per _CSPELL_DICTIONARY
+#
+# and then applies, in this script, the transformations scripts/prepare-cspell.php applies
+# in the job: the extra word list, the ignorePaths, and the fifteen built-in dictionaries.
+#
+# WHAT IT IS STILL NOT. It is a replica, not the job. It pins nothing about the runner's
+# node version, and prepare-cspell.php can change upstream without this file noticing.
+# Verified equivalent on 2026-08-24 against pipeline 934329: same verdict, and after the
+# fix, 64 files checked and 0 issues - the same denominator the job reports (I-045: a green
+# linter is a statement about the set it opened, so this script always prints the set).
+#
+# Usage:  bash tests/bin/spellcheck [--refresh]
+#         --refresh  re-fetch the upstream inputs even if the cache is warm.
+
+set -u
+
+# `pwd -W` is what makes this work under Git Bash on Windows: the shell reports /c/Users/...
+# but node, python and cspell all want C:/Users/... . Passing the MSYS form to them produced
+# 68 "file not found" lines and a run over zero files that still printed "Issues found: 0" -
+# I-028 exactly, the degenerate case and the expected value wearing the same words.
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && { pwd -W 2>/dev/null || pwd; })"
+cd "$REPO" || { echo "FATAL: cannot cd to repository root"; exit 2; }
+
+CACHE="$REPO/.cspell-cache"
+CSPELL_VERSION="9.8.0"
+UPSTREAM_CONFIG="https://git.drupalcode.org/project/gitlab_templates/-/raw/main/assets/.cspell.json"
+CORE_DICT="https://git.drupalcode.org/project/drupal/-/raw/11.x/core/misc/cspell/dictionary.txt"
+DRUPAL_DICT="https://git.drupalcode.org/project/drupal/-/raw/11.x/core/misc/cspell/drupal-dictionary.txt"
+
+REFRESH=0
+[ "${1:-}" = "--refresh" ] && REFRESH=1
+
+fail() { echo "FATAL: $*" >&2; exit 2; }
+
+command -v curl   >/dev/null 2>&1 || fail "curl not found"
+command -v python3 >/dev/null 2>&1 || fail "python3 not found"
+command -v pnpm   >/dev/null 2>&1 || fail "pnpm not found - it is the only package manager this project uses"
+
+mkdir -p "$CACHE" || fail "cannot create $CACHE"
+
+# ---------------------------------------------------------------- fetch the upstream inputs
+fetch() {
+  local url="$1" dest="$2" name="$3"
+  if [ "$REFRESH" -eq 0 ] && [ -s "$dest" ]; then
+    echo "  cached   $name"
+    return 0
+  fi
+  local code
+  code="$(curl -sS -o "$dest.tmp" -w '%{http_code}' "$url" 2>/dev/null)"
+  if [ "$code" != "200" ]; then
+    rm -f "$dest.tmp"
+    # A stale cache is worth more than nothing, but say so out loud.
+    if [ -s "$dest" ]; then
+      echo "  STALE    $name (HTTP $code; using the cached copy - the result may lag the job)"
+      return 0
+    fi
+    fail "cannot fetch $name (HTTP $code) and there is no cached copy. Offline? The gate cannot be reproduced without it."
+  fi
+  mv "$dest.tmp" "$dest"
+  echo "  fetched  $name"
+}
+
+echo "upstream inputs"
+fetch "$UPSTREAM_CONFIG" "$CACHE/upstream.cspell.json" "gitlab_templates assets/.cspell.json"
+fetch "$CORE_DICT"       "$CACHE/dictionary.txt"        "Drupal core dictionary.txt"
+fetch "$DRUPAL_DICT"     "$CACHE/drupal-dictionary.txt" "Drupal core drupal-dictionary.txt"
+[ -f "$REPO/.cspell-project-words.txt" ] || fail ".cspell-project-words.txt is missing - the job registers it via _CSPELL_DICTIONARY"
+
+# ---------------------------------------------------------------- build the effective config
+python3 - "$REPO" "$CACHE" <<'PY' || fail "could not build the effective config"
+import json, os, sys
+repo, cache = sys.argv[1].replace(os.sep, "/"), sys.argv[2].replace(os.sep, "/")
+c = json.load(open(os.path.join(cache, "upstream.cspell.json"), encoding="utf-8"))
+# prepare-cspell.php: words it merges in unconditionally, plus the project's name parts.
+c["words"] = ["agora", "transparency", "lando", "ddev", "endapply", "nightwatchjs", "testgroup",
+  "testgroups", "backlinks", "mdhash", "uploaders", "vocabs", "curlopt", "returntransfer", "curle",
+  "customrequest", "failonerror", "postfields", "followlocation", "colourdefinitionsniff",
+  "seletorsingleline", "teamplatespacingaftercomment", "tforvalue", "trhowscommentindentation",
+  "unecessaryfiledeclaration", "blocklisted", "flagwords", "mkdocs", "autorun"]
+# prepare-cspell.php: non-project directories, always-ignored files, and the standard set.
+c["ignorePaths"] = ["web", "vendor", "node_modules", ".git", "recipes", ".cspell-cache",
+  "*.patch", "*.svg", "*_ignore_*", "build.env", "get-file-via-curl.sh",
+  "_cspell_unrecognized_words.txt", "_cspell_updated_project_words.txt",
+  "**/.*.json", "package.json", "yarn.lock", "phpstan*", ".*ignore",
+  "LICENSE.txt", "composer.json", "composer.lock"]
+c["globRoot"] = repo
+c["dictionaryDefinitions"] = [
+  {"name": "drupal",        "path": cache + "/drupal-dictionary.txt"},
+  {"name": "dictionary",    "path": cache + "/dictionary.txt"},
+  {"name": "project-words", "path": repo + "/.cspell-project-words.txt"}]
+c["dictionaries"] = ["companies", "fonts", "html", "php", "softwareTerms", "misc", "typescript",
+  "node", "css", "bash", "filetypes", "npm", "lorem-ipsum", "sql", "fullstack",
+  "drupal", "dictionary", "project-words"]
+json.dump(c, open(os.path.join(cache, "effective.cspell.json"), "w", encoding="utf-8"), indent=2)
+PY
+
+# ---------------------------------------------------------------- the file set
+# Tracked AND untracked-but-not-ignored: a file that is about to be committed is a file the
+# job will read, and the whole point of a pre-flight is to see it before the push does.
+git ls-files --cached --others --exclude-standard \
+  | sed "s#^#$REPO/#" > "$CACHE/files.txt" || fail "git ls-files failed"
+COUNT="$(wc -l < "$CACHE/files.txt" | tr -d ' \r')"
+echo
+echo "file set: $COUNT tracked or stage-able files offered to cspell"
+echo "          (it will skip a few by the upstream ignorePaths above and say how many)"
+echo
+
+# ---------------------------------------------------------------- run it
+pnpm dlx "cspell@$CSPELL_VERSION" \
+  --config "$CACHE/effective.cspell.json" \
+  --locale en,en-GB \
+  --no-progress \
+  --file-list "$CACHE/files.txt"
+RC=$?
+
+echo
+if [ "$RC" -eq 0 ]; then
+  echo "spellcheck: clean - and the line above states over how many files, which is the half"
+  echo "            that makes it a gate rather than a badge (I-045)."
+else
+  echo "spellcheck: FAILED. Every word above is one of four things (D-024(3)):"
+  echo "  * a real misspelling                 -> fix the prose"
+  echo "  * British English                    -> already covered by --locale en,en-GB; if it is"
+  echo "                                          still flagged it is not the spelling you think"
+  echo "  * project vocabulary or a proper noun-> .cspell-project-words.txt, ONE justified line each"
+  echo "  * a verbatim quotation               -> scope it in the file with cspell:disable/enable,"
+  echo "                                          or cspell:ignore for a long quoted passage"
+  echo "  Copying the job's _cspell_updated_project_words.txt over the word list is forbidden:"
+  echo "  it is one command from a green pipeline and it declares the next real misspelling correct."
+fi
+exit "$RC"

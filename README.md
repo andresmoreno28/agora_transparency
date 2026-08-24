@@ -292,28 +292,44 @@ than it looks, and it is written down here as one rather than counted as coverag
 ### Checking spelling before you push
 
 `cspell` is blocking, and it reads `README.md` and everything under `specs/`. That makes every prose
-commit a gate, so it is worth a look before you push:
+commit a gate, so run it before you push:
 
 ```shell
-pnpm dlx cspell@9.8.0 --locale en,en-GB README.md "specs/**/*.md"
+bash tests/bin/spellcheck
 ```
 
-`pnpm` is the only JavaScript package manager this project uses, in documentation as well as in
-tooling. The version is pinned to the one the CI job runs, and `--locale en,en-GB` matches the
-`_CSPELL_EXTRA` variable set in `.gitlab-ci.yml`: the prose here is British English, and declaring
-the language of the text is not the same as switching the check off.
+It prints the file count and either `Issues found: 0` or the words, and it exits non-zero when it
+finds something — so it is usable in a hook or a loop, not only by eye.
 
-**Treat this as an approximation, because that is what it is.** The CI job fetches the upstream
-`.cspell.json` from `gitlab_templates` and expands it with a PHP script before running; the command
-above does neither. It can therefore disagree with the pipeline in both directions. It is a way to
-catch typos early, not a second opinion on the gate.
+**What changed, and why the old advice is gone.** This section used to offer a bare
+`pnpm dlx cspell@9.8.0 --locale en,en-GB README.md "specs/**/*.md"` and warn that it was *"an
+approximation … not a second opinion on the gate"*. It was worse than an approximation. This
+repository deliberately has **no `.cspell.json`** (D-024(2)), so that command loaded no project
+dictionary and neither of Drupal core's: it reported hundreds of words the job accepts, and the
+real failures were indistinguishable inside the noise. **Three consecutive pipelines went red on
+`cspell`** — `934242`, `934297`, `934329` — while the local command kept printing the same
+unreadable output it always printed.
+
+`tests/bin/spellcheck` fetches the job's actual inputs instead of guessing them: the
+`assets/.cspell.json` that `gitlab_templates` copies in, Drupal core's two
+`core/misc/cspell/*.txt` dictionaries, and this project's `.cspell-project-words.txt` — then applies
+in shell the same transformations `scripts/prepare-cspell.php` applies in the job. It reads
+**tracked and stage-able files both**, because a file about to be committed is a file the job will
+read. Verified equivalent against pipeline `934329` on 2026-08-24: same verdict before the fix, and
+`65 files checked · 0 issues` after it. It is a replica, not the job — it pins nothing about the
+runner's Node version, and upstream can change `prepare-cspell.php` without this file noticing.
+The first run needs network for those three inputs and caches them in `.cspell-cache/`, which is
+git-ignored; later runs are offline, and a stale cache says so rather than pretending.
 
 Words that are genuinely words go in
 [`.cspell-project-words.txt`](.cspell-project-words.txt), one at a time, each with the reason it
-belongs there written beside it. The job offers an artefact that is "this dictionary plus everything
-that just failed"; importing that wholesale is one command away from a green pipeline and is
-forbidden here, because it declares the next real misspelling correct before anyone has seen it.
-
+belongs there written beside it. A **verbatim quotation** is not vocabulary and does not go there:
+it is scoped where it sits, with `cspell:disable`/`cspell:enable` around a phrase or `cspell:ignore`
+for a long quoted passage — which is why the research file quoting four Spanish statutes carries
+~190 words in its own header and none of them in the project dictionary. The job offers an artefact
+that is "this dictionary plus everything that just failed"; importing that wholesale is one command
+away from a green pipeline and is forbidden here, because it declares the next real misspelling
+correct before anyone has seen it.
 ## Support
 
 Bugs and questions go to the project's issue queue on Drupal.org:
