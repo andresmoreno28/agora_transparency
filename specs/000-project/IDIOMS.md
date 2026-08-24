@@ -424,3 +424,8 @@
   the answer lives. Corollary that made this cheap: a canary is worth running the moment it is
   possible, not when the feature needs it. This one cost one merge request and moved D-009 from an
   assumption to a measurement with a named next step. Recorded 2026-08-23.
+  **Follow-up, same day, and it is the reason the canary was worth running:** the manual job was
+  triggered and succeeded, and the useful evidence was **not** its result but its **container
+  list** — `database`, `selenium`, `chrome`. The shared contrib runners provision a real browser.
+  A job's services tell you what the runner *can* do; its assertions tell you only what this test
+  chose to do. Read both.

@@ -752,6 +752,27 @@ Sign here: `[ ]`
       **executes** on the shared contrib runners. The manual job can be started from the MR with one
       click, which needs a GitLab session; it is the only half of D-009 rider (b) still open, and it
       is now a two-minute action rather than an unknown.
+      > **ANSWERED 2026-08-23, by [andres] running the manual job.** Job `11731378`, pipeline
+      > `934195`, on shared runner `gitlab-runner-7899c9b6cd-zbdnk`: **`Job succeeded`**,
+      > `OK (1 test, 1 assertion)` in 31.7s.
+      > **The decisive line is not the result, it is the container list.** The job provisioned
+      > `database`, **`selenium`** and **`chrome`** as services, and Composer locked
+      > `lullabot/mink-selenium2-driver` and `lullabot/php-webdriver`. **So the shared contrib
+      > runners do provide a real browser**, which is the question D-009 rider (b) was written to
+      > ask and the risk it was written to retire. The accessibility thesis has somewhere to run.
+      > **Stated precisely, because the distinction is the whole of I-050:** what executed was
+      > `DrupalCmsCompatibilityTest`, a **Functional** test — it builds a Drupal CMS site with
+      > Ágora's recipe applied and asserts compatibility, but it does not drive the browser. So
+      > *the browser is provisioned and the job runs*; *a test that actually drives it* is still
+      > unproven, and that is unit 002's axe test, which is the file that also makes the
+      > `nightwatch` job materialise.
+      > Third fact worth keeping: **the job builds a full Drupal CMS with our recipe on every run
+      > it is triggered** — a second, independent install smoke, upstream-maintained and free. It
+      > stays `manual` and permissive for now (see above); unit 002 decides whether to make it
+      > automatic together with the Nightwatch test and its exception line.
+      > ⚠️ [andres] reports the job was **not visible in the MR view** and had to be found under
+      > Build → Jobs. Worth knowing: the MR page does not always surface a manual job in a
+      > `build`-stage that no other job needs.
 - [✓ 2026-08-21] **T-301** · `tests/bin/no-unstable-deps` according to the spec in `plan.md` §6.
       *Success:* it detects a deliberately injected `-beta` and does **not** flag the starter kit.
 - [✓ 2026-08-21] **T-302** · `tests/bin/no-patches`. *Success:* it detects an injected `patches` section.
