@@ -119,6 +119,7 @@ are YES. Any NO sends it to a named later unit with a one-line reason. There is 
 4. Can it be finished **inside the current wave** without opening a new D-NNN?
 
 **(b) The budget, and it is a number.** Unit 002 closes at **34 tasks, T-501 … T-834**.
+  ⚠️ **Corrected 2026-08-24: there is no T-834.** The unit's last row is **T-806**.
 Crossing 34 is not forbidden — it is *escalated*: it costs a rider signed by [andres]
 that names the tasks added and the reason, exactly as widening any other denominator
 would. The point is not that 34 is correct. The point is that growth becomes **visible
@@ -136,7 +137,7 @@ signed `T-<wave><nn>` convention and keeps every number unique across the projec
 (rule 8). Known expiry: from global wave 10 the numbers go four-digit.
 
 ### Wave 5 · The theme repository exists and its gate is provably real
-**Repositories:** `agora_theme` only. The template repository is not touched.
+**Repositories:** ~~`agora_theme` only. The template repository is not touched.~~ ⚠️ **Falsified by its own table, 2026-08-24:** four wave-5 rows touch the template repository — T-501 (`specs/`, the word list), T-503 (`specs/…/research/`), T-511 (`.gitlab-ci.yml` **and** `CLAUDE.md`) and T-512 (`IDIOMS.md`). Wave 5 is a **two-repository wave**. Not a scope problem, a lane problem: the lanes are `AT` (template) and `TH` (theme), and their file sets are disjoint.
 The wave's product is **not a theme** — it is a pipeline whose job list has been read from
 the API, containing a Nightwatch job that ran a real browser and printed a count.
 No visual design happens here.

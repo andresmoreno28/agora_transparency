@@ -147,6 +147,34 @@ Windows. Reach it with `wsl.exe -e bash -lc '...'`. **Never report Docker as una
 Windows side alone**: that mistake cost a day (I-046). Run `tests/bin/doctor` — it probes WSL and
 distinguishes the four states, and **its output beats any memory and beats this file**.
 
+**Amended 2026-08-24 (unit 002, wave 5). “Exactly ONE working copy” was true while this project was
+one repository. D-014=B made it two.** The paragraph above is not edited (rule 8); it is superseded
+here, and its warning gets *sharper*, not softer, because there are now two real checkouts that
+`~/agora-smoke` could be mistaken for.
+
+| Directory | Repository | Remotes |
+|---|---|---|
+| the checkout you are already in | **`agora_transparency`** — the site template | `drupalcode`, `github`; **no `origin`** |
+| its **sibling** `agora-theme/` | **`agora_theme`** — the theme (D-014) | `drupalcode` only |
+
+Written as *sibling* rather than as an absolute path on purpose: this file is public on drupalcode
+and on the mirror, and a home directory names a person. `tests/bin/doctor` prints both real paths
+when you need them, and its output beats this file.
+
+**The two are never both a session's working directory.** Every dispatch names **one absolute path
+on its first line**; an order without one is refused, not guessed. The guard that actually works is
+mechanical, not visual — the two names differ by a hyphen and a word, which is thin:
+`tests/bin/identity-strings` runs inside `agora-invariants` in **both** repositories and fires when
+a tree is not the repository it claims to be.
+
+**The template must never contain the theme.** `RequirementsTest` requires **0 `*.info.yml` files**
+in the package. A theme checkout nested anywhere under the template's tree is one `git add -A` away
+from making that permanently false, and the failure mode is a marketplace reviewer finding it, not
+a test. The sibling layout is the guard — that is why it is a sibling and not a subdirectory.
+
+⚠️ **Chosen by [ejecutor] 2026-08-24 under standing delegation, and it is reversible.** A
+`workspace/` parent holding both is the right shape at five repositories; at two it would mean
+moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job list observed**, 2026-08-24)
 
 - `composer validate` + clean install.
