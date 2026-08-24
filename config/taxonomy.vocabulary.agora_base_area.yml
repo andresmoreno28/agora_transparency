@@ -1,8 +1,8 @@
 langcode: en
 status: true
 dependencies: {  }
-name: Área
+name: Area
 vid: agora_base_area
-description: 'Área u órgano responsable.'
+description: 'The department or public body responsible for the information.'
 weight: 0
 new_revision: false

@@ -22,16 +22,22 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * NAMING CONVENTION, asserted rather than merely described:
  *  - machine names are ENGLISH (CLAUDE.md rule 6 / D-017: identifiers are
  *    English; only demo content is bilingual),
- *  - the Spanish the law uses is carried by the LABELS, which is why the five
- *    vocabularies have Spanish `name` and `description` values and the six
- *    field storages have none to carry,
+ *  - labels and descriptions are ENGLISH too (D-033, which OVERTURNED the
+ *    earlier ruling this docblock used to state: that the labels carry the
+ *    Spanish). English is not a preference here - core compares a config
+ *    object's langcode to 'en' before it will translate its strings at all,
+ *    so Spanish text under `langcode: en` was both false and untranslatable.
+ *    The Spanish reaches a site as a TRANSLATION, from localize.drupal.org,
+ *    never from this repository,
  *  - every identifier Ágora owns is prefixed with its functional area
  *    (recipe.yml's seam convention, D-011 rider b). The content model is area
  *    `base`, hence `agora_base_*`; fields additionally keep Drupal's `field_`
  *    prefix, hence `field_agora_base_*`, which also keeps `estado` from
  *    colliding with the `status` base field of a node.
  *
- * The Spanish the law names, mapped to the machine name that carries it:
+ * The Spanish term the law uses, mapped to the machine name that implements it.
+ * This is a glossary for whoever reads the statute next to the code - it is NOT
+ * a statement about what any shipped string says (D-033):
  *   objeto      -> field_agora_base_subject
  *   importe     -> field_agora_base_amount
  *   periodo     -> field_agora_base_period
@@ -105,8 +111,11 @@ final class ContentModelTest extends KernelTestBase {
       $assertions++;
       $this->assertSame($vid, $data['vid'], "$name must declare its own machine name.");
       $assertions++;
-      // The label is what carries the Spanish; an empty one would mean the
-      // vocabulary shipped with nothing a Spanish clerk can read.
+      // D-033: the label is ENGLISH, and an empty one would mean the vocabulary
+      // shipped with nothing at all to read. This comment used to say the label
+      // "carries the Spanish", which was the ruling D-033 overturned - a stale
+      // comment left beside a corrected file is the same failure as a stale
+      // justification left in the word list, one file over.
       $this->assertNotEmpty($data['name'], "$name must carry a label.");
       $assertions++;
     }

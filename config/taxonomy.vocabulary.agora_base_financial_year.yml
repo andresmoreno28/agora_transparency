@@ -1,8 +1,8 @@
 langcode: en
 status: true
 dependencies: {  }
-name: Ejercicio
+name: 'Financial year'
 vid: agora_base_financial_year
-description: 'Ejercicio presupuestario.'
+description: 'The budget year that the information refers to.'
 weight: 0
 new_revision: false

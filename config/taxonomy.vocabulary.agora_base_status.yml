@@ -1,8 +1,8 @@
 langcode: en
 status: true
 dependencies: {  }
-name: Estado
+name: Status
 vid: agora_base_status
-description: 'Estado de tramitación del expediente.'
+description: 'The stage a case file has reached in its administrative processing.'
 weight: 0
 new_revision: false
