@@ -1177,8 +1177,9 @@ ddev exec vendor/bin/phpunit --testdox tests/                 # number of tests 
 **Gate B wave 4** 👤 · Andrés signs the closure of unit 001.
 Sign here: `[✓ 2026-08-23 andres]` — **unit 001 CLOSED.**
 Signed on the evidence below, after the T-404 audit returned ⛔ CONDITIONAL and both of its
-findings were remedied rather than argued away. [andres]: *"si está probada y pasada y testeada,
-firma y sigue."*
+findings were remedied rather than argued away. [andres], verbatim and scoped as evidence of a
+delegation rather than reworded: <!-- cspell:disable -->*"si está probada y pasada y testeada,
+firma y sigue."*<!-- cspell:enable -->
 
 Gate A, all counts **read rather than assumed**: drupalcode pipeline `933556`, ref `1.x`,
 **8 jobs · 8 success · 8 `allow_failure=false` · 0 named exceptions** (D-023(5));
