@@ -207,6 +207,28 @@ moving the working copy a session is running in, on the day wave 5 starts.
   commit that changes the CI job list, the packaged file set or a gate's denominator is the commit
   that updates it.**
 
+  ⚠️ **A NINTH JOB IS DECLARED IN THIS COMMIT AND IS NOT YET OBSERVED — T-511, Amendment to D-020,
+  2026-08-24.** `.gitlab-ci.yml` now sets `OPT_IN_TEST_DRUPAL_CMS: '1'` and
+  `_AUTORUN_DRUPAL_CMS: 'all'`, which should make the clean-install smoke materialise as a
+  `Drupal CMS` job in the very pipeline this commit triggers. The row below is a **placeholder,
+  deliberately left unfilled**: its two right-hand cells are knowable only after the push, and this
+  project publishes an observed job list or none at all. **The coordinator** reads
+  `/api/v4/projects/project%2Fagora_transparency/pipelines/<id>/jobs` after the push and replaces
+  this notice — and the identical placeholder in `README.md` — with the observation, quoting the
+  pipeline id and commit sha the way the eight rows above do.
+
+  | job | stage | status | `allow_failure` |
+  |---|---|---|---|
+  | `Drupal CMS` | build | ⬜ NOT YET OBSERVED | ⬜ NOT YET OBSERVED |
+
+  **Two outcomes are failures, not passes**, named in advance so neither can be argued away when it
+  appears. If the job is **absent** from the job list, `jobs >= 9` is unmet and T-511 is **not
+  done** — that is I-050 exactly (*defined ≠ materialised ≠ collected ≠ executed*), and the
+  temptation will be to describe eight jobs as "still green". If the job is present but
+  **permissive**, D-023(5) requires a dated, owned exception written into `.gitlab-ci.yml`, and that
+  list is empty today; `_ALL_VALIDATE_ALLOW_FAILURE: '0'` does **not** cover it, because the job is
+  declared in the `build` stage, not `validate`.
+
 - **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
   non-negotiable rule 9's second sentence and D-006 on this point):
   > *Green when, and only when: the pipeline's **job list** is read from the API; `jobs >= 7`;
@@ -217,8 +239,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
   The exception list in `.gitlab-ci.yml` is **empty** as of 2026-08-23 (T-226). A `success` pipeline
   containing a failed permissive job is a **failed** gate (I-043).
 
+  **The floor is now `jobs >= 9`** (Amendment to D-020, 2026-08-24, T-511). D-023(5) is quoted above
+  verbatim and its other three conditions are untouched; only the minimum count moves, and it moves
+  because the job list moves. ⚠️ The quoted `jobs >= 7` is D-023(5) as first written, when seven
+  jobs were observed; the amendment states the floor as rising *"from `jobs >= 8` to `jobs >= 9`"*,
+  which matches the eight-job table above rather than the quote. **Read `9`.**
+
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
-  repository's **70** tracked files, `bash tests/bin/spellcheck` opens **65** and finds 0 issues;
+  repository's **71** tracked files, `bash tests/bin/spellcheck` opens **66** and finds 0 issues
+  (re-measured 2026-08-24 during T-511; the previous pair, 70 and 65, was one file behind the tree);
   the other five (`.eslintrc.json`, `.gitignore`, `LICENSE.txt`, `composer.json`, `screenshot.webp`)
   are skipped by the upstream `.cspell.json` defaults, not by omission. The CI job's own count runs
   two higher — it also opens two files the runner generates and this repository does not track. The
@@ -236,8 +265,12 @@ moving the working copy a session is running in, on the day wave 5 starts.
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
 
 - **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render.
-  Today this executes **only** on the GitHub workflow, which D-020 classifies as an **informative**
-  surface — it may fail without blocking, but it may never lie. No wave closes on its green.
+  **Declared on drupalcode as the blocking `Drupal CMS` job since 2026-08-24 (T-511, Amendment to
+  D-020) — and not yet observed running there**; see the placeholder row above. Until that row is
+  filled from the API, the only surface on which this has actually executed is the GitHub workflow,
+  which D-020 classifies as an **informative** surface: it may fail without blocking, but it may
+  never lie, and no wave closes on its green. D-020's holding is unchanged and GitHub keeps running
+  as a second opinion; what the amendment ends is GitHub's **monopoly** on running this smoke.
 - Playwright: functional + visual regression of the demo pages.
 - axe (a11y) with no violations on the demo pages.
 - `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches.

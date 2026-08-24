@@ -820,6 +820,56 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   installation that grants it — and it is the third time this pattern has been caught by someone
   else rather than by me.
 
+- **Amendment to D-020 — the install smoke moves onto the canonical gate and becomes blocking
+  there. GitHub keeps running and stops being the only place it runs.** **SIGNED [ejecutor]
+  2026-08-24 under [andres]'s standing delegation**, on the same footing as D-020 itself, which he
+  also delegated: this is **gate methodology with no product trade-off**, and the `orquestador`
+  recommended the same route. Unblocks **T-511**.
+
+  *What changes:* the template's `.gitlab-ci.yml` declares `OPT_IN_TEST_DRUPAL_CMS: '1'` and
+  `_AUTORUN_DRUPAL_CMS: 'all'`, so the `Drupal CMS` job **materialises in the observed job list**
+  with `allow_failure: false`. The gate's floor rises from `jobs >= 8` to **`jobs >= 9`**, and per
+  the derived-list prohibition the CLAUDE.md and README tables are rewritten **in the same commit
+  that makes it true** — an observation and the commit that changes it never travel separately.
+
+  *What does NOT change, and this is the half worth stating:* **D-020's holding stands entirely.**
+  GitHub remains an *informative* surface — it may fail without blocking, it may never lie, and no
+  wave closes on its green. It is not deleted here; D-020 rider (a) already sets its expiry at unit
+  007. What ends is its **monopoly**: from D-020's signing until today, the only place a real
+  Drupal, this package and these tests were ever assembled was a mirror a Drupal.org reviewer
+  cannot re-run. That was tolerable while the canonical remote had **no project**. It has one, and
+  eight blocking jobs on it, so the tolerance has expired on its own terms.
+
+  *Why now rather than in wave 7, which is where the swap lives.* The `Drupal CMS` job resolves the
+  template's dependencies from `packages.drupal.org`, and wave 7 is precisely when the template
+  starts requiring `drupal/agora_theme`. Landing the job **today**, on a tree that requires no
+  theme, buys a **known-good baseline**: when it goes red after the swap, the red is attributable
+  to the swap and to nothing else (**I-037** — a matching count is not an attribution). Promoting
+  it in wave 7 would introduce a new job and a new dependency in the same window and leave nobody
+  able to say which one broke.
+
+  ⚠️ **Two failure modes are named in advance, so neither can be argued away when it appears.**
+  (a) If the job materialises **permissive**, D-023(5) requires a dated, owned exception written
+  into `.gitlab-ci.yml` — the exception list is empty today and a silent permissive job would
+  break the gate rule the moment it exists. `_ALL_VALIDATE_ALLOW_FAILURE: '0'` covers the
+  **validate** stage only, and this job is not in it.
+  (b) If the job **does not materialise at all**, that is a **failure to report, not a pass**:
+  `jobs >= 9` is unmet and T-511 is not done. A job that was asked for and did not appear is I-050
+  exactly — *defined ≠ materialised ≠ collected ≠ executed* — and the temptation will be to call
+  eight jobs "still green".
+
+
+- **Correction to the Amendment to D-020, same day, before it was acted on.** The amendment said
+  the floor rises *"from `jobs >= 8` to `jobs >= 9`"*. **`8` was never the floor.** D-023(5) sets
+  the floor at **`jobs >= 7`**; `8` is the *observed count* of pipeline `934387`. The amendment
+  conflated the rule with the measurement — which is exactly the confusion D-023(5) exists to
+  prevent, committed inside the sentence that cites it. Read it as: **the floor rises from
+  `jobs >= 7` to `jobs >= 9`**, and the observed count is expected to go from 8 to 9.
+  Caught by the implementer reading the quoted decision instead of trusting the amendment's
+  summary of it. Recorded as a correction rather than an edit (rule 8): a decision that had to be
+  re-read to be understood is evidence about how it was written.
+
+
 - **Amendment to D-028 — `no-unstable-deps` is the fifth shared invariant. Its enumeration was
   incomplete, and the gap was in the one place a gap is invisible.** Recorded [ejecutor]
   2026-08-24, under standing delegation. **This completes D-028's own list; it does not add work

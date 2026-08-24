@@ -83,6 +83,60 @@ variables:
 
 
 ################
+# T-511 - Amendment to D-020 (2026-08-24): the clean-install smoke moves onto
+# the canonical gate and becomes BLOCKING there. Until today the only place this
+# package was ever assembled against a real Drupal was the GitHub mirror, which
+# D-020 classifies as an informative surface - one a Drupal.org reviewer cannot
+# re-run. GitHub keeps running as a second opinion; what ends is its monopoly.
+#
+# Both variables below are upstream's own, read AT SOURCE on 2026-08-24 over
+# https://git.drupalcode.org/project/gitlab_templates/-/raw/main/includes/include.drupalci.main.yml
+# and its sibling variables file - not inferred from their names. No upstream
+# job is redefined, copied or overridden; the `include:` block above stays
+# byte-identical to upstream.
+#
+# include.drupalci.variables.yml:344-346 - default '0'. "Set to 1 to opt in
+# testing against the current stable Drupal CMS version." The first rule the
+# `Drupal CMS` job evaluates is `.opt-in-drupal-cms`
+# (include.drupalci.main.yml:440-442), which is `when: never` while this is not
+# exactly the string '1'. Without this line the job is not in the pipeline at
+# all - and a job that never materialises is I-050, not a pass.
+################
+  OPT_IN_TEST_DRUPAL_CMS: '1'
+
+################
+# include.drupalci.variables.yml:415-423 - default 'none', with the enumerated
+# options none / push / push-and-mr / push-and-schedule / all. 'all' matches
+# REGEX_ALL, which is `/^all$/i`
+# (include.drupalci.hidden-variables.yml:320), so the job's SECOND rule fires.
+#
+# CITATION CHECKED, AND IT HOLDS. The task row cites
+# include.drupalci.main.yml:487-496; on `main` today that span holds exactly the
+# two rules this variable chooses between:
+#   487-492  `.autorun-drupal-cms-rule` - four `if` alternatives ending in
+#            `when: always`, declaring no failure tolerance of its own, so the
+#            job starts automatically and a red one fails the pipeline.
+#   494-496  `.make-job-manual` - the fallback that applies otherwise: the job
+#            is manual and its failure is tolerated. That is the state this
+#            line moves the smoke out of.
+#
+# NOTE: `_ALL_VALIDATE_ALLOW_FAILURE: '0'` above does NOT reach this job. It
+# governs the validate stage, and `Drupal CMS` is declared in the `build` stage
+# (include.drupalci.main.yml:858-864). Should the job nevertheless materialise
+# permissive, D-023(5) requires a dated, owned exception written into this file,
+# and that exception list is empty as of 2026-08-24. Do not paper over it.
+#
+# What the job actually does, so a later reader need not guess: it creates a
+# fresh `drupal/cms` project at $_DRUPAL_CMS_TAG (default CMS_STABLE, '2.1.3' as
+# of 2026-08-24), adds THIS package as a Composer path repository, and runs
+# drupal_cms's own DrupalCmsCompatibilityTest against it
+# (include.drupalci.main.yml:884-930). PROJECT_TYPE resolves to "recipe" because
+# recipe.yml exists at the root (include.drupalci.main.yml:61-62).
+################
+  _AUTORUN_DRUPAL_CMS: 'all'
+
+
+################
 # Ágora-local job (T-221). This is the ONLY job defined by hand in this file,
 # and it is permitted by the amended T-202 success criterion: the original
 # criterion, "no job is defined by hand", would have left the eight - now nine -

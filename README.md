@@ -262,6 +262,30 @@ the set of jobs the template could in principle run:
 This table is a dated measurement, not a promise: whichever commit changes the CI job list, the
 packaged file set or a gate's denominator is the commit that updates it.
 
+### A ninth job, declared in this commit and not yet observed
+
+The commit that added this paragraph also added `OPT_IN_TEST_DRUPAL_CMS: '1'` and
+`_AUTORUN_DRUPAL_CMS: 'all'` to [`.gitlab-ci.yml`](.gitlab-ci.yml). Both are variables the shared
+`gitlab_templates` pipeline already understands, and together they turn on the **clean-install
+smoke**: a job named `Drupal CMS` that builds a fresh Drupal CMS site, installs this package into it
+from a Composer path repository, and runs Drupal CMS's own compatibility test against it. Until now
+that smoke ran only on the GitHub mirror, which is an informative surface — a reviewer on
+Drupal.org cannot re-run it.
+
+The row is written here **empty on purpose**. Its status and its blocking flag can only be read from
+the pipeline that this commit triggers, and this project publishes job lists it has observed or none
+at all:
+
+| Job | Stage | Status | Blocking |
+|---|---|---|---|
+| `Drupal CMS` | build | ⬜ not yet observed | ⬜ not yet observed |
+
+Two outcomes would be failures rather than passes, and they are written down in advance so that
+neither can be talked away afterwards. If the job does not appear in the job list at all, the gate's
+minimum of nine jobs is unmet and the work is not done — a job that was asked for and never
+materialised is not a job that passed. If it appears but is non-blocking, it needs a dated, owned
+exception recorded in `.gitlab-ci.yml`, and that exception list is empty today.
+
 **Two checks are absent, and an absent check is not a passed one.**
 
 * `stylelint` did not run because there is no CSS in the package for it to read. Ágora's theme is a
