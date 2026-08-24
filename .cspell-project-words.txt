@@ -132,9 +132,24 @@ limpia                # .claude/skills/exportar-config-limpia/ — skill directo
 accesibilidad         # .claude/skills/accesibilidad-wcag-aa/ — skill directory name
 licencias             # .claude/skills/sbom-y-licencias/ — skill directory name
 fundacion             # the git branch 001-fundacion/scaffolding, recorded in D-022(4) and IDIOMS
-tema                  # specs/002-base-tema/ — unit directory, not yet started, not renamed
-contenido             # specs/003-contenido-demo/ — unit directory, not yet started, not renamed
-publicacion           # specs/007-publicacion/ — unit directory, not yet started, not renamed
+# The three tokens below outlived the directories that put them here: the four unit directories
+# were renamed to English in commit a0e01b6 (T-501), and every path on disk is English now.
+#
+# D-024's table prescribed "rename the paths to English - the token leaves the corpus; nothing is
+# declared". For these three that outcome is unreachable, and the reason is structural rather than
+# an oversight: DECISIONS.md (D-029) and the T-501 row in specs/002-base-and-theme/tasks.md both
+# quote the pre-rename names permanently, because a record of what was renamed has to name it.
+# Both files are spell-checked and cspell is blocking, so deleting these three lines turns the
+# gate red. Amended, not edited (rule 8): the words stay, and this block says why, so nobody
+# reads them later as evidence that the rename never happened.
+#
+# These comments deliberately do NOT spell the old directory names. T-501's success criterion
+# greps the tracked files for them and excludes exactly two records; a justification that spelled
+# them out would have made this file a third exception - the trap, in its third form, caught by
+# running the criterion instead of trusting the edit.
+tema                  # pre-rename Spanish name of unit 002's directory; quoted by D-029 and T-501
+contenido             # same, unit 003
+publicacion           # same, unit 007
 estado                # specs/001-foundation/research/2026-08-20-estado-del-arte.md
 arte                  # same research filename
 flujo                 # specs/001-foundation/research/2026-08-21-flujo-tema-y-marketplace.md
