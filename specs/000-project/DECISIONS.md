@@ -777,6 +777,28 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   `002-base-tema` etc. Those go in the word list as signed identifiers, and `[ejecutor]` is pinned by
   non-negotiable rule 7. The remaining inconsistency is **recorded rather than half-fixed**.
 
+- **Note on D-014(e) — security advisory coverage has a waiting period, and it is a quality clock.**
+  Recorded 2026-08-24 from [andres], who read it on the application page.
+  D-014 rider (e) says *"when creating the theme project, opt in to security team coverage"*, and an
+  earlier reading of mine assumed the gate was **a stable release**. That is wrong, or at least not
+  the binding constraint: **a new project cannot apply until it is at least ten days old**, and the
+  Drupal Association uses that window explicitly to ask for quality code and good practice, so that
+  the review does not turn up problems.
+  *Consequences, none of which change the plan:*
+  · `drupal/agora_theme` was created **2026-08-24**, so it becomes eligible on or after
+    **2026-09-03**. `drupal/agora_transparency` was created **2026-08-22** → eligible from
+    **2026-09-01**.
+  · The ten days are **not** dead time. They are exactly the window in which unit 002 writes the
+    theme, and what lands in it is what the coverage review will read. That reframes the waiting
+    period from an obstacle into the reason the unit's standards matter on the first commit rather
+    than at its gate.
+  · Neither project's page can claim coverage before then; both currently show *"not covered by the
+    security advisory policy"*, which is accurate and must not be papered over in the README (I-023).
+  *Correction of method, not just of fact:* I asserted the stable-release prerequisite from memory
+  instead of reading the page. That is **I-042** — a capability asserted without checking the
+  installation that grants it — and it is the third time this pattern has been caught by someone
+  else rather than by me.
+
 ---
 
 ## Riders on wave 1, signed by [andres] 2026-08-21
