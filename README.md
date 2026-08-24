@@ -242,8 +242,8 @@ not.
 
 Ágora's pipeline is the shared `gitlab_templates` pipeline the Drupal Association maintains, run on
 [git.drupalcode.org](https://git.drupalcode.org), plus one job of our own defined on top of it,
-`agora-invariants`. This is the list of jobs that actually ran, taken from pipeline `933556` on
-branch `1.x`, commit `5556bb3`, read from the API on 2026-08-23 — not from the badge, and not from
+`agora-invariants`. This is the list of jobs that actually ran, taken from pipeline `934387` on
+branch `1.x`, commit `25f6163`, read from the API on 2026-08-24 — not from the badge, and not from
 the set of jobs the template could in principle run:
 
 | Job | Stage | Status | Blocking |
@@ -275,14 +275,21 @@ packaged file set or a gate's denominator is the commit that updates it.
 **The gate is the list of jobs, never the pipeline's status field.** This is not a preference. An
 earlier pipeline reported `success` while the spell check inside it had failed: four of the seven
 jobs then defined were non-blocking by upstream default, so their failures were recorded and then
-rolled up into a green result that hid them. All eight jobs are blocking now, with no exceptions —
+rolled up into a green result that hid them. The failure repeated in the opposite direction on
+2026-08-24 — `cspell` red and **blocking** on `934242`, `934297` and `934329`, so the pipelines
+were correctly red and nobody read them, because the local pre-flight this README documented was
+unreadable. Both halves are the same lesson: a signal has to be both correct and read.
+All eight jobs are blocking now, with no exceptions —
 `_ALL_VALIDATE_ALLOW_FAILURE: '0'` in [`.gitlab-ci.yml`](.gitlab-ci.yml) is what makes the validate
 stage stop the pipeline. Read the job list; the status field has already been wrong here once.
 
-**What the green does not tell you.** The 36-versus-63 gap reported earlier is closed: `cspell` now
-reports `Files checked: 62`, two of which are files the CI runner generates and this repository does
-not track (`.editorconfig`, `gitlab_templates_version.txt`). Of the repository's 65 tracked files, 60
-are opened. The other five are skipped by the upstream `.cspell.json` defaults, not by omission:
+**What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
+stayed closed across a change of denominator: of the repository's 70 tracked files, `cspell` opens
+**65** — plus two the CI runner generates and this repository does not track (`.editorconfig`,
+`gitlab_templates_version.txt`), which is why the job's own count reads two higher. `bash
+tests/bin/spellcheck` prints the number every time it runs, so this paragraph is checkable rather
+than quotable. The five tracked files not opened are skipped by the upstream `.cspell.json`
+defaults, not by omission:
 `.eslintrc.json` and `.gitignore` match its dotfile/`*ignore` ignore patterns, `LICENSE.txt` and
 `composer.json` match its case-insensitive filename list regardless of extension, and
 `screenshot.webp` is binary, which `cspell` does not open. `phpcs`, `phpstan` and `eslint` still
