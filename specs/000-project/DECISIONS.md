@@ -937,6 +937,82 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
     this is the measurement that would have proved it.
 
 
+- **D-033** · **The language of shipped config strings is ENGLISH, and the Spanish is a
+  translation that does not live in this repository.** **DECIDED BY [andres] 2026-08-24**, in his
+  own words — <!-- cspell:disable -->*"El idioma de los proyectos en Drupal.org SIEMPRE es inglés,
+  la traducción de los proyectos NO se sube al mismo repo, revísalo bien porque creo que las
+  traducciones a los diferentes idiomas van por otro lado."*<!-- cspell:enable -->
+  He was **right**, and he was correcting **me**: I had ruled the opposite (*"labels carry the
+  Spanish"*) in the dispatch that produced T-601, and that ruling shipped. Verified at source
+  before acting, because a correction accepted on authority is still an unverified claim.
+
+  **What the verification found, with citations rather than recollection:**
+  · **English is not a preference, it is the precondition for being translatable at all.** Core's
+    `LocaleConfigManager::isSupported()` reads
+    `getDefaultConfigLangcode($name) == 'en'`, and `translateString()`'s docblock says it plainly:
+    *"we only know how to translate strings from English so the source string should be in
+    English."* Config whose default langcode is not `en` is **outside the mechanism by
+    construction**.
+  · **Translations left drupal.org's repositories in 2011 and the announcement is unambiguous:**
+    *"the drupal.org projects themselves should not have `.po` files committed and maintained…
+    Project maintainers should not accept `.po` files anymore"* (localize.drupal.org/node/3044).
+    Measured rather than trusted: **23 recipes on the rig, 2,273 files, 0 `.po`, 0 `.pot`, 0
+    `translations/`.**
+  · **Drupal CMS's own recipes agree, and the number is the argument:** 706 config files across 13
+    `drupal_cms_*` recipes, **660 `langcode:` lines and every one `en`**, 784 label/name/description
+    lines of which **8 carry a non-ASCII byte and all eight are typography** (an em dash, a `×`).
+    **Zero non-English strings.** Both published site templates match.
+  · ★ **The precedent that settles the hard case: `dsfr`, the French State Design System.** Its
+    `.info.yml` and config are **English**; it ships `translations/dsfr-fr.po` and 456 source
+    strings on the localisation server. **The French government writes English in its own Drupal
+    theme and delivers French as a translation.** That is exactly the objection — *a Spanish clerk
+    does not call it an Agreement* — answered by the closest possible analogue.
+
+  ⚠️ **What was actually on disk was worse than "Spanish labels".** All five vocabularies declare
+  **`langcode: en` while carrying Spanish text** — a false statement in the **one field the
+  machinery consults**. That is red under any option: A fixes it by changing the text, B by
+  changing the langcode. It could not stay.
+
+  | | Option | Real cost |
+  |---|---|---|
+  | **A ★** | **English labels and descriptions; Spanish arrives as a translation** | On install day a Spanish clerk sees English labels. Real, and the pitch's soft spot |
+  | B | Keep Spanish, correct `langcode: es` | Honest, and it **kills the future**: `isSupported()` requires `en`, so the strings become permanently untranslatable by the standard mechanism, and Ágora stands alone against every measured precedent |
+  | C | English labels **plus** a Spanish translation shipped inside the template | **Rejected on mechanics, not taste.** `RecipeConfigInstaller` hard-codes `DEFAULT_COLLECTION`; `ConfigConfigurator` opens `config/` with a non-recursive `FileStorage`; a `translations/*.po` needs an `.info.yml` key and a site template has **zero** `.info.yml`. **There is no seam.** ⚠️ The same trick **is** available to `drupal/agora_theme`, which has one — an experiment for unit 005/006, recorded as an experiment and never as a promise |
+  | D | English label + the Spanish statutory term in the description | Rejected as a **general** rule — it puts a second language back into shipped config. **Kept in narrow form**, below |
+
+  ★ **A, with D's narrow form for exactly three terms.** `convenio`, `subvención` and `importe de
+  adjudicación` are cases where the English is a correct translation and still the wrong word — so
+  their labels are English and the Spanish term is named **once, in the description, as a legal
+  citation**, which is what a description is for. That is a citation, not bilingual UI. It binds
+  **T-612–T-615**, which are not yet written, so it costs nothing to impose now.
+
+  ⚠️ **This does NOT reopen D-026.** No bundle, no field and no statute article moves; machine
+  names were **already English** (`agora_base_area`, `field_agora_base_amount`) and stay. Only the
+  language of label strings, and where a translation lives.
+
+  *Two consequences with owners:* (a) the five shipped vocabularies are corrected **through the
+  export rig, never by hand** — D-032=B is signed and a label change is a modelling change — and
+  the correction lands **before T-612**, so six bundles and ~30 fields are not exported twice;
+  (b) the 13 `.cspell-project-words.txt` entries justified as *"the Spanish that T-601 ships inside
+  `config/`"* are **removed in the same commit**, because a justification that outlives its reason
+  makes the word list lie about why its entries exist. The earlier ~40 entries justifying Spanish
+  in `specs/` prose and in the three legal citations **stay**.
+
+  *Cost in task rows: zero.* This changes the **content** of T-601's output and writes a constraint
+  into rows that have not run. **D-031's headroom −2 is untouched.**
+
+  ⚠️ *Two things NOT established, recorded so nobody quotes them as settled:* **no site-template or
+  marketplace document names a language requirement** — the review list is five items and language
+  is not among them, and the Creator Guide it points at is unreachable, so this decision rests on
+  core's machinery and on precedent, **not on a written rule**. And **extraction is not delivery**:
+  a recipe's config strings *can* now be extracted to the localisation server (potx gained recipe
+  support 2026-04-09, and `haven` shows 620 source strings dated the day potx 2.0.0-alpha1 was
+  tagged) — but **four independent locks stop those translations reaching an installed site**, the
+  sharpest being that a site template's config carries no `_core.default_config_hash`, which
+  `isSupported()` requires, **and our own `RequirementsTest` forbids it**. Re-measure at unit 007
+  rather than quoting this date (I-047).
+
+
 - **D-032** · **What is the authoritative producer of `config/`, `recipe.yml` and
   `composer.json`?** **SIGNED [ejecutor] 2026-08-24 under standing delegation** — this is
   mechanics, not a product trade-off: it decides which tool writes which file, and every option

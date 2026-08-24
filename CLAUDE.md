@@ -265,7 +265,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. **Read `9`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
-  repository's **71** tracked files, `bash tests/bin/spellcheck` opens **66** and finds 0 issues
+  repository's **87** tracked files, `bash tests/bin/spellcheck` opens **82** and finds 0 issues
   (re-measured 2026-08-24 during T-511; the previous pair, 70 and 65, was one file behind the tree);
   the other five (`.eslintrc.json`, `.gitignore`, `LICENSE.txt`, `composer.json`, `screenshot.webp`)
   are skipped by the upstream `.cspell.json` defaults, not by omission. The CI job's own count runs

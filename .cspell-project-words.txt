@@ -262,3 +262,7 @@ presupuestario   # `Ejercicio presupuestario`, its description; art. 8.1.d)
 tramitación      # `Estado de tramitación` - what the status vocabulary tracks
 expediente       # the administrative file whose state is tracked; same description
 contratación     # `Procedimiento de contratación` - the procedure-type description
+
+# The drupal.org project of the French State Design System, cited in D-033 as the precedent that
+# settles the language question: it writes English config and ships French as a translation.
+dsfr                  # drupal.org/project/dsfr, quoted in D-033
