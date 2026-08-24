@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: 'Tipo de documento'
+vid: agora_base_document_type
+description: 'Clasificación de documentos: normativa, informes, actas de pleno, cuentas anuales.'
+weight: 0
+new_revision: false

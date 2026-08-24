@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Ejercicio
+vid: agora_base_financial_year
+description: 'Ejercicio presupuestario.'
+weight: 0
+new_revision: false

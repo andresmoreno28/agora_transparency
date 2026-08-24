@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Área
+vid: agora_base_area
+description: 'Área u órgano responsable.'
+weight: 0
+new_revision: false

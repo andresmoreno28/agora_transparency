@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Estado
+vid: agora_base_status
+description: 'Estado de tramitación del expediente.'
+weight: 0
+new_revision: false

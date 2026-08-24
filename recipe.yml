@@ -88,6 +88,15 @@ install:
   # -- area: base ---------------------------------------------------------------
   # Provides useful tools for site template creators, and polyfills functionality that is not yet in Drupal core.
   - drupal_cms_helper
+  # Core module. Supplies the `daterange` field type used by
+  # `field.storage.node.field_agora_base_period` — the `periodo` of the three
+  # financial regimes, which the law states as a start and an end, not as a
+  # duration string. Hand-transplanted here per D-032 step 4b: enabling a module
+  # is the one part of T-601 that `site:export` writes into its regenerated
+  # `recipe.yml` instead of `config/`, so copying `config/` alone would have lost
+  # it silently and the field storage would fail to import on a clean install.
+  # Core, so it adds nothing to `composer.json` and needs no SBOM line.
+  - datetime_range
   # By default, Drupal installs Stark as the default theme. It must be listed here, at
   # least initially, to prevent bugs if it's not present. You can remove it later if you
   # want to; just uninstall it before exporting the site as a recipe.

@@ -87,7 +87,23 @@ final class RequirementsTest extends KernelTestBase {
     // Ensure that all config shipped by this site template doesn't have the
     // `_core` or (except in certain situations) `uuid` keys.
     $storage = new FileStorage($path . '/config');
-    foreach ($storage->listAll() as $name) {
+    $config_names = $storage->listAll();
+    // CUSTOMISED DELIBERATELY (T-601), and this is the "specific reason" the
+    // docblock above asks for. As shipped, the loop below was a TAUTOLOGY for
+    // this repository: `config/` did not exist, `listAll()` returned an empty
+    // array, and the `_core`/`uuid` block passed with nothing built. It could
+    // not distinguish a good export from no export at all — and every task row
+    // from T-601 onward cites "RequirementsTest still green" as its criterion,
+    // so all of them inherited a check that could not fail. The denominator is
+    // now asserted and printed (I-045: a green check is a statement about the
+    // set it opened, so print the set). STDERR, because core's phpunit.xml sets
+    // beStrictAboutOutputDuringTests="true".
+    $this->assertNotEmpty($config_names, 'The site template must ship configuration in config/; an empty config/ makes the checks below vacuous.');
+    fwrite(STDERR, sprintf(
+      "\nRequirementsTest: %d config objects enumerated in config/.\n",
+      count($config_names),
+    ));
+    foreach ($config_names as $name) {
       $data = $storage->read($name);
       // In general, the config shipped by a site template should not have a
       // UUID key. The exception is certain entity types, Canvas folders being

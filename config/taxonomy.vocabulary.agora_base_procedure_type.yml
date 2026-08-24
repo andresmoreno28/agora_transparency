@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: 'Tipo de procedimiento'
+vid: agora_base_procedure_type
+description: 'Procedimiento de contratación (LCSP).'
+weight: 0
+new_revision: false

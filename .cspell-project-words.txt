@@ -224,3 +224,41 @@ hostable         # self-hostable, in the licence discussion of T-607
 Fdrupal          # a URL-encoded path fragment (%2Fdrupal) quoted from a drupalcode API call
 zbdnk            # an opaque asset hash in a quoted Google Fonts URL
 
+
+# ---------------------------------------------------------------------------
+# The Spanish that T-601 ships INSIDE config/. Under D-017 machine names are
+# English (agora_base_*, field_agora_base_*); the Spanish is carried by the
+# labels and descriptions of the five vocabularies, because the clerk reading
+# them in the admin UI is Spanish and the law names these things in Spanish.
+# So `config/taxonomy.vocabulary.agora_base_*.yml` is prose, and cspell opens it
+# like any other tracked file - which is correct, and is why these are declared
+# here one line at a time rather than by excluding config/ from the scan.
+#
+# Every entry below is DOMAIN vocabulary that later units will write again in
+# more labels. The first pass of these descriptions also used three ordinary
+# Spanish connectives and abstract nouns; those were NOT declared - the
+# descriptions were reworded in the export rig and re-exported instead, because
+# declaring grammar is not what a project word list is for. This comment
+# deliberately does not spell those three words: spelling them here would
+# declare them correct everywhere, which is exactly the trap T-501 hit with the
+# pre-rename directory names, in its second form.
+#
+# Measured while doing this, and it settles an open question in the header of
+# this file: cspell's case folding DOES work. `área`, `estado` and
+# `procedimiento` were already listed in lower case and their sentence-initial
+# forms `Área`, `Estado` and `Procedimiento` passed unflagged in the same run
+# that flagged 16 genuinely new words. The accent claim above stays false and
+# the case claim is no longer untested.
+tipo             # `Tipo de documento` / `Tipo de procedimiento` - two vocabulary labels
+documento        # same label; art. 6-7's catch-all category is the Document node type
+documentos       # plural, in the document-type vocabulary's description
+clasificación    # what a controlled vocabulary does, said in the same description
+normativa        # a document type the description enumerates; art. 7 publishes it
+informes         # another; art. 8.1.e) audit reports and budget-execution reports
+órgano           # `Área u órgano responsable` - the area vocabulary's description
+responsable      # same phrase; the body accountable for the published information
+ejercicio        # the financial-year vocabulary's label - the Spanish accounting term
+presupuestario   # `Ejercicio presupuestario`, its description; art. 8.1.d)
+tramitación      # `Estado de tramitación` - what the status vocabulary tracks
+expediente       # the administrative file whose state is tracked; same description
+contratación     # `Procedimiento de contratación` - the procedure-type description
