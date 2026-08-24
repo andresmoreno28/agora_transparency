@@ -859,6 +859,61 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   eight jobs "still green".
 
 
+- **D-032 gains a step 4b, and its central claim is now MEASURED rather than argued.** Recorded
+  [ejecutor] 2026-08-24 from the export rig's own numbers. The rig exists, it installs clean, and
+  the procedure was exercised before anything was built on it.
+
+  **The claim that decided D-032 is confirmed by counting:** `_core.default_config_hash` appears on
+  **398 live config objects** and on **0 of 454 exported files**. The exporter really does delete
+  the only marker distinguishing *"this came from an extension"* from *"this is ours"*.
+
+  **And the replacement discriminator works.** A throwaway slogan change, exported and diffed
+  against the baseline, named **2 files** — and the second was measured away rather than excused:
+  `SiteExporter::writeComposerJson()` names the package after the **destination directory**, so
+  exporting into a same-basename destination diffs at **1 file, 1 line**. The strongest form: revert
+  the change, export again → **0 differing files out of 541**. The export is **byte-stable run to
+  run**, which is what makes a diff-based procedure trustworthy at all.
+
+  ⚠️ **STEP 4b, and it changes how T-601 is executed.** The slogan **never appeared in `config/`**
+  — both exports' `config/` are byte-identical at 454 files. `SiteExporter::isAction()` routes
+  anything shipped as **default config by core, System or User** into `recipe.yml` **as a config
+  action** instead. So D-032 step 4 (*"copy changed files into `config/`"*) is correct for node
+  types, fields and views — and **silently captures nothing** for core/System/User config, whose
+  only artefact lands in the one file step 5 forbids copying. Those changes are **read from the
+  export's `recipe.yml` and hand-transplanted into the correct `# -- area:` block**. A modelling
+  session that changes a System setting and copies only `config/` will lose it **with no error**.
+
+  *Three hazards the rig surfaced, none of them anticipated:*
+  · **The read-only mount earned itself on the first `composer update`.**
+    `drupal/site_template_helper`'s Composer plugin writes a `version` key into the installed
+    recipe's `composer.json` on every install — and under a symlink **that file is this
+    repository's hand-maintained manifest**. The mount refused the write. Verified after:
+    **0** `version` keys in `composer.json`, `git status` empty. Without the read-only mount, the
+    template's manifest would have been edited by a tool nobody invoked.
+  · **Why the older rigs got copies is a setting, not a mystery:** `COMPOSER_MIRROR_PATH_REPOS=1`
+    in both `.ddev/config.yaml`, inherited from this repository's own GitHub workflow, where it is
+    deliberate and correct. Composer's default is to symlink.
+  · **Rule-1 exposure observed verbatim in the export log** — *"Falling back to an allow-all (`*`)
+    constraint"* for `drupal/blank`. D-032 rejected option A on reasoning; this is the sentence
+    that would have proved it.
+
+  *Numbers worth quoting with their scope (I-045):* the baseline is **541 files**, of which **454
+  are `config/`** and **72 were mirrored in from the checkout by `--base`**. The honest denominator
+  for "what the site contains" is **454**, not 541. The export wrote **13** content files while the
+  working copy's `content/` still holds **1** — which is exactly why D-032 step 6 discards the
+  export's `content/` wholesale.
+
+  *The rig, stated so it can be rebuilt rather than remembered:* `~/agora-export`, **not a git
+  working copy and containing no clone** — the machine still has **three** clones, not four, and
+  the path repository points straight at the Windows checkout through `/mnt/c`, measured fast
+  enough (593 files enumerated in 0.5 s, baseline export 12 s). `require` is **5 entries, 0
+  unstable**; the resolved lock is **153 packages, 0 non-stable**; **11 out-of-scope packages
+  checked, 0 present**. It installs to `install_finished` with **no AI key in the environment** and
+  no AI module in the closure — I-003 holds. `drupal/core-recipe-unpack` and
+  `drupal/core-project-message` were **removed deliberately**: unpack would flatten the template's
+  requirements into the rig's own `require` and can dissolve the path-repo entry the rig exists for.
+
+
 - **Corrections to D-032, measured the same day it was signed.** Three of its supporting numbers
   were wrong and one of its arguments was aimed at the wrong target. **The holding stands** —
   export authoritative for `config/` only, through a baseline diff — but a decision whose evidence
