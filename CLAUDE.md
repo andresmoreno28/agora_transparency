@@ -167,6 +167,19 @@ mechanical, not visual — the two names differ by a hyphen and a word, which is
 `tests/bin/identity-strings` runs inside `agora-invariants` in **both** repositories and fires when
 a tree is not the repository it claims to be.
 
+🔴 **THERE ARE THREE CLONES OF THE TEMPLATE ON THIS MACHINE, NOT ONE. Added 2026-08-24;
+the third was unnamed until today.** Both WSL rigs hold a `source/` directory that is a **full
+clone**: `~/agora-smoke/source` **and `~/agora-cms/source`**. The second is the more dangerous of
+the two, because it is the directory an implementer sits beside for the whole of wave 6 — and
+until today **both carried a remote named `origin`**, the exact name deliberately removed from the
+real working copy so a bare `git push` fails loudly instead of reaching a remote by accident. In
+those rigs it would have **succeeded**. Both are now renamed to `drupalcode` with their **push URL
+disabled**; `git pull` still works, which is all a rig needs.
+⚠️ **`tests/bin/identity-strings` does not protect against this**, and assuming it does is the
+trap: it fires when a tree is **not** the repository it claims to be, and those trees **are** this
+repository. Neither rig is ever edited or committed from — that rule has no mechanical backstop,
+which is exactly why it is written here.
+
 **The template must never contain the theme.** `RequirementsTest` requires **0 `*.info.yml` files**
 in the package. A theme checkout nested anywhere under the template's tree is one `git add -A` away
 from making that permanently false, and the failure mode is a marketplace reviewer finding it, not

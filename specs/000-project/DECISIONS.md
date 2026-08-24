@@ -859,6 +859,73 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   eight jobs "still green".
 
 
+- **D-032** · **What is the authoritative producer of `config/`, `recipe.yml` and
+  `composer.json`?** **SIGNED [ejecutor] 2026-08-24 under standing delegation** — this is
+  mechanics, not a product trade-off: it decides which tool writes which file, and every option
+  ships the same template. Blocks everything from T-601 onward. **Costs no task row.**
+
+  *Context in one line:* T-601's row says the model is *"exported with `drush site:export` into
+  `config/`"*, and **executed literally that command does not update `config/` at all** — it writes
+  a whole new recipe elsewhere, regenerates `recipe.yml` from a four-key array, and **replaces**
+  `composer.json`'s `require`.
+
+  *Read at source in the rig, not recalled* (`drupal_cms_helper/src/SiteExporter.php`,
+  `Drush/Commands/SiteExportCommand.php`):
+  · `--destination` defaults to `recipes/site_export`; the command **refuses to run** if the
+    destination exists without `--overwrite`. The skill's flow therefore writes a recipe next door
+    that nobody reads, and `config/` is untouched.
+  · `recipe.yml` is **regenerated** from `name`/`type`/`install`/`config` via `Yaml::encode()`. So:
+    **there is no `recipes:` key in the output** — Ágora's eleven upstream recipes vanish and their
+    config is inlined; **every comment is destroyed**, and most of that 9,491-byte file is D-011's
+    seam convention, the area labels and D-021's rationale for the exact `name:` string; `install:`
+    becomes ~100 entries instead of three.
+  · `$data['require'] = $this->getExtensionRequirements($extensions)` — an **assignment**, one
+    `^<installed-version>` per installed extension. Where a version cannot be determined it emits a
+    raw dev constraint (`'*'` in the `catch`): **direct rule-1 exposure**.
+  · It `unset`s `extra.drupal-site-template`, which means an export in wave 6 would **silently
+    perform half of wave 7's T-702** and falsify T-702's criterion that the change be *its own*.
+  · `--base` defaults to the kit's base recipe and mirrors it in, putting `GET-STARTED.md` and the
+    kit's README back — **the boilerplate T-103 deleted**.
+  · It exports **all content** into `content/`.
+
+  | | Option | Real cost |
+  |---|---|---|
+  | A | The export is authoritative for all three files; the repository is regenerated from the site | Loses the eleven upstream recipes, the seam convention, D-021's rationale and deliberate SBOM control; performs half of T-702 by accident. **This is what T-601's row literally says today.** |
+  | **B ★** | **The export is authoritative for `config/` only, and only through a baseline diff. `recipe.yml` and `composer.json` stay hand-maintained and are never written by the tool** | One extra export (the baseline) per modelling session, plus a documented transplant step for `install:` entries and `require` additions |
+  | C | Hand-write `config/` YAML directly; never run `site:export` | 60-100 files hand-authored including entity view and form displays, with schema keys wrong in ways only an install surfaces |
+
+  ★ **B.** The only option where the export's output is **reviewable** — because the baseline gives
+  it a denominator — and the only one where the seam convention and the SBOM survive contact with
+  the tool.
+
+  ⚠️ **The reason the baseline is not optional, and it is the finding that decided this.**
+  `_core.default_config_hash` is the marker that says *"this config came from an extension's
+  default config, not from you"* — **and the exporter strips it**. After a `site:export`, Ágora's
+  own config is **indistinguishable by inspection** from the config the eleven upstream recipes
+  supplied. The only discriminator left is a **diff against a baseline export of the same site
+  without Ágora's changes**. Neither the skill nor any task row mentioned such a step.
+
+  *The procedure B mandates:* (1) a purpose-built rig whose `require` is exactly Ágora's dependency
+  closure — **not `~/agora-cms`**, whose `require` carries Byte, Haven, `drupal_cms_ai`,
+  `drupal_cms_forms`, `drupal_cms_search` and more, **none of which is in Ágora's SBOM** ·
+  (2) **baseline export first**, before touching anything · (3) model, then export again ·
+  (4) **the artefact is `diff -r baseline after`, never `after`** — only files that appear or change
+  are copied into `config/` · (5) `recipe.yml` and `composer.json` are **never taken from the
+  export**; its versions are read as *information* and the relevant lines transplanted by hand into
+  their area block, each new package earning its `DECISIONS.md` line per rule 2 · (6) the export's
+  `content/` is **discarded wholesale** in unit 002 · (7) pre-commit review adds four checks the
+  skill lacks: `config/` file count printed and **> 0**, `git status --porcelain content/` empty,
+  `find content -type f | wc -l` still **1**, and `git diff recipe.yml` showing only hand-made,
+  area-blocked changes.
+
+  *Three failure modes are caught by **nothing** today* — `recipe.yml` silently replaced, content
+  silently exported into `content/`, and **`config/` silently empty**. The last is live right now:
+  `RequirementsTest` builds a `FileStorage` over `config/`, **which does not exist**, so
+  `listAll()` returns `[]` and the assertion block passes with nothing built. Procedure B prevents
+  all three; only a script would **detect** them. Whether that script is written is a **separate
+  question for [andres]**, because at headroom −2 it costs a signed rider naming a displacement.
+
+
 - **Correction to the Amendment to D-020, same day, before it was acted on.** The amendment said
   the floor rises *"from `jobs >= 8` to `jobs >= 9`"*. **`8` was never the floor.** D-023(5) sets
   the floor at **`jobs >= 7`**; `8` is the *observed count* of pipeline `934387`. The amendment
