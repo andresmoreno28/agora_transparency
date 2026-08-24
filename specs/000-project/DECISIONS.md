@@ -820,6 +820,23 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   installation that grants it — and it is the third time this pattern has been caught by someone
   else rather than by me.
 
+- **Note closing D-014(c) — the theme's identity is measured, and now it is on disk.** Recorded
+  [ejecutor] 2026-08-24. D-014 rider (c) read *"theme machine name pending verification (proposal:
+  `agora_theme`) — closed in unit 002"*. It is closed. Read from
+  `www.drupal.org/api-d7/node/3618791.json`, not from a prompt:
+  **node `3618791`** · title **`Ágora Transparency Theme`** · `field_project_machine_name`
+  **`agora_theme`** · `type` **`project_theme`** · `field_project_type` **`full`** (not a sandbox).
+  Composer package **`drupal/agora_theme`**; git repository `project/agora_theme`, id `241203`,
+  created `2026-08-24T10:25:56Z`.
+  ⚠️ **The title carries a `Theme` suffix and that is not cosmetic:** `Ágora Transparency` is
+  already taken by the template project, so drupal.org refused it. Nobody may "tidy" the suffix
+  away, and the theme's `name:` key is **byte-identical** to the title above — verified as bytes
+  (`c381676f7261…`), not by eye, because D-021 exists after this class of thing was got wrong once.
+  *Why this note exists at all:* the identity was true in a dispatch prompt and **nowhere on disk**
+  — `grep -rn '3618791' specs/` returned nothing while T-506 and T-507 were already written to cite
+  it. A fact that lives only in a prompt is I-036's exact failure, caught this time by the
+  implementer rather than by an audit.
+
 - **D-031** · **The unit-002 scope gate is 2 over, and the overrun is accepted rather than
   re-based.** **SIGNED by [andres] 2026-08-24** — he was given A/B/C and answered **A**.
 
