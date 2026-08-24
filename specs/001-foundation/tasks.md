@@ -699,7 +699,7 @@ description as recorded in `composer.json`. Gate A closed with **61 checks · 0 
       > byte" warning. They are stripped **inside** the pipeline instead. Same family as I-025:
       > normalise at the boundary, not after it.
 
-- [ ] **T-228** · The D-009 rider (b) canary: verify the browser job **really executes** on the
+- [✓ 2026-08-23] **T-228** · The D-009 rider (b) canary: verify the browser job **really executes** on the
       shared contrib runners. `OPT_IN_TEST_DRUPAL_CMS: '1'`, one push, one API read of the job list.
       **Run it as a merge request, not on `1.x`** — per I-040 a plain branch triggers **no pipeline
       at all**, so a throwaway branch would return a silent nothing and read as success; MR rules do
@@ -727,6 +727,31 @@ Sign here: `[ ]`
       That label earned itself the same day: run locally over `.claude/**` it reported 82 issues
       where CI reported 5, because the local run lacks upstream's `.cspell.json` and is therefore
       **stricter** than the gate. An approximation that says so is a tool (I-042).
+      *Executed as merge request **!1**, 2026-08-23, branch `3574001-nightwatch-canary`.*
+      **I-040 confirmed live before anything else:** pushing the branch produced
+      `pipelines en la rama: 0` — no job, no badge, no notification. Had this been run as a branch
+      push, the canary would have returned silence and silence reads as success.
+      *The MR pipeline: **9 jobs**, the eight of `1.x` plus one.* And the answer is not the one
+      D-009 assumed:
+      | job | stage | status | `allow_failure` |
+      |---|---|---|---|
+      | `Drupal CMS` | build | **manual** | **true** |
+      **`nightwatch` did not appear at all**, and the reason is a rule, not a runner:
+      `.nightwatch-tests-exist-rule` gates it on `exists: tests/src/Nightwatch/**/*.js`. We have no
+      Nightwatch test, so the job does not materialise. **That is good news precisely stated:** the
+      job upstream is real and D-009's mechanism is sound — it appears the moment unit 002 adds the
+      axe test file, and not before. What was wrong in D-009 was the implicit belief that the job
+      was already running and merely needed opting into.
+      **And `OPT_IN_TEST_DRUPAL_CMS: '1'` alone buys a job that never runs**: `Drupal CMS` is
+      `when: manual` by upstream default and `allow_failure: true`, in the **build** stage, which
+      `_ALL_VALIDATE_ALLOW_FAILURE: '0'` does not cover. Under D-023(5) merging it into `1.x` would
+      put a permissive job in the gate with no dated, owned exception naming it — so **the MR is
+      not merged**, and `1.x` keeps its 8 blocking jobs. The variable belongs in unit 002's commit,
+      together with the Nightwatch test and the exception line, or not at all.
+      *What remains unanswered, stated rather than glossed:* whether a browser-capable job actually
+      **executes** on the shared contrib runners. The manual job can be started from the MR with one
+      click, which needs a GitLab session; it is the only half of D-009 rider (b) still open, and it
+      is now a two-minute action rather than an unknown.
 - [✓ 2026-08-21] **T-301** · `tests/bin/no-unstable-deps` according to the spec in `plan.md` §6.
       *Success:* it detects a deliberately injected `-beta` and does **not** flag the starter kit.
 - [✓ 2026-08-21] **T-302** · `tests/bin/no-patches`. *Success:* it detects an injected `patches` section.

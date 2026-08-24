@@ -411,3 +411,16 @@
   ever asked *"does this belong in 001 or in 006?"*; and the dead weight in the record is not its
   length but the **evidence blocks inside signed tasks** that restate what a linked pipeline log
   already says. Recorded 2026-08-23.
+- I-050 · **A job that exists in the template is not a job that exists in your pipeline, and a job
+  in your pipeline is not a job that ran.** D-009 chose to mount accessibility inside "the Nightwatch
+  job that `gitlab_templates` already ships and already supports" — true of the template, and the
+  canary (T-228) found the job absent from a real pipeline: `.nightwatch-tests-exist-rule` gates it
+  on `exists: tests/src/Nightwatch/**/*.js`, and we have no such file, so it never materialises.
+  Meanwhile the opt-in we did set produced `Drupal CMS`, which arrived **`when: manual` and
+  `allow_failure: true`** — present in the job list and not run. Three states that all read as "the
+  job is there" and are not the same thing: **defined upstream · materialised in this pipeline ·
+  actually executed**. Rule: when a decision rests on an upstream job, verify it at the third level
+  before building on it, and read the job's **gating rule**, not its existence — the rule is where
+  the answer lives. Corollary that made this cheap: a canary is worth running the moment it is
+  possible, not when the feature needs it. This one cost one merge request and moved D-009 from an
+  assumption to a measurement with a named next step. Recorded 2026-08-23.
