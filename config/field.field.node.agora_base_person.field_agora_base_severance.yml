@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_severance
+    - node.type.agora_base_person
+id: node.agora_base_person.field_agora_base_severance
+field_name: field_agora_base_severance
+entity_type: node
+bundle: agora_base_person
+label: 'Severance payment'
+description: 'Compensation received on leaving the post, if any.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0.0
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: decimal

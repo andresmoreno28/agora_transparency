@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Document
+type: agora_base_document
+description: 'A published document: regulations, plans, reports, minutes of council meetings, the approved budget, budget execution reports and annual accounts.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: false

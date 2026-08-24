@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Person
+type: agora_base_person
+description: 'A person holding a post in the organisation chart, with their professional profile and the financial information that must be published about the post.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: false

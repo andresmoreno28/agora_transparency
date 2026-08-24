@@ -1,0 +1,27 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_document_file
+    - media.type.document
+    - node.type.agora_base_document
+id: node.agora_base_document.field_agora_base_document_file
+field_name: field_agora_base_document_file
+entity_type: node
+bundle: agora_base_document
+label: File
+description: 'The published file, chosen from or added to the media library.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      document: document
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+field_type: entity_reference

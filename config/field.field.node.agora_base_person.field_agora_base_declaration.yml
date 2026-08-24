@@ -1,0 +1,26 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_declaration
+    - node.type.agora_base_person
+  module:
+    - file
+id: node.agora_base_person.field_agora_base_declaration
+field_name: field_agora_base_declaration
+entity_type: node
+bundle: agora_base_person
+label: 'Asset declaration'
+description: 'The declaration of assets and economic interests, published as a PDF. Required of elected local representatives.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:file'
+  handler_settings: {  }
+  file_directory: 'asset-declarations/[date:custom:Y]'
+  file_extensions: pdf
+  max_filesize: ''
+  description_field: false
+field_type: file

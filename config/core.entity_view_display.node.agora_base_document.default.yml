@@ -1,0 +1,60 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.agora_base_document.field_agora_base_area
+    - field.field.node.agora_base_document.field_agora_base_document_file
+    - field.field.node.agora_base_document.field_agora_base_document_type
+    - field.field.node.agora_base_document.field_agora_base_financial_year
+    - field.field.node.agora_base_document.field_agora_base_summary
+    - node.type.agora_base_document
+  module:
+    - user
+id: node.agora_base_document.default
+targetEntityType: node
+bundle: agora_base_document
+mode: default
+content:
+  field_agora_base_area:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  field_agora_base_document_file:
+    type: entity_reference_entity_view
+    label: above
+    settings:
+      view_mode: default
+      link: false
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  field_agora_base_document_type:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  field_agora_base_financial_year:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 4
+    region: content
+  field_agora_base_summary:
+    type: text_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden: {  }
