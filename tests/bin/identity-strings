@@ -16,7 +16,7 @@
 # identity strings are correct" is naturally EXPECT-PRESENT, whose degenerate
 # value is `no` and never `yes`.
 #
-# FIVE assertions:
+# SIX assertions:
 #   1. recipe.yml has exactly ONE `^name:` line, and its value is exactly
 #      $FULL_NAME. In the installer's template selector that string IS the
 #      entire user interface for "what is this"; a bare `Ágora` sends the
@@ -35,6 +35,51 @@
 #      that matters most: I-024 - "inherited boilerplate outlives the task
 #      that was supposed to clean it up whenever no task owns the WHOLE file"
 #      - made impossible rather than remembered.
+#   6. recipe.yml still has a `recipes:` key with a NON-EMPTY list beneath it,
+#      and still carries its `-- area:` labels. Added later than the other
+#      five, as a DEFECT FIX rather than as a new invariant; the reasoning is
+#      below, because it is the part a future reader will want and the part a
+#      future reader will otherwise re-litigate.
+#
+# WHY ASSERTION 6 LIVES HERE, AND WHY IT IS A DEFECT FIX. D-032 names three
+# ways a config export can ruin this repository with NO error anywhere:
+# recipe.yml silently replaced, content silently exported into content/, and
+# config/ silently empty. The third is closed by tests/bin/config-inventory and
+# the second is closed by a content-count assertion. The first was open, and it
+# was open in a specific way: `drush site:export` REGENERATES recipe.yml from a
+# handful of top-level keys, so the regenerated file has no `recipes:` key at
+# all and none of the area comments - while still carrying a correct `name:`
+# and a correct `description:`, which is exactly and only what assertions 1 and
+# 3 read. A regenerated recipe.yml PASSED this script. That is a hole in an
+# existing invariant, not a missing invariant, so it is repaired in the file
+# that already opens recipe.yml, already declares its scope, already prints its
+# counts and already runs inside the blocking agora-invariants job. A separate
+# script would have been a second thing to remember to run.
+#
+# WHY IT ASSERTS STRUCTURE AND NOT A CENSUS. The list holds 10 entries today
+# and units 004 and 005 add more, so `entries == 10` would have to be relaxed
+# every time the product grows - and a gate that is routinely relaxed is the
+# gate that teaches people to relax gates. T-601's row made that ruling and it
+# applies unchanged here. So the ASSERTION is structural (the key exists, the
+# list is not empty) and the CENSUS is printed beside it: the number is
+# evidence for a reader, never a threshold for the script.
+#
+# The `-- area:` floor is 15 for the same reason and with the same honesty
+# about what it discriminates: there are 16 matching lines today - the 15 area
+# labels of D-011 rider b, plus the one line of prose that DEFINES the
+# convention - and the failure this catches is the wholesale loss of every
+# comment in the file, which takes the count to 0, not the loss of one label.
+# Stated rather than implied, per I-045: a floor of 15 is a claim about
+# regeneration, not a claim that all 15 labels are individually present.
+#
+# WHY IT IS GUARDED ON THE FILE EXISTING. This script is shared with
+# drupal/agora_theme as a hash-pinned ADAPTED copy (D-028), and a theme has no
+# recipe.yml; an unconditional read would turn the theme's gate red the moment
+# its copy is refreshed. The guard costs this repository nothing, because here
+# recipe.yml is a DECLARED IDENTITY FILE and the preflight above already exits
+# FATAL when a declared identity file is unreadable - the skip branch is
+# unreachable in this repository by construction, which is the only kind of
+# conditional that is not a hole.
 #
 # WHY ASSERTION 4 NORMALISES BEFORE MATCHING. A naive "the first line
 # containing `Ágora` also contains `Ágora Transparency`" is wrong on this tree
@@ -414,10 +459,81 @@ done <<EOF
 $IDENTITY_FILES
 EOF
 
+# ------------------------- 6. recipe.yml keeps its structure (D-032, D-011) --
+# The hole this closes is argued in full in the header. In one line: a
+# regenerated recipe.yml keeps `name:` and `description:` and loses everything
+# else, so assertions 1 and 3 alone would wave it through.
+printf '\n6. recipe.yml structure - the recipes: list and the area labels survived\n'
+
+# The floor for `-- area:` lines. Deliberately BELOW today's count: see the
+# header - this discriminates the loss of every comment in the file, which is
+# what regeneration does, and it is not a per-label roll call.
+AREA_MIN=15
+
+RECIPES_ENTRIES='n/a'
+AREA_LABELS='n/a'
+
+if [ ! -r recipe.yml ]; then
+  # UNREACHABLE IN THIS REPOSITORY: recipe.yml is a declared identity file and
+  # the preflight has already exited FATAL if it is unreadable. The branch
+  # exists for drupal/agora_theme's adapted copy (D-028), which has no
+  # recipe.yml and must not be failed for not having one.
+  note 'recipe.yml is not present - assertion 6 does not apply to this repository'
+else
+  RECIPES_KEY_MATCHED=$(grep '^recipes:' recipe.yml 2>/dev/null)
+  RK_RC=$?
+  [ "$RK_RC" -ge 2 ] && grep_fatal "$RK_RC" '^recipes:' recipe.yml
+  if [ "$RK_RC" -eq 0 ]; then
+    RECIPES_KEYS=$(printf '%s\n' "$RECIPES_KEY_MATCHED" | wc -l | tr -d ' ')
+  else
+    RECIPES_KEYS=0
+  fi
+  note "^recipes: keys: $RECIPES_KEYS"
+
+  # The block runs from the key to the next line that starts a top-level key.
+  # sed searches for the end pattern from the line AFTER the start, so the key
+  # line cannot terminate its own range. Read with sed rather than a YAML
+  # parser for the same reason as yaml_scalar above: gate A owns no YAML
+  # dependency (T-320(c)).
+  RECIPES_ENTRIES=0
+  if [ "${RECIPES_KEYS:-0}" -ge 1 ]; then
+    ENTRIES_MATCHED=$(sed -n '/^recipes:/,/^[A-Za-z_]/p' recipe.yml 2>/dev/null | grep '^  - ' 2>/dev/null)
+    EN_RC=$?
+    [ "$EN_RC" -ge 2 ] && grep_fatal "$EN_RC" '^  - ' 'the recipes: block of recipe.yml'
+    if [ "$EN_RC" -eq 0 ]; then
+      RECIPES_ENTRIES=$(printf '%s\n' "$ENTRIES_MATCHED" | wc -l | tr -d ' ')
+    fi
+  fi
+  note "entries beneath it: $RECIPES_ENTRIES (census, NOT a threshold - units 004 and 005 add more)"
+
+  # Zero means FAIL for both guards below, which is the only direction in which
+  # the `:-0` default is safe (I-031). The two are chained with `elif` on
+  # purpose: a missing key is ONE defect, and reporting it a second time as an
+  # empty list would inflate the finding count without adding information.
+  if [ "${RECIPES_KEYS:-0}" -eq 0 ]; then
+    finding recipe.yml '<recipes>' 'no top-level recipes: key - the file has lost the list of recipes applied before this one, which is what a regenerated recipe.yml looks like (D-032). Restore it from git, do not retype it'
+  elif [ "${RECIPES_ENTRIES:-0}" -eq 0 ]; then
+    finding recipe.yml '<recipes>' 'the recipes: key lists no entries - an empty list applies nothing, and installs a site template that is not this site template'
+  fi
+
+  AREA_MATCHED=$(grep -e '-- area:' recipe.yml 2>/dev/null)
+  AR_RC=$?
+  [ "$AR_RC" -ge 2 ] && grep_fatal "$AR_RC" '-- area:' recipe.yml
+  if [ "$AR_RC" -eq 0 ]; then
+    AREA_LABELS=$(printf '%s\n' "$AREA_MATCHED" | wc -l | tr -d ' ')
+  else
+    AREA_LABELS=0
+  fi
+  note "lines matching -- area: $AREA_LABELS (floor $AREA_MIN)"
+  if [ "${AREA_LABELS:-0}" -lt "$AREA_MIN" ]; then
+    finding recipe.yml '<area labels>' "only $AREA_LABELS line(s) match -- area:, expected at least $AREA_MIN - the functional-area seams of D-011 rider b are comments, and comments are exactly what an export drops on the floor"
+  fi
+fi
+
 # ----------------------------------------------------------------- summary ---
 printf '\n=========================================================================================================\n'
-printf 'identity files checked: %s · prose-only declared: %s · packaged files naming the product: %s · findings: %s\n' \
-  "$IDENTITY_COUNT" "$PROSE_COUNT" "$NAMING" "$FINDINGS"
+printf 'identity files checked: %s · prose-only declared: %s · packaged files naming the product: %s · recipes entries: %s · area label lines: %s · findings: %s\n' \
+  "$IDENTITY_COUNT" "$PROSE_COUNT" "$NAMING" "$RECIPES_ENTRIES" "$AREA_LABELS" "$FINDINGS"
 printf '=========================================================================================================\n'
 
 if [ "$FINDINGS" -eq 0 ]; then
