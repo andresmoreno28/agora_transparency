@@ -219,42 +219,32 @@ check 'lines "^description:"'          "$(grep_count '^description:' recipe.yml)
 group 'G3 - Starter kit scaffolding removed (T-103, T-104)'
 check 'occurrences of _comment'    "$(grep_count_fixed '_comment' composer.json)" '0'
 # ---------------------------------------------------------------------------
-# DEBT WITH AN OWNER AND AN EXIT GATE - THIS IS NOT A RELAXED CHECK.
+# DEBT DISCHARGED - the exit gate fired, and this is the note that closes it.
 #
-# Expected = PRESENT, on purpose. Rider of the `blank` theme, signed by [andres]
-# on 2026-08-21 (specs/000-project/DECISIONS.md, "Riders on wave 1"):
+# This check expected PRESENT from 2026-08-21 to 2026-08-25, under the `blank`
+# rider signed by [andres] (specs/000-project/DECISIONS.md, "Riders on wave 1"):
+# the theme the recipe installed was not versioned at all, it was MANUFACTURED
+# at install time by drupal/site_template_helper reading the
+# `extra.drupal-site-template` block, so deleting that block would have left
+# `recipe.yml` pointing at a theme that did not exist. The rider named its own
+# exit: the unit 002 task performing the atomic `drupal/agora_theme` change
+# (D-014, option B) in ONE SINGLE COMMIT, and that task was required to set
+# 'absent' back here in the same commit. It has:
+#     - .extra["drupal-site-template"] deleted from composer.json
+#     + "drupal/agora_theme": "^1.0" added to .require
+#     + `- blank` changed to `- agora_theme` in `install:` of recipe.yml
+#     + system.theme.default changed to 'agora_theme'
+# all four in the commit that also flipped the expected value below.
 #
-#   "`blank` and the `extra.drupal-site-template` block are kept until unit 002.
-#    T-103 deletes the three `_comment` arrays and `GET-STARTED.md`, but NOT the
-#    `extra` block. [...] the affected check is adjusted to the specification in
-#    force for unit 001 (`blank` and the `extra` block are expected to be
-#    PRESENT, with a reference to this rider)."
-#
-# Why this is the specification in force and not an excuse: `recipe.yml` today
-# installs the `blank` theme (`install: - blank`) and sets it as the default
-# theme (`system.theme.default: 'blank'`). That theme is NOT versioned: it is
-# MANUFACTURED by drupal/site_template_helper reading exactly this `extra`
-# block. Deleting it today would leave `recipe.yml` pointing at a non-existent
-# theme and the template would NOT install. In unit 001 the block is a hard
-# requirement; expecting 'absent' was describing the end state of unit 002, not
-# the contract in force.
-#
-# WHO REVERTS IT: the UNIT 002 task that performs the atomic
-# `drupal/agora_theme` change (D-014, option B) in ONE SINGLE COMMIT:
-#     delete .extra["drupal-site-template"] from composer.json
-#   + add "drupal/agora_theme" to .require
-#   + change `- blank` to `- agora_theme` in `install:` of recipe.yml
-#   + change system.theme.default to 'agora_theme'
-# That same task MUST set 'absent' back here. This line is the tripwire: the
-# moment someone deletes the `extra` block without touching the gate, this
-# check goes RED and the change does not pass. It is deliberate (I-020: "known
-# debt is a task with an owner and an exit gate, never a tolerated red").
-#
-# FORBIDDEN: changing this expected value to 'absent' -- or deleting the check --
-# without executing the four steps above in the same commit.
+# The tripwire has not been removed, it has been TURNED AROUND. Expecting
+# 'absent' is now what fails if the generated-theme block ever comes back -
+# and it can come back by accident: `drush site:export` `unset`s the key on its
+# way past (D-032), and a hand-restored block would silently reintroduce a theme
+# that this package must never manufacture. I-020 still governs: known debt is a
+# task with an owner and an exit gate, never a tolerated red.
 # ---------------------------------------------------------------------------
-check '.extra["drupal-site-template"]' "$(jq_raw '.extra["drupal-site-template"] // "absent" | if . == "absent" then . else "present" end' composer.json)" 'present'
-note 'expected PRESENT by the `blank` rider [andres] 2026-08-21; reverted by the unit 002 theme task (atomic change)'
+check '.extra["drupal-site-template"]' "$(jq_raw '.extra["drupal-site-template"] // "absent" | if . == "absent" then . else "present" end' composer.json)" 'absent'
+note 'the `blank` rider [andres] 2026-08-21 is DISCHARGED: the unit 002 atomic theme change removed the block and flipped this expectation in the same commit'
 check 'GET-STARTED.md'             "$(exists_file GET-STARTED.md)" 'absent'
 # NOTE: find is used, not the dispatch's `*.example` glob: the shell glob does
 # NOT match dotfiles and the kit ships `.gitignore.example` / `.gitattributes.example`.

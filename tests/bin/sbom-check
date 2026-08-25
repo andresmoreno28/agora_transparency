@@ -11,6 +11,13 @@
 #     D-NNN token and the qualified name `drupal/<short>` (CLAUDE.md rule 2: no
 #     dependency without a justification recorded in the same change).
 #
+# ONE NAMED EXCEPTION EXISTS, and it is the only one this script has ever
+# granted: `drupal/agora_theme` is exempt from the security-coverage clause -
+# from that clause and no other - until 2026-09-03, under D-034. It is named in
+# the summary on every run and it expires by FAILING, not by warning. The whole
+# of it is the block beside `EXEMPT_PROJECT` below; read D-034 before touching
+# it.
+#
 # THREE TRAPS THIS SCRIPT IS BUILT AROUND (all reproduced in this project, not
 # theoretical):
 #
@@ -88,6 +95,70 @@ DECISIONS="specs/000-project/DECISIONS.md"
 
 fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
 
+# ------------------------------------------- THE ONE NAMED EXCEPTION (D-034) --
+# Signed by [andres] 2026-08-25. This script has never granted an exemption
+# before, and this is the whole of it. Read D-034 before touching these four
+# lines; its three mandatory properties are implemented immediately below, and
+# without any one of them the exception collapses into a silent pass:
+#
+#   (1) NAMED     - it exempts exactly `drupal/agora_theme` from exactly the
+#                   security-coverage clause. Never a wildcard, never a
+#                   category, never a second clause. Every other clause still
+#                   applies to it: a stable release, no dev/alpha/beta/rc, and
+#                   its own D-NNN line. It is queried like any other entry and
+#                   it appears in the counts.
+#   (2) PRINTED   - the `exclusions:` line of the summary names it on EVERY run
+#                   and says whether it was applied, so a reader sees an
+#                   exemption rather than a clean sweep. That line used to read
+#                   `none - every drupal/* entry in require is queried`, which
+#                   would now be a lie.
+#   (3) EXPIRES BY FAILING - on and after EXEMPT_UNTIL the exemption stops
+#                   applying and the missing coverage becomes an ordinary
+#                   finding, worded so the reader knows an exemption lapsed.
+#                   Not a warning, not a silent continue.
+#
+# Why one package earns this: D-004 and CLAUDE.md rule 2 are written against
+# THIRD-PARTY risk - depending on code nobody maintains. `drupal/agora_theme` is
+# first-party: same maintainer, same project. The date is not hope: a Drupal.org
+# project cannot apply for security-advisory coverage until it is ten days old,
+# the theme was created 2026-08-24, and [andres] holds the role to opt it in on
+# 2026-09-03. On and after that date this invariant FAILS until the release
+# actually reports covered="1".
+EXEMPT_PROJECT="agora_theme"
+EXEMPT_CLAUSE="security coverage"
+EXEMPT_UNTIL="2026-09-03"
+EXEMPT_DECISION="D-034"
+
+# ----------------------------------------------- the clock, and its test hook
+# An expiry that cannot be OBSERVED to fire is a promise, not a gate, so the
+# clock is injectable - in ONE DIRECTION ONLY. `SBOM_CHECK_TODAY` is honoured
+# when it moves the clock FORWARD, which can only make this script stricter, and
+# is FATAL when it moves it backward, which is the only direction that could
+# hide a lapsed exemption. `CI_ALLOW_DEV` is the cautionary tale this asymmetry
+# is built against (CLAUDE.md: using it is an automatic red) - an escape hatch
+# that can weaken a gate eventually does. The worst a caller can do with this
+# one is fail their own build.
+TODAY=$(date -u +%Y-%m-%d)
+CLOCK_SOURCE="system clock, UTC"
+if [ -n "${SBOM_CHECK_TODAY:-}" ]; then
+  case "$SBOM_CHECK_TODAY" in
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+    *) fatal "SBOM_CHECK_TODAY must be YYYY-MM-DD; got \"$SBOM_CHECK_TODAY\"" ;;
+  esac
+  if [ "$(printf '%s' "$SBOM_CHECK_TODAY" | tr -d -)" -lt "$(printf '%s' "$TODAY" | tr -d -)" ]; then
+    fatal "SBOM_CHECK_TODAY=$SBOM_CHECK_TODAY is BEFORE the system date $TODAY - the clock hook moves forward only, so it can never hide an expired exemption"
+  fi
+  TODAY=$SBOM_CHECK_TODAY
+  CLOCK_SOURCE="SBOM_CHECK_TODAY, forward-only test hook"
+fi
+# Dashes stripped and compared as integers: no locale, no `[ a \< b ]`, and
+# YYYYMMDD orders exactly the way the dates do.
+if [ "$(printf '%s' "$TODAY" | tr -d -)" -lt "$(printf '%s' "$EXEMPT_UNTIL" | tr -d -)" ]; then
+  EXEMPT_EXPIRED=0
+else
+  EXEMPT_EXPIRED=1
+fi
+
 # ------------------------------------------------------- grep's third state --
 # T-316 / I-027. `grep` has THREE exit states, not two: 0 = matched, 1 = no
 # match, >= 2 = grep itself FAILED (invalid pattern, unreadable file, crash).
@@ -156,7 +227,9 @@ count_findings() {
 # "The token `D-018` sits in the first cell of every row" carries both a D-NNN
 # token and the string "token", so an undocumented dependency would have been
 # waved through. `drupal/<short>` is how the D-018 table names each package, so
-# this is a tightening, not a relaxation: all nine still match their own row.
+# this is a tightening, not a relaxation: all nine entries of that day still
+# matched their own row. (The tenth, `drupal/agora_theme`, arrived 2026-08-25
+# and matches D-034's own line.)
 # The trailing class is a word boundary, so `drupal/media` never matches
 # `drupal/drupal_cms_media`.
 #
@@ -341,18 +414,32 @@ if [ "${PROJECT_COUNT:-0}" -eq 0 ]; then
 fi
 
 QUERIED=0
+# D-034 bookkeeping, printed in the summary whatever it says: SEEN = the named
+# package is in `require` at all; APPLIED = the exemption actually excused a
+# missing coverage attribute on this run; LAPSED = it was past its date and the
+# missing coverage became an ordinary finding.
+EXEMPT_SEEN=0
+EXEMPT_APPLIED=0
+EXEMPT_LAPSED=0
+# COVERED = the named package answered the coverage clause on its own merits.
+# It exists so the summary can tell "the exemption was not needed" apart from
+# "the coverage clause was never reached, because an earlier clause already
+# failed this package" - two very different runs that would otherwise print the
+# same reassuring sentence.
+EXEMPT_COVERED=0
 WITH_STABLE=0
 WITH_COVERAGE=0
 WITH_DECISION=0
 WITH_CORE=0
 
 printf '\nsbom-check - stable release, security coverage and D-NNN justification\n\n'
-printf '  %-30s %-10s %-6s %-10s %s\n' "project" "stable" "sec" "core" "decision"
+printf '  %-30s %-10s %-9s %-10s %s\n' "project" "stable" "sec" "core" "decision"
 printf '  %s\n' "--------------------------------------------------------------------------------"
 
 while IFS= read -r project; do
   [ -n "$project" ] || continue
   QUERIED=$((QUERIED + 1))
+  [ "$project" = "$EXEMPT_PROJECT" ] && EXEMPT_SEEN=1
   MANIFEST_LINE=$(line_of "\"drupal/$project\"" "$MANIFEST")
   XML="$WORKDIR/$project.xml"
 
@@ -389,6 +476,10 @@ PARSED
     continue
   fi
 
+  # What the `sec` column will show. Overwritten only by the D-034 branches
+  # below, so an ordinary package's column is exactly what it always was.
+  SEC_SHOWN="${STABLE_SECURITY:-none}"
+
   # (h) the project itself must be published.
   if [ "$PROJECT_STATUS" != "published" ]; then
     finding "$MANIFEST" "$MANIFEST_LINE" \
@@ -404,8 +495,26 @@ PARSED
     WITH_STABLE=$((WITH_STABLE + 1))
     STABLE_SHOWN=$STABLE_VERSION
     # (f) that release must carry <security covered="1">.
+    #
+    # THE D-034 EXEMPTION LIVES HERE AND NOWHERE ELSE. Note what it does not
+    # touch: the stable-release clause immediately above and the D-NNN clause
+    # below have already run against this same package, unchanged, and either
+    # will still file a finding for it. That is what "named, and one clause
+    # only" means in code rather than in prose.
     if [ "$STABLE_SECURITY" = "1" ]; then
       WITH_COVERAGE=$((WITH_COVERAGE + 1))
+      [ "$project" = "$EXEMPT_PROJECT" ] && EXEMPT_COVERED=1
+    elif [ "$project" = "$EXEMPT_PROJECT" ] && [ "$EXEMPT_EXPIRED" -eq 0 ]; then
+      EXEMPT_APPLIED=1
+      SEC_SHOWN="$STABLE_SECURITY exempt"
+    elif [ "$project" = "$EXEMPT_PROJECT" ]; then
+      # The date passed and coverage still is not there: the exemption is over,
+      # and it ends as a FINDING. Moving EXEMPT_UNTIL to make this green is the
+      # one repair that is not available - it would need a signed decision.
+      EXEMPT_LAPSED=1
+      SEC_SHOWN="$STABLE_SECURITY LAPSED"
+      finding "$MANIFEST" "$MANIFEST_LINE" \
+        "drupal/$project $STABLE_VERSION: the $EXEMPT_DECISION exemption from the $EXEMPT_CLAUSE clause EXPIRED on $EXEMPT_UNTIL (today is $TODAY) and the release still reports covered=\"$STABLE_SECURITY\". Opt the project into security advisory coverage; do not move the date"
     else
       finding "$MANIFEST" "$MANIFEST_LINE" \
         "drupal/$project $STABLE_VERSION has no <security covered=\"1\"> (covered=\"$STABLE_SECURITY\"); D-004 requires security-team coverage"
@@ -434,8 +543,8 @@ PARSED
       "drupal/$project has no line in $DECISIONS carrying both a D-NNN token and \"drupal/$project\" (CLAUDE.md rule 2)"
   fi
 
-  printf '  %-30s %-10s %-6s %-10s %s\n' \
-    "$project" "$STABLE_SHOWN" "${STABLE_SECURITY:-none}" "$CORE_SHOWN" "$DEC_SHOWN"
+  printf '  %-30s %-10s %-9s %-10s %s\n' \
+    "$project" "$STABLE_SHOWN" "$SEC_SHOWN" "$CORE_SHOWN" "$DEC_SHOWN"
 done <<PROJECTLIST
 $PROJECTS
 PROJECTLIST
@@ -491,6 +600,7 @@ printf 'endpoint:   %s/<project>/current\n' "$ENDPOINT"
 printf 'queried:    %s\n' "$QUERIED"
 printf 'with stable release: %s\n' "$WITH_STABLE"
 printf 'with security coverage: %s\n' "$WITH_COVERAGE"
+printf 'exempt from the coverage clause: %s (see exclusions below)\n' "$EXEMPT_APPLIED"
 printf 'with a D-NNN line: %s\n' "$WITH_DECISION"
 printf 'core_compatibility declared: %s (%s n/a - informational, not a finding)\n' "$WITH_CORE" "$NO_CORE"
 if [ "$LOCK_STATE" = "absent" ]; then
@@ -498,7 +608,26 @@ if [ "$LOCK_STATE" = "absent" ]; then
 else
   printf 'lock:       composer.lock: present (%s drupal/* packages checked)\n' "$LOCK_DRUPAL"
 fi
-printf 'exclusions: none - every drupal/* entry in require is queried\n'
+# D-034 property (2): the exemption is named on EVERY run, whatever state it is
+# in, so a reader can never mistake an exempted sweep for a clean one. This line
+# used to read `none - every drupal/* entry in require is queried`, and a
+# sentence like that one, left standing over an exemption, IS the silent pass.
+printf 'clock:      %s = %s (the %s exemption expires %s)\n' \
+  "$CLOCK_SOURCE" "$TODAY" "$EXEMPT_DECISION" "$EXEMPT_UNTIL"
+printf 'exclusions: 1 named - drupal/%s is exempt from the %s clause ONLY, per %s, until %s\n' \
+  "$EXEMPT_PROJECT" "$EXEMPT_CLAUSE" "$EXEMPT_DECISION" "$EXEMPT_UNTIL"
+if [ "$EXEMPT_SEEN" -eq 0 ]; then
+  printf '            NOT REACHED: drupal/%s is not in %s require\n' "$EXEMPT_PROJECT" "$MANIFEST"
+elif [ "$EXEMPT_APPLIED" -eq 1 ]; then
+  printf '            APPLIED: its stable release reports no coverage, and that one finding was withheld\n'
+elif [ "$EXEMPT_LAPSED" -eq 1 ]; then
+  printf '            EXPIRED on %s: the missing coverage is a FINDING again, not an exemption\n' "$EXEMPT_UNTIL"
+elif [ "$EXEMPT_COVERED" -eq 1 ]; then
+  printf '            NOT NEEDED: drupal/%s reports coverage of its own, so the exemption excused nothing and can be deleted\n' "$EXEMPT_PROJECT"
+else
+  printf '            NOT EVALUATED: the coverage clause was never reached for drupal/%s - an earlier clause already filed a finding against it\n' "$EXEMPT_PROJECT"
+fi
+printf '            every other drupal/* entry, and every other clause on drupal/%s, is queried as normal\n' "$EXEMPT_PROJECT"
 
 # T-321(b): defaulted because zero means FAIL here - the safe direction of
 # I-031. Do not copy the `:-0` to a guard where zero means PASS.
@@ -518,7 +647,12 @@ if [ "$M" -gt 0 ]; then
   exit 1
 fi
 
-printf '\n%s%s projects queried - %s with coverage - 0 findings%s\n' \
-  "$C_DIM" "$QUERIED" "$WITH_COVERAGE" "$C_OFF"
-printf 'OK: every drupal/* dependency is stable, covered, and justified in %s.\n' "$DECISIONS"
+printf '\n%s%s projects queried - %s with coverage - %s exempt - 0 findings%s\n' \
+  "$C_DIM" "$QUERIED" "$WITH_COVERAGE" "$EXEMPT_APPLIED" "$C_OFF"
+if [ "$EXEMPT_APPLIED" -eq 1 ]; then
+  printf 'OK: every drupal/* dependency is stable and justified in %s; all carry security coverage except drupal/%s, exempt from that clause until %s under %s.\n' \
+    "$DECISIONS" "$EXEMPT_PROJECT" "$EXEMPT_UNTIL" "$EXEMPT_DECISION"
+else
+  printf 'OK: every drupal/* dependency is stable, covered, and justified in %s.\n' "$DECISIONS"
+fi
 exit 0

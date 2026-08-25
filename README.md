@@ -16,8 +16,9 @@ that installs Drupal with the template applied.
 
 * Installs a working Drupal CMS site: administrative back end, media, basic SEO, basic privacy and
   consent, anti-spam, authentication tweaks and HTML email.
-* Generates a blank front-end theme at install time and sets a blank Canvas landing page as the
-  home page.
+* Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
+  this template requires at `^1.0` — and makes it the site's default theme.
+* Sets an empty Canvas landing page as the home page.
 * Nothing else. There is no transparency-specific functionality in it yet.
 
 **What does not exist yet**, and is therefore not offered by this template — this is the plan, not a
@@ -26,7 +27,6 @@ feature list:
 | Planned | Where it is going |
 |---|---|
 | Content model: documents, officials, contracts, budget lines, public calls | unit 002 |
-| Ágora's own theme, as the separate project `drupal/agora_theme` | unit 002 |
 | Bilingual (ES/EN) demo content and the real screenshot | unit 003 |
 | Editorial workflow and freedom-of-information requests | unit 004 |
 | AI assistant with citations, and configuration auditing | unit 005 |
@@ -37,9 +37,10 @@ The full intended scope is written down in `specs/000-project/plan.md` in this r
 
 **A goal, not a verified result — yet.** Ágora targets WCAG 2.2 AA, and the plan is for automated
 accessibility checks over the demo pages to gate every release, with the outcome reported in this
-section. No such check has run, because there is nothing to run it against: the template currently
-ships no theme, no components and no demo pages. **No conformance with any WCAG level is claimed at
-this point.**
+section. No such check has run here, because there is nothing in this repository to run it
+against: the template ships no demo pages. The theme it installs is a separate project,
+`drupal/agora_theme`, developed and tested in its own repository. **No conformance with any WCAG
+level is claimed at this point.**
 
 ## Requirements
 
@@ -94,13 +95,9 @@ ddev composer require --update-with-all-dependencies "drupal/agora_transparency:
 ```
 
 Composer places the template in `recipes/agora_transparency`, outside the docroot. The
-`allow-plugins` line is needed because Ágora depends on `drupal/site_template_helper`, the Composer
-plugin that generates the blank theme; without it, Composer will stop and ask. That is an
-install-UX finding, stated honestly rather than smoothed over: without this step the `blank` theme
-is never generated, while `recipe.yml` both installs it and pins it as the site's default theme, so
-the install fails later for a reason this step does not make obvious. It is resolved for good once
-Ágora's theme becomes its own project, `drupal/agora_theme` (see the table above) — until then,
-this step stays mandatory, not optional. Check that the package arrived:
+`allow-plugins` line is needed because Ágora depends on `drupal/site_template_helper`, which is a
+Composer plugin, and Composer will not execute a plugin's code without being told to; without the
+line it stops and asks. The step is mandatory, not optional. Check that the package arrived:
 
 ```shell
 test -d ./recipes/agora_transparency && echo present
@@ -125,11 +122,18 @@ two checks — the directory and the bootstrap line — are the whole of what "i
 ### What a clean install actually does
 
 This is the strongest thing this project can currently say about itself, so it is measured, not
-described. Against a real, clean Drupal `11.4.5` on 2026-08-23, from a clone of the canonical
+described.
+
+⚠️ **The measurement below predates the theme swap of 2026-08-25**, which replaced the generated
+blank theme with `drupal/agora_theme`. It is left standing because a dated measurement is only
+replaced by another measurement, never by an estimate: adding a dependency moves the step count and
+the module count, and neither figure is re-stated here until a clean install has been run again.
+
+Against a real, clean Drupal `11.4.5` on 2026-08-23, from a clone of the canonical
 repository at `git.drupalcode.org` — not the working copy, so this is what an end user receives, not
 what a developer has — applying the recipe produced **78 steps** and
 `[OK] Ágora Transparency applied successfully`, exit 0. The resulting site: Drupal
-bootstrap **Successful**, front page **HTTP 200**, the generated `blank` theme set as the site
+bootstrap **Successful**, front page **HTTP 200**, that build's blank theme set as the site
 default, the front page pointed at the Canvas page the recipe creates, and **58** non-core modules
 enabled. With the test suite copied in as described in the next section,
 `phpunit --fail-on-empty-test-suite` reported **`Tests: 3, Assertions: 38`** — the same counts the
@@ -202,15 +206,14 @@ Recipes, in the order `recipe.yml` applies them:
 | `drupal_cms_seo_basic` | Basic SEO tools and configuration |
 | `easy_email_express` | HTML email |
 
-It also installs `drupal_cms_helper`, the `stark` theme and the generated `blank` theme, points the
-front page at a blank Canvas landing page shipped in `content/`, makes `blank` the default theme, and
-hides from the Canvas page builder a set of administrative components that are not useful for
-building pages.
+It also installs `drupal_cms_helper`, the `stark` theme and `agora_theme` — Ágora's own theme, a
+separate Drupal.org project rather than code bundled here — and makes `agora_theme` the site's
+default. It points the front page at an empty Canvas landing page shipped in `content/`, and hides
+from the Canvas page builder a set of administrative components that are not useful for building
+pages.
 
 ## Known limitations
 
-* **The site has no design.** The default theme is `blank` — a deliberately empty theme. Ágora's own
-  theme is a separate project that does not exist yet.
 * **`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
   installed site.
 * **No demo content**, beyond the empty home page.

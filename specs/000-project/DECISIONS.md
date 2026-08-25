@@ -937,6 +937,59 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
     this is the measurement that would have proved it.
 
 
+- **D-034** · **`sbom-check` gets its first named exception: `drupal/agora_theme`, dated, printed,
+  and expiring by FAILING.** **DECIDED BY [andres] 2026-08-25**, and this line contains the
+  `D-034` token beside `drupal/agora_theme` on purpose — `sbom-check`'s `decision_line()` requires
+  exactly that pairing, so this entry is both the decision and the record the invariant reads.
+
+  *The problem in one line:* the template must declare the theme in `require`, and `sbom-check`
+  demands security-advisory coverage for every `drupal/*` entry. Measured on the real release:
+  `<security>` is present with **no `covered` attribute** and the text *"Project has not opted
+  into security advisory coverage!"*, so the parser's `security.get('covered', '0')` returns
+  **`'0'`** and files a finding. The project is **not eligible to apply until 2026-09-03**, ten
+  days after creation.
+
+  ⚠️ **A cost this project overstated, corrected by [andres] and worth recording because the
+  overstatement was the argument for option B:** both the audit and I wrote that waiting would
+  cost *"nine days plus an unbounded Drupal Association review"*. **That is false.** He already
+  holds the role to opt any project into coverage once the ten days elapse; **no third-party
+  review is involved.** The Association's review is the **marketplace** submission, which is a
+  different gate at a different time. So option A's real cost was **nine days, bounded** — and B
+  was chosen on its merits rather than because the alternative was frightening.
+
+  | | Option | Real cost |
+  |---|---|---|
+  | A | Wait: land the swap only once `covered="1"` | **Nine days, bounded** (corrected above). Waves 5 and 6 sit green with nothing able to close them |
+  | **B ★** | **Land the swap with a named, dated exception that expires by failing** | One exemption inside a gate-A invariant — the first this project has ever granted |
+  | C | Land it and tolerate a red `agora-invariants` until coverage arrives | **Rejected.** Rule 9, and the wave-1 rider's own words: *"A gate A with a permanent red is NOT accepted"* |
+
+  ★ **B**, chosen by [andres]: <!-- cspell:disable -->*"vamos haciendo igualmente, y el día 3 ya activo la cobertura"*<!-- cspell:enable -->.
+
+  *The argument that makes this a reading of the rule rather than a hole in it:* **D-004 and
+  non-negotiable rule 2 are written against THIRD-PARTY risk** — the danger of depending on code
+  nobody maintains. `drupal/agora_theme` is **first-party**: same maintainer, same project, same
+  session, **nine blocking jobs green**, and an accessibility gate that has been **seen to fail**.
+  Applying a rule written against third-party risk to our own theme would satisfy its letter
+  against its purpose.
+
+  **Three properties are mandatory, and without any one of them B collapses into a silent pass:**
+  (1) the exception is **named** — it exempts `drupal/agora_theme` and nothing else, never a
+  wildcard, never a category; (2) it is **printed in the summary on every run**, so a reader sees
+  an exemption was applied rather than a clean sweep — the script's line reads
+  `exclusions: none` today and must stop saying that; (3) it **expires by FAILING on 2026-09-03**,
+  not by warning and not by silently continuing. An exemption that lapses quietly is worse than
+  no exemption, because it leaves a gate that looks intact.
+
+  ⚠️ **The expiry is actionable rather than hopeful**, and that is what distinguishes it from a
+  deferral: it does not wait on a third party. **[andres] holds the role and activates coverage on
+  2026-09-03**; on that date the invariant fails until he has, and the failure is the reminder.
+
+  *Scope, stated so it cannot creep:* this exempts **one package** from **one check** — the
+  security-coverage clause. `drupal/agora_theme` must still satisfy every other clause:
+  a stable release, no dev/alpha/beta/rc constraint, and this very D-NNN line. It is queried like
+  any other entry and appears in the counts.
+
+
 - **D-033** · **The language of shipped config strings is ENGLISH, and the Spanish is a
   translation that does not live in this repository.** **DECIDED BY [andres] 2026-08-24**, in his
   own words — <!-- cspell:disable -->*"El idioma de los proyectos en Drupal.org SIEMPRE es inglés,

@@ -112,6 +112,47 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-701 / T-702 / T-706 — THE ATOMIC SWAP. The template now ships Ágora's own theme.**
+  **T-701:** `drupal/agora_theme 1.0.0` released and **packaged in ~90 seconds** —
+  `packages.drupal.org` 200 with `['1.0.0']`, requiring only `drupal/core ^11`. ⚠️ That closes the
+  other half of T-505's measurement: a pushed **branch** produced no Composer entry after **two
+  days**, a **release** produced one in a minute and a half. It was never packaging latency; it
+  was that without a release node there is nothing to package.
+  **T-702 is FIVE files, not the two the row named**, and the membership test is *what must be true
+  simultaneously for the nine-job gate to be green*: `composer.json` · `recipe.yml` ·
+  `tests/bin/gate-a-wave1.sh` · `tests/bin/sbom-check` · `README.md`, plus D-034's entry, which
+  cannot be split out because `sbom-check` reads it.
+  ⚠️ **The gate runner's own comment demanded its flip in THIS commit and forbade it in any other**
+  — *"FORBIDDEN: changing this expected value to 'absent' — or deleting the check — without
+  executing the four steps above in the same commit"*. All four steps are here, so the flip is
+  **authorised by that text**. And the tripwire now points the other way: `'absent'` fails if the
+  generated-theme block ever returns — **which it can by accident**, because `drush site:export`
+  `unset`s that key on its way past (D-032).
+  **T-706 folded INTO T-702 rather than after it**, because `sbom-check` runs in the same pipeline
+  as the commit — there was never a window where one had landed and the other had not.
+  ✅ **D-034's exception, with all four falsifications executed:** before, the theme in `require`
+  produces **exactly 2 findings** (coverage + no D-NNN line) — if it had been 0 or 1 the analysis
+  was wrong and the swap stopped. After: **10 queried · 9 covered · 1 exempt · 0 findings**.
+  **The expiry fails on the date**: `2026-09-03` → exit **1**, `2026-09-02` → exit **0**. And the
+  exemption is **narrow in both directions** — stripping coverage from a *different* package still
+  files a finding, and marking the theme's only release unpublished still fails it for *"no stable
+  release"*.
+  ⚠️ **Making the expiry testable needed a clock hook, and a hook in a gate-A invariant is the
+  `CI_ALLOW_DEV` shape this project treats as an automatic 🔴.** So it is **one-directional**: a
+  later date is honoured, an earlier one is **FATAL**. The worst a caller can do is fail their own
+  build, and every run prints which clock it used. **All five states of the `exclusions:` line were
+  exercised** — APPLIED, EXPIRED, NOT NEEDED, NOT REACHED, NOT EVALUATED — the last added after a
+  draft printed *"reports coverage of its own"* for a package that had never reached the clause.
+  **README: 7 false claims corrected**, and one deliberately **not**: the *"78 steps / 58 modules"*
+  measurement predates the swap and carries a dated ⚠️ instead of a guess. **T-705 retires it.**
+  🔴 **`drupal/site_template_helper` is now justified by a sentence that is false.** D-018 records
+  it as *"Composer plugin that generates the `blank` theme declared in
+  `extra.drupal-site-template`"* — the block this commit deletes. Read at source, its plugin does
+  two things: `generateTheme()`, which is now a **no-op** because it requires that very key, and
+  stamping a `version` into an installed recipe's `composer.json` — **the write the export rig's
+  read-only mount had to refuse**. `sbom-check` still passes it, because the D-NNN line exists; it
+  just no longer says anything true. **Owner: [andres]** — it is an SBOM change and not the
+  implementer's call.
 - **T-512 — recorded as I-055**, the next free number verified on disk (I-053 and I-054 were taken
   by the config-shape and pre-flight-parity lessons). ⚠️ **The row was renumbered twice before it
   ran** — drafted citing I-051, corrected to I-053, landing at I-055 — which is itself the
@@ -575,12 +616,12 @@ none of which needed the theme repository to exist:
 
 | # | Repo | Task | Success criterion | Blocked by |
 |---|---|---|---|---|
-| T-701 | · | **[andres]** Cut `agora_theme` **1.0.0 stable** on drupal.org | `curl -s "https://updates.drupal.org/release-history/agora_theme/current"` lists a `<version>1.0.0</version>` with `<status>published</status>`; `packages.drupal.org/files/packages/8/p2/drupal/agora_theme.json` returns 200 containing `1.0.0` | Wave 6 gate green, D-025 |
-| T-702 | T | **The atomic commit.** Delete `extra.drupal-site-template` from `composer.json`; add `"drupal/agora_theme": "^1.0"` to `require`; replace `blank` with `agora_theme` in `recipe.yml` `install:`; set `system.theme` `default: 'agora_theme'`. One commit, nothing else in it | `grep -c "drupal-site-template" composer.json` → **0**; `grep -c "blank" recipe.yml` → **0**; `RequirementsTest` green (still **0** `*.info.yml`, constraint `^1.0` does not match the pin regex); `composer validate --strict` exit 0 | T-701 |
+| T-701 ✓ | · | **[andres]** Cut `agora_theme` **1.0.0 stable** on drupal.org | `curl -s "https://updates.drupal.org/release-history/agora_theme/current"` lists a `<version>1.0.0</version>` with `<status>published</status>`; `packages.drupal.org/files/packages/8/p2/drupal/agora_theme.json` returns 200 containing `1.0.0` | Wave 6 gate green, D-025 |
+| T-702 ✓ | T | **The atomic commit.** Delete `extra.drupal-site-template` from `composer.json`; add `"drupal/agora_theme": "^1.0"` to `require`; replace `blank` with `agora_theme` in `recipe.yml` `install:`; set `system.theme` `default: 'agora_theme'`. One commit, nothing else in it | `grep -c "drupal-site-template" composer.json` → **0**; `grep -c "blank" recipe.yml` → **0**; `RequirementsTest` green (still **0** `*.info.yml`, constraint `^1.0` does not match the pin regex); `composer validate --strict` exit 0 | T-701 |
 | T-703 | T | Discharge the wave-1 rider **by name**: revert the adjusted `no-boilerplate` check, add `extra.drupal-site-template` to the deny list, prove the deny list fires on the pre-swap file | The deny list grows from 8 to 9 entries; running it against the `HEAD~1` `composer.json` exits non-zero and names the key; running it against `HEAD` exits 0. The rider text in `DECISIONS.md` gains a closure note citing T-703 | T-702 |
 | T-704 | T | Discharge **T-106** (deferred from unit 001 against D-014=B) and record its closure in the blockers table | The blockers table row for T-106 reads ✅ CLOSED with the T-702 commit sha; `tests/bin/cited-tasks-exist` exits 0 | T-702 |
 | T-705 | T | Prove the swap on a **clean** install: rebuild `~/agora-smoke` from scratch (rebuild, not `git pull` — CLAUDE.md), apply the template, confirm `agora_theme` is the default theme and the front page renders | `drush config:get system.theme default` → `agora_theme`; front page HTTP **200**; the theme's stylesheet is in the served HTML; **and** the `Drupal CMS` job on drupalcode shows the same, `allow_failure: false` | T-702, T-511 |
-| T-706 | T | `sbom-check` against a first-party dependency: `drupal/agora_theme` has no third-party security-coverage answer until 2026-09-03 | The invariant either reports the theme as covered (if the date has passed and coverage was granted) or **names it explicitly as a first-party exception with its eligibility date**, and its D-NNN line exists in `DECISIONS.md`. A silent pass is a **failure** | T-702 |
+| T-706 ✓ | T | `sbom-check` against a first-party dependency: `drupal/agora_theme` has no third-party security-coverage answer until 2026-09-03 | The invariant either reports the theme as covered (if the date has passed and coverage was granted) or **names it explicitly as a first-party exception with its eligibility date**, and its D-NNN line exists in `DECISIONS.md`. A silent pass is a **failure** | T-702 |
 
 ---
 
