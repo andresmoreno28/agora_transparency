@@ -239,3 +239,8 @@ DCAT                  # W3C Data Catalog Vocabulary, the standard the EU's DCAT-
 # mandatory pre-adoption checks. Both are real terms of art, not abbreviations we coined.
 GSUB                  # the OpenType glyph-substitution table, where the tnum feature lives
 subsetting            # trimming a font to a subset of codepoints - rejected in T-607, and the
+
+# Present in Drupal core's dictionary on the 11.x DEVELOPMENT branch and ABSENT from 11.4.x,
+# which is the stable branch CI installs. That difference is what made the local pre-flight
+# more permissive than the gate on 2026-08-25; tests/bin/spellcheck now reads 11.4.x.
+vincentlanglet        # the vendor of twig-cs-fixer, cited by name as evidence in T-609

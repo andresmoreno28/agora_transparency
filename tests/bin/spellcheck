@@ -45,8 +45,23 @@ cd "$REPO" || { echo "FATAL: cannot cd to repository root"; exit 2; }
 CACHE="$REPO/.cspell-cache"
 CSPELL_VERSION="9.8.0"
 UPSTREAM_CONFIG="https://git.drupalcode.org/project/gitlab_templates/-/raw/main/assets/.cspell.json"
-CORE_DICT="https://git.drupalcode.org/project/drupal/-/raw/11.x/core/misc/cspell/dictionary.txt"
-DRUPAL_DICT="https://git.drupalcode.org/project/drupal/-/raw/11.x/core/misc/cspell/drupal-dictionary.txt"
+# WHICH BRANCH THE DICTIONARIES COME FROM, AND WHY IT IS NOT 11.x.
+#
+# This used to fetch core's cspell dictionaries from the 11.x DEVELOPMENT branch, and that made
+# the local check MORE PERMISSIVE THAN THE GATE. Measured on 2026-08-25: `vincentlanglet` is in
+# 11.x's dictionary.txt and is NOT in 11.4.x's. The theme's README cited that package name, the
+# local run reported "30 files checked, 0 issues", and the blocking CI job then failed on it.
+#
+# CI installs DRUPAL_CORE=$CORE_STABLE, which is 11.4.5 - so the dictionaries it reads are the
+# ones on the 11.4.x branch. A pre-flight that reads a newer, larger dictionary silently accepts
+# words the gate will reject, which is the exact failure I-051 names: a local check that models
+# most of a gate is not the gate, and the half it does not model is where something gets through.
+#
+# Update this when the project moves to a newer stable core - and note that pointing it back at
+# 11.x would not look like a mistake, it would look like an upgrade.
+CORE_BRANCH="11.4.x"
+CORE_DICT="https://git.drupalcode.org/project/drupal/-/raw/$CORE_BRANCH/core/misc/cspell/dictionary.txt"
+DRUPAL_DICT="https://git.drupalcode.org/project/drupal/-/raw/$CORE_BRANCH/core/misc/cspell/drupal-dictionary.txt"
 
 REFRESH=0
 [ "${1:-}" = "--refresh" ] && REFRESH=1
@@ -81,7 +96,7 @@ fetch() {
   echo "  fetched  $name"
 }
 
-echo "upstream inputs"
+echo "upstream inputs (core dictionaries from branch $CORE_BRANCH - the branch CI installs)"
 fetch "$UPSTREAM_CONFIG" "$CACHE/upstream.cspell.json" "gitlab_templates assets/.cspell.json"
 fetch "$CORE_DICT"       "$CACHE/dictionary.txt"        "Drupal core dictionary.txt"
 fetch "$DRUPAL_DICT"     "$CACHE/drupal-dictionary.txt" "Drupal core drupal-dictionary.txt"
