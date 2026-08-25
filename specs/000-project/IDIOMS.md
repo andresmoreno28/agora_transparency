@@ -555,3 +555,51 @@
   that only works when someone is paying attention is a habit that fails exactly when they are
   not — which is at the end of a long session, immediately after something went well.
   Recorded 2026-08-25.
+
+- I-059 · **A justification is checked for EXISTING, never for being TRUE — so a reason can rot
+  into fiction with the gate green throughout.** `sbom-check` requires, for every contrib
+  dependency, a line in `DECISIONS.md` carrying both a `D-NNN` token and the package name. D-018
+  justified `drupal/site_template_helper` as the plugin that *"generates the `blank` theme declared
+  in `extra.drupal-site-template`"*. Wave 7's swap **deleted that key**. The line still existed, so
+  the invariant stayed green for days while describing a block that was no longer in
+  `composer.json`. Rule: **a mechanical check can enforce that a reason was written and cannot
+  enforce that it still holds** — which is the class of defect an audit exists for, and the T-806
+  audit is what found it. Do not answer this by making the checker smarter; answer it by keeping
+  the periodic read. Recorded 2026-08-26.
+
+- I-060 · **A closure chain can be unsatisfiable on its own terms, and every row in it will look
+  fine individually.** Unit 002 ended with T-805 blocked by T-801…T-804, T-806 blocked by T-805 and
+  T-807 by T-806. T-804 **could not run at all** — it wanted a GitHub visual-regression workflow and
+  no GitHub repository exists for the theme. So T-805 could never start, and nothing after it ever
+  could. Each row read as reasonable; the *graph* was impossible, and nothing in the process reads
+  the graph. Rule: **when a task cannot run, the blocker lists naming it are already broken** —
+  resolve it explicitly by deferring with a named prerequisite, never by quietly proceeding as
+  though the blocker were met. This is the third impossible criterion this unit produced.
+  Recorded 2026-08-26.
+
+- I-061 · **Two pipelines at the same job count are not running the same jobs, and the count is the
+  part that invites the mistake.** On 2026-08-26 both repositories were observed at **nine blocking
+  jobs**. Three of the nine differ: the theme runs `nightwatch` and `stylelint` and **no `phpunit`**;
+  the site template runs `phpunit` and `Drupal CMS` and no `stylelint`. A shared floor of `jobs >= 9`
+  is therefore satisfied by two different sets, and *"both are at nine"* is not the statement *"both
+  run what they need to run"* — the theme has no PHP tests at all, which the number conceals and the
+  **names** reveal. Rule: **a floor catches a pipeline that materialised almost nothing; only an
+  observed job LIST catches a single missing job.** Keep both, and never let the count stand in for
+  the list. Recorded 2026-08-26.
+
+- I-062 · **Views renders no `<table>` at all for an empty result set, so a table test with no rows
+  passes against a page that has no table on it.** Measured while building coverage for the theme's
+  `views-view-table.html.twig` override: with every node unpublished the page still returns **HTTP
+  200**, the Views wrapper is still in the DOM, and `<table>`, `<caption>` and the scroll wrapper
+  are **all zero**. An axe run over that page reports *no violations* — truthfully, and about
+  nothing. Rule: **assert the denominator before asserting the property** — `rows >= 3` first, then
+  the markers. This is I-028's degenerate case wearing a Views costume. Recorded 2026-08-26.
+
+- I-063 · **A fix that is reviewed and committed is not a fix that ships.** The theme's Views
+  table override was committed at `dbbe934` and treated as resolved. The site template resolves
+  `drupal/agora_theme` at `^1.0`, and the `Drupal CMS` job's log says what that means in practice:
+  `Locking drupal/agora_theme (1.0.0)` — **the release in which the file does not exist at all**. So
+  every install, including the one 1717 assertions ran against, got the pre-fix theme, and the fix
+  was in the repository and in no release. Rule: **for a dependency resolved from a package server,
+  the unit of shipping is the RELEASE, not the commit** — and the resolved version is printed in the
+  install log, so this is checkable rather than inferable. Recorded 2026-08-26.
