@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Dataset
+type: agora_base_dataset
+description: 'A machine-readable dataset published for reuse, with its distribution file, the format that file is in, the licence it is released under and how often it is updated. The budget execution table is published here rather than as a content type of its own: the rendered table is the accessible source of truth, and any chart is built on top of it. Required by the public sector information reuse act and, for high value datasets, by an EU implementing regulation that binds local bodies directly.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: false

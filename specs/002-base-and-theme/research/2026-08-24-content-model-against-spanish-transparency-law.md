@@ -286,3 +286,41 @@ Follow it through: `Document` acquires `importe de licitación`, `importe de adj
   that is the moment it stops being usable.
 
 The refutation is not that it is expensive. It is that it is wrong.
+
+
+---
+
+## ✅ SOURCE-VERIFIED 2026-08-25 — the high-value categories, and two corrections to this file
+
+This document's list of the Reglamento's *high-value data categories* was **snippet-level** and
+carried a NOT SOURCE-VERIFIED marker. T-614 read the Annex at source before any config or doc was
+allowed to name it. Appended rather than edited, because the wrong forms are part of the record of
+how this file was written.
+
+**Source:** *Reglamento de Ejecución (UE) 2023/138*, Anexo —
+`https://www.boe.es/buscar/doc.php?id=DOUE-L-2023-80077`, read **2026-08-25**, extracted from the
+fetched HTML rather than from a summary. Corroborating DOUE PDF:
+`https://www.boe.es/doue/2023/019/L00043-00075.pdf`, HTTP 200, 1,179,745 bytes,
+sha256 `9122dd60e364129d6973898003bd406a2d560ea5aacd7a25345aed34cbed643f`.
+
+**The six top-level headings, verbatim** — and a grep for a `7.` heading returns nothing:
+
+<!-- cspell:disable -- the Annex's six headings, quoted verbatim from the official Spanish text; scoped, never declared -->
+1. Geoespacial · 2. Observación de la tierra y medio ambiente · 3. Meteorología ·
+4. Estadísticas · 5. Sociedades y propiedad de sociedades · 6. Movilidad
+<!-- cspell:enable -->
+
+**Two corrections to the text above in this file** — small, and precisely the reason the task
+forbade shipping an unverified list. Both are visible in the verbatim block above: this file wrote
+the second heading with a **capitalised** initial on its final noun where the official text has it
+in lower case, and wrote the fourth heading in the **singular** where the official text has it in
+the plural. The other four match and the count of six is confirmed.
+
+⚠️ **The English original is `NOT MEASURED`.** EUR-Lex answers **HTTP 202 with a 2,035-byte bot
+challenge** for that document's identifier on both the HTML and PDF endpoints, with and without a browser
+user agent. What is verified is the **official Spanish text**, not the English.
+
+⚠️ **Nothing ships this list.** The six categories are named in **no config object and no
+published doc** — D-026 fixes the vocabulary count at five, and a sixth *theme* vocabulary would be
+a model change nobody signed. This verification exists so the record is honest, not so a list could
+be shipped.

@@ -1,0 +1,32 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - node
+    - options
+id: node.field_agora_base_licence
+field_name: field_agora_base_licence
+entity_type: node
+type: list_string
+settings:
+  allowed_values:
+    -
+      value: cc-by-4.0
+      label: 'Creative Commons Attribution 4.0'
+    -
+      value: cc-by-sa-4.0
+      label: 'Creative Commons Attribution-ShareAlike 4.0'
+    -
+      value: cc-zero-1.0
+      label: 'Creative Commons Zero 1.0'
+    -
+      value: other-open
+      label: 'Another open licence'
+  allowed_values_function: ''
+module: options
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

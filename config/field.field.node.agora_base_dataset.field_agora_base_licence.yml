@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_licence
+    - node.type.agora_base_dataset
+  module:
+    - options
+id: node.agora_base_dataset.field_agora_base_licence
+field_name: field_agora_base_licence
+entity_type: node
+bundle: agora_base_dataset
+label: Licence
+description: 'The terms this dataset may be reused under. A dataset with no licence stated is not reusable in practice, whatever the statute says.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

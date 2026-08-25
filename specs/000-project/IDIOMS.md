@@ -449,3 +449,13 @@
   as the directive that was supposed to allow them. It fails quietly in the direction that looks
   like success — the block is visibly *there*, and the count merely goes down. One directive per
   line. Recorded 2026-08-24.
+- I-053 · **The shape a config file holds is not always the shape the API that writes it takes.**
+  `config/` stores a `list_string` field's `allowed_values` as a **structured** list of
+  `{value, label}` maps; `ListItemBase::structureAllowedValues()` expects the **simple**
+  `value => label` map and structures it. Handed the structured form it structures it twice and
+  throws `The configuration property settings.allowed_values.0.label.0 doesn't exist` — a message
+  that names a key nobody wrote and points at nothing a reader can act on. Cost one failed run in
+  T-614. The lasting hazard is the **reverse** trip: someone reading `config/` later, seeing the
+  structured form, and "fixing" the model script to match it — which breaks it again, in the
+  direction that looks like consistency. Rule: **when a value round-trips through a tool, verify
+  the shape on BOTH sides before assuming they are the same shape.** Recorded 2026-08-25.

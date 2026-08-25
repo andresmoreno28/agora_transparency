@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_format
+    - node.type.agora_base_dataset
+  module:
+    - options
+id: node.agora_base_dataset.field_agora_base_format
+field_name: field_agora_base_format
+entity_type: node
+bundle: agora_base_dataset
+label: Format
+description: 'The format the distribution file is in. Stated as a value rather than left to be guessed from the file name, because a catalogue can filter on a value.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

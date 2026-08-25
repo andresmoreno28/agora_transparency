@@ -231,3 +231,6 @@ dsfr                  # drupal.org/project/dsfr, quoted in D-033
 
 # Python identifiers quoted verbatim in CLAUDE.md's phpcs pre-flight snippet.
 splitlines            # str.splitlines(), in the comment-line-length check
+
+# Open-data standard named by the content model's T-614 comments (unit 002).
+DCAT                  # W3C Data Catalog Vocabulary, the standard the EU's DCAT-AP profiles

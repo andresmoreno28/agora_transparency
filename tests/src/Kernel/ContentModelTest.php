@@ -34,6 +34,17 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * more, Agreement one, Grant none. A bundle that adds nothing is the correct
  * outcome, not an oversight.
  *
+ * `testDatasetBundle()` — T-614. The sixth and LAST bundle, and the only one
+ * that comes from neither the transparency act nor a financial statute: the
+ * public sector information reuse act, as amended by the Open Data Directive,
+ * plus an EU implementing regulation on high value datasets that binds
+ * Spanish local bodies directly, without transposition. Dataset is where the
+ * machine-readable budget execution table is published, which is why there is
+ * no seventh bundle: budget is a Document plus a Dataset, and the Dataset's
+ * rendered table is the accessible source of truth any chart is built on.
+ * Three of its seven fields are ATTACHED rather than created, and this method
+ * ASSERTS that reuse rather than describing it.
+ *
  * WHAT MAKES D-026 FALSIFIABLE, and what it deliberately is NOT. The row asked
  * for an assertion that "no bundle carries a field its own regime does not
  * name". A test cannot assert against a statute: the oracle exists only as
@@ -53,10 +64,14 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * storages, which is exactly the growth T-601's row warned would tempt someone
  * to weaken the check. It was not weakened: the DECLARED LIST grew and the
  * assertion stayed identical, so an accretion nobody declared still fails.
- * T-613 and T-614 add four more bundles the same way. What is forbidden is a
+ * T-613 added three bundles and five storages the same way, and T-614 the
+ * sixth bundle and four more. The model is now COMPLETE at six bundles, so
+ * the next growth this file sees should be none. What is forbidden is a
  * hard-coded TOTAL count of config objects, which would have to be edited on
  * every legitimate growth and would teach exactly the wrong habit; the
- * denominator is printed by tests/bin/config-inventory instead.
+ * denominator is printed by tests/bin/config-inventory instead. The one
+ * number that IS hard-coded is six — the bundle count D-026 signed — because
+ * a number a decision fixes is not a denominator that grows.
  *
  * NAMING CONVENTION, asserted rather than merely described:
  *  - machine names are ENGLISH (CLAUDE.md rule 6 / D-017: identifiers are
@@ -204,6 +219,123 @@ final class ContentModelTest extends KernelTestBase {
     'field_agora_base_procedure_type' => 'entity_reference',
     'field_agora_base_tender_amount' => 'decimal',
   ];
+
+  /**
+   * The field storages T-614 had to create, machine name => field type.
+   *
+   * REUSE BEFORE CREATION, for the last time in this model. Three of Dataset's
+   * seven fields are ATTACHED and are therefore absent here —
+   * `field_agora_base_summary` (T-612) carries the description,
+   * `field_agora_base_area` (T-601) and `field_agora_base_financial_year`
+   * (T-612) are attached unchanged. DATASET_REUSED_STORAGES below asserts that
+   * absence rather than leaving it as a claim in a comment.
+   *
+   * Every entry exists because no shipped storage fitted:
+   *  - `distribution` — the model's second file field. Reusing
+   *    `field_agora_base_declaration` would have put "declaration" in the
+   *    machine name of a dataset distribution, and its instance is locked to
+   *    PDF. Reusing `field_agora_base_document_file` was worse: that one
+   *    references a MEDIA entity restricted to core's `document` media type,
+   *    whose extension list holds no CSV, no JSON and no XML, so a dataset
+   *    could not have been attached to it at all,
+   *  - `format` — stated as a value rather than inferred from the file name,
+   *    because a catalogue can filter on a value and cannot filter on a
+   *    suffix. A list, so the value set is closed,
+   *  - `licence` — a dataset with no licence stated is not reusable in
+   *    practice, whatever the statute says,
+   *  - `frequency` — how often the file is republished; the one thing
+   *    somebody reusing the data needs that the file itself cannot say.
+   *
+   * FIELD-NAME CEILING. `field_agora_base_` spends 17 of Drupal's 32, leaving
+   * 15. These four names are 12, 6, 7 and 9 characters, so the longest is
+   * `field_agora_base_distribution` at 29 — two short of the model's tightest
+   * pair (`field_agora_base_financial_year` and
+   * `field_agora_base_procedure_type`, both 31). `update_frequency` would have
+   * been 16 and would NOT have fitted: the field is `frequency` and its LABEL
+   * is "Update frequency".
+   */
+  private const T614_FIELD_STORAGES = [
+    'field_agora_base_distribution' => 'file',
+    'field_agora_base_format' => 'list_string',
+    'field_agora_base_frequency' => 'list_string',
+    'field_agora_base_licence' => 'list_string',
+  ];
+
+  /**
+   * The sixth and last bundle, with every field attached to it.
+   *
+   * Seven fields, transcribed from the T-614 row: title (a base field, so not
+   * listed), description, distribution file, format, licence, área, financial
+   * year and update frequency. Asserted for set equality in both directions
+   * against `config/`, exactly as the other five bundles are.
+   */
+  private const DATASET_BUNDLE = [
+    'agora_base_dataset' => [
+      'name' => 'Dataset',
+      'fields' => [
+        'field_agora_base_summary' => 'text_long',
+        'field_agora_base_distribution' => 'file',
+        'field_agora_base_format' => 'list_string',
+        'field_agora_base_licence' => 'list_string',
+        'field_agora_base_frequency' => 'list_string',
+        'field_agora_base_area' => 'entity_reference',
+        'field_agora_base_financial_year' => 'entity_reference',
+      ],
+    ],
+  ];
+
+  /**
+   * The storages Dataset ATTACHES rather than creates.
+   *
+   * "Reuse before creation" is the instruction every content-model row carries,
+   * and until now it has been honoured in prose. Here it is a test: each of
+   * these must be absent from T614_FIELD_STORAGES AND already attached to some
+   * other bundle. A storage this row had quietly duplicated would fail both.
+   */
+  private const DATASET_REUSED_STORAGES = [
+    'field_agora_base_area',
+    'field_agora_base_financial_year',
+    'field_agora_base_summary',
+  ];
+
+  /**
+   * Dataset's three list fields, machine name => how many values it allows.
+   *
+   * The size is asserted because an `allowed_values` list silently emptied
+   * leaves a select element with nothing in it, and the field then imports,
+   * renders and can never be filled in — a failure with no error anywhere.
+   */
+  private const DATASET_LIST_FIELDS = [
+    'field_agora_base_format' => 5,
+    'field_agora_base_frequency' => 7,
+    'field_agora_base_licence' => 4,
+  ];
+
+  /**
+   * Taxonomy references on Dataset, field name => the vocabulary it is tied to.
+   *
+   * Same reason as T-612's and T-613's: a term reference with no
+   * `target_bundles` accepts terms from EVERY vocabulary, so without this an
+   * area term could be chosen as the financial year of a budget dataset.
+   */
+  private const DATASET_TERM_REFERENCES = [
+    'agora_base_dataset' => [
+      'field_agora_base_area' => 'agora_base_area',
+      'field_agora_base_financial_year' => 'agora_base_financial_year',
+    ],
+  ];
+
+  /**
+   * The number of node types D-026 signed, and the reason six is hard-coded.
+   *
+   * Every other total in this file is forbidden, because the model grows and a
+   * gate that must be relaxed on every growth teaches people to relax gates.
+   * This one is different in kind: D-026 FIXED the bundle count at six and
+   * named the failure mode — a seventh bundle arriving by the back door, as a
+   * Person subtype or as a Budget type. The model is complete, so this number
+   * is a decision rather than a denominator.
+   */
+  private const BUNDLE_COUNT = 6;
 
   /**
    * T-601's shared pattern, by machine name: the six every regime attaches.
@@ -534,11 +666,11 @@ final class ContentModelTest extends KernelTestBase {
     $assertions++;
 
     // The expected list is the UNION of every row's declared storages, not
-    // T-601's six. T-612 added eight and T-613 five, and the honest way to
-    // admit them was to grow the declared list — the assertion itself is
-    // byte-for-byte what it was, still failing in both directions. Relaxing it
-    // to a `>=` or dropping it would have been the weakened gate T-601's row
-    // named in advance.
+    // T-601's six. T-612 added eight, T-613 five and T-614 four, and the
+    // honest way to admit each was to grow the declared list — the assertion
+    // itself is byte-for-byte what it was, still failing in both directions.
+    // Relaxing it to a `>=` or dropping it would have been the weakened gate
+    // T-601's row named in advance.
     $storages = $storage->listAll('field.storage.node.');
     sort($storages);
     $expected = array_map(
@@ -547,6 +679,7 @@ final class ContentModelTest extends KernelTestBase {
         self::FIELD_STORAGES,
         self::T612_FIELD_STORAGES,
         self::T613_FIELD_STORAGES,
+        self::T614_FIELD_STORAGES,
       )),
     );
     sort($expected);
@@ -620,12 +753,20 @@ final class ContentModelTest extends KernelTestBase {
     // asserted in two places is a census that can disagree with itself. T-613
     // admitted its three bundles by GROWING the declared list — the assertion
     // is byte-for-byte what it was, still failing in both directions. T-614
-    // adds `Dataset` the same way, and D-026 fixes the final count at six.
+    // added `Dataset` the same way, and with it the set is CLOSED: D-026 fixes
+    // the final count at six. testDatasetBundle() asserts that number, which
+    // is a different claim from this one — this is the SET, that is the COUNT
+    // a decision signed — and the two cannot silently disagree, because a set
+    // of any other size fails both.
     $node_types = $storage->listAll('node.type.');
     sort($node_types);
     $expected_types = array_map(
       static fn (string $bundle): string => 'node.type.' . $bundle,
-      array_keys(array_merge(self::BUNDLES, self::REGIME_BUNDLES)),
+      array_keys(array_merge(
+        self::BUNDLES,
+        self::REGIME_BUNDLES,
+        self::DATASET_BUNDLE,
+      )),
     );
     sort($expected_types);
     $this->assertSame($expected_types, $node_types, 'config/ must ship exactly the node types the content-model rows declare.');
@@ -1013,6 +1154,218 @@ final class ContentModelTest extends KernelTestBase {
       + (2 * $term_references)
       + count(self::LEGAL_CITATIONS)
       + 1;
+    $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
+  }
+
+  /**
+   * Tests the Dataset bundle and every field on it (T-614).
+   */
+  public function testDatasetBundle(): void {
+    $path = dirname(__FILE__, 4);
+    $storage = new FileStorage($path . '/config');
+    $assertions = 0;
+
+    // -- The census, for the same reason as in the three methods above -------
+    // Every loop below runs over one of these four constants. A constant
+    // silently emptied would leave each loop passing over nothing, which is a
+    // green gate that proves nothing (I-045).
+    $this->assertCount(1, self::DATASET_BUNDLE, 'T-614 ships the sixth and last of D-026\'s six bundles.');
+    $assertions++;
+    $this->assertCount(4, self::T614_FIELD_STORAGES, 'T-614 creates four new field storages.');
+    $assertions++;
+    $this->assertCount(3, self::DATASET_LIST_FIELDS, 'Dataset carries three list fields: format, licence and update frequency.');
+    $assertions++;
+    $this->assertCount(3, self::DATASET_REUSED_STORAGES, 'Three of Dataset\'s seven fields are attached, not created.');
+    $assertions++;
+
+    // -- Six bundles, and there is no seventh --------------------------------
+    // D-026 fixed the count and named the two ways a seventh would arrive: a
+    // Person subtype for the declaración de bienes (refused in T-612) and a
+    // Budget type (refused here — budget is a Document plus this Dataset).
+    // Asserted against what config/ SHIPS, never against the constants, which
+    // would pass with nothing built.
+    $this->assertCount(self::BUNDLE_COUNT, $storage->listAll('node.type.'), 'D-026 fixes the model at six node types; a seventh is a decision, not an implementation detail.');
+    $assertions++;
+
+    foreach (self::DATASET_BUNDLE as $bundle => $definition) {
+      // -- The bundle itself -------------------------------------------------
+      $name = 'node.type.' . $bundle;
+      $data = $storage->read($name);
+      $this->assertIsArray($data, "$name must be shipped in config/.");
+      $assertions++;
+      $this->assertSame($bundle, $data['type'], "$name must declare its own machine name.");
+      $assertions++;
+      $this->assertSame($definition['name'], $data['name'], "$name must carry its English label (D-033).");
+      $assertions++;
+      $this->assertNotEmpty($data['description'], "$name must explain what belongs in it; the description is the only help a clerk gets on the node/add screen.");
+      $assertions++;
+
+      // -- SET EQUALITY, BOTH DIRECTIONS -------------------------------------
+      // A field the T-614 row does not name fails here, and so does one it
+      // names that never shipped.
+      $prefix = 'field.field.node.' . $bundle . '.';
+      $attached = $storage->listAll($prefix);
+      sort($attached);
+      $expected_fields = array_map(
+        static fn (string $field_name): string => $prefix . $field_name,
+        array_keys($definition['fields']),
+      );
+      sort($expected_fields);
+      $this->assertSame($expected_fields, $attached, "$bundle must carry exactly the fields the T-614 row names - no more, and no fewer.");
+      $assertions++;
+      // The set size, asserted because it cannot be printed from here.
+      // tests/bin/config-inventory prints it, in a job where output is free.
+      $this->assertCount(count($definition['fields']), $attached, "$bundle's field set must be the size the T-614 row gives it.");
+      $assertions++;
+
+      // -- The displays ------------------------------------------------------
+      $form_display = $storage->read('core.entity_form_display.node.' . $bundle . '.default');
+      $this->assertIsArray($form_display, "$bundle must ship a default form display.");
+      $assertions++;
+      $view_display = $storage->read('core.entity_view_display.node.' . $bundle . '.default');
+      $this->assertIsArray($view_display, "$bundle must ship a default view display.");
+      $assertions++;
+
+      // -- Every field on the bundle ----------------------------------------
+      foreach ($definition['fields'] as $field_name => $type) {
+        $name = $prefix . $field_name;
+        $field = $storage->read($name);
+        $this->assertIsArray($field, "$name must be shipped in config/.");
+        $assertions++;
+        $this->assertSame($field_name, $field['field_name'], "$name must declare its own machine name.");
+        $assertions++;
+        $this->assertSame($bundle, $field['bundle'], "$name must be attached to $bundle.");
+        $assertions++;
+        $this->assertSame($type, $field['field_type'], "$name must be of type $type.");
+        $assertions++;
+        $this->assertNotEmpty($field['label'], "$name must carry a label.");
+        $assertions++;
+        $this->assertArrayHasKey($field_name, $form_display['content'], "$field_name must be editable on $bundle's form.");
+        $assertions++;
+        $this->assertArrayHasKey($field_name, $view_display['content'], "$field_name must be rendered on $bundle.");
+        $assertions++;
+        // WCAG 2.2 AA, 1.3.1. A format and a licence rendered with their
+        // labels hidden are two bare codes side by side, and nothing tells a
+        // screen-reader user which of them is which.
+        $this->assertSame('above', $view_display['content'][$field_name]['label'], "$field_name must render its label visibly on $bundle.");
+        $assertions++;
+      }
+    }
+
+    // -- The four new field storages -----------------------------------------
+    foreach (self::T614_FIELD_STORAGES as $field_name => $type) {
+      $name = 'field.storage.node.' . $field_name;
+      $data = $storage->read($name);
+      $this->assertIsArray($data, "$name must be shipped in config/.");
+      $assertions++;
+      $this->assertSame($field_name, $data['field_name'], "$name must declare its own machine name.");
+      $assertions++;
+      $this->assertSame('node', $data['entity_type'], "$name must be a node field storage.");
+      $assertions++;
+      $this->assertSame($type, $data['type'], "$name must be of type $type.");
+      $assertions++;
+      // Cardinality 1, like every other field in the model. DCAT lets a
+      // dataset carry several distributions; a facet and a sortable table
+      // column both stop working the moment a field holds an unbounded list,
+      // so a second format is a second Dataset node. A real narrowing, and it
+      // is asserted rather than left as an intention.
+      $this->assertSame(1, $data['cardinality'], "$name must be single-valued.");
+      $assertions++;
+    }
+
+    // -- The three list fields actually offer something to choose ------------
+    // An `allowed_values` list silently emptied leaves a select element with
+    // no options: the config imports, the site installs, the form renders and
+    // the field can never be filled in. Nothing anywhere reports it.
+    $list_options = 0;
+    foreach (self::DATASET_LIST_FIELDS as $field_name => $expected_count) {
+      $data = $storage->read('field.storage.node.' . $field_name);
+      $this->assertCount($expected_count, $data['settings']['allowed_values'], "$field_name must offer exactly the values T-614 declares for it.");
+      $assertions++;
+      foreach ($data['settings']['allowed_values'] as $option) {
+        $list_options++;
+        $this->assertArrayHasKey('value', $option, "Every allowed value of $field_name must carry the value that is stored.");
+        $assertions++;
+        // D-033: English, and present at all. An option with an empty label
+        // renders as a blank line in a select element.
+        $this->assertNotEmpty($option['label'], "Every allowed value of $field_name must carry a label.");
+        $assertions++;
+      }
+    }
+
+    // -- REUSE BEFORE CREATION, asserted rather than claimed -----------------
+    // Every content-model row carries this instruction and until now it lived
+    // in prose. Each reused storage must be absent from what this row created
+    // AND already attached to some other bundle; a storage quietly duplicated
+    // for Dataset fails both halves.
+    $all_instances = $storage->listAll('field.field.node.');
+    foreach (self::DATASET_REUSED_STORAGES as $field_name) {
+      $this->assertArrayNotHasKey($field_name, self::T614_FIELD_STORAGES, "$field_name is attached by T-614, not created by it: declaring it as new would be the duplication every row is told to avoid.");
+      $assertions++;
+      $elsewhere = array_filter(
+        $all_instances,
+        static fn (string $object): bool => str_ends_with($object, '.' . $field_name)
+          && !str_contains($object, '.agora_base_dataset.'),
+      );
+      $this->assertNotEmpty($elsewhere, "$field_name must already be attached to another bundle - that is what makes attaching it to Dataset reuse rather than creation.");
+      $assertions++;
+    }
+
+    // -- Every term reference is tied to ONE vocabulary ----------------------
+    $term_references = 0;
+    foreach (self::DATASET_TERM_REFERENCES as $bundle => $map) {
+      foreach ($map as $field_name => $vid) {
+        $term_references++;
+        $field = $storage->read('field.field.node.' . $bundle . '.' . $field_name);
+        $this->assertSame('default:taxonomy_term', $field['settings']['handler'], "$field_name on $bundle must reference taxonomy terms.");
+        $assertions++;
+        $this->assertSame([$vid], array_keys($field['settings']['handler_settings']['target_bundles']), "$field_name on $bundle must be restricted to the $vid vocabulary.");
+        $assertions++;
+      }
+    }
+
+    // -- The distribution is a plain file, and it accepts what it advertises --
+    // NOT a media reference: core's `document` media type, which Document
+    // uses, lists no CSV, no JSON and no XML, so a dataset could not be
+    // attached to it at all. And the extensions the field accepts must be
+    // exactly the formats the `format` field can state, in both directions -
+    // otherwise the two drift into a dataset whose declared format is one no
+    // file on it could ever have, which is a broken record that imports and
+    // validates and says nothing.
+    $distribution = $storage->read('field.field.node.agora_base_dataset.field_agora_base_distribution');
+    $this->assertSame('file', $distribution['field_type'], 'The distribution must be an attached file: a dataset is published as a file a machine can read.');
+    $assertions++;
+    $extensions = explode(' ', $distribution['settings']['file_extensions']);
+    sort($extensions);
+    $formats = array_column(
+      $storage->read('field.storage.node.field_agora_base_format')['settings']['allowed_values'],
+      'value',
+    );
+    sort($formats);
+    $this->assertSame($formats, $extensions, 'The extensions the distribution accepts must be exactly the formats the model can state, or a dataset can declare a format no file on it could carry.');
+    $assertions++;
+
+    // -- The assertion count, asserted rather than printed -------------------
+    // Same mechanic and same reason as the three methods above: PHPUnit turns
+    // ANY output a test emits, STDOUT and STDERR alike, into an exception
+    // (pipeline 934619), so the count is asserted here and reaches the CI log
+    // through PHPUnit's own "OK (N tests, N assertions)" line. Derived from
+    // the constants rather than written as a literal, so that a change to the
+    // model updates it instead of being papered over.
+    $field_instances = 0;
+    foreach (self::DATASET_BUNDLE as $definition) {
+      $field_instances += count($definition['fields']);
+    }
+    $expected_assertions = 4
+      + 1
+      + (8 * count(self::DATASET_BUNDLE))
+      + (8 * $field_instances)
+      + (5 * count(self::T614_FIELD_STORAGES))
+      + count(self::DATASET_LIST_FIELDS)
+      + (2 * $list_options)
+      + (2 * count(self::DATASET_REUSED_STORAGES))
+      + (2 * $term_references)
+      + 2;
     $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
   }
 

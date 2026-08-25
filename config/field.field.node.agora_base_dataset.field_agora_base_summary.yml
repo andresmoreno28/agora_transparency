@@ -1,0 +1,21 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_summary
+    - node.type.agora_base_dataset
+  module:
+    - text
+id: node.agora_base_dataset.field_agora_base_summary
+field_name: field_agora_base_summary
+entity_type: node
+bundle: agora_base_dataset
+label: Description
+description: 'What this dataset contains, in plain language, for a reader who will not open the file.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

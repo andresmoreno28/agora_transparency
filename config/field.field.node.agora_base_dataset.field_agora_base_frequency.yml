@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_frequency
+    - node.type.agora_base_dataset
+  module:
+    - options
+id: node.agora_base_dataset.field_agora_base_frequency
+field_name: field_agora_base_frequency
+entity_type: node
+bundle: agora_base_dataset
+label: 'Update frequency'
+description: 'How often this dataset is republished, so that anyone reusing it knows whether the file in front of them is current.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

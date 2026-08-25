@@ -1,0 +1,74 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.agora_base_dataset.field_agora_base_area
+    - field.field.node.agora_base_dataset.field_agora_base_distribution
+    - field.field.node.agora_base_dataset.field_agora_base_financial_year
+    - field.field.node.agora_base_dataset.field_agora_base_format
+    - field.field.node.agora_base_dataset.field_agora_base_frequency
+    - field.field.node.agora_base_dataset.field_agora_base_licence
+    - field.field.node.agora_base_dataset.field_agora_base_summary
+    - node.type.agora_base_dataset
+  module:
+    - user
+id: node.agora_base_dataset.default
+targetEntityType: node
+bundle: agora_base_dataset
+mode: default
+content:
+  field_agora_base_area:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  field_agora_base_distribution:
+    type: file_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  field_agora_base_financial_year:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 6
+    region: content
+  field_agora_base_format:
+    type: list_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  field_agora_base_frequency:
+    type: list_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 4
+    region: content
+  field_agora_base_licence:
+    type: list_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  field_agora_base_summary:
+    type: text_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden: {  }
