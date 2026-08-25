@@ -24,6 +24,12 @@
 # while it waits - which is the normal rhythm of a working session - and two things follow,
 # one merely annoying and one dangerous:
 #
+# `canceling` IS IN THE NON-TERMINAL LIST, and it is there because the first version of this
+# fix missed it. GitLab's cancellation is a two-step state - `canceling` then `canceled` - and
+# a run that reached the API mid-transition printed six jobs `canceled`, two `canceling` and a
+# NOT GREEN verdict. Treating `canceling` as terminal is the same defect this whole block is
+# about, one state earlier. Observed on pipeline 936407, not reasoned about.
+#
 #   FALSE RED    GitLab auto-cancels the superseded pipeline. Observed: pipeline 936400 came
 #                back with phpunit `canceled`, and this script reported NOT GREEN over a
 #                commit nothing was wrong with. A red that has to be explained away teaches
@@ -114,7 +120,7 @@ import json,sys
 print(json.load(sys.stdin)[0]['status'])" 2>/dev/null)"
 
   case "$STATUS" in
-    running|pending|created|waiting_for_resource|preparing)
+    running|pending|created|waiting_for_resource|preparing|canceling)
       echo "  pipeline $PID: $STATUS (attempt $attempt)"
       [ "$WAIT" -eq 1 ] || { echo "watch-gate: NOT FINISHED - re-run with --wait"; exit 1; }
       sleep 30; retarget_if_head_moved; continue ;;
