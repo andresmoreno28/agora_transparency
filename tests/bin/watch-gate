@@ -19,6 +19,25 @@
 # which has reported `success` over a failed job in this very project (I-043). So this
 # prints the list, applies that rule, and exits non-zero when the rule is not met.
 #
+# IT RE-READS HEAD ON EVERY POLL, and that was a DEFECT FIX rather than a nicety.
+# Until 2026-08-26 --wait resolved HEAD once and watched that sha to the end. Push again
+# while it waits - which is the normal rhythm of a working session - and two things follow,
+# one merely annoying and one dangerous:
+#
+#   FALSE RED    GitLab auto-cancels the superseded pipeline. Observed: pipeline 936400 came
+#                back with phpunit `canceled`, and this script reported NOT GREEN over a
+#                commit nothing was wrong with. A red that has to be explained away teaches
+#                people to explain reds away.
+#   FALSE GREEN  the serious one. It reports GREEN for a commit that is no longer HEAD, while
+#                the code actually on the branch has been tested by nothing. That is this
+#                project's whole catalogue of false greens, arriving through the very tool
+#                written to end them.
+#
+# So HEAD is re-read every iteration and a move is announced and re-targeted, never absorbed
+# silently. A terminal `canceled` is also checked against the ref for a NEWER pipeline before
+# it is called a failure: superseded and broken look identical in the status field and are
+# not the same event.
+#
 # Usage:  bash tests/bin/watch-gate [--wait] [--repo <project-path>]
 #           --wait   poll until the pipeline reaches a terminal state (default: report now)
 #           --repo   defaults to the remote of this checkout
@@ -53,6 +72,18 @@ SHA="$(git rev-parse HEAD)"
 SHORT="${SHA:0:7}"
 echo "HEAD $SHORT in $(basename "$REPO")"
 
+# Re-read HEAD and re-target if it moved. Announced, never absorbed: the whole value of this
+# script is that its verdict names the commit the verdict is about.
+retarget_if_head_moved() {
+  local now
+  now="$(git rev-parse HEAD)"
+  [ "$now" = "$SHA" ] && return 1
+  echo "  HEAD MOVED: $SHORT -> ${now:0:7} - re-targeting; the earlier sha's pipeline is superseded"
+  SHA="$now"
+  SHORT="${SHA:0:7}"
+  return 0
+}
+
 # The floor. D-023(5) says `jobs >= 7`; the observed lists are larger and the operative
 # floor lives beside the observed table in CLAUDE.md. Deliberately NOT hard-coded to the
 # current count: a number that must be raised every time the list grows is a number
@@ -75,7 +106,7 @@ except Exception:
   if [ -z "$PID" ]; then
     echo "  no pipeline for $SHORT yet"
     [ "$WAIT" -eq 1 ] || { echo "watch-gate: NOT MEASURED - nothing to read"; exit 1; }
-    sleep 30; continue
+    sleep 30; retarget_if_head_moved; continue
   fi
 
   STATUS="$(printf '%s' "$PIPE" | python3 -c "
@@ -86,7 +117,28 @@ print(json.load(sys.stdin)[0]['status'])" 2>/dev/null)"
     running|pending|created|waiting_for_resource|preparing)
       echo "  pipeline $PID: $STATUS (attempt $attempt)"
       [ "$WAIT" -eq 1 ] || { echo "watch-gate: NOT FINISHED - re-run with --wait"; exit 1; }
-      sleep 30; continue ;;
+      sleep 30; retarget_if_head_moved; continue ;;
+    canceled)
+      # Superseded and broken look identical here. Ask the ref whether something newer exists
+      # before calling it either one - and never call a superseded pipeline green.
+      NEWER="$(curl -sS "$API/$PROJECT/pipelines?ref=$(git rev-parse --abbrev-ref HEAD)&per_page=1" 2>/dev/null | python3 -c "
+import json,sys
+try:
+    d=json.load(sys.stdin); print(d[0]['id'] if d else '')
+except Exception:
+    print('')" 2>/dev/null)"
+      if [ -n "$NEWER" ] && [ "$NEWER" != "$PID" ]; then
+        echo "  pipeline $PID: canceled, and pipeline $NEWER is NEWER on this ref"
+        echo "  -> SUPERSEDED, not failed. This is not a verdict about the code."
+        if retarget_if_head_moved || [ "$WAIT" -eq 1 ]; then
+          sleep 5; continue
+        fi
+        echo "watch-gate: NOT MEASURED - the pipeline for $SHORT was superseded before it finished"
+        exit 1
+      fi
+      echo "  pipeline $PID: canceled, and nothing newer exists on this ref - somebody cancelled it"
+      echo "watch-gate: NOT GREEN - a cancelled pipeline measured nothing"
+      exit 1 ;;
   esac
 
   curl -sS "$API/$PROJECT/pipelines/$PID/jobs?per_page=100" 2>/dev/null | python3 -c "
