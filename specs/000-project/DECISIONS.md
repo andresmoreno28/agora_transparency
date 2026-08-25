@@ -937,6 +937,39 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
     this is the measurement that would have proved it.
 
 
+- **Correction to D-018 — `drupal/site_template_helper`'s justification described a block that no
+  longer exists, and the invariant could not tell.** Recorded [ejecutor] 2026-08-26 after T-806's
+  audit. ⚠️ **This corrects a FALSE STATEMENT; it does not decide whether the dependency stays.**
+  That second question is an SBOM change and belongs to [andres].
+
+  D-018 justified the package as *"Composer plugin that generates the `blank` theme declared in
+  `extra.drupal-site-template`"*. **The swap deleted that key**, so as of `9dc5722` the sentence
+  describes a block that is not in `composer.json`.
+
+  *What the package actually does, read at the version that actually resolves.* An earlier reading
+  of mine said `generateTheme()` was now a no-op and left it there — which was true of **1.0.3**
+  and wrong about the installed one. Observed in job `11771135`:
+  `Locking drupal/site_template_helper (1.0.4)`. At **1.0.4**, `onPackageInstall()` **stamps a
+  `version` key into an installed recipe's `composer.json`**, and the package's own comment says
+  why: *"so we can derive the URL where we can download translations"*. So the dependency has a
+  real, current function — and it is **coherent with D-033**, which put this project's
+  translations on localize.drupal.org rather than in the repository. `generateTheme()` is indeed
+  inert now, because it requires the deleted key; the package is not.
+
+  ⚠️ **The finding underneath is about the invariant, not the package.** `sbom-check`'s
+  `decision_line()` requires a line carrying both a `D-NNN` token and the package name. It checks
+  that **a line exists**, never that it is **true** — so a justification can rot into fiction with
+  the gate green throughout. That is a real limit of the mechanism and it is recorded rather than
+  papered over: a machine can enforce that a reason was written, and cannot enforce that it still
+  holds. **The audit is what catches this class, and it did.**
+
+  ⚠️ **Still open and NOT decided here:** whether the template should keep depending on a plugin
+  whose only remaining function serves a translation-download URL this project does not use today.
+  Dropping it is an SBOM change under rule 2 and needs [andres]. **Owner: [andres]. Target unit:
+  006**, with the SBOM sweep — named now, because a finding with an owner and no unit is how a
+  finding becomes permanent.
+
+
 - **D-034** · **`sbom-check` gets its first named exception: `drupal/agora_theme`, dated, printed,
   and expiring by FAILING.** **DECIDED BY [andres] 2026-08-25**, and this line contains the
   `D-034` token beside `drupal/agora_theme` on purpose — `sbom-check`'s `decision_line()` requires
