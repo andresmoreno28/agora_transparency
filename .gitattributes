@@ -49,7 +49,7 @@
 #
 # What T-802's container measured: git's BLOBS are LF (1 genuine CRLF blob out of 179),
 # but with core.autocrlf=true a Windows checkout materialises 50 of them as CRLF - and
-# MSYS grep CANNOT SEE those carriage returns. `grep -c $'' recipe.yml` returns 0 while
+# MSYS grep CANNOT SEE those carriage returns. a grep for a carriage return in `recipe.yml` returns 0 while
 # `od -c` shows the carriage return. So end-anchored checks PASS ON THIS HOST BY ACCIDENT:
 # run the same
 # runners in a Linux container against the same working tree and two of them fail, because

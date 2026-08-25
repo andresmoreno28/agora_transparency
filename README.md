@@ -232,18 +232,86 @@ What each platform this project is developed or gated on actually provides — m
 reasoned about. A tool that silently changes behaviour between platforms is the kind of defect that
 fails *green*: the failure looks like a pass until someone runs it somewhere else.
 
-| Platform | Status |
-|---|---|
-| Windows dev host (MSYS2 / Git for Windows) | GNU grep **3.0**; `grep -IFin` returns **rc 134 (SIGABRT)** — combining `-F` with `-i` aborts it. `jq` 1.8.2, Python 3.12.6, PHP 8.4.24 **ZTS**, Composer 2.10.2. Windows Python defaults to **cp1252**, so any script opening a repository file needs `encoding='utf-8'` explicitly — the product is named *Ágora*, and the `Á` breaks the default. |
-| WSL2 Ubuntu 24.04 | `docker-ce` **28.1.1**, DDEV **1.24.4**. This is where the clean-install smoke above actually runs, and it is DDEV's own recommended Windows setup. |
-| drupalcode CI runner | `jq`, `python3`, `curl`, `git` and `composer` all present — verified by the invariants job passing its preflight, after this project predicted some might be missing and was wrong. |
-| macOS | **NOT MEASURED.** Ships BSD grep, not GNU grep, so its `-Fin` behaviour, its exit-status semantics and its handling of the patterns this repository's scripts use are all open questions. |
+### How a host gets measured
 
-Any platform not in this table, or listed with a gap in it, is **NOT MEASURED** — never a plausible
-guess. That is the entire point of keeping the table at all.
+```bash
+bash tests/bin/toolchain-floor                                    # this host
+bash tests/bin/gate-in-container --exec 'bash tests/bin/toolchain-floor'   # the pinned image
+```
 
-Drupal itself has a floor independent of the row above: core `11.4.5` needs PHP `8.3`–`8.5` and
-Composer `2.3.6` or later.
+`tests/bin/toolchain-floor` writes nothing, installs nothing and judges nothing — it exits 0
+whatever it finds, because what it finds is evidence, not a verdict. It prints a table meant to be
+pasted back whole. Every row below came out of it.
+
+### The floor, per host
+
+| Axis | Windows dev host (MSYS2 / Git for Windows) | Gate container (digest-pinned) | macOS |
+|---|---|---|---|
+| Measured | ✅ 2026-08-22, re-measured 2026-08-25 | ✅ 2026-08-25 | ❌ **never** |
+| `grep` | GNU **3.0** | GNU **3.11** | not measured |
+| `grep -Fi` and `grep -IFin` | **rc 134 (SIGABRT)** on both — combining `-F` with `-i` aborts it | **rc 0** on both — no abort | not measured |
+| `awk` | gawk **5.0.0** | **mawk** 1.3.4 | not measured |
+| `awk length` counts | **bytes** in the ambient locale (`LANG` unset), **characters** under a forced UTF-8 locale — the same binary, two answers | **bytes**, and a forced UTF-8 locale does not change it | not measured |
+| `sha256sum` | present (`shasum` and `openssl` also present; all three agree) | present (all three present, all three agree) | **absent — the one difference known in advance**, see below |
+| `sed` | GNU 4.9; `sed -i` with no backup suffix exits 0 | GNU 4.9; same | not measured |
+| `jq` / `python3` stdout | **CRLF** on both (I-025) | clean LF on both | not measured |
+| Python default encoding | **cp1252** — any script opening a repository file needs `encoding='utf-8'` explicitly; the product is named *Ágora* and the `Á` breaks the default | UTF-8 | not measured |
+| Locale | `LANG`, `LC_ALL`, `LC_CTYPE` all unset | `LANG=LC_ALL=C.UTF-8` | not measured |
+| `cd ""` | exits **0** without moving | exits **0** without moving | not measured |
+| Other versions | `jq` 1.8.2, Python 3.12.6, PHP 8.4.24 **ZTS**, Composer 2.10.2 | `jq` 1.7, Python 3.12.3, git 2.43.0, curl 8.5.0 — recorded in `tests/container/compose.yaml` | not measured |
+| Dirty-case matrix (T-312) | ✅ run 2026-08-22 — **CERTIFIED** | ❌ not run — measured, not certified | ❌ not run |
+
+Two more hosts are recorded but are not development hosts, so they get a line rather than a column:
+
+- **WSL2 Ubuntu 24.04** — `docker-ce` **28.1.1**, DDEV **1.24.4**. Where the clean-install smoke
+  actually runs, and DDEV's own recommended Windows setup.
+- **drupalcode CI runner** — `jq`, `python3`, `curl`, `git` and `composer` all present, verified by
+  the invariants job passing its preflight after this project predicted some might be missing and
+  was wrong.
+
+### macOS: NOT CERTIFIED
+
+**Named blocking reason: nobody has run the probe there.** Not one measurement exists. That is the
+whole reason, stated plainly rather than dressed up as a technical obstacle — macOS ships a BSD
+userland, so its `grep`, `sed` and `awk` are different programs wearing the same names, and
+guessing what they do is precisely what this section exists to forbid.
+
+One difference is known in advance without a Mac in the room, because it is a fact about that
+system's packaging rather than a prediction: **macOS ships no `sha256sum`.** It ships `shasum`.
+That matters for `drupal/agora_theme`, whose `tests/bin/shared-invariants` is built entirely out of
+sha256 comparisons. It is already handled: that script selects the first of `sha256sum`,
+`shasum -a 256` and `openssl dgst -sha256` that exists, and refuses to run at all — loudly — if
+none does. Falsified on 2026-08-25 under a `PATH` shim that hid each in turn: all three produce
+`f7070d57bbe5496e29249421e91572f46ac4c2b62953b7ea046fa3707b9e6b2a` for the five bytes `agora`, all
+three give the same **6 records · 0 findings**, and with all three hidden the script exits **1**
+with a FATAL rather than reporting a false clean. `tests/bin/doctor` now names the implementation
+it selected, on every host, for the same reason: a drift detector that quietly changes which
+program computes its hashes is worse than one that is noisy.
+
+**What would flip macOS to CERTIFIED**, in order:
+
+1. Run `bash tests/bin/toolchain-floor` on the Mac and paste the whole output back. That fills the
+   empty column above and is the only step that needs a Mac in front of a human.
+2. Run `bash tests/bin/doctor` there; it must reach `READY`.
+3. Run both wave runners and reproduce the counts this repository quotes — **61 checks · 0
+   failures** and **37 checks · 0 failures**.
+4. Re-run the dirty-case matrix (T-312): 12 injections, each reverted, each seen to fail. A
+   platform where no invariant has been watched *failing* has not been shown to have working
+   invariants at all — that is what certification means here, and it is the step that separates
+   this column from the container's.
+
+Until step 4, macOS stays **NOT CERTIFIED**, and so does the container. Host mode remains
+explicitly allowed on both (D-019 rider c); a green result from either is simply not the same
+statement as a green result from the Windows host.
+
+### Reading this table
+
+Any platform not in it, or listed with a gap in it, is **NOT MEASURED** — never a plausible guess.
+That is the entire point of keeping it. And it is a dated measurement, not a promise: the commit
+that changes what a host provides is the commit that updates this table.
+
+Drupal itself has a floor independent of all of the above: core `11.4.5` needs PHP `8.3`–`8.5` and
+Composer `2.3.6` or later. The Windows dev host runs PHP 8.4.24 **ZTS** and Composer 2.10.2.
 
 `tests/bin/doctor` is how a machine gets checked against all of this. Run it before trusting
 anything else on a new host, and trust its output over this table: a table decays, a probe does

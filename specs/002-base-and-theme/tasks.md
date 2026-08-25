@@ -112,6 +112,80 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-803 — the toolchain floor, and TWO OF THE DISPATCH'S PREMISES WERE WRONG.**
+  ⚠️ **This repository hashes nothing.** I named `no-boilerplate` and `identity-strings` as
+  hashing calls to port; grepped for every hasher across both repositories, they do not. The only
+  hits are the container's image digest, which is a different thing.
+  ⚠️ **And the theme's fallback already existed** — three-way (`sha256sum` → `shasum -a 256` →
+  `openssl dgst`), with a FATAL when none is present and an I-028 canary. **So the certain macOS
+  break was already fixed.** What was genuinely missing was that **nothing REPORTED which
+  implementation it picked** — which is I-054's whole lesson, a check whose inputs differ from the
+  gate's *silently*. `doctor` now names it and exercises it against a known digest.
+  ✅ **Falsified without a Mac, under a `PATH` shim**: hiding each hasher in turn gives
+  **`sha256sum` → `shasum` → `openssl`, all producing the IDENTICAL digest** and the same 6
+  records / 0 findings; hiding all three gives `FATAL: no sha256 tool found`, **exit 1**. A loud
+  failure rather than a false clean.
+  ✅ **The probe caught its own author:** the first draft hard-coded an **invented** expected
+  digest and printed `MISMATCH`. The value now in both scripts is measured, and its first sixteen
+  characters are exactly what the theme's runner already asserts.
+  🔴 **I-057, and it is the finding of this row: `awk`'s `length` counts bytes or characters
+  depending on the LOCALE, not on the implementation.** The **same gawk binary in the same shell**
+  returned **4** for a 3-character accented string with `LANG` unset and **3** under
+  `LANG=en_US.UTF-8`; the container's mawk returns 4 either way. **The 80-character rule that
+  turned this gate red twice is a CHARACTER rule**, and the obvious local check for it is
+  `awk 'length>80'` — which is therefore right or wrong depending on an environment variable
+  nobody sets deliberately, and on a host where `LANG` is unset it is **wrong while looking**
+  **right**. The probe measures **both** and prints both, because either alone is a
+  half-measurement that reads like a whole one.
+  ⚠️ **`awk` was invoked seven times by `config-inventory` and probed nowhere** — a broken `awk`
+  passed `doctor` and then failed a gate runner. Now probed; `doctor`'s hazard count moved 4 → 5.
+  **macOS: NOT CERTIFIED, with the reason named — nobody has run the probe there**, and the four
+  steps that would flip it are written into the README. That is an answer, not a placeholder.
+  ⚠️ **`linux` was deliberately NOT flipped to CERTIFIED** either: T-802 proved the container
+  reproduces the clean-path counts, but certification in this project means the **12-injection
+  dirty-case matrix** (T-312) has been run there, and it has not. Recorded as *measured, not
+  certified*.
+  **Line endings finished the job T-802 started:** three files still held CRLF, and two held a
+  **literal carriage return inside their own prose** — written there by the comment that was
+  explaining carriage returns. All normalised; the only CR left in the repository is inside the
+  binary screenshot.
+- **T-802 — the gate container, and it caught the HOST passing by accident.**
+  Image pinned **by sha256 digest**, not a tag — the Drupal Association's own gate image, whose
+  digest is the `Descriptor` one from `docker manifest inspect --verbose`, **not** the `config`
+  digest the non-verbose form prints first and which is easy to copy by mistake. **Tools added at
+  run time: zero.** `doctor` reports the pin; replacing it with a tag makes `doctor` print *"that
+  is a TAG, not a sha256 digest"* and the driver refuse with **exit 2**.
+  ✅ **`grep -Fi` returns 0 in that image, so I-027 is deleted rather than guarded**, and its PHP
+  8.3 NTS retires D-020(c)'s *"PHP 8.4 ZTS on the dev host"* blocker.
+  🔴 **THE FINDING IS WORTH MORE THAN THE CONTAINER.** Host: 61·0 and 37·0. Container, **same
+  working tree**: **61·1 and 37·1**. Container, an LF clone: 61·0 and 37·0. **The denominators
+  reproduced exactly in every column; only the failures differed, and they were one cause.**
+  git's **blobs are LF** — one genuine CRLF blob out of 179 — but `core.autocrlf=true`
+  materialises **50** of them as CRLF in a Windows checkout, and **MSYS grep cannot see those
+  carriage returns**: `grep -c` for a CR in `recipe.yml` returns **0** while `od -c` shows them.
+  **So end-anchored checks were passing on this host by accident.** CI and end users were never
+  affected — they read the LF blobs. **The host was the liar, and it lied in the direction that
+  says everything is fine**, which is exactly why D-019 redefined this task: all five of its false
+  greens came from the host.
+  ✅ **Fixed at the root rather than documented:** `.gitattributes` now carries `text=auto eol=lf`,
+  the tree was re-materialised, and **host and container now agree at 61·0 and 37·0**. [andres]
+  confirmed the same day that he will work from macOS too, which turns this from tidiness into a
+  requirement — **a project whose checks are shell scripts cannot afford three dialects of the
+  same file.**
+  ✅ **Falsified twice:** one byte changed in a runner moves the container to **61·2** and names
+  the check, so it is demonstrably running **these** scripts and not a stale copy.
+  ⚠️ **Three things recorded rather than smoothed over.** `spellcheck` does **not** run in the
+  container — the image ships npm and no `pnpm`, and npm is forbidden by rule 5, so it stays a
+  host pre-flight and the compose header says so. The container's `awk` is **mawk**, which counts
+  **bytes**, so it does **not** delete the phpcs trap — harmless today only because the one script
+  using awk never asks for a length. And **`doctor` itself carried a false statement**: its
+  2026-08-22 survey said awk was unused, and `config-inventory` has invoked it seven times since
+  T-601. Corrected; **awk is still not probed**, which is T-803's territory.
+  **Nothing ships:** a tarball built from a temporary index containing every new file has **116
+  entries, 0 under `tests/`** — identical to HEAD. That is also why the definition lives under
+  `tests/` and not at the root: a container definition at a site template's root tells a reviewer
+  the package is something you **run**, which is the same false assertion that got T-208's
+  original `.ddev/config.yaml` superseded.
 - **T-801 — nine key routes asserted, and the falsification found a PRODUCT DEFECT.**
   **PHPUnit: 16 tests, 1717 assertions, 0 failures** (was 15 / 1665 on this rig).
   `config-inventory` prints **`key routes asserted: 9 · distinct route markers: 8 of 8`**.
@@ -719,8 +793,8 @@ none of which needed the theme repository to exist:
 | # | Repo | Task | Success criterion | Blocked by |
 |---|---|---|---|---|
 | T-801 ✓ | T | **T-402** (carried): route assertions in the functional tests | Each key route asserted for status **and** for a rendered marker; the test prints the number of routes asserted; the number is quoted in the closure report | Wave 7 |
-| T-802 | · | **T-208** (carried, redefined): the digest-pinned local gate container | The container definition names an image by **sha256 digest**, not a tag; `tests/bin/doctor` reports the digest; running the wave runners inside it reproduces the host's counts **exactly**, both numbers quoted | D-019 |
-| T-803 | · | **T-317** (carried): toolchain floor measured on the macOS host | The floor (grep flavour, `-F` behaviour, line endings, `sha256sum` availability) recorded per host; **either** macOS is certified with its counts **or** it is recorded as NOT CERTIFIED with the named blocking difference. An unmeasured host is a **failure** | — |
+| T-802 ✓ | · | **T-208** (carried, redefined): the digest-pinned local gate container | The container definition names an image by **sha256 digest**, not a tag; `tests/bin/doctor` reports the digest; running the wave runners inside it reproduces the host's counts **exactly**, both numbers quoted | D-019 |
+| T-803 ✓ | · | **T-317** (carried): toolchain floor measured on the macOS host | The floor (grep flavour, `-F` behaviour, line endings, `sha256sum` availability) recorded per host; **either** macOS is certified with its counts **or** it is recorded as NOT CERTIFIED with the named blocking difference. An unmeasured host is a **failure** | — |
 | T-804 | H | **T-206(b)** (carried): Playwright visual regression on GitHub Actions, non-blocking per D-009 | Baselines committed; the workflow runs and reports **`S` screenshots compared**, `S` stated. Non-blocking, but **it may never lie** (D-020) | Wave 6 |
 | T-805 | · | Both repositories' gate tables refreshed **from observation** in the same commit that makes them true, and CLAUDE.md's gate-A block updated | Each table names its pipeline id, ref, commit sha and the API path it was read from. No derived lists | T-801…T-804 |
 | T-806 | · | `orquestador` audit and gate verdict for unit 002 | No open 🔴; every green quoted with its denominator (I-045); the **task count reported against the 38 budget** (raised from 34 by D-026); every 🟡 carries an owner and a target unit | T-805 |

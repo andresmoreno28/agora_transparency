@@ -63,10 +63,28 @@
 # real invocations (as opposed to the tool's name merely appearing in a
 # comment or a filename like composer.json) on 2026-08-22. That survey found
 # sed, tr, cut, sort, wc, find, tar, date, mktemp, dirname and basename in
-# real use, plus head (no-patches, no-unstable-deps, sbom-check). `awk`,
-# `xargs` and any checksum tool were searched for and are NOT currently used
-# (xargs appears only in a gate-a-wave1.sh comment describing what T-316
-# removed, not in live code).
+# real use, plus head (no-patches, no-unstable-deps, sbom-check). `xargs`
+# appears only in a gate-a-wave1.sh comment describing what T-316 removed,
+# not in live code.
+#
+# TWO CORRECTIONS TO THAT SURVEY, both re-measured 2026-08-25 (T-803), both
+# recorded here rather than left standing, because a diagnostic that prints a
+# false statement about the toolchain is the exact hazard it exists to catch:
+#
+#   - `awk` was surveyed as unused and no longer is. tests/bin/config-inventory
+#     (T-601, added after the survey) invokes it SEVEN times. It is now probed
+#     as a required tool, in group 3, and its character-versus-byte behaviour
+#     is probed as a hazard in group 4 - the gate container's awk is mawk,
+#     which counts bytes where a character-based rule counts characters.
+#
+#   - A checksum tool is still not used by anything in THIS repository, and
+#     that is the whole reason group 3b exists rather than a report_tool call.
+#     drupal/agora_theme's tests/bin/shared-invariants is built entirely out of
+#     sha256 comparisons, this script is the host probe for BOTH repositories,
+#     and macOS ships no `sha256sum` at all - it ships `shasum`. So the hash
+#     tool is REPORTED, never silently selected, and its absence is a note
+#     rather than a failure. A check whose inputs differ from the gate's,
+#     silently, is worse than one that is noisy (I-054).
 #
 #
 # House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
@@ -215,7 +233,7 @@ install_hint() {
         curl)     echo 'winget install --id cURL.cURL -e  (Windows 10 1803+ already ships curl.exe in System32)' ;;
         git)      echo 'winget install --id Git.Git -e  (also provides sed/tr/cut/sort/wc/find/tar/date/mktemp/dirname/basename/head/grep via its MSYS2 userland)' ;;
         composer) echo 'winget install --id Composer.Composer -e' ;;
-        grep|sed|tr|cut|sort|wc|find|tar|date|mktemp|dirname|basename|head)
+        awk|grep|sed|tr|cut|sort|wc|find|tar|date|mktemp|dirname|basename|head)
                   echo "winget install --id Git.Git -e  (repairs the MSYS2 userland that ships $1; open a fresh terminal afterwards)" ;;
         docker)   echo 'winget install --id Docker.DockerDesktop -e' ;;
         ddev)     echo 'winget install --id drud.ddev -e' ;;
@@ -229,8 +247,9 @@ install_hint() {
         curl)     echo 'brew install curl  (macOS already ships a system curl; only needed if that one is broken)' ;;
         git)      echo 'brew install git  (or: xcode-select --install)' ;;
         composer) echo 'brew install composer' ;;
+        awk)      echo 'brew install gawk  (macOS ships one-true-awk; whether that matters here is what tests/bin/toolchain-floor measures - do not install it on a guess)' ;;
         grep|sed|tr|cut|sort|wc|find|tar|date|mktemp|dirname|basename|head)
-                  echo "brew install coreutils  (macOS ships BSD $1 by default; whether GNU is actually required here is UNMEASURED - see T-317)" ;;
+                  echo "brew install coreutils  (macOS ships BSD $1 by default; whether GNU is actually required here is UNMEASURED - run tests/bin/toolchain-floor, T-803)" ;;
         docker)   echo 'brew install --cask docker' ;;
         ddev)     echo 'brew install ddev/ddev/ddev' ;;
         *)        echo "no install command recorded for $1 on macOS" ;;
@@ -243,6 +262,7 @@ install_hint() {
         curl)     echo 'sudo apt-get install -y curl' ;;
         git)      echo 'sudo apt-get install -y git' ;;
         composer) echo 'see https://getcomposer.org/download/  (package name/availability varies by distro)' ;;
+        awk)      echo 'sudo apt-get install -y gawk  (or mawk - note mawk counts BYTES where gawk in a UTF-8 locale counts characters)' ;;
         grep|sed|tr|cut|sort|wc|find|tar|date|mktemp|dirname|basename|head)
                   echo 'sudo apt-get install -y coreutils findutils grep sed tar' ;;
         docker)   echo 'see https://docs.docker.com/engine/install/  (distro-specific)' ;;
@@ -390,18 +410,21 @@ report_tool composer 'composer (composer --version, exit)' "$COMPOSER_GOT" '0'
 group '3. Coreutils used by tests/bin/* (surveyed 2026-08-22, not guessed)'
 note 'real invocations found (not comments/mentions) across no-boilerplate, no-ci-allow-dev,'
 note 'no-code-in-template, no-patches, no-secrets, no-unstable-deps, sbom-check and both gate'
-note 'runners. xargs and checksum tools were searched for and are NOT currently used.'
-# CORRECTION, re-measured 2026-08-25 (T-802). The 2026-08-22 survey above also
-# listed `awk` as unused, and that has stopped being true: tests/bin/config-inventory
-# (T-601, landed after the survey) invokes it 7 times. The line is corrected rather
-# than left standing, because a diagnostic that PRINTS a false statement about the
-# toolchain is the exact hazard this script exists to catch. What is NOT done here,
-# deliberately: awk is still not probed below, so a broken awk would pass this
-# script and then fail config-inventory. Adding a probe changes this script's
-# contract and belongs to whoever owns the toolchain floor (T-317/T-803), not to a
-# container task - it is reported as an open gap, not quietly patched.
-note 'CORRECTED 2026-08-25 (T-802): awk IS now used - 7 invocations in config-inventory'
-note '(T-601, added after that survey). It is reported here but NOT probed below; see T-803.'
+note 'runners. xargs is NOT used (it survives only in one comment).'
+# T-802 spotted that the 2026-08-22 survey's claim about awk had gone stale and
+# said so, but deliberately left awk without a probe: adding one changes this
+# script's contract, and that belonged to whoever owned the toolchain floor.
+# T-803 owns it, so the gap is closed here rather than described a second time.
+# awk is now exercised like every other tool below, and how it COUNTS - the part
+# a works/does-not-work probe cannot see - is a hazard in group 4.
+note 'CLOSED 2026-08-25 (T-803): awk IS used - 7 invocations in config-inventory (T-601),'
+note 'and it is now probed below, with its byte-vs-character behaviour in group 4.'
+
+# Two fields and a length in one program: enough that a shell wrapper
+# pretending to be awk, or an awk that cannot parse a rule with an action,
+# fails here rather than four hundred lines into config-inventory.
+AWK_GOT=$(printf 'x y\n' | awk '{print $2, length($1)}' 2>&1)
+if report_tool awk 'awk (print $2, length($1) over "x y")' "$AWK_GOT" 'y 1'; then AWK_OK=yes; else AWK_OK=no; fi
 
 SED_GOT=$(printf 'a' | sed 's/a/b/' 2>&1)
 report_tool sed 'sed (printf a | sed s/a/b/)' "$SED_GOT" 'b'
@@ -439,6 +462,80 @@ report_tool basename 'basename (basename /a/b/c)' "$BASENAME_GOT" 'c'
 
 HEAD_GOT=$(printf 'a\nb\nc\n' | head -n 1 2>&1)
 report_tool head 'head (printf a\nb\nc | head -n1)' "$HEAD_GOT" 'a'
+
+# ================================================ 3b. The sha256 tool -----
+# WHY THIS IS A GROUP AND NOT A report_tool CALL. report_tool counts a missing
+# tool toward TOOLS_MISSING, which makes this script exit 1 and say NOT READY.
+# A Mac with no `sha256sum` is not a broken host - it is a normal Mac, and
+# `shasum` covers it. So the three implementations are reported, the selected
+# one is NAMED, and none of that is a failure unless all three are gone.
+#
+# The point of naming it: drupal/agora_theme's shared-invariants picks the
+# first of sha256sum / shasum / openssl that exists, and a drift detector that
+# silently changed which program computes its hashes - between two hosts, or
+# between a host and the gate - would be the I-054 shape exactly. If it is
+# going to vary, the variation has to be visible, on both hosts, before it
+# matters.
+group '3b. sha256 (used by drupal/agora_theme shared-invariants, not by this repository)'
+HASH_TOOL='<none>'
+HASH_CMD=''
+HASH_FOUND=0
+# Same order shared-invariants itself resolves them in. Restating another
+# script's logic is a risk, so it is stated as a fact to CHECK rather than one
+# to trust: if that order ever changes this line is wrong, and the digests
+# printed below are what let a reader notice.
+for _h in sha256sum shasum openssl; do
+  if command -v "$_h" >/dev/null 2>&1; then
+    HASH_FOUND=$((HASH_FOUND + 1))
+    [ "$HASH_TOOL" = '<none>' ] && HASH_TOOL=$_h
+  fi
+done
+case "$HASH_TOOL" in
+  sha256sum) HASH_CMD='sha256sum' ;;
+  shasum)    HASH_CMD='shasum -a 256' ;;
+  openssl)   HASH_CMD='openssl dgst -sha256' ;;
+esac
+# The canary is the same five bytes shared-invariants hashes, and the digest
+# whose first 16 characters gate-a-theme.sh asserts. A hasher that returned a
+# constant would report every comparison in that script as equal, so it is
+# EXERCISED here, not merely located.
+HASH_CANARY_EXPECT='f7070d57bbe5496e29249421e91572f46ac4c2b62953b7ea046fa3707b9e6b2a'
+case "$HASH_TOOL" in
+  sha256sum) HASH_CANARY=$(printf 'agora' | sha256sum 2>/dev/null | cut -d' ' -f1) ;;
+  shasum)    HASH_CANARY=$(printf 'agora' | shasum -a 256 2>/dev/null | cut -d' ' -f1) ;;
+  openssl)   HASH_CANARY=$(printf 'agora' | openssl dgst -sha256 2>/dev/null | sed 's/^.*= *//') ;;
+  *)         HASH_CANARY='' ;;
+esac
+if [ "$HASH_FOUND" -eq 0 ]; then
+  HASH_SUMMARY='NONE - sha256sum, shasum and openssl are all absent'
+  note "sha256 tool: ${C_BAD}none found${C_OFF} (looked for sha256sum, shasum, openssl)"
+  note 'This repository does not need one. drupal/agora_theme does: its'
+  note 'shared-invariants is built entirely out of sha256 comparisons and will'
+  note 'refuse to run here, loudly, rather than report a false clean.'
+else
+  note "sha256 implementations present: $HASH_FOUND of 3 (sha256sum, shasum, openssl)"
+  for _h in sha256sum shasum openssl; do
+    _p=$(command -v "$_h" 2>/dev/null)
+    note "  $_h: ${_p:-ABSENT}"
+  done
+  check 'sha256 selected implementation' "$HASH_CMD" "$HASH_CMD"
+  if [ "$HASH_CANARY" = "$HASH_CANARY_EXPECT" ]; then
+    HASH_SUMMARY="$HASH_CMD (canary OK)"
+    check "sha256 canary: first 16 of sha256('agora')" "$(printf '%s' "$HASH_CANARY" | cut -c1-16)" 'f7070d57bbe5496e'
+  else
+    HASH_SUMMARY="$HASH_CMD - CANARY FAILED"
+    check "sha256 canary: first 16 of sha256('agora')" "${HASH_CANARY:-<no output>}" 'f7070d57bbe5496e'
+    TOOLS_BROKEN=$((TOOLS_BROKEN + 1))
+    note 'A hash tool that cannot reproduce a known digest cannot detect drift either.'
+  fi
+  if [ "$HASH_TOOL" != sha256sum ]; then
+    note "${C_WARN}NOTE:${C_OFF} no sha256sum on this host - falling back to '$HASH_CMD'."
+    note 'Expected on macOS, and not a defect: the digests are identical, falsified'
+    note 'under a PATH shim in T-803. It is printed because a drift detector quietly'
+    note 'changing which program computes its hashes is the silent-input-change shape'
+    note 'of I-054, and the fix for that is noise, not confidence.'
+  fi
+fi
 
 # ================================================= 4. Known-hazard probes ---
 printf '\n%s\n' '4. Known-hazard probes (reproduced live on this host, not assumed - I-025/I-026/I-027)'
@@ -498,6 +595,31 @@ except Exception as e:
 else
   hazard_skipped 'python3 CRLF on stdout (multi-line output)' 'python3 itself is not usable, see group 2 above'
   hazard_skipped 'python3 default encoding vs recipe.yml' 'python3 itself is not usable, see group 2 above'
+fi
+
+# awk counting BYTES where a character-based rule counts CHARACTERS. Found by
+# T-802 in the gate container, whose awk is mawk; found again by T-803 on this
+# host, where gawk counts bytes under a C locale and characters under a UTF-8
+# one - the SAME binary, two answers, decided by an environment variable. Both
+# are therefore measured; neither is inferred from the other. Nothing in
+# tests/bin/ depends on this today - config-inventory uses awk to match and
+# count lines only - so this is a hazard, not a failure. It is here so that the
+# next character-based rule written in awk is written knowingly.
+if [ "$AWK_OK" = yes ]; then
+  # 'a' + U+00E1 + 'b': three characters, four bytes. Octal escapes, so this
+  # file's own encoding cannot change what is being measured.
+  AWK_LEN=$(printf 'a\303\241b\n' | awk '{print length}' 2>/dev/null)
+  AWK_LEN_UTF8=$(printf 'a\303\241b\n' | LC_ALL=en_US.UTF-8 awk '{print length}' 2>/dev/null)
+  [ -z "${AWK_LEN_UTF8:-}" ] && AWK_LEN_UTF8=$(printf 'a\303\241b\n' | LC_ALL=C.UTF-8 awk '{print length}' 2>/dev/null)
+  if [ "${AWK_LEN:-}" = 4 ]; then
+    hazard 'awk length counts bytes, not characters' PRESENT "length=4 for a 3-character string with LANG=${LANG:-unset}; a forced UTF-8 locale gives ${AWK_LEN_UTF8:-?}. Never use awk for a character-based rule without pinning the locale" 'T-802/T-803'
+  elif [ "${AWK_LEN:-}" = 3 ]; then
+    hazard 'awk length counts bytes, not characters' ABSENT "length=3 - this awk counts characters in the ambient locale (LANG=${LANG:-unset})" 'T-802/T-803'
+  else
+    hazard_skipped 'awk length counts bytes, not characters' "awk returned [${AWK_LEN:-<blank>}] for a 3-character string - neither 3 nor 4"
+  fi
+else
+  hazard_skipped 'awk length counts bytes, not characters' 'awk itself is not usable, see group 3 above'
 fi
 
 # ============================================== 5. Container availability --
@@ -723,6 +845,7 @@ printf '  tools broken:    %d\n' "$TOOLS_BROKEN"
 printf '  hazards probed:  %d (%d present - informational, already handled at their call sites)\n' "$HAZ_TOTAL" "$HAZ_PRESENT"
 printf '  container:       %s\n' "$CONTAINER_SUMMARY"
 printf '  gate image pin:  %s\n' "$GATE_PIN_SUMMARY"
+printf '  sha256 tool:     %s\n' "$HASH_SUMMARY"
 if [ "$CERT_STATUS" = yes ]; then
   printf '  certification:   %sCERTIFIED%s (matrix run %s, %s)\n' "$C_OK" "$C_OFF" "$CERT_DATE" "$CERT_TASK"
 else

@@ -118,7 +118,7 @@
   only the trailing `
 `, so the corruption hits **every line but the last** — which is exactly why
   8 of 9 projects failed and the 9th, last in the list, did not. Rule: normalise at the boundary
-  (`| tr -d ''`, or `sys.stdout.reconfigure(newline='
+  (`| tr -d ''`, or `sys.stdout.reconfigure(newline='
 ')`), and **never read a dirty-case result
   off an already-red gate** — a red gate answers "fail" to every question, including the ones you
   did not ask. Verified 2026-08-21.
@@ -523,3 +523,18 @@
   writes `base_path() . $path`.** And the general form, now on its **third occurrence in this
   unit** (I-051, I-054, this): **when a local pass and a CI failure are both correct, the
   difference IS the finding** — do not look for which one is lying. Recorded 2026-08-25.
+- I-057 · **`awk`'s `length` counts bytes or characters depending on the LOCALE, not on the
+  implementation — and the same binary in the same shell gives both answers.** Measured 2026-08-25
+  by T-803's probe: gawk 5.0.0 returned **4** for a 3-character accented string with `LANG` unset
+  and **3** under `LANG=en_US.UTF-8`. The container's **mawk 1.3.4 returns 4 either way**, and a
+  forced UTF-8 locale does not move it.
+  ⚠️ **Why this is not a footnote.** The 80-character rule that turned this project's gate red
+  twice is a **character** rule (`Drupal.Files.LineLength`), and the obvious local check for it is
+  `awk 'length>80'`. That check is therefore **correct or incorrect depending on an environment
+  variable nobody sets deliberately** — and on a host where `LANG` is unset it is wrong while
+  looking right. The pre-flight in CLAUDE.md counts characters in Python for exactly this reason.
+  **Rule: never infer one from the other. Measure both, print both.** The probe reports the
+  ambient locale's answer and a forced-UTF-8 answer side by side, because either alone is a
+  half-measurement that reads like a whole one. This is I-027's family — a shell tool behaving
+  differently than the reader assumes — with the twist that here **the tool is not even the
+  variable**. Recorded 2026-08-25.

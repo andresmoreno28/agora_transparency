@@ -1,0 +1,361 @@
+#!/usr/bin/env bash
+#
+# toolchain-floor - Agora - T-803 (carries T-317).
+#
+# THIS IS A PROBE, NOT A GATE. It writes nothing outside a temporary
+# directory it makes and removes, installs nothing, touches no file in the
+# repository and judges nothing. It exits 0 whatever it finds, because what
+# it finds is evidence for a human to record, not a verdict. It never prints
+# an "N checks - M failures" line; that phrase belongs to
+# tests/bin/gate-a-wave1.sh and tests/bin/gate-a-wave3.sh alone.
+#
+# WHY IT EXISTS. T-317's rule is blunt: an UNMEASURED host is a failure.
+# Every invariant in tests/bin/ is a shell script, and this project has been
+# caught four times by a difference between hosts rather than by its own
+# code:
+#   - GNU grep 3.0 aborting when -F is combined with -i (I-027)
+#   - jq and python3 emitting CRLF on stdout (I-025)
+#   - a second python3 further down PATH, the Store stub (I-026)
+#   - `cd ""` returning 0 without moving, so files landed in one repository
+#     while the session believed it was in another
+# and a fifth was found while writing this one: the gate container's awk is
+# mawk, which counts BYTES where the 80-character comment rule counts
+# CHARACTERS. None of those are visible by reading the scripts. All of them
+# are visible in ten seconds of measurement.
+#
+# WHAT IT IS FOR, CONCRETELY. [andres] works from a Windows PC and expects
+# to work from a Mac. macOS ships BSD userland, not GNU: its grep, sed and
+# awk are different programs with the same names, and it ships no
+# `sha256sum` at all. Reasoning about what they do is exactly what T-317
+# forbids. So: run this there, paste the whole output back, and the macOS
+# row of the README's toolchain floor stops saying NOT MEASURED.
+#
+# HOW TO RUN IT
+#   bash tests/bin/toolchain-floor                       # this host
+#   bash tests/bin/gate-in-container --exec \
+#        'bash tests/bin/toolchain-floor'                # the pinned image
+#
+# WHAT IT DELIBERATELY DOES NOT DO. It does not repair anything and it does
+# not guess. A difference nobody has observed gets no workaround here -
+# inventing a fix for an unmeasured difference is the same error as assuming
+# it away, just pointed the other direction. The one exception is the sha256
+# tool, whose absence on macOS is a fact about that system's packaging
+# rather than a prediction, and which is therefore already handled with a
+# real fallback in drupal/agora_theme's shared-invariants.
+#
+# HOUSE RULES for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a
+# compared value; grep rc >= 2 is an error, never "no match"; never -F with
+# -i. The canonical copy of that block lives in the header of
+# tests/bin/no-ci-allow-dev. Two deliberate exemptions apply here and only
+# here, for the same reason gate-a-wave3.sh and doctor take them: `grep -c`
+# and the -F/-i combination are the SUBJECTS of this probe, not counters
+# feeding a guard. Their exit codes are printed, never compared.
+
+set -u
+# No `set -e`: a tool that is missing or that aborts is the measurement, not
+# a reason to stop measuring the other twenty.
+
+C_OFF=""; C_DIM=""; C_WARN=""
+if [ -t 1 ]; then C_OFF=$'\033[0m'; C_DIM=$'\033[2m'; C_WARN=$'\033[33m'; fi
+
+row()  { printf '  %-34s %s\n' "$1" "$2"; }
+head2() { printf '\n%s\n  %s\n' "$1" '---------------------------------------------------------------------------'; }
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+# BSD mktemp wants a template unless -t is given; GNU is happy with neither.
+# Both spellings are tried rather than one being assumed to work.
+TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t agora-floor)
+if [ -z "${TMP_DIR:-}" ] || [ ! -d "$TMP_DIR" ]; then
+  printf 'toolchain-floor: cannot create a temporary directory - nothing can be measured\n' >&2
+  exit 0
+fi
+cleanup() { [ -n "${TMP_DIR:-}" ] && rm -rf "$TMP_DIR" 2>/dev/null; }
+trap cleanup EXIT
+
+# Version banners are captured with stdin closed on purpose. BSD awk and BSD
+# sed do not necessarily recognise --version; an unrecognised option is read
+# as the PROGRAM TEXT, and the tool then sits waiting on stdin forever. A
+# probe that hangs on the one host it was written for is worse than no probe.
+banner() { "$@" </dev/null 2>&1 | head -1; }
+
+printf '=========================================================================================\n'
+printf 'toolchain-floor - Agora - T-803 - PROBE, NOT A GATE\n'
+printf 'Paste this entire output back. Every line is a measurement of THIS host.\n'
+printf '=========================================================================================\n'
+
+# ================================================================ 0. host ---
+head2 '0. Host identity'
+row 'date (UTC)'   "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo '<date unavailable>')"
+row 'uname -s -r'  "$(uname -s 2>/dev/null) $(uname -r 2>/dev/null)"
+row 'uname -m'     "$(uname -m 2>/dev/null)"
+row 'shell'        "bash ${BASH_VERSION:-<not bash>}"
+row 'MSYSTEM'      "${MSYSTEM:-<not set>}"
+if command -v sw_vers >/dev/null 2>&1; then
+  row 'sw_vers' "$(sw_vers -productName 2>/dev/null) $(sw_vers -productVersion 2>/dev/null) ($(sw_vers -buildVersion 2>/dev/null))"
+fi
+if [ -r /etc/os-release ]; then
+  row 'os-release' "$(sed -n 's/^PRETTY_NAME=//p' /etc/os-release 2>/dev/null | tr -d '\"')"
+fi
+# Being inside the pinned gate image is worth stating, because a paste-back
+# from there answers a different question than one from a laptop.
+IN_CONTAINER=no
+[ -f /.dockerenv ] && IN_CONTAINER='yes (/.dockerenv present)'
+row 'inside a container'  "$IN_CONTAINER"
+
+# ================================================================ 1. grep ---
+head2 '1. grep - flavour, the -F/-i abort (I-027), BRE, exit codes'
+GREP_PATH=$(command -v grep 2>/dev/null)
+row 'grep path'     "${GREP_PATH:-ABSENT}"
+GREP_BANNER=$(banner grep --version)
+row 'grep --version' "${GREP_BANNER:-<no banner>}"
+case "$GREP_BANNER" in
+  *'GNU grep'*)   GREP_FLAVOUR='GNU' ;;
+  *BSD*|*bsd*)    GREP_FLAVOUR='BSD' ;;
+  *[Bb]usy[Bb]ox*) GREP_FLAVOUR='BusyBox' ;;
+  *)              GREP_FLAVOUR='UNRECOGNISED - record the banner above verbatim' ;;
+esac
+row 'grep flavour'  "$GREP_FLAVOUR"
+
+printf '%s\n' alpha beta ALPHA > "$TMP_DIR/g.txt"
+
+grep -i 'alpha' "$TMP_DIR/g.txt" >/dev/null 2>&1
+row 'grep -i          exit' "$?  (0 expected)"
+
+# The plain -Fi form, and then the exact -IFin combination the deny-list
+# scanners used to run. Both are recorded: the abort seen on this project's
+# Windows host is rc 134, which is 128 + SIGABRT, and any rc >= 128 means a
+# signal killed it rather than a pattern failing to match.
+# Written as a PIPELINE inside a subshell whose stderr is discarded, and the
+# shape matters. When -F+-i aborts, the shell that WAITS on the signalled
+# child - not grep - prints "Aborted" as a job report, so redirecting grep's
+# own stderr does nothing. Put the doomed command in a pipeline and the
+# waiting shell is the subshell, whose stderr this discards. Put it there as
+# a bare simple command and the PARENT waits, and prints. Measured, both
+# ways round, on the host that actually aborts. The exit status is identical
+# either way, which is the whole measurement.
+( printf '%s\n' alpha beta ALPHA | grep -Fi 'alpha' >/dev/null 2>&1 ) 2>/dev/null
+row 'grep -Fi         exit' "$?  (0 = works; >=128 = killed by a signal, the I-027 abort)"
+
+( printf 'hello\n' | grep -IFin 'hello' >/dev/null 2>&1 ) 2>/dev/null
+row 'grep -IFin       exit' "$?  (0 = works; 134 = the abort this project banned -F+-i for)"
+
+# BRE metacharacters. The deny lists are written assuming `.` matches any
+# character; a grep that treated it literally would turn every one of them
+# into a silent no-op.
+# Written `printf '%s\n' a b` rather than `printf 'a\nb\n'`: the second form
+# glues the escape to the following word, and a spell checker then reads one
+# token that exists nowhere in the running program. A word that is an artefact
+# of a format string gets removed, never declared as vocabulary (D-024(3),
+# fourth bucket). The same applies to every multi-line printf below.
+BRE_DOT=$(printf '%s\n' 'a.b' 'axb' | grep -c 'a.b' 2>/dev/null)
+row 'BRE: grep -c "a.b" over a.b+axb' "${BRE_DOT:-<blank>}  (2 = '.' is a metacharacter, as the deny lists assume)"
+
+BRE_BRACE=$(printf '%s\n' 'aab' 'ab' | grep -cE 'a{2}b' 2>/dev/null)
+row 'ERE: grep -cE "a{2}b"' "${BRE_BRACE:-<blank>}  (1 expected)"
+
+printf 'x\n' | grep -c 'nothing-here' >/dev/null 2>&1
+row 'grep -c on zero hits, exit' "$?  (1 expected - a count of zero exits 1, which is why rc>=2 is the error case)"
+
+grep -q 'nothing' /this/path/does/not/exist >/dev/null 2>&1
+row 'grep on a missing file, exit' "$?  (2 expected - the rc>=2 case every scanner must treat as FATAL)"
+
+# ================================================================= 2. awk ---
+# Added by T-803. awk was surveyed as unused in 2026-08-22 and that stopped
+# being true when config-inventory (T-601) landed: it invokes awk SEVEN
+# times. A broken or byte-counting awk passed every check this project had.
+head2 '2. awk - flavour, and whether length counts CHARACTERS or BYTES'
+AWK_PATH=$(command -v awk 2>/dev/null)
+row 'awk path' "${AWK_PATH:-ABSENT}"
+AWK_BANNER=$(banner awk --version)
+case "$AWK_BANNER" in
+  ''|*'not an option'*|*usage:*|*Usage:*|*'unknown option'*)
+    AWK_BANNER=$(banner awk -W version) ;;
+esac
+row 'awk --version' "${AWK_BANNER:-<no banner>}"
+case "$AWK_BANNER" in
+  *'GNU Awk'*|*'GNU awk'*) AWK_FLAVOUR='gawk (GNU awk)' ;;
+  *mawk*)                  AWK_FLAVOUR='mawk' ;;
+  *[Bb]usy[Bb]ox*)         AWK_FLAVOUR='BusyBox awk' ;;
+  *'awk version'*)         AWK_FLAVOUR='BSD / one-true-awk (the macOS default)' ;;
+  *)                       AWK_FLAVOUR='UNRECOGNISED - record the banner above verbatim' ;;
+esac
+row 'awk flavour' "$AWK_FLAVOUR"
+
+# 'a' + U+00E1 + 'b' -- three characters, four bytes. Written as octal
+# escapes rather than as a literal so this file's own encoding, and whatever
+# the host's editor did to it, cannot change what is being measured.
+printf 'a\303\241b\n' > "$TMP_DIR/u.txt"
+AWK_LEN=$(awk '{print length}' "$TMP_DIR/u.txt" 2>/dev/null)
+case "$AWK_LEN" in
+  3) AWK_COUNTS='CHARACTERS' ;;
+  4) AWK_COUNTS='BYTES' ;;
+  *) AWK_COUNTS='UNDETERMINED' ;;
+esac
+row 'awk length of a<U+00E1>b' "${AWK_LEN:-<blank>}  (3 = characters, 4 = bytes)"
+row 'awk counts (ambient locale)' "$AWK_COUNTS"
+
+# The answer above is NOT a property of the implementation alone, and finding
+# that out is what made this row worth printing twice. gawk 5.0.0 on the
+# Windows dev host returned 4 (bytes) with LANG unset - a C locale - and 3
+# (characters) under LANG=en_US.UTF-8, from the same binary in the same shell.
+# mawk returns 4 either way. So the same script, the same awk and two
+# different environment variables give two different verdicts on an
+# 80-column rule. Both are therefore measured, never one inferred from the
+# other, and the locale that produced each is printed beside it.
+AWK_LEN_UTF8=$(LC_ALL=en_US.UTF-8 awk '{print length}' "$TMP_DIR/u.txt" 2>/dev/null)
+[ -z "${AWK_LEN_UTF8:-}" ] && AWK_LEN_UTF8=$(LC_ALL=C.UTF-8 awk '{print length}' "$TMP_DIR/u.txt" 2>/dev/null)
+case "$AWK_LEN_UTF8" in
+  3) AWK_COUNTS_UTF8='CHARACTERS' ;;
+  4) AWK_COUNTS_UTF8='BYTES - unaffected by the locale' ;;
+  *) AWK_COUNTS_UTF8='UNDETERMINED (no UTF-8 locale available here?)' ;;
+esac
+row 'awk counts (forced UTF-8 locale)' "$AWK_COUNTS_UTF8"
+row 'wc -m (characters)' "$(printf 'a\303\241b' | wc -m 2>/dev/null | tr -d ' ')  (3 expected in a UTF-8 locale)"
+row 'wc -c (bytes)'      "$(printf 'a\303\241b' | wc -c 2>/dev/null | tr -d ' ')  (4 always)"
+
+# The consequence, made concrete rather than left as a principle: a comment
+# line of exactly 80 CHARACTERS that is 81 BYTES. A byte-counting awk calls
+# it too long; the phpcs rule it is standing in for does not.
+LINE80="// $(printf '%076d' 0 | tr '0' 'a')$(printf '\303\241')"
+printf '%s\n' "$LINE80" > "$TMP_DIR/w.txt"
+row 'an 80-char / 81-byte comment: awk' "$(awk '{print length}' "$TMP_DIR/w.txt" 2>/dev/null)  (80 = agrees with phpcs; 81 = would report a false violation)"
+row '  the same line: wc -m / wc -c' "$(wc -m < "$TMP_DIR/w.txt" 2>/dev/null | tr -d ' ') / $(wc -c < "$TMP_DIR/w.txt" 2>/dev/null | tr -d ' ')  (newline included in both)"
+if [ "$AWK_COUNTS" = BYTES ]; then
+  note "${C_WARN}awk on this host counts BYTES.${C_OFF} Do not use it for any character-based"
+  note 'rule (the 80-column comment rule above all). Nothing in tests/bin/ does today -'
+  note 'config-inventory uses awk only for line matching and counting - but this is the'
+  note 'reason to check before the next one is written.'
+fi
+
+# ============================================================== 3. sha256 ---
+# THE one certain difference between this project's two hosts: macOS ships
+# no sha256sum. It ships `shasum`. drupal/agora_theme's shared-invariants is
+# a drift detector built entirely out of sha256 comparisons, so on a Mac
+# with no fallback it would not degrade - it would have nothing to say at
+# all. Every implementation found is exercised here, not just the first one,
+# because "the fallback exists" and "the fallback returns the same digest"
+# are two different claims and only the second one matters.
+head2 '3. sha256 - which implementation, and do they agree'
+SHA_FOUND=0
+SHA_SELECTED='<none>'
+SHA_AGREE='n/a'
+SHA_FIRST=''
+# Measured on 2026-08-25, not recalled: `printf 'agora' | sha256sum` and
+# `printf 'agora' | openssl dgst -sha256` on the Windows dev host, which agree
+# with each other and whose first 16 characters are the value
+# drupal/agora_theme's gate-a-theme.sh already asserts.
+SHA_EXPECT='f7070d57bbe5496e29249421e91572f46ac4c2b62953b7ea046fa3707b9e6b2a'
+
+sha_probe() { # <label> <digest>
+  _lbl=$1; _dig=$2
+  SHA_FOUND=$((SHA_FOUND + 1))
+  [ "$SHA_SELECTED" = '<none>' ] && SHA_SELECTED=$_lbl
+  if [ -z "$SHA_FIRST" ]; then
+    SHA_FIRST=$_dig
+    SHA_AGREE=yes
+  elif [ "$_dig" != "$SHA_FIRST" ]; then
+    SHA_AGREE=NO
+  fi
+  row "  $_lbl" "$_dig"
+}
+
+row 'sha256sum' "$(command -v sha256sum 2>/dev/null || echo 'ABSENT  <-- expected on macOS')"
+row 'shasum'    "$(command -v shasum    2>/dev/null || echo 'ABSENT')"
+row 'openssl'   "$(command -v openssl   2>/dev/null || echo 'ABSENT')"
+note "digest of the 5 bytes 'agora', from every implementation present:"
+if command -v sha256sum >/dev/null 2>&1; then
+  sha_probe 'sha256sum'          "$(printf 'agora' | sha256sum 2>/dev/null | cut -d' ' -f1)"
+fi
+if command -v shasum >/dev/null 2>&1; then
+  sha_probe 'shasum -a 256'      "$(printf 'agora' | shasum -a 256 2>/dev/null | cut -d' ' -f1)"
+fi
+if command -v openssl >/dev/null 2>&1; then
+  sha_probe 'openssl dgst -sha256' "$(printf 'agora' | openssl dgst -sha256 2>/dev/null | sed 's/^.*= *//')"
+fi
+[ "$SHA_FOUND" -eq 0 ] && note "${C_WARN}NO sha256 tool at all.${C_OFF} drupal/agora_theme's shared-invariants cannot run here."
+row 'implementations found' "$SHA_FOUND"
+row 'first one on PATH (selected)' "$SHA_SELECTED"
+row 'all implementations agree' "$SHA_AGREE"
+if [ -n "$SHA_FIRST" ]; then
+  if [ "$SHA_FIRST" = "$SHA_EXPECT" ]; then
+    row 'canary vs the known digest' 'MATCH'
+  else
+    row 'canary vs the known digest' "MISMATCH - expected $SHA_EXPECT"
+  fi
+fi
+
+# ================================================================= 4. sed ---
+head2 '4. sed - the BSD/GNU in-place split'
+row 'sed path'     "$(command -v sed 2>/dev/null || echo ABSENT)"
+row 'sed --version' "$(banner sed --version)"
+printf 'one\n' > "$TMP_DIR/s.txt"
+sed -i 's/one/two/' "$TMP_DIR/s.txt" </dev/null >/dev/null 2>&1
+SED_RC=$?
+SED_BODY=$(cat "$TMP_DIR/s.txt" 2>/dev/null)
+row 'sed -i with NO backup suffix, exit' "$SED_RC  (0 = GNU behaviour; non-zero = BSD, which reads the next argument as the suffix)"
+row '  file afterwards' "$SED_BODY  (two = it edited in place; one = it did not)"
+row '  stray backup files created' "$(find "$TMP_DIR" -name 's.txt*' 2>/dev/null | wc -l | tr -d ' ')  (1 = none; 2 = a backup was left behind)"
+note 'Nothing in tests/bin/ uses sed -i today. This row is here so that when'
+note 'something does, the difference is already on record instead of being found'
+note 'by a Mac silently rewriting the wrong file.'
+
+# =============================================================== 5. tools ---
+head2 '5. Tool presence (every tool tests/bin/* actually invokes)'
+for t in bash grep sed awk tr cut sort wc find tar date mktemp dirname basename head \
+         jq python3 git curl composer docker sha256sum shasum openssl; do
+  p=$(command -v "$t" 2>/dev/null)
+  row "$t" "${p:-ABSENT}"
+done
+
+# ========================================================== 6. line endings --
+head2 '6. Line endings, and cd ""'
+printf 'x\r\n' > "$TMP_DIR/cr.txt"
+row 'a CR written to a file survives' "$(od -c "$TMP_DIR/cr.txt" 2>/dev/null | head -1 | sed 's/^[0-9]* *//')"
+if command -v jq >/dev/null 2>&1; then
+  JQ_OUT=$(jq -rn '"a","b"' 2>/dev/null)
+  case "$JQ_OUT" in
+    *$'\r'*) row 'jq multi-line stdout' 'CRLF - the I-025 hazard is PRESENT here' ;;
+    *)       row 'jq multi-line stdout' 'clean LF' ;;
+  esac
+else
+  row 'jq multi-line stdout' 'not measured - no jq'
+fi
+if command -v python3 >/dev/null 2>&1; then
+  PY_OUT=$(python3 -c "print('a'); print('b')" 2>/dev/null)
+  case "$PY_OUT" in
+    *$'\r'*) row 'python3 multi-line stdout' 'CRLF - the I-025 hazard is PRESENT here' ;;
+    *)       row 'python3 multi-line stdout' 'clean LF' ;;
+  esac
+  row 'python3 preferred encoding' "$(python3 -c 'import locale; print(locale.getpreferredencoding(False))' 2>/dev/null)"
+else
+  row 'python3 multi-line stdout' 'not measured - no python3'
+fi
+# In a subshell, so that a shell which DOES move cannot strand the rest of
+# the probe somewhere else. That is the bug being measured, after all.
+CD_RC=$( (cd "" 2>/dev/null); echo $? )
+row 'cd "" exit' "$CD_RC  (0 = it silently does NOT move - the bug that put files in the wrong repository)"
+
+# =============================================================== 7. locale --
+head2 '7. Locale - it decides how grep, sort and wc -m behave'
+row 'LANG'    "${LANG:-<not set>}"
+row 'LC_ALL'  "${LC_ALL:-<not set>}"
+row 'LC_CTYPE' "${LC_CTYPE:-<not set>}"
+SORT_ORDER=$(printf '%s\n' b a B A | sort 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+row 'sort order of a,A,b,B' "$SORT_ORDER"
+
+# =============================================================== summary ---
+printf '\n=========================================================================================\n'
+printf 'FLOOR SUMMARY - these six lines are what the README toolchain floor row records\n'
+printf '=========================================================================================\n'
+row 'platform'         "$(uname -s 2>/dev/null) $(uname -r 2>/dev/null) $(uname -m 2>/dev/null)"
+row 'grep'             "$GREP_FLAVOUR - ${GREP_BANNER:-<no banner>}"
+row 'grep -IFin'       "$( ( printf 'hello\n' | grep -IFin 'hello' >/dev/null 2>&1 ) 2>/dev/null; echo $?)"
+row 'awk'              "$AWK_FLAVOUR - length counts $AWK_COUNTS here, $AWK_COUNTS_UTF8 under UTF-8"
+row 'sha256'           "$SHA_FOUND implementation(s); selected $SHA_SELECTED; agree: $SHA_AGREE"
+row 'sed -i bare'      "exit $SED_RC"
+printf '=========================================================================================\n'
+printf 'This probe reports; it does not judge. Exit is always 0.\n'
+printf 'Record the result in README.md, section "Toolchain floor". A host with no row\n'
+printf 'there is NOT MEASURED, and NOT MEASURED is a failure, never a plausible guess.\n'
+printf '=========================================================================================\n'
+exit 0
