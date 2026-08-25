@@ -274,6 +274,20 @@ moving the working copy a session is running in, on the day wave 5 starts.
   `phpcs`, `phpstan` and `eslint` still print **no denominator at all**; quote result and scope
   together or not at all (I-045).
 
+- ⚠️ **`phpcs` cannot be run on this host, and its one recurring failure has a one-line local
+  check — use it before pushing PHP.** `Drupal.Files.LineLength` enforces the 80-character limit
+  **on comment lines only**, and it counts **characters, not bytes**. A naive `awk 'length>80'`
+  reports **27** lines where phpcs reports **2**: 25 are code, which the standard permits, and the
+  other two are comments long in bytes but not characters (an `á`, a typographic quote). It has
+  turned the gate red **twice**. The check that matches the rule:
+
+  ```bash
+  python3 -c "import io,sys
+  for f in sys.argv[1:]:
+      for i,l in enumerate(io.open(f,encoding='utf-8').read().splitlines(),1):
+          if l.strip().startswith('//') and len(l)>80: print(f,i,len(l))" tests/src/**/*.php
+  ```
+
 - PHPUnit runs with **`--fail-on-empty-test-suite`** on every runner — **observed on drupalcode**,
   not inferred: the flag in the executed command line, `_PHPUNIT_CONCURRENT=0`, and
   `OK (3 tests, 38 assertions)` from the same log. A suite that executed 0 tests is a **failed**

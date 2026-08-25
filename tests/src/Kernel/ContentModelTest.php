@@ -891,7 +891,7 @@ final class ContentModelTest extends KernelTestBase {
         $assertions++;
         // WCAG 2.2 AA, 1.3.1. A contract page carries a tender amount and an
         // award amount side by side; rendered with their labels hidden they are
-        // two bare numbers, and a screen-reader user cannot tell which is which.
+        // two bare numbers, and a screen-reader user cannot tell them apart.
         $this->assertSame('above', $view_display['content'][$field_name]['label'], "$field_name must render its label visibly on $bundle.");
         $assertions++;
       }

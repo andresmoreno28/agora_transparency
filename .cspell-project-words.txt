@@ -228,3 +228,6 @@ zbdnk            # an opaque asset hash in a quoted Google Fonts URL
 # The drupal.org project of the French State Design System, cited in D-033 as the precedent that
 # settles the language question: it writes English config and ships French as a translation.
 dsfr                  # drupal.org/project/dsfr, quoted in D-033
+
+# Python identifiers quoted verbatim in CLAUDE.md's phpcs pre-flight snippet.
+splitlines            # str.splitlines(), in the comment-line-length check
