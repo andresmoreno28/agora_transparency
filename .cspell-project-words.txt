@@ -234,3 +234,8 @@ splitlines            # str.splitlines(), in the comment-line-length check
 
 # Open-data standard named by the content model's T-614 comments (unit 002).
 DCAT                  # W3C Data Catalog Vocabulary, the standard the EU's DCAT-AP profiles
+
+# Typography vocabulary, from T-607's verification of Public Sans against D-030's two
+# mandatory pre-adoption checks. Both are real terms of art, not abbreviations we coined.
+GSUB                  # the OpenType glyph-substitution table, where the tnum feature lives
+subsetting            # trimming a font to a subset of codepoints - rejected in T-607, and the

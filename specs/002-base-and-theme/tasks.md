@@ -112,6 +112,57 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-606 / T-607 / T-608** — **the theme has an identity, and its contrast is a gate rather than a
+  claim.** 18 colour tokens in one file, Public Sans 2.001 self-hosted with its OFL, a rem type
+  scale, visible focus and reduced-motion handling. **38 contrast pairs, 0 below threshold**, at
+  4.5:1 for text and 3:1 for focus rings and table rules.
+  ✅ **The palette was computed BEFORE the checker existed, which is the right order:** T-608's job
+  is to *verify* a palette, not to discover that nobody had calculated one. **One colour failed on
+  first pass and was fixed rather than excused** — the table rule started at **2.52:1** and was
+  darkened until it cleared 3:1 on the darkest surface it actually sits on. These are the lines
+  separating one salary from another in a table; calling them decoration was the easy way out.
+  ⚠️ **Dark mode was REFUSED, with a reason worth keeping:** a second palette redeclares every
+  token name inside a media query, so a flat name→value parse **keeps whichever it read last and
+  reports clean having checked one palette of two**. T-608 now detects that at-rule — matching the
+  **at-rule and never the string**, because `tokens.css` says those words in prose explaining the
+  absence, and a string match would file a finding against the comment documenting the rule.
+  **T-607 verified the typeface from the archive that was downloaded, not from the release page:**
+  the OFL's first line, `head.fontRevision` **read from inside the woff2 binaries**, and all three
+  files byte-identical to upstream. D-030's two mandatory pre-adoption checks measured on those
+  binaries: **565 codepoints per face, every Spanish diacritic present, none missing**, and `tnum`
+  in GSUB — with the catch that `onum` is *also* present, so the table CSS must pin lining tabular
+  figures rather than trust the default. **No subsetting**: it would save 30 KB and put the Spanish
+  alphabet one careless unicode range from becoming tofu in a marketplace screenshot.
+  **The no-external-font grep returns 0 — and returned 1 on its first run**, matching a comment
+  that quoted the forbidden patterns while documenting the criterion. A check tripped by its own
+  documentation teaches people to add exceptions.
+  **T-608 makes the ratios assertion 7 of 9**, because a checker that only computes ratios goes
+  green while the file it reads rots. It also fails on a duplicate token, a pair naming an
+  undefined token, **a token no pair mentions**, a malformed line, **a declared minimum that is
+  neither 4.5 nor 3** — without which anyone could dim a colour and edit its own threshold down —
+  and **`0 pairs checked` exits 1**, which is I-028 and the likeliest way this would have rotted
+  into decoration. **Eleven negative paths executed, all exit 1.**
+  **The arithmetic was validated against four independently known values first:** 21.00 for black
+  on white, **4.54 for the canonical AA boundary gray**, 4.48 for one shade lighter — correctly
+  **below** — and 4.00 for red on white, which also proves the three-digit expansion, so
+  `stylelint`'s blocking `color-hex-length: short` is honoured by the parser rather than fought.
+  Ratios are compared **unrounded** and printed rounded: 4.4996 is below 4.5 even when it prints
+  as 4.50.
+  ⚠️ **The WCAG erratum was read and deliberately NOT guarded**, with the arithmetic in the header:
+  the wiki threshold is `0.03928` and IEC's correct value is `0.04045`, but `10/255 = 0.039216`
+  falls below the first and `11/255 = 0.043137` above the second, so **no 8-bit value lands between
+  them**. A check that cannot fire is decoration.
+  ⚠️ **The job list went 5 → 6 and `stylelint` FAILED on its first run** — one wrapped font stack.
+  It had been linted locally with core's own config and come back clean: the divergence was the
+  **formatter, not the linter**. The CI job **symlinks `.prettierrc.json` to core's before running**
+  and the local run had no such symlink, so prettier used its own defaults. **A local check that
+  models most of a gate is not the gate, and the half it does not model is where something gets
+  through** — the same shape as the `phpcs` lesson, two commits earlier.
+  🟡 **The manifest cannot hold a record for a local-only script**, verified against the checker
+  rather than assumed: records need six fields, `role` is closed to two values, exactly five
+  `role=invariant` are enforced, and a `source_sha256` would mean **inventing a 40-hex commit for a
+  file the template has never held** — an invention chosen to satisfy a check while describing
+  nothing. Declared through `LOCAL_ONLY` instead, with a prose block saying why.
 - **T-602 / T-604 / T-605** — **`config/` is now 100 objects; PHPUnit `13 tests, 1423 assertions,
   0 failures`** (was 9 / 1220).
   **T-602 ships TWO roles, not three, and the missing one is the interesting part.**
@@ -407,9 +458,9 @@ none of which needed the theme repository to exist:
 
 | # | Repo | Task | Success criterion | Blocked by |
 |---|---|---|---|---|
-| T-606 | H | Colour tokens as CSS custom properties: text, background, link, focus, border, status | Every token defined in exactly one file; the file is machine-readable enough for T-608 to parse without a bespoke grammar | T-507 |
-| T-607 | H | Typography: one OFL face, self-hosted `woff2`, `OFL.txt` shipped beside it, licence-manifest line, type scale, `prefers-reduced-motion`, visible focus | The `OFL.txt` is present and its first line names the copyright holder; the manifest line names font, version, licence and source URL; **no** external font URL anywhere — `grep -rn "fonts.googleapis\|fonts.gstatic\|@import url(http" .` returns **0 lines** | **D-030** |
-| T-608 | H | `tests/bin/contrast-check` + its dirty case: parse the token file, compute WCAG contrast for every declared foreground/background pair | Prints `N pairs checked — 0 below threshold` with `N` stated (4.5:1 body, 3:1 large text and non-text). A deliberately dimmed token makes it print `N pairs checked — 1 below threshold` and exit non-zero | T-606, T-508 |
+| T-606 ✓ | H | Colour tokens as CSS custom properties: text, background, link, focus, border, status | Every token defined in exactly one file; the file is machine-readable enough for T-608 to parse without a bespoke grammar | T-507 |
+| T-607 ✓ | H | Typography: one OFL face, self-hosted `woff2`, `OFL.txt` shipped beside it, licence-manifest line, type scale, `prefers-reduced-motion`, visible focus | The `OFL.txt` is present and its first line names the copyright holder; the manifest line names font, version, licence and source URL; **no** external font URL anywhere — `grep -rn "fonts.googleapis\|fonts.gstatic\|@import url(http" .` returns **0 lines** | **D-030** |
+| T-608 ✓ | H | `tests/bin/contrast-check` + its dirty case: parse the token file, compute WCAG contrast for every declared foreground/background pair | Prints `N pairs checked — 0 below threshold` with `N` stated (4.5:1 body, 3:1 large text and non-text). A deliberately dimmed token makes it print `N pairs checked — 1 below threshold` and exit non-zero | T-606, T-508 |
 | T-609 | H | Twig templates: page, node, field, **table**, form element, pager, menu | `twig-cs-fixer` **materialises** in the observed job list with `allow_failure: false` and passes; the table template emits `<th scope="col">`/`<th scope="row">` and a `<caption>`, asserted by the axe test's DOM checks | T-606 |
 | T-610 | H | Base stylesheet built from the tokens; no generic CSS framework (D-014 rider f) | `stylelint` **materialises** in the job list with `allow_failure: false` and passes; the CSS contains **0** hard-coded colour literals outside the token file — asserted by an invariant with its dirty case | T-606, T-609 |
 | T-611 | H | Extend T-509: axe over **every** page the theme renders in its fixtures, with the page count stated | The `nightwatch` log states **`P` pages scanned, `P >= 3`**, `R` axe rules run, **0** violations. `P` is written into the theme README's gate table in the same commit | T-609, T-610 |
