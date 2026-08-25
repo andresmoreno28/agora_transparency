@@ -25,8 +25,8 @@ atomic swap and wave 8's carried debts are most likely to need. Crossing **38** 
 | T-506 ✓ | · | 🔴 **BLOCKED 2026-08-24 — `403 You are not allowed to push code to this project`.** The commit is ready (`973870b`) and the push is refused **per project**: the same credential, same host, same machine pushed to `agora_transparency` minutes before. So this is authorisation on drupal.org's side, and it is **[andres]**'s to clear — the two things worth checking first are whether the theme project lists him under **Maintainers** with *Write to VCS*, and whether drupal.org has propagated permissions for a project created the same day. ⚠️ **The coordinator was to do the push half** (it is a branch push, not a tag, release or merge); that split still stands and only the unblocking is his. **[andres]** Push `agora_theme` `1.x` to drupalcode and, if T-505 shows a branch is not enough, create the `1.x-dev` release on the project page | `git ls-remote --symref` shows HEAD pinned to `refs/heads/1.x`; the API reports `1` branch; the T-505 command returns **200**. ⚠️ **Two amendments, 2026-08-24.** (a) The API reports `default_branch: main` on a repository with **zero** branches; whether GitLab repoints HEAD to the first branch pushed is **NOT MEASURED**, so a `main` answer means *Settings → Repository → Default branch*, not *the push failed*. (b) The `200` has an unbounded wait inside it and **T-505 has now measured that the wait is real** — do not soften it, bound it: if the release node exists and the URL still returns 404, record both timestamps and re-measure at +2h and +24h; **a 404 with a release node present after 24h is a 🔴 finding, not a pass** | T-502, T-504, T-505, **T-508** |
 | T-507 ✓ | H | First observed pipeline: read the **job list** from the API, not the UI or the badge, and write the observed table into the theme's `README.md` in the same commit that makes it true | `jobs >= 5` — ⚠️ **satisfiable only because T-508 was moved ahead of T-506, 2026-08-24.** Measured against `gitlab_templates@main`: a tree holding only T-502 + T-504 output materialises **four** jobs (`composer`, `composer-lint`, `cspell`, `eslint` — the last on `**/*.yml`, which the `.info.yml` alone satisfies). `phpcs`, `phpstan` and `phpunit` are gated on PHP files and test files that a theme at this stage does not have; that absence is correct and must be stated in the theme's README gate table, or a later session will "fix" a job that was never meant to be there. The fifth job is `agora-invariants`, which has no exists-gate — so **T-508 lands in the same push T-506 makes**. **The threshold was NOT lowered:** a gate lowered to go green is an automatic 🔴; every `status == "success"`; every `allow_failure == false`; the table names each job, its stage and its `allow_failure`, with the pipeline id and commit sha | T-506 |
 | T-508 ✓ | H | Theme `tests/bin/`: the named subset plus `shared-invariants.manifest` (sha256 per shared script + the `agora_transparency` sha it was taken from), and `agora-invariants` as a local blocking job | The runner prints `N checks — 0 failures` with `N` stated; a deliberately edited byte in one shared copy makes it print `N checks — 1 failures` and exit non-zero | D-028, T-504 |
-| T-509 | H | **The unit's centrepiece.** `tests/src/Nightwatch/Accessibility/axe.js`: `'@tags': ['agora_theme']`, `drupalInstall`, navigate to at least one theme-rendered page, `browser.axeInject().axeRun('html', {})` | The `nightwatch` job is **in the observed job list** with `allow_failure: false`; its log shows **`N` tests executed, `N >= 1`**; the axe result names the **number of rules run** and the number of violations. `0 tests` is a **failure**. ⚠️ **Added 2026-08-24 — this row could pass having scanned the wrong theme.** `drupalInstall` gives you a site, not a site using `agora_theme`, so a green here is compatible with axe having audited **Olivero**. That is the exact species of false green this project keeps catching, on the unit's centrepiece. Also required: **the log names the active theme as `agora_theme`, and the scanned page's markup contains a marker emitted only by this theme** | T-507, D-027 |
-| T-510 | H | **Dirty case for T-509** (D-019 rider e): prove on a throwaway branch that a deliberately inaccessible fragment — an `<img>` with no `alt` — turns the `nightwatch` job **red** | A pipeline id and job id where `nightwatch` is `failed` and the log names the axe rule that fired. The branch is then deleted; the evidence is the pipeline record, not the branch | T-509 |
+| T-509 ✓ | H | **The unit's centrepiece.** `tests/src/Nightwatch/Accessibility/axe.js`: `'@tags': ['agora_theme']`, `drupalInstall`, navigate to at least one theme-rendered page, `browser.axeInject().axeRun('html', {})` | The `nightwatch` job is **in the observed job list** with `allow_failure: false`; its log shows **`N` tests executed, `N >= 1`**; the axe result names the **number of rules run** and the number of violations. `0 tests` is a **failure**. ⚠️ **Added 2026-08-24 — this row could pass having scanned the wrong theme.** `drupalInstall` gives you a site, not a site using `agora_theme`, so a green here is compatible with axe having audited **Olivero**. That is the exact species of false green this project keeps catching, on the unit's centrepiece. Also required: **the log names the active theme as `agora_theme`, and the scanned page's markup contains a marker emitted only by this theme** | T-507, D-027 |
+| T-510 ✓ | H | **Dirty case for T-509** (D-019 rider e): prove on a throwaway branch that a deliberately inaccessible fragment — an `<img>` with no `alt` — turns the `nightwatch` job **red** | A pipeline id and job id where `nightwatch` is `failed` and the log names the axe rule that fired. The branch is then deleted; the evidence is the pipeline record, not the branch | T-509 |
 | T-511 ✓ | T | Promote the install smoke: add `OPT_IN_TEST_DRUPAL_CMS: '1'` and `_AUTORUN_DRUPAL_CMS: 'all'` to the template's `.gitlab-ci.yml`, with a comment citing `include.drupalci.main.yml:487-496` | The next pipeline's job list contains `Drupal CMS` with `status: success` and `allow_failure: false`; **`jobs >= 9`**; the CLAUDE.md gate-A table is updated **in the same commit** (the derived-list prohibition) | Amendment to D-020 |
 | T-512 | · | Record **I-053** — ⚠️ **renumbered 2026-08-24, from I-051, before the task ran**: I-051 and I-052 were taken the same day by the cspell episode, so this row's citation would have pointed at a different lesson (I-044's shape, caught by writing the number down rather than by a script). Use the next free number on disk, not the one this row was drafted with — the fourth rung — *defined upstream · materialised in this pipeline · collected by the harness · actually executed* — with the `nightwatch.conf.js` glob and the `DRUPAL_PROJECT_FOLDER` branch as the two halves of the evidence | The idiom is in `IDIOMS.md` under the **next free number verified on disk**, cites both file:line references, and states the rule: **read where the harness looks, not only where CI puts you** | T-509 |
 
@@ -112,6 +112,62 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-509 / T-510 / T-611 — THE ACCESSIBILITY GATE RUNS, AND IT HAS BEEN SEEN TO FAIL.**
+  **Observed job list, pipeline `935800`, commit `f6943c3`: 9 jobs, every one `success`, every one
+  `allow_failure: false`, zero named exceptions.** `nightwatch` reports **6 tests, 128 assertions,
+  0 failed**; axe reports **4 pages scanned, 89 rules per page, 0 violations**.
+  ⚠️ **`nightwatch` sits in the `test` stage, which `_ALL_VALIDATE_ALLOW_FAILURE: '0'` does not
+  cover — and it arrived `allow_failure: false` ON ITS OWN.** No exception was needed and the
+  exception list stays empty in both repositories. Had it arrived permissive, D-023(5) would have
+  required a dated, owned one, and a permissive accessibility gate would not have been merged.
+  ✅ **T-510: the dirty case is a pipeline record, not a claim.** Pipeline `935776`, job
+  `11759055`: `nightwatch` **failed**, `allow_failure: false`, and the log names the rule twice —
+  *"aXe rule: image-alt - Images must have alternative text"* and `violations: image-alt x1`. The
+  other three pages still reported 0 violations, so **one defect produced one red page**, not a
+  blanket failure. Run as a **merge request**, because per I-040 a plain branch fires no pipeline
+  at all and a throwaway branch would have returned a silent nothing that reads as success. Branch
+  deleted, never merged.
+  🔴 **THE ROW'S OWN SPECIFIED PATH WAS WRONG, and it would have produced exactly the false green
+  it was written to prevent.** Two globs have to match and only one is the CI rule: CI
+  **materialises** the job on `exists: tests/src/Nightwatch/**/*.js`, but Drupal's
+  `nightwatch.conf.js` builds `src_folders` **only** from paths containing
+  `Nightwatch/Tests|Commands|Assertions|Pages`. The row's `Nightwatch/Accessibility/axe.js` passes
+  the first and fails the second — **the job appears, collects nothing, and goes green having run
+  zero tests.** That is I-050's ladder (*defined ≠ materialised ≠ collected ≠ executed*) with the
+  break at the third rung. Landed at `tests/src/Nightwatch/Tests/axe.js`.
+  ✅ **The wrong-theme trap is closed by two independent markers**, as the amended row required:
+  `.agora-page__main`, emitted by this theme's `page.html.twig` and by nothing else, **and** the
+  theme named by core's own installer in the log (`Installed agora_theme as default theme`). A
+  stylesheet URL was **rejected** as a marker — CSS aggregation rewrites the href, so it would
+  report the theme absent whenever preprocessing was on.
+  **There is no opt-in variable, measured rather than assumed:** `SKIP_NIGHTWATCH` already defaults
+  to `0` and `OPT_IN_TEST_CURRENT` to `1`; the file-exists rule is the only gate. Browser confirmed
+  from the job's own log — `Connected to selenium on port 4444`, `chrome-headless-shell
+  (127.0.6533.119) on LINUX` — which retires D-009's last risk by observation rather than by T-228's
+  canary alone.
+  ⚠️ **The sources were read at the ref that ACTUALLY RUNS**, the moving tag `default-ref` (commit
+  `43f48f55`), not at `main`. That distinction produced a finding of its own — see T-609 below.
+  ⚠️ **Two red pipelines were FALSE REDS**, on runs where every accessibility assertion passed:
+  `drupalLoginAsAdmin` ends with an unconditional `drupalLogout`, so calling logout again turned
+  the job red. Root cause read at source. **The same class of bug produces a false GREEN just as
+  easily**, which is why it is recorded rather than merely fixed.
+
+- **T-609 / T-610 — signed, and T-609's criterion is REPLACED because it cannot be met by anyone.**
+  Seven templates, three stylesheets, and `tests/bin/no-colour-literals` proving no colour literal
+  lives outside the token file (11 files scanned, 0 findings; its dirty case plants four forms and
+  catches four).
+  🔴 **`twig-cs-fixer` does not exist at the ref this project runs.** Measured: the job occurs
+  **0 times** at `default-ref` and 12 times on `main`, where `SKIP_TWIG_CS_FIXER` defaults to
+  **`'1'`** — so it is **doubly absent**, and on `main` it would fail by design anyway, because
+  `core/.twig-cs-fixer.php` ships on **no released core** (404 on 11.4.x, 11.4.5, 11.3.16; newest
+  stable is 11.4.5). The criterion demanded observing a job that cannot run.
+  ★ **Replaced: a blocking Twig lint runs and passes.** Satisfied today by a documented pre-flight
+  — `twig-cs-fixer` 4.0.2 against a config mirroring core's `11.x` file, **7 templates linted, 0
+  errors**, and its first run found 3 — and satisfied by the upstream job automatically **when core
+  11.5.0 is stable and `SKIP_TWIG_CS_FIXER` is set to `'0'`**. ⚠️ Until then this is a pre-flight,
+  **not a gate**, and saying so is the point: the templates are covered by the axe run, which is a
+  gate, and by a style linter that is not.
+
 - **T-606 / T-607 / T-608** — **the theme has an identity, and its contrast is a gate rather than a
   claim.** 18 colour tokens in one file, Public Sans 2.001 self-hosted with its OFL, a rem type
   scale, visible focus and reduced-motion handling. **38 contrast pairs, 0 below threshold**, at
@@ -461,9 +517,9 @@ none of which needed the theme repository to exist:
 | T-606 ✓ | H | Colour tokens as CSS custom properties: text, background, link, focus, border, status | Every token defined in exactly one file; the file is machine-readable enough for T-608 to parse without a bespoke grammar | T-507 |
 | T-607 ✓ | H | Typography: one OFL face, self-hosted `woff2`, `OFL.txt` shipped beside it, licence-manifest line, type scale, `prefers-reduced-motion`, visible focus | The `OFL.txt` is present and its first line names the copyright holder; the manifest line names font, version, licence and source URL; **no** external font URL anywhere — `grep -rn "fonts.googleapis\|fonts.gstatic\|@import url(http" .` returns **0 lines** | **D-030** |
 | T-608 ✓ | H | `tests/bin/contrast-check` + its dirty case: parse the token file, compute WCAG contrast for every declared foreground/background pair | Prints `N pairs checked — 0 below threshold` with `N` stated (4.5:1 body, 3:1 large text and non-text). A deliberately dimmed token makes it print `N pairs checked — 1 below threshold` and exit non-zero | T-606, T-508 |
-| T-609 | H | Twig templates: page, node, field, **table**, form element, pager, menu | `twig-cs-fixer` **materialises** in the observed job list with `allow_failure: false` and passes; the table template emits `<th scope="col">`/`<th scope="row">` and a `<caption>`, asserted by the axe test's DOM checks | T-606 |
-| T-610 | H | Base stylesheet built from the tokens; no generic CSS framework (D-014 rider f) | `stylelint` **materialises** in the job list with `allow_failure: false` and passes; the CSS contains **0** hard-coded colour literals outside the token file — asserted by an invariant with its dirty case | T-606, T-609 |
-| T-611 | H | Extend T-509: axe over **every** page the theme renders in its fixtures, with the page count stated | The `nightwatch` log states **`P` pages scanned, `P >= 3`**, `R` axe rules run, **0** violations. `P` is written into the theme README's gate table in the same commit | T-609, T-610 |
+| T-609 ✓ | H | Twig templates: page, node, field, **table**, form element, pager, menu | `twig-cs-fixer` **materialises** in the observed job list with `allow_failure: false` and passes; the table template emits `<th scope="col">`/`<th scope="row">` and a `<caption>`, asserted by the axe test's DOM checks | T-606 |
+| T-610 ✓ | H | Base stylesheet built from the tokens; no generic CSS framework (D-014 rider f) | `stylelint` **materialises** in the job list with `allow_failure: false` and passes; the CSS contains **0** hard-coded colour literals outside the token file — asserted by an invariant with its dirty case | T-606, T-609 |
+| T-611 ✓ | H | Extend T-509: axe over **every** page the theme renders in its fixtures, with the page count stated | The `nightwatch` log states **`P` pages scanned, `P >= 3`**, `R` axe rules run, **0** violations. `P` is written into the theme README's gate table in the same commit | T-609, T-610 |
 
 ---
 
@@ -507,6 +563,8 @@ none of which needed the theme repository to exist:
 | `page.front` declared `/home` vs landed `/page/1` | T-605 | owned, wave 6 |
 | Rendering a Dataset's CSV distribution as an accessible `<table>` (D-026 calls that table the source of truth the charts read) | **unit 003** | owned, ruled 2026-08-25 |
 | Menu placement: nothing links to the six per-bundle routes | **T-603** | owned, ruled 2026-08-25 |
+| The theme ships **no default block placements** — no page title, no `h1`, no menu on any real page; every axe fixture supplies its own `<h1>`, which papers over a genuine defect, and `menu`/`node`/`field.html.twig` are consequently **never exercised** | **unit 003** | owned, found 2026-08-25 |
+| Pager heading level: core defaults `#pagination_heading_level` to `h4` and `heading-order` fired during development. The template correctly prints what the caller sets — **nothing makes the caller choose**, the same shape as the conditional `<caption>` | **unit 003** | owned, found 2026-08-25 |
 
 ~~**Count: 34 tasks. Budget 38. Headroom 4.**~~
 
