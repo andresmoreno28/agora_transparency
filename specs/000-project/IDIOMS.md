@@ -500,3 +500,26 @@
   wherever a CI rule and a test-runner's discovery disagree** — PHPUnit's `testsuite` directories
   against `exists: '**/tests/**/*Test.php'` is the identical pair, and `--fail-on-empty-test-suite`
   exists precisely because someone met this rung before. Recorded 2026-08-25 (T-512).
+- I-056 · **A DDEV rig cannot see a base-path bug, because a DDEV rig is the environment in which
+  that bug is invisible.** drupalci serves the docroot **in a subdirectory** — its own access log
+  opens with `GET /web → 301`, then `GET /web/ → 200` — so Drupal's base path there is `/web` and
+  every internal href carries it. DDEV serves the docroot at the server root, base path empty. A
+  functional test asserting `a[href="/publications"]` is therefore **green locally by
+  construction** and is only ever tested by CI. It cost this project two red pipelines and an
+  afternoon.
+  ⚠️ **The premise of the investigation was wrong, and that is the transferable part.** The
+  dispatch asked *"why is the menu link absent on a clean install"*. **It was not absent.** The
+  runner's rendered HTML had all eight links, correctly nested, with the right titles — under
+  `/web`. Hypothesising about derivative discovery, router ordering and cache state would have
+  been reasoning about a thing that never happened.
+  ✅ **What answered it in one step: a failed drupalci job uploads its `browser_output` HTML as an
+  artifact.** `curl -sL https://git.drupalcode.org/project/<p>/-/jobs/<id>/artifacts/download`.
+  **Look at what the browser actually saw before theorising about why it did not see it.**
+  *The corroboration was arithmetic, not a hunch:* the failure reported **1654** assertions where
+  local reported 1662, and Mink's `WebAssert` methods **throw instead of counting**, so the only
+  counted assertions after the abort were the eight in the loop it aborted. 1662 − 8 = 1654 —
+  the gap named the exact loop.
+  **Mechanical rule: a functional test never writes a literal internal path into a selector; it
+  writes `base_path() . $path`.** And the general form, now on its **third occurrence in this
+  unit** (I-051, I-054, this): **when a local pass and a CI failure are both correct, the
+  difference IS the finding** — do not look for which one is lying. Recorded 2026-08-25.

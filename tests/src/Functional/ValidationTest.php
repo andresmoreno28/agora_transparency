@@ -391,8 +391,28 @@ class ValidationTest extends BrowserTestBase {
     $assert->statusCodeEquals(200);
     $assert->elementExists('css', $selector);
 
+    // Drupal prefixes every internal href with the site's BASE PATH, which is
+    // empty only when the docroot IS the server root. The drupalci runner
+    // serves the docroot at http://localhost/web, so there the menu emits
+    // `/web/publications`; a DDEV rig serves it at the root and emits
+    // `/publications`. Hard-coding the second is what turned this gate red
+    // while every local run stayed green - the rig could not see the bug
+    // because the rig is the environment the bug is invisible in.
+    //
+    // NOT a loosened selector: this stays an exact `href="..."` match on a
+    // whole path. `a[href$="/publications"]` would pass here too and would be
+    // the forbidden move, because it also matches a link to
+    // /anything-else/publications. Only the expected VALUE is corrected.
+    //
+    // `base_path()` is the same call `testFrontPageRoundTrip()` below already
+    // relies on, and that test passed on the runner in the very pipeline this
+    // one failed in - so this is a mechanism observed working there, not a
+    // second guess at how the runner is laid out. It returns a trailing
+    // slash ('/' or '/web/') and MENU_ROUTES carries a leading one.
+    $base_path = rtrim(base_path(), '/');
+
     foreach (self::MENU_ROUTES as $route => $title) {
-      $link = $assert->elementExists('css', $selector . ' a[href="' . $route . '"]');
+      $link = $assert->elementExists('css', $selector . ' a[href="' . $base_path . $route . '"]');
       $this->assertSame($title, trim($link->getText()), "The main menu's link to $route must carry the title T-603 gives it.");
     }
     // Exactly eight, so a ninth link appearing from somewhere is a change
@@ -402,7 +422,7 @@ class ValidationTest extends BrowserTestBase {
     // The six tables hang UNDER the cross-type listing rather than beside it,
     // which is the difference between a menu and a list of eight things.
     $assert->elementsCount('css', $selector . ' li li a', count(self::TABLE_VIEWS));
-    $assert->elementExists('css', $selector . ' li li a[href="/contracts"]');
+    $assert->elementExists('css', $selector . ' li li a[href="' . $base_path . '/contracts"]');
 
     // And every route the menu offers actually answers.
     foreach (array_keys(self::MENU_ROUTES) as $route) {
