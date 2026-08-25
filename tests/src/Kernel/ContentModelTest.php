@@ -8,9 +8,9 @@ use Drupal\KernelTests\KernelTestBase;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Tests the content model (T-601 and T-612, under D-026).
+ * Tests the content model (T-601, T-612 and T-613, under D-026).
  *
- * SCOPE, in two methods that own two different rows.
+ * SCOPE, in three methods that own three different rows.
  *
  * `testSharedSpine()` — T-601. The five taxonomy vocabularies and the six
  * reusable field storages that the three financial regimes (Contract,
@@ -24,6 +24,28 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * field storages those instances needed, and the display components that make
  * each field editable and readable. `Contract`, `Agreement` and `Grant` are
  * T-613; `Dataset` is T-614; the six table views are T-615.
+ *
+ * `testFinancialRegimeBundles()` — T-613. The three legal regimes, which are
+ * three bundles and not one bundle with a `regime` dropdown because Spanish
+ * administrative law makes them three: a convenio is defined by its exclusion
+ * from public-procurement law, and a subvención has its own statute and its own
+ * national register (D-026, option D refuted). Each attaches T-601's shared
+ * six-field pattern and then ONLY what its own statute names — Contract four
+ * more, Agreement one, Grant none. A bundle that adds nothing is the correct
+ * outcome, not an oversight.
+ *
+ * WHAT MAKES D-026 FALSIFIABLE, and what it deliberately is NOT. The row asked
+ * for an assertion that "no bundle carries a field its own regime does not
+ * name". A test cannot assert against a statute: the oracle exists only as
+ * prose in D-026 and in the research file. So what runs here is a LITERAL
+ * expected field set per bundle, transcribed from D-026, asserted for SET
+ * EQUALITY IN BOTH DIRECTIONS — a missing field fails, and a field that
+ * accreted without being written into that literal set fails too. That is the
+ * union typing D-026 refuses, caught at config level where it is cheap and
+ * exact. The set SIZES are asserted rather than printed, for the reason the
+ * closing block of every method here repeats; `tests/bin/config-inventory`
+ * prints the per-bundle denominators, in a job whose whole contract is
+ * printing counts.
  *
  * WHY THE SET-EQUALITY CONSTANTS GROW RATHER THAN THE ASSERTIONS RELAXING.
  * Both methods assert set equality in BOTH directions — a missing object fails
@@ -138,6 +160,209 @@ final class ContentModelTest extends KernelTestBase {
     'field_agora_base_remuneration' => 'decimal',
     'field_agora_base_severance' => 'decimal',
     'field_agora_base_summary' => 'text_long',
+  ];
+
+  /**
+   * The field storages T-613 had to create, machine name => field type.
+   *
+   * REUSE BEFORE CREATION, again. All six of T-601's shared storages are
+   * ATTACHED by the three regimes and none is recreated, which is the whole
+   * point of D-026 calling them "created once and attached three times".
+   * `agora_base_procedure_type` is a VOCABULARY T-601 already ships — only the
+   * reference field pointing at it is new, because T-601 created
+   * entity_reference storages for `área` and `estado` only, exactly as T-612
+   * found for `document type` and `financial year`.
+   *
+   * Every entry exists because no shipped storage fitted:
+   *  - `procedure_type` — see above; art. 8.1.a) names the procurement
+   *    procedure and the law then requires a statistic aggregated BY it, which
+   *    is why it is a term reference and not free text,
+   *  - `tender_amount` — art. 8.1.a) names TWO amounts on one contract
+   *    (licitación and adjudicación) and one storage cannot be attached twice
+   *    to the same bundle, so `field_agora_base_amount` could serve at most
+   *    one. The shared storage carries the award amount, this one the tender,
+   *  - `bidder_count` — the first integer in the model; a count, not a sum,
+   *  - `modifications` — prose about what changed after award; `summary` is
+   *    already attached to Document and Person for a different purpose and
+   *    reusing it would put "summary" in the machine name of a contract's
+   *    modification history,
+   *  - `obligations` — art. 8.1.b)'s `obligaciones económicas convenidas`, the
+   *    ONE field Agreement adds. Decimal, not prose: D-026's own rule counts
+   *    it as the numeric field that lets convenios clear the bar for a bundle
+   *    of their own, and a table has to sort it.
+   *
+   * FIELD-NAME CEILING, stated because Drupal's is 32 characters and
+   * `field_agora_base_` spends 17 of them, leaving 15. The longest name here
+   * is `procedure_type` at 14, so `field_agora_base_procedure_type` is 31 —
+   * tying `field_agora_base_financial_year`, the tightest name in the model.
+   * The others are 30, 30, 29 and 28. Nothing is near the ceiling by accident.
+   */
+  private const T613_FIELD_STORAGES = [
+    'field_agora_base_bidder_count' => 'integer',
+    'field_agora_base_modifications' => 'text_long',
+    'field_agora_base_obligations' => 'decimal',
+    'field_agora_base_procedure_type' => 'entity_reference',
+    'field_agora_base_tender_amount' => 'decimal',
+  ];
+
+  /**
+   * T-601's shared pattern, by machine name: the six every regime attaches.
+   *
+   * `objeto · importe · periodo · contraparte · área · estado`. Asserted
+   * against `config/` for each of the three bundles, never against the
+   * constants below — asserting a constant against a constant would pass with
+   * nothing built, which is the tautology T-601's row was corrected for.
+   */
+  private const SHARED_PATTERN = [
+    'field_agora_base_subject',
+    'field_agora_base_amount',
+    'field_agora_base_period',
+    'field_agora_base_counterparty',
+    'field_agora_base_area',
+    'field_agora_base_status',
+  ];
+
+  /**
+   * The four fields art. 8.1.a) names that ONLY Contract carries.
+   *
+   * Asserted twice over: present on Contract, and absent from Agreement and
+   * Grant. Set equality already implies the absence, but the union-typing
+   * failure is the thing D-026 exists to prevent, so it is named explicitly
+   * rather than left to be inferred from a set comparison.
+   */
+  private const CONTRACT_EXTRAS = [
+    'field_agora_base_procedure_type',
+    'field_agora_base_tender_amount',
+    'field_agora_base_bidder_count',
+    'field_agora_base_modifications',
+  ];
+
+  /**
+   * The three regime bundles T-613 ships, with every field attached to each.
+   *
+   * This is the literal set transcribed from D-026, and it is the oracle the
+   * set-equality assertion compares `config/` against in both directions.
+   * Contract 10 fields, Agreement 7, Grant 6 — the shared six plus four, plus
+   * one, plus nothing.
+   */
+  private const REGIME_BUNDLES = [
+    'agora_base_contract' => [
+      'name' => 'Contract',
+      'fields' => [
+        'field_agora_base_subject' => 'string',
+        'field_agora_base_counterparty' => 'string',
+        'field_agora_base_procedure_type' => 'entity_reference',
+        'field_agora_base_tender_amount' => 'decimal',
+        'field_agora_base_amount' => 'decimal',
+        'field_agora_base_bidder_count' => 'integer',
+        'field_agora_base_period' => 'daterange',
+        'field_agora_base_modifications' => 'text_long',
+        'field_agora_base_area' => 'entity_reference',
+        'field_agora_base_status' => 'entity_reference',
+      ],
+    ],
+    'agora_base_agreement' => [
+      'name' => 'Agreement',
+      'fields' => [
+        'field_agora_base_subject' => 'string',
+        'field_agora_base_counterparty' => 'string',
+        'field_agora_base_amount' => 'decimal',
+        'field_agora_base_obligations' => 'decimal',
+        'field_agora_base_period' => 'daterange',
+        'field_agora_base_area' => 'entity_reference',
+        'field_agora_base_status' => 'entity_reference',
+      ],
+    ],
+    'agora_base_grant' => [
+      'name' => 'Grant',
+      'fields' => [
+        'field_agora_base_subject' => 'string',
+        'field_agora_base_counterparty' => 'string',
+        'field_agora_base_amount' => 'decimal',
+        'field_agora_base_period' => 'daterange',
+        'field_agora_base_area' => 'entity_reference',
+        'field_agora_base_status' => 'entity_reference',
+      ],
+    ],
+  ];
+
+  /**
+   * Every money field on the three regimes, bundle => field names.
+   *
+   * Same load-bearing point as `retribución` and `indemnización` on a Person:
+   * a transparency portal publishes these so they can be COMPARED, and a table
+   * cannot sort a string. Five in all — Contract's tender and award amounts,
+   * Agreement's total and its agreed financial obligations, Grant's amount.
+   */
+  private const REGIME_MONEY_FIELDS = [
+    'agora_base_contract' => [
+      'field_agora_base_amount',
+      'field_agora_base_tender_amount',
+    ],
+    'agora_base_agreement' => [
+      'field_agora_base_amount',
+      'field_agora_base_obligations',
+    ],
+    'agora_base_grant' => [
+      'field_agora_base_amount',
+    ],
+  ];
+
+  /**
+   * Taxonomy references on the regimes, bundle => field name => vocabulary.
+   *
+   * Same reason as T-612's: a term reference with no `target_bundles` accepts
+   * terms from EVERY vocabulary, so without this a financial-year term could be
+   * chosen as a contract's procurement procedure — and the statistic art.
+   * 8.1.a) requires is aggregated by exactly that field.
+   */
+  private const REGIME_TERM_REFERENCES = [
+    'agora_base_contract' => [
+      'field_agora_base_procedure_type' => 'agora_base_procedure_type',
+      'field_agora_base_area' => 'agora_base_area',
+      'field_agora_base_status' => 'agora_base_status',
+    ],
+    'agora_base_agreement' => [
+      'field_agora_base_area' => 'agora_base_area',
+      'field_agora_base_status' => 'agora_base_status',
+    ],
+    'agora_base_grant' => [
+      'field_agora_base_area' => 'agora_base_area',
+      'field_agora_base_status' => 'agora_base_status',
+    ],
+  ];
+
+  /**
+   * The three legal citations D-033 permits, and the only Spanish in config/.
+   *
+   * D-033 ruled every shipped label and description ENGLISH, with exactly three
+   * exceptions — terms where the English is a correct translation and still the
+   * wrong word. Each names its Spanish term ONCE, in a description, as a legal
+   * citation. That is a citation, not bilingual UI.
+   *
+   * Config object name => the Spanish term its `description` must contain.
+   * A FOURTH is a D-033 amendment, not an implementer's call: T-612 wanted
+   * `LCSP` and correctly declined. The bound is enforced below by scanning
+   * every shipped file for a byte above 0x7F, so a fourth term cannot arrive
+   * unnoticed — and note that only two of the three carry an accent, which is
+   * why `convenio` needs its own containment assertion.
+   */
+  private const LEGAL_CITATIONS = [
+    'field.field.node.agora_base_contract.field_agora_base_amount' => 'importe de adjudicación',
+    'node.type.agora_base_agreement' => 'convenio',
+    'node.type.agora_base_grant' => 'subvención',
+  ];
+
+  /**
+   * The only shipped config objects that may contain a byte above 0x7F.
+   *
+   * `convenio` is pure ASCII, so it is absent here by arithmetic rather than by
+   * omission. Audited with a byte range and never with a `[^\x00-\x7F]` bracket
+   * class, which GNU grep does not read the way it looks.
+   */
+  private const NON_ASCII_OBJECTS = [
+    'field.field.node.agora_base_contract.field_agora_base_amount',
+    'node.type.agora_base_grant',
   ];
 
   /**
@@ -309,15 +534,20 @@ final class ContentModelTest extends KernelTestBase {
     $assertions++;
 
     // The expected list is the UNION of every row's declared storages, not
-    // T-601's six. T-612 added eight, and the honest way to admit them was to
-    // grow the declared list — the assertion itself is byte-for-byte what it
-    // was, still failing in both directions. Relaxing it to a `>=` or dropping
-    // it would have been the weakened gate T-601's row named in advance.
+    // T-601's six. T-612 added eight and T-613 five, and the honest way to
+    // admit them was to grow the declared list — the assertion itself is
+    // byte-for-byte what it was, still failing in both directions. Relaxing it
+    // to a `>=` or dropping it would have been the weakened gate T-601's row
+    // named in advance.
     $storages = $storage->listAll('field.storage.node.');
     sort($storages);
     $expected = array_map(
       static fn (string $field_name): string => 'field.storage.node.' . $field_name,
-      array_keys(array_merge(self::FIELD_STORAGES, self::T612_FIELD_STORAGES)),
+      array_keys(array_merge(
+        self::FIELD_STORAGES,
+        self::T612_FIELD_STORAGES,
+        self::T613_FIELD_STORAGES,
+      )),
     );
     sort($expected);
     $this->assertSame($expected, $storages, 'config/ must ship exactly the field storages the content-model rows declare.');
@@ -384,12 +614,18 @@ final class ContentModelTest extends KernelTestBase {
     // as a Person SUBTYPE would have been a seventh bundle by the back door.
     // It is an unconditional optional field instead, and this assertion is
     // what makes that a fact about config/ rather than an intention.
-    // T-613 and T-614 admit their four bundles by GROWING self::BUNDLES.
+    //
+    // This is the ONE place that asserts which node types ship at all, so it
+    // spans every content-model row rather than only T-612's two: a census
+    // asserted in two places is a census that can disagree with itself. T-613
+    // admitted its three bundles by GROWING the declared list — the assertion
+    // is byte-for-byte what it was, still failing in both directions. T-614
+    // adds `Dataset` the same way, and D-026 fixes the final count at six.
     $node_types = $storage->listAll('node.type.');
     sort($node_types);
     $expected_types = array_map(
       static fn (string $bundle): string => 'node.type.' . $bundle,
-      array_keys(self::BUNDLES),
+      array_keys(array_merge(self::BUNDLES, self::REGIME_BUNDLES)),
     );
     sort($expected_types);
     $this->assertSame($expected_types, $node_types, 'config/ must ship exactly the node types the content-model rows declare.');
@@ -561,6 +797,222 @@ final class ContentModelTest extends KernelTestBase {
       + 3
       + 3
       + 2;
+    $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
+  }
+
+  /**
+   * Tests Contract, Agreement and Grant, and only what each names (T-613).
+   */
+  public function testFinancialRegimeBundles(): void {
+    $path = dirname(__FILE__, 4);
+    $storage = new FileStorage($path . '/config');
+    $assertions = 0;
+
+    // -- The census, for the same reason as in the two methods above ---------
+    // Every loop below runs over one of these four constants. A constant
+    // silently emptied would leave each loop passing over nothing, which is a
+    // green gate that proves nothing (I-045).
+    $this->assertCount(3, self::REGIME_BUNDLES, 'D-026 makes the financial regimes THREE bundles, because Spanish administrative law makes them three.');
+    $assertions++;
+    $this->assertCount(5, self::T613_FIELD_STORAGES, 'T-613 creates five new field storages.');
+    $assertions++;
+    $this->assertCount(6, self::SHARED_PATTERN, 'T-601 ships a six-field shared pattern.');
+    $assertions++;
+    $this->assertCount(4, self::CONTRACT_EXTRAS, 'Art. 8.1.a) gives Contract four fields the other two regimes do not have.');
+    $assertions++;
+
+    foreach (self::REGIME_BUNDLES as $bundle => $definition) {
+      // -- The bundle itself -------------------------------------------------
+      $name = 'node.type.' . $bundle;
+      $data = $storage->read($name);
+      $this->assertIsArray($data, "$name must be shipped in config/.");
+      $assertions++;
+      $this->assertSame($bundle, $data['type'], "$name must declare its own machine name.");
+      $assertions++;
+      $this->assertSame($definition['name'], $data['name'], "$name must carry its English label (D-033).");
+      $assertions++;
+      $this->assertNotEmpty($data['description'], "$name must explain what belongs in it; the description is the only help a clerk gets on the node/add screen.");
+      $assertions++;
+
+      // -- SET EQUALITY, BOTH DIRECTIONS -------------------------------------
+      // This is the assertion that makes D-026 falsifiable. The expected side
+      // is the literal set transcribed from D-026; the actual side is whatever
+      // config/ ships. A field the regime's statute does not name fails here,
+      // which is the union typing D-026 refused when it rejected one bundle
+      // with a `regime` dropdown.
+      $prefix = 'field.field.node.' . $bundle . '.';
+      $attached = $storage->listAll($prefix);
+      sort($attached);
+      $expected_fields = array_map(
+        static fn (string $field_name): string => $prefix . $field_name,
+        array_keys($definition['fields']),
+      );
+      sort($expected_fields);
+      $this->assertSame($expected_fields, $attached, "$bundle must carry exactly the fields its own regime names - no more, and no fewer.");
+      $assertions++;
+      // The set size, asserted because it cannot be printed from here. The
+      // three sizes are 10, 7 and 6; tests/bin/config-inventory prints them.
+      $this->assertCount(count($definition['fields']), $attached, "$bundle's field set must be the size D-026 gives it.");
+      $assertions++;
+
+      // -- All six of the shared pattern, asserted against config/ -----------
+      // Against the SHIPPED set, never against $definition['fields'] - a
+      // constant checked against a constant passes with nothing built.
+      foreach (self::SHARED_PATTERN as $shared) {
+        $this->assertContains($prefix . $shared, $attached, "$bundle must attach the shared pattern's $shared: all three regimes reuse it, created once by T-601.");
+        $assertions++;
+      }
+
+      // -- The displays ------------------------------------------------------
+      $form_display = $storage->read('core.entity_form_display.node.' . $bundle . '.default');
+      $this->assertIsArray($form_display, "$bundle must ship a default form display.");
+      $assertions++;
+      $view_display = $storage->read('core.entity_view_display.node.' . $bundle . '.default');
+      $this->assertIsArray($view_display, "$bundle must ship a default view display.");
+      $assertions++;
+
+      // -- Every field on the bundle ----------------------------------------
+      foreach ($definition['fields'] as $field_name => $type) {
+        $name = $prefix . $field_name;
+        $field = $storage->read($name);
+        $this->assertIsArray($field, "$name must be shipped in config/.");
+        $assertions++;
+        $this->assertSame($field_name, $field['field_name'], "$name must declare its own machine name.");
+        $assertions++;
+        $this->assertSame($bundle, $field['bundle'], "$name must be attached to $bundle.");
+        $assertions++;
+        $this->assertSame($type, $field['field_type'], "$name must be of type $type.");
+        $assertions++;
+        $this->assertNotEmpty($field['label'], "$name must carry a label.");
+        $assertions++;
+        $this->assertArrayHasKey($field_name, $form_display['content'], "$field_name must be editable on $bundle's form.");
+        $assertions++;
+        $this->assertArrayHasKey($field_name, $view_display['content'], "$field_name must be rendered on $bundle.");
+        $assertions++;
+        // WCAG 2.2 AA, 1.3.1. A contract page carries a tender amount and an
+        // award amount side by side; rendered with their labels hidden they are
+        // two bare numbers, and a screen-reader user cannot tell which is which.
+        $this->assertSame('above', $view_display['content'][$field_name]['label'], "$field_name must render its label visibly on $bundle.");
+        $assertions++;
+      }
+    }
+
+    // -- Contract's four extras, present and NOT anywhere else ---------------
+    $contract_fields = $storage->listAll('field.field.node.agora_base_contract.');
+    foreach (self::CONTRACT_EXTRAS as $field_name) {
+      $this->assertContains('field.field.node.agora_base_contract.' . $field_name, $contract_fields, "Art. 8.1.a) names $field_name and Contract must carry it.");
+      $assertions++;
+      // Asserted against the SHIPPED set rather than against a `read()` of a
+      // name expected to be absent: FileStorage::read() returns FALSE for a
+      // missing object, not NULL, so `assertNull` here passed nothing and
+      // failed a correct model. Comparing sets has no such convention to get
+      // wrong, and it is the same comparison the equality assertion makes.
+      foreach (['agora_base_agreement', 'agora_base_grant'] as $other) {
+        $this->assertNotContains(
+          'field.field.node.' . $other . '.' . $field_name,
+          $storage->listAll('field.field.node.' . $other . '.'),
+          "$field_name belongs to art. 8.1.a) alone; putting it on $other is the union typing D-026 rejected."
+        );
+        $assertions++;
+      }
+    }
+
+    // -- The five new field storages -----------------------------------------
+    foreach (self::T613_FIELD_STORAGES as $field_name => $type) {
+      $name = 'field.storage.node.' . $field_name;
+      $data = $storage->read($name);
+      $this->assertIsArray($data, "$name must be shipped in config/.");
+      $assertions++;
+      $this->assertSame($field_name, $data['field_name'], "$name must declare its own machine name.");
+      $assertions++;
+      $this->assertSame('node', $data['entity_type'], "$name must be a node field storage.");
+      $assertions++;
+      $this->assertSame($type, $data['type'], "$name must be of type $type.");
+      $assertions++;
+      $this->assertSame(1, $data['cardinality'], "$name must be single-valued.");
+      $assertions++;
+    }
+
+    // -- Every money field is NUMERIC, not text ------------------------------
+    $money_fields = 0;
+    foreach (self::REGIME_MONEY_FIELDS as $bundle => $field_names) {
+      foreach ($field_names as $field_name) {
+        $money_fields++;
+        $field = $storage->read('field.field.node.' . $bundle . '.' . $field_name);
+        $this->assertContains($field['field_type'], self::NUMERIC_FIELD_TYPES, "$field_name on $bundle must be numeric: a table has to sort it.");
+        $assertions++;
+        $this->assertNotContains($field['field_type'], self::TEXTUAL_FIELD_TYPES, "$field_name on $bundle must not be a text field.");
+        $assertions++;
+        $storage_data = $storage->read('field.storage.node.' . $field_name);
+        $this->assertSame('decimal', $storage_data['type'], "$field_name must be stored as decimal.");
+        $assertions++;
+        // Money has cents. A scale of 0 silently truncates every amount it
+        // stores, and nothing in the UI would say so.
+        $this->assertSame(2, $storage_data['settings']['scale'], "$field_name must keep two decimal places.");
+        $assertions++;
+      }
+    }
+
+    // -- Every term reference is tied to ONE vocabulary ----------------------
+    $term_references = 0;
+    foreach (self::REGIME_TERM_REFERENCES as $bundle => $map) {
+      foreach ($map as $field_name => $vid) {
+        $term_references++;
+        $field = $storage->read('field.field.node.' . $bundle . '.' . $field_name);
+        $this->assertSame('default:taxonomy_term', $field['settings']['handler'], "$field_name on $bundle must reference taxonomy terms.");
+        $assertions++;
+        $this->assertSame([$vid], array_keys($field['settings']['handler_settings']['target_bundles']), "$field_name on $bundle must be restricted to the $vid vocabulary.");
+        $assertions++;
+      }
+    }
+
+    // -- D-033: three legal citations, and not a fourth ----------------------
+    // Each of the three names its Spanish term once, in a description. Two of
+    // them carry an accent and one does not, so the containment check and the
+    // byte scan are both needed: neither alone bounds the set at three.
+    foreach (self::LEGAL_CITATIONS as $object => $term) {
+      $data = $storage->read($object);
+      $this->assertStringContainsString($term, $data['description'], "$object must name its Spanish legal term once, in its description (D-033).");
+      $assertions++;
+    }
+
+    // The bound. Every shipped config object is read as raw bytes and tested
+    // for a byte above 0x7F - the same range the audit in tests/bin uses, and
+    // deliberately NOT a `[^\x00-\x7F]` character class, which GNU grep does
+    // not read the way it looks. Before T-613, config/ contained zero such
+    // bytes; after it, exactly two objects do, and a fourth Spanish term
+    // cannot arrive without failing here.
+    $non_ascii = [];
+    foreach ($storage->listAll() as $object) {
+      $raw = file_get_contents($path . '/config/' . $object . '.yml');
+      if (preg_match('/[\x80-\xFF]/', (string) $raw) === 1) {
+        $non_ascii[] = $object;
+      }
+    }
+    sort($non_ascii);
+    $expected_non_ascii = self::NON_ASCII_OBJECTS;
+    sort($expected_non_ascii);
+    $this->assertSame($expected_non_ascii, $non_ascii, 'Only the accented legal citations D-033 permits may put a non-ASCII byte into config/; a fourth Spanish term is a D-033 amendment, not an implementer\'s call.');
+    $assertions++;
+
+    // -- The assertion count, asserted rather than printed -------------------
+    // Same mechanic and same reason as the two methods above: PHPUnit turns
+    // ANY output a test emits into an exception, so the count is asserted here
+    // and reaches the CI log through PHPUnit's own "OK (N tests, N assertions)"
+    // line. Derived from the constants so that growing the model updates it.
+    $field_instances = 0;
+    foreach (self::REGIME_BUNDLES as $definition) {
+      $field_instances += count($definition['fields']);
+    }
+    $expected_assertions = 4
+      + (14 * count(self::REGIME_BUNDLES))
+      + (8 * $field_instances)
+      + (3 * count(self::CONTRACT_EXTRAS))
+      + (5 * count(self::T613_FIELD_STORAGES))
+      + (4 * $money_fields)
+      + (2 * $term_references)
+      + count(self::LEGAL_CITATIONS)
+      + 1;
     $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
   }
 

@@ -1,0 +1,98 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.agora_base_contract.field_agora_base_amount
+    - field.field.node.agora_base_contract.field_agora_base_area
+    - field.field.node.agora_base_contract.field_agora_base_bidder_count
+    - field.field.node.agora_base_contract.field_agora_base_counterparty
+    - field.field.node.agora_base_contract.field_agora_base_modifications
+    - field.field.node.agora_base_contract.field_agora_base_period
+    - field.field.node.agora_base_contract.field_agora_base_procedure_type
+    - field.field.node.agora_base_contract.field_agora_base_status
+    - field.field.node.agora_base_contract.field_agora_base_subject
+    - field.field.node.agora_base_contract.field_agora_base_tender_amount
+    - node.type.agora_base_contract
+  module:
+    - user
+id: node.agora_base_contract.default
+targetEntityType: node
+bundle: agora_base_contract
+mode: default
+content:
+  field_agora_base_amount:
+    type: number_decimal
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 4
+    region: content
+  field_agora_base_area:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 8
+    region: content
+  field_agora_base_bidder_count:
+    type: number_integer
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  field_agora_base_counterparty:
+    type: string
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  field_agora_base_modifications:
+    type: text_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 7
+    region: content
+  field_agora_base_period:
+    type: daterange_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 6
+    region: content
+  field_agora_base_procedure_type:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  field_agora_base_status:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 9
+    region: content
+  field_agora_base_subject:
+    type: string
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  field_agora_base_tender_amount:
+    type: number_decimal
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden: {  }

@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_obligations
+    - node.type.agora_base_agreement
+id: node.agora_base_agreement.field_agora_base_obligations
+field_name: field_agora_base_obligations
+entity_type: node
+bundle: agora_base_agreement
+label: 'Agreed financial obligations'
+description: 'The financial obligations the parties took on under the agreement, where there are any.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0.0
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: decimal

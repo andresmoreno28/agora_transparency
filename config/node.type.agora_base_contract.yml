@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Contract
+type: agora_base_contract
+description: 'A public contract awarded by this body, with the amounts involved, the procedure used to award it and the number of bidders that took part. Article 8.1.a) of the transparency act names each of these.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: false

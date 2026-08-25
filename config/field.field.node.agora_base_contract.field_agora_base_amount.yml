@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_amount
+    - node.type.agora_base_contract
+id: node.agora_base_contract.field_agora_base_amount
+field_name: field_agora_base_amount
+entity_type: node
+bundle: agora_base_contract
+label: 'Award amount'
+description: 'The amount the contract was finally awarded for, known in Spanish law as the importe de adjudicación.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0.0
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: decimal

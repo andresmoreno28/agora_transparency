@@ -155,6 +155,43 @@ printf 'nested files:   %s (below %s/, enumerated by nothing)\n' "$NESTED" "$CON
 printf 'zero-byte objects: %s\n' "$EMPTY"
 printf 'exclusions: none - every file under %s/ is inspected\n' "$CONFIG_DIR"
 
+# -------------------------------------------------- per-bundle denominators --
+# T-613's criterion asks for the per-bundle field-set SIZES to be stated
+# alongside the set-equality assertions that ContentModelTest makes in both
+# directions. It cannot state them itself: PHPUnit turns any output a test
+# emits, STDOUT and STDERR alike, into an exception (pipeline 934619). So the
+# assertion lives in PHP and the number is printed here, which is the same
+# division of labour the header describes for the total.
+#
+# NOTHING here is a finding and nothing is compared to an expected value: a
+# bundle count hard-coded in this script would have to be edited every time
+# T-614 legitimately grows the model, which is the habit the whole file exists
+# to avoid. The set-equality assertions in ContentModelTest are what fail when
+# one of these numbers is wrong; this block only says what the numbers ARE.
+printf '\nper-bundle field sets (the sizes ContentModelTest asserts by equality):\n'
+BUNDLES=0
+for t in "$CONFIG_DIR"/node.type.*.yml; do
+  [ -e "$t" ] || break
+  b=${t#"$CONFIG_DIR"/node.type.}
+  b=${b%.yml}
+  BUNDLES=$((BUNDLES + 1))
+  # `wc -l` over a listing, never `grep -c`: house rule, T-321(c).
+  n=$(find "$CONFIG_DIR" -maxdepth 1 -type f \
+        -name "field.field.node.$b.*.yml" 2>/dev/null | wc -l | tr -d '[:space:]')
+  printf '  %-24s %s field instance(s)\n' "$b" "${n:-0}"
+done
+printf '  node types: %s\n' "$BUNDLES"
+
+# The three legal citations D-033 permits are the only shipped strings that may
+# carry a byte above 0x7F, and only two of them are accented. Printed with the
+# same byte RANGE the audit uses - never a `[^\x00-\x7F]` bracket class, which
+# GNU grep does not read the way it looks and which returns a permanent false
+# positive. Informational here; ContentModelTest is what fails on a fourth.
+NON_ASCII=$(LC_ALL=C grep -rlE "$(printf '[\200-\377]')" "$CONFIG_DIR" 2>/dev/null \
+  | wc -l | tr -d '[:space:]')
+printf 'objects carrying a byte above 0x7F: %s (D-033 permits the accented legal citations only)\n' \
+  "${NON_ASCII:-0}"
+
 # T-321(b): defaulted because zero means FAIL here - the safe direction of
 # I-031. Do not copy the `:-0` to a guard where zero means PASS.
 if [ "${SCANNED:-0}" -eq 0 ]; then

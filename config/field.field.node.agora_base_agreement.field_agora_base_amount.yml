@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_amount
+    - node.type.agora_base_agreement
+id: node.agora_base_agreement.field_agora_base_amount
+field_name: field_agora_base_amount
+entity_type: node
+bundle: agora_base_agreement
+label: Amount
+description: 'The total value of the agreement.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0.0
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: decimal

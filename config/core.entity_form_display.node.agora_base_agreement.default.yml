@@ -1,0 +1,117 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.agora_base_agreement.field_agora_base_amount
+    - field.field.node.agora_base_agreement.field_agora_base_area
+    - field.field.node.agora_base_agreement.field_agora_base_counterparty
+    - field.field.node.agora_base_agreement.field_agora_base_obligations
+    - field.field.node.agora_base_agreement.field_agora_base_period
+    - field.field.node.agora_base_agreement.field_agora_base_status
+    - field.field.node.agora_base_agreement.field_agora_base_subject
+    - node.type.agora_base_agreement
+  module:
+    - content_moderation
+    - path
+id: node.agora_base_agreement.default
+targetEntityType: node
+bundle: agora_base_agreement
+mode: default
+content:
+  created:
+    type: datetime_timestamp
+    weight: 10
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_agora_base_amount:
+    type: number
+    weight: 2
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_agora_base_area:
+    type: options_select
+    weight: 5
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_agora_base_counterparty:
+    type: string_textfield
+    weight: 1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_agora_base_obligations:
+    type: number
+    weight: 3
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_agora_base_period:
+    type: daterange_default
+    weight: 4
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_agora_base_status:
+    type: options_select
+    weight: 6
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_agora_base_subject:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  moderation_state:
+    type: moderation_state_default
+    weight: 100
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  path:
+    type: path
+    weight: 30
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  status:
+    type: boolean_checkbox
+    weight: 120
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  title:
+    type: string_textfield
+    weight: -5
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  uid:
+    type: entity_reference_autocomplete
+    weight: 5
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  url_redirects:
+    weight: 50
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+hidden:
+  promote: true
+  publish_on: true
+  publish_state: true
+  sticky: true
+  unpublish_on: true
+  unpublish_state: true

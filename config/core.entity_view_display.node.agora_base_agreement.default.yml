@@ -1,0 +1,74 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.agora_base_agreement.field_agora_base_amount
+    - field.field.node.agora_base_agreement.field_agora_base_area
+    - field.field.node.agora_base_agreement.field_agora_base_counterparty
+    - field.field.node.agora_base_agreement.field_agora_base_obligations
+    - field.field.node.agora_base_agreement.field_agora_base_period
+    - field.field.node.agora_base_agreement.field_agora_base_status
+    - field.field.node.agora_base_agreement.field_agora_base_subject
+    - node.type.agora_base_agreement
+  module:
+    - user
+id: node.agora_base_agreement.default
+targetEntityType: node
+bundle: agora_base_agreement
+mode: default
+content:
+  field_agora_base_amount:
+    type: number_decimal
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  field_agora_base_area:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  field_agora_base_counterparty:
+    type: string
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  field_agora_base_obligations:
+    type: number_decimal
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  field_agora_base_period:
+    type: daterange_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 4
+    region: content
+  field_agora_base_status:
+    type: entity_reference_label
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 6
+    region: content
+  field_agora_base_subject:
+    type: string
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden: {  }

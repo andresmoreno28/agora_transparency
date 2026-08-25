@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Grant
+type: agora_base_grant
+description: 'A grant or public subsidy awarded to a beneficiary, with the amount awarded and what it is for, known in Spanish law as the subvención.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: false
