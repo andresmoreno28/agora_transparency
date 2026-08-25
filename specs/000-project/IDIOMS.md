@@ -538,3 +538,20 @@
   half-measurement that reads like a whole one. This is I-027's family — a shell tool behaving
   differently than the reader assumes — with the twist that here **the tool is not even the
   variable**. Recorded 2026-08-25.
+- I-058 · **Pushing is not finishing, and a resolution that has already failed twice is not a
+  fix.** On 2026-08-25 the coordinator pushed T-603 without reading its pipeline, then signed
+  T-512 and **tagged the theme's `1.0.0` on top of a red gate**. It wrote down the lesson —
+  *"pushing is not finishing; finishing is having read the pipeline's job list"* — and then, within
+  hours, **pushed T-801, T-802 and T-803 without reading any of them. All three were red.**
+  ⚠️ **The failure is not forgetfulness, it is that the check had no cost of omission.** Every
+  other rule in this project is enforced by something that fails: the gate runners, the drift
+  detector, the parity check, the deny lists. *"Remember to look"* was the only one enforced by
+  intention, and it is the only one that broke twice in a day.
+  **The fix is `tests/bin/watch-gate`**: one command, short enough to run every time, that reads
+  the **job list** from the API — never the status field, which has reported `success` over a
+  failed job in this very project (I-043) — applies D-023(5) and **exits non-zero when the rule
+  is not met**. It decides nothing; it makes *"I pushed"* into *"I know"*.
+  Rule: **when a discipline fails twice, stop restating it and give it an exit code.** A habit
+  that only works when someone is paying attention is a habit that fails exactly when they are
+  not — which is at the end of a long session, immediately after something went well.
+  Recorded 2026-08-25.

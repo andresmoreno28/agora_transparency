@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+#
+# watch-gate - read the canonical pipeline's JOB LIST for the current HEAD and say
+#              whether the gate is green, by D-023(5)'s definition and no other.
+#
+# WHY THIS EXISTS, and it is a process defect rather than a tooling gap.
+#
+# On 2026-08-25 the coordinator pushed three commits in a row - T-801, T-802, T-803 -
+# without reading any of their pipelines, and all three were RED. Earlier the same day
+# it had done the same thing once already, signed two rows and tagged the theme's 1.0.0
+# on top of a red gate, and wrote down that "pushing is not finishing; finishing is
+# having read the pipeline's job list". Then it did it again within hours.
+#
+# A resolution that has already failed twice is not a fix. This is the fix: one command,
+# short enough to be run every time, that turns "I pushed" into "I know".
+#
+# WHAT IT DOES NOT DO. It does not decide anything. D-023(5) defines the gate as a
+# statement about the JOB LIST read from the API - never the pipeline's status field,
+# which has reported `success` over a failed job in this very project (I-043). So this
+# prints the list, applies that rule, and exits non-zero when the rule is not met.
+#
+# Usage:  bash tests/bin/watch-gate [--wait] [--repo <project-path>]
+#           --wait   poll until the pipeline reaches a terminal state (default: report now)
+#           --repo   defaults to the remote of this checkout
+
+set -u
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && { pwd -W 2>/dev/null || pwd; })"
+cd "$REPO" || { echo "FATAL: cannot cd to repository root"; exit 2; }
+
+API="https://git.drupalcode.org/api/v4/projects"
+PROJECT=""
+WAIT=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --wait) WAIT=1 ;;
+    --repo) shift; PROJECT="${1:-}" ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+if [ -z "$PROJECT" ]; then
+  URL="$(git config --get remote.drupalcode.url 2>/dev/null || true)"
+  case "$URL" in
+    *agora_theme*)        PROJECT="project%2Fagora_theme" ;;
+    *agora_transparency*) PROJECT="project%2Fagora_transparency" ;;
+    *) echo "FATAL: cannot infer the project from remote.drupalcode.url ('$URL'). Pass --repo." >&2; exit 2 ;;
+  esac
+fi
+
+SHA="$(git rev-parse HEAD)"
+SHORT="${SHA:0:7}"
+echo "HEAD $SHORT in $(basename "$REPO")"
+
+# The floor. D-023(5) says `jobs >= 7`; the observed lists are larger and the operative
+# floor lives beside the observed table in CLAUDE.md. Deliberately NOT hard-coded to the
+# current count: a number that must be raised every time the list grows is a number
+# somebody eventually lowers instead.
+FLOOR=7
+
+attempt=0
+while : ; do
+  attempt=$((attempt + 1))
+  PIPE="$(curl -sS "$API/$PROJECT/pipelines?sha=$SHA&per_page=1" 2>/dev/null)"
+  PID="$(printf '%s' "$PIPE" | python3 -c "
+import json,sys
+try:
+    d = json.load(sys.stdin)
+    print(d[0]['id'] if d else '')
+except Exception:
+    print('')
+" 2>/dev/null)"
+
+  if [ -z "$PID" ]; then
+    echo "  no pipeline for $SHORT yet"
+    [ "$WAIT" -eq 1 ] || { echo "watch-gate: NOT MEASURED - nothing to read"; exit 1; }
+    sleep 30; continue
+  fi
+
+  STATUS="$(printf '%s' "$PIPE" | python3 -c "
+import json,sys
+print(json.load(sys.stdin)[0]['status'])" 2>/dev/null)"
+
+  case "$STATUS" in
+    running|pending|created|waiting_for_resource|preparing)
+      echo "  pipeline $PID: $STATUS (attempt $attempt)"
+      [ "$WAIT" -eq 1 ] || { echo "watch-gate: NOT FINISHED - re-run with --wait"; exit 1; }
+      sleep 30; continue ;;
+  esac
+
+  curl -sS "$API/$PROJECT/pipelines/$PID/jobs?per_page=100" 2>/dev/null | python3 -c "
+import json, sys
+jobs = json.load(sys.stdin)
+floor = $FLOOR
+if not jobs:
+    # 'jobs: 0' is a failure, not 'nothing to report' - D-023(5) says so in as many words.
+    print('  jobs: 0 - that is a FAILURE, not an empty result')
+    sys.exit(1)
+bad = 0
+for j in sorted(jobs, key=lambda x: x['name']):
+    flag = '' if j['status'] == 'success' and not j['allow_failure'] else '   <-- '
+    if flag:
+        bad += 1
+        flag += 'FAILED' if j['status'] != 'success' else 'PERMISSIVE (needs a dated exception)'
+    print('  %-18s %-9s %-9s allow_failure=%s%s'
+          % (j['name'], j['stage'], j['status'], j['allow_failure'], flag))
+print('  jobs: %d' % len(jobs))
+if len(jobs) < floor:
+    print('  BELOW THE FLOOR: %d jobs, floor is %d' % (len(jobs), floor))
+    bad += 1
+sys.exit(1 if bad else 0)
+"
+  rc=$?
+  echo "  pipeline $PID: $STATUS"
+  if [ "$rc" -eq 0 ]; then
+    echo "watch-gate: GREEN - every job success, every job blocking"
+  else
+    echo "watch-gate: NOT GREEN - and the pipeline's own status field is not the evidence either way"
+  fi
+  exit "$rc"
+done
