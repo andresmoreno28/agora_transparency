@@ -106,6 +106,19 @@ install:
   # cause is three files away. Declared for the same reason `datetime_range` above is.
   # Core, so it adds nothing to `composer.json` and needs no SBOM line.
   - views
+  # Core module. `config/user.role.agora_base_reviewer.yml` (T-602) declares a
+  # dependency on it, because `view any unpublished content` — the one permission
+  # that makes a reviewer something other than a weaker editor — is defined by
+  # `content_moderation`, not by `node`. Without the module the role does not
+  # import and a clean install loses it. Like `views` above it is ALREADY provided
+  # by the declared chain (the upstream `content_editor` role and
+  # `workflows.workflow.basic_editorial` both depend on it), so this line changes
+  # nothing today; it is here because that is a guarantee about somebody else's
+  # recipe. NOTE the scope: declaring the module is not putting Ágora's six bundles
+  # under moderation — none of them is moderated, and the editorial workflow is
+  # unit 004's row, not this one.
+  # Core, so it adds nothing to `composer.json` and needs no SBOM line.
+  - content_moderation
   # By default, Drupal installs Stark as the default theme. It must be listed here, at
   # least initially, to prevent bugs if it's not present. You can remove it later if you
   # want to; just uninstall it before exporting the site as a recipe.
@@ -137,7 +150,31 @@ config:
 
   actions:
     # -- area: base -------------------------------------------------------------
-    # Set the home page to a blank Canvas landing page.
+    # THE HOME PAGE, AND WHY THIS SAYS `/home` WHILE AN INSTALLED SITE REPORTS
+    # `/page/1` (T-605, measured 2026-08-25 — the gap is cosmetic and
+    # self-cancelling, not a bug, and it is written down because the next person
+    # to notice it will otherwise "fix" it).
+    #
+    # `drupal_cms_helper`'s `RecipeSubscriber::onRecipeApplied()` deliberately
+    # converts the alias declared here into its SYSTEM path when the recipe is
+    # applied, so `system.site` `page.front` on a live site holds `/page/1`. The
+    # export side is its mirror image: `GenericConfigurationListener` rewrites
+    # `page.front` back to the alias, gated on a flag that only `SiteExporter`
+    # switches on. The two are a ROUND-TRIP PAIR, and the alias itself survives
+    # an export because it rides inside the landing page's own `path` field
+    # rather than as a standalone `path_alias` entity.
+    #
+    # So the alias is declared, NOT the system path: `/page/1` is entity-ID
+    # dependent, and `site:export` would rewrite it back to `/home` on every
+    # export — declaring it would mean fighting the tool forever.
+    #
+    # Asserted end to end by `ValidationTest::testFrontPageRoundTrip()`. Note
+    # what that test does NOT pin: the status `/home` answers with. A
+    # DDEV-served install returns 301 to `/`; the same recipe under
+    # BrowserTestBase returns a plain 200. The difference is the contributed
+    # `redirect` module's route normalizer, which fires only when
+    # `RedirectChecker::canRedirect()` passes, and that depends on how the
+    # site is being served rather than on anything declared here.
     system.site:
       simpleConfigUpdate:
         page.front: '/home'
@@ -146,49 +183,103 @@ config:
     system.theme:
       simpleConfigUpdate:
         default: 'blank'
-    # Disable Canvas components that aren't really useful in building pages or
-    # content templates. This doesn't delete the components; it only prevents
-    # them from appearing in the Canvas UI. If you want any of these components
-    # to be enabled by default, delete them from this list.
-    ?canvas.component.block.announce_block:
+    # -------------------------------------------------------------------------
+    # CANVAS COMPONENTS (T-604). Disabling does not delete a component; it keeps
+    # it out of the Canvas UI, so an editor building a page is not offered it.
+    #
+    # THE REVIEW THIS ROW ASKED FOR, and its one finding. Every component the
+    # starter kit inherited into this list is an ADMIN surface — the toolbar,
+    # the dashboard, the module installer, the editorial queues. Checked
+    # component by component against its provider on a clean install, and the
+    # reasons below are the result. The list was missing exactly one: core's
+    # `navigation` module ships TWO single-directory components from the same
+    # directory, `title` and `message`, and the inherited list disabled `title`
+    # while leaving `message` enabled. `message` is added below.
+    #
+    # THE `?` PREFIXES ARE GONE, and that is a deliberate, measured change.
+    # A `?` means "apply if present, SILENTLY skip if not" — no API reports what
+    # was skipped, so a `?` that is never needed is a permanent blind spot: the
+    # day an upstream module stops shipping one of these, the component quietly
+    # comes back into the palette and nothing says so. All 16 `?`-prefixed names
+    # were resolved against a clean install carrying this template's exact
+    # dependency closure: 16 exist, 0 absent. An unnecessary `?` is therefore
+    # dropped, which converts that silent regression into a loud failure at
+    # apply time. `tests/bin/config-inventory` prints the count that was
+    # inspected; `ValidationTest::testCanvasComponentReview()` is what fails if
+    # one of these names stops resolving.
+    #
+    # The one name that keeps a wildcard is `project_browser_block.*`: it stands
+    # for six per-source blocks, and the wildcard is resolved by the recipe
+    # engine rather than being an optionality marker.
+    # -------------------------------------------------------------------------
+    # Drupal.org announcements, shown to administrators. Not page content.
+    canvas.component.block.announce_block:
       disable: []
-    ?canvas.component.block.dashboard_placeholder:
+    # Scaffolding for the administrative dashboard.
+    canvas.component.block.dashboard_placeholder:
       disable: []
-    ?canvas.component.block.dashboard_site_status:
+    # The administrative dashboard's site status report.
+    canvas.component.block.dashboard_site_status:
       disable: []
+    # Administrative action links ("Add content"), placed by the admin theme.
     canvas.component.block.local_actions_block:
       disable: []
+    # The administrative tab strip (View / Edit / Delete), placed by the admin theme.
     canvas.component.block.local_tasks_block:
       disable: []
-    ?canvas.component.block.navigation_dashboard:
+    # A link into the administrative dashboard.
+    canvas.component.block.navigation_dashboard:
       disable: []
-    ?canvas.component.block.navigation_link:
+    # An administrative toolbar link.
+    canvas.component.block.navigation_link:
       disable: []
-    ?canvas.component.block.navigation_shortcuts:
+    # The administrative toolbar's shortcuts.
+    canvas.component.block.navigation_shortcuts:
       disable: []
-    ?canvas.component.block.navigation_user:
+    # The administrative toolbar's user menu.
+    canvas.component.block.navigation_user:
       disable: []
+    # The module and recipe installer UI. The wildcard covers all six sources.
     canvas.component.block.project_browser_block.*:
       disable: []
-    ?canvas.component.block.system_menu_block.admin:
+    # The administration menu.
+    canvas.component.block.system_menu_block.admin:
       disable: []
-    ?canvas.component.block.system_menu_block.navigation-user-links:
+    # The administrative user-links menu.
+    canvas.component.block.system_menu_block.navigation-user-links:
       disable: []
-    ?canvas.component.block.system_menu_block.tools:
+    # The administrative tools menu.
+    canvas.component.block.system_menu_block.tools:
       disable: []
-    ?canvas.component.block.system_menu_block.top-tasks:
+    # The administrative top-tasks menu.
+    canvas.component.block.system_menu_block.top-tasks:
       disable: []
+    # Status and error messages. The page template places these; an editor
+    # positioning them by hand is how a form error ends up somewhere nobody looks.
     canvas.component.block.system_messages_block:
       disable: []
-    ?canvas.component.block.views_block.publishing_content-block_drafts:
+    # An editorial queue: content currently in draft. Belongs on a dashboard.
+    canvas.component.block.views_block.publishing_content-block_drafts:
       disable: []
-    ?canvas.component.block.views_block.publishing_content-block_scheduled:
+    # An editorial queue: content scheduled for publication. Belongs on a dashboard.
+    canvas.component.block.views_block.publishing_content-block_scheduled:
       disable: []
-    ?canvas.component.block.views_block.recent_pages-block_recent_pages:
+    # An administrative dashboard listing of recently edited pages.
+    canvas.component.block.views_block.recent_pages-block_recent_pages:
       disable: []
-    ?canvas.component.sdc.navigation.title:
+    # Administrative navigation chrome, from core's `navigation` module.
+    canvas.component.sdc.navigation.title:
       disable: []
-    ?canvas.component.block.events_block:
+    # ADDED BY THIS REVIEW (T-604). The sibling of the component above, from the
+    # same directory in core's `navigation` module, and administrative chrome for
+    # the same reason — it renders a status/warning/error strip for the toolbar,
+    # not page content. Core additionally marks it `status: experimental`, which
+    # is not something to hand an editor in a page-building palette.
+    canvas.component.sdc.navigation.message:
+      disable: []
+    # Drupal community events, from a contributed events module. A transparency
+    # portal publishes its own records, not the Drupal event calendar.
+    canvas.component.block.events_block:
       disable: []
     # -- area: publishing -------------------------------------------------------
     # (empty in v1; filled by unit 004)

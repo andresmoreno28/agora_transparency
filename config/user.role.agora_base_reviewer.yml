@@ -1,0 +1,26 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_agreement
+    - node.type.agora_base_contract
+    - node.type.agora_base_dataset
+    - node.type.agora_base_document
+    - node.type.agora_base_grant
+    - node.type.agora_base_person
+  module:
+    - content_moderation
+    - node
+id: agora_base_reviewer
+label: 'Transparency reviewer'
+weight: 5
+is_admin: false
+permissions:
+  - 'access content overview'
+  - 'view agora_base_agreement revisions'
+  - 'view agora_base_contract revisions'
+  - 'view agora_base_dataset revisions'
+  - 'view agora_base_document revisions'
+  - 'view agora_base_grant revisions'
+  - 'view agora_base_person revisions'
+  - 'view any unpublished content'

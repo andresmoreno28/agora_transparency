@@ -225,6 +225,102 @@ for v in "$CONFIG_DIR"/views.view.*.yml; do
 done
 printf '  table views: %s\n' "$VIEWS"
 
+# ------------------------------------------------------ role denominators --
+# T-602's criterion asks for the number of roles and permissions INSPECTED to be
+# printed. Same division of labour as the blocks above and for the same hard
+# reason: `RolesAndPermissionsTest` asserts the numbers and cannot print them,
+# because PHPUnit turns any output a test emits into an exception.
+#
+# ⚠️ WHY THE SCOPE IS "ROLES THIS TEMPLATE SHIPS" AND NOT "ROLES ON A SITE".
+# The criterion as first written asked that no role except `administrator` hold
+# a permission matching `^administer `, and that is RED ON ARRIVAL: the
+# inherited `content_editor` holds three, from two upstream recipes Ágora lists
+# deliberately. Those three are a dated, named exception, ASSERTED by
+# `ValidationTest::testRolesOnAnInstalledSite()` on a live site — this script
+# can only see what is in config/, so it prints that and says so, rather than
+# printing a site-wide number it is not in a position to measure.
+#
+# ZERO ROLES IS A FAILURE, not "nothing to report" — the row says so in as many
+# words, and it is the same tautology the header describes for config/ as a
+# whole: every assertion in the kernel test loops over this set.
+printf '\nroles shipped by this template (the set RolesAndPermissionsTest asserts over):\n'
+ROLES=0
+ROLE_PERMS=0
+for r in "$CONFIG_DIR"/user.role.*.yml; do
+  [ -e "$r" ] || break
+  id=${r#"$CONFIG_DIR"/user.role.}
+  id=${id%.yml}
+  ROLES=$((ROLES + 1))
+  # A permission is one `  - '...'` line inside the `permissions:` block, counted
+  # by walking from that key to the next key at column 0. `wc -l` over a
+  # listing, never `grep -c` for a compared value: house rule, T-321(c).
+  n=$(awk '
+    /^permissions:$/ { inp = 1; next }
+    inp && /^[a-z_]+:/ { inp = 0 }
+    inp && /^  - / { n++ }
+    END { print n + 0 }
+  ' "$r")
+  # `is_admin` is printed because it is the FLAG the tests key their exemption
+  # on. A role reporting 0 permissions is not thereby clean - an is_admin role
+  # stores none and is allowed everything - and printing the two side by side is
+  # what stops a reader drawing the wrong conclusion from a zero.
+  adm=$(awk '/^is_admin:/ { print $2; exit }' "$r")
+  # Permissions matching ^administer , which for a role THIS template ships must
+  # be zero. Printed, and asserted in PHP.
+  bad=$(awk '
+    /^permissions:$/ { inp = 1; next }
+    inp && /^[a-z_]+:/ { inp = 0 }
+    inp && /^  - .administer / { n++ }
+    END { print n + 0 }
+  ' "$r")
+  printf '  %-28s %2s permission(s), is_admin=%-5s, %s matching ^administer\n' \
+    "$id" "${n:-0}" "${adm:-?}" "${bad:-0}"
+  ROLE_PERMS=$((ROLE_PERMS + ${n:-0}))
+done
+printf '  roles inspected: %s   permissions granted across them: %s\n' "$ROLES" "$ROLE_PERMS"
+printf '  inherited roles are NOT in this scope: content_editor holds 3 ^administer\n'
+printf '  permissions from upstream recipes, recorded as a dated exception and asserted\n'
+printf '  by ValidationTest::testRolesOnAnInstalledSite().\n'
+if [ "${ROLES:-0}" -eq 0 ]; then
+  finding "$CONFIG_DIR/user.role.*.yml" "0" \
+    "no role shipped; zero roles inspected is a failure, not a pass (T-602)"
+fi
+
+# ------------------------------------------- recipe.yml optional-key audit --
+# T-604's criterion asks for the count of `?`-prefixed config names INSPECTED to
+# be printed. This is the one block whose scope is NOT config/, and it is
+# labelled as such rather than folded into the totals above.
+#
+# WHY THE EXPECTED COUNT IS ZERO. A `?` prefix means "apply if present, SILENTLY
+# skip if not", and no API reports what was skipped - so the original criterion
+# ("0 unresolved optional keys that were expected to exist") could not be
+# evaluated at all. Restated and executed: all 16 names were resolved against a
+# clean install carrying this template's exact dependency closure, 16 existed
+# and 0 were absent, so every prefix was dropped. A `?` reappearing here is not
+# automatically wrong - a genuinely conditional config is exactly what the
+# prefix is for - but it must come with a line in the recipe saying which
+# install it is absent on, which is why the names are printed and not just
+# counted.
+RECIPE="recipe.yml"
+printf '\nrecipe.yml optional-key audit (scope: %s, NOT %s/):\n' "$RECIPE" "$CONFIG_DIR"
+if [ -r "$RECIPE" ]; then
+  # `tr -d '\r'`: recipe.yml is CRLF in the working tree, and `$` would never
+  # match without it - a silent zero, which is the failure mode this whole
+  # script exists to refuse.
+  # `wc -l` over a listing, never `grep -c`, because this value IS compared
+  # below: house rule, T-321(c).
+  OPTIONAL=$(tr -d '\r' < "$RECIPE" | grep '^    ?' | wc -l | tr -d '[:space:]')
+  ACTIONS=$(tr -d '\r' < "$RECIPE" | grep -E '^    [?]?canvas\.component\.' | wc -l | tr -d '[:space:]')
+  printf '  canvas component actions named: %s\n' "${ACTIONS:-0}"
+  printf '  ?-prefixed names inspected:     %s\n' "${OPTIONAL:-0}"
+  if [ "${OPTIONAL:-0}" -gt 0 ]; then
+    printf '  the names still carrying a ?:\n'
+    tr -d '\r' < "$RECIPE" | grep '^    ?' | sed 's/^/    /'
+  fi
+else
+  finding "$RECIPE" "0" "not readable; the optional-key audit has an empty scope"
+fi
+
 # The three legal citations D-033 permits are the only shipped strings that may
 # carry a byte above 0x7F, and only two of them are accented. Printed with the
 # same byte RANGE the audit uses - never a `[^\x00-\x7F]` bracket class, which

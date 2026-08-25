@@ -1,0 +1,52 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_agreement
+    - node.type.agora_base_contract
+    - node.type.agora_base_dataset
+    - node.type.agora_base_document
+    - node.type.agora_base_grant
+    - node.type.agora_base_person
+    - taxonomy.vocabulary.agora_base_area
+    - taxonomy.vocabulary.agora_base_document_type
+    - taxonomy.vocabulary.agora_base_financial_year
+  module:
+    - node
+    - taxonomy
+id: agora_base_editor
+label: 'Transparency editor'
+weight: 4
+is_admin: false
+permissions:
+  - 'access content overview'
+  - 'create agora_base_agreement content'
+  - 'create agora_base_contract content'
+  - 'create agora_base_dataset content'
+  - 'create agora_base_document content'
+  - 'create agora_base_grant content'
+  - 'create agora_base_person content'
+  - 'create terms in agora_base_area'
+  - 'create terms in agora_base_document_type'
+  - 'create terms in agora_base_financial_year'
+  - 'edit any agora_base_agreement content'
+  - 'edit any agora_base_contract content'
+  - 'edit any agora_base_dataset content'
+  - 'edit any agora_base_document content'
+  - 'edit any agora_base_grant content'
+  - 'edit any agora_base_person content'
+  - 'edit terms in agora_base_area'
+  - 'edit terms in agora_base_document_type'
+  - 'edit terms in agora_base_financial_year'
+  - 'revert agora_base_agreement revisions'
+  - 'revert agora_base_contract revisions'
+  - 'revert agora_base_dataset revisions'
+  - 'revert agora_base_document revisions'
+  - 'revert agora_base_grant revisions'
+  - 'revert agora_base_person revisions'
+  - 'view agora_base_agreement revisions'
+  - 'view agora_base_contract revisions'
+  - 'view agora_base_dataset revisions'
+  - 'view agora_base_document revisions'
+  - 'view agora_base_grant revisions'
+  - 'view agora_base_person revisions'
