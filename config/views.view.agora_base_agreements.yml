@@ -10,6 +10,7 @@ dependencies:
     - field.storage.node.field_agora_base_status
     - field.storage.node.field_agora_base_subject
     - node.type.agora_base_agreement
+    - system.menu.main
     - taxonomy.vocabulary.agora_base_area
     - taxonomy.vocabulary.agora_base_status
   module:
@@ -330,6 +331,16 @@ display:
     display_options:
       display_extenders: {  }
       path: agreements
+      menu:
+        type: normal
+        title: Agreements
+        description: 'The agreements table.'
+        weight: 3
+        enabled: true
+        expanded: false
+        menu_name: main
+        parent: 'views_view:views.agora_base_publications.page_1'
+        context: ''
     cache_metadata:
       max-age: -1
       contexts:

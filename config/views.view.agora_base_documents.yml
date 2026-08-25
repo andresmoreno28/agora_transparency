@@ -8,6 +8,7 @@ dependencies:
     - field.storage.node.field_agora_base_financial_year
     - field.storage.node.field_agora_base_summary
     - node.type.agora_base_document
+    - system.menu.main
     - taxonomy.vocabulary.agora_base_area
     - taxonomy.vocabulary.agora_base_financial_year
   module:
@@ -290,6 +291,16 @@ display:
     display_options:
       display_extenders: {  }
       path: documents
+      menu:
+        type: normal
+        title: Documents
+        description: 'The documents table.'
+        weight: 0
+        enabled: true
+        expanded: false
+        menu_name: main
+        parent: 'views_view:views.agora_base_publications.page_1'
+        context: ''
     cache_metadata:
       max-age: -1
       contexts:

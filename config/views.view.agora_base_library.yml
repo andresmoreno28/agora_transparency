@@ -3,24 +3,20 @@ status: true
 dependencies:
   config:
     - field.storage.node.field_agora_base_area
-    - field.storage.node.field_agora_base_declaration
-    - field.storage.node.field_agora_base_position
-    - field.storage.node.field_agora_base_remuneration
-    - field.storage.node.field_agora_base_severance
-    - field.storage.node.field_agora_base_summary
-    - node.type.agora_base_person
+    - field.storage.node.field_agora_base_financial_year
+    - node.type.agora_base_dataset
+    - node.type.agora_base_document
     - system.menu.main
     - taxonomy.vocabulary.agora_base_area
+    - taxonomy.vocabulary.agora_base_financial_year
   module:
-    - file
     - node
     - taxonomy
-    - text
     - user
-id: agora_base_people
-label: People
+id: agora_base_library
+label: 'Document library'
 module: views
-description: 'The organisation chart, with each post, its area and what it is paid.'
+description: 'Every published document and dataset, with its area and financial year.'
 tag: ''
 base_table: node_field_data
 base_field: nid
@@ -31,7 +27,7 @@ display:
     display_plugin: default
     position: 0
     display_options:
-      title: People
+      title: 'Document library'
       fields:
         title:
           id: title
@@ -40,11 +36,22 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: field
-          label: 'Full name'
+          label: Title
           click_sort_column: value
           type: string
           settings:
             link_to_entity: true
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          entity_type: node
+          entity_field: type
+          plugin_id: field
+          label: Type
+          type: entity_reference_label
+          settings:
+            link: false
         field_agora_base_area:
           id: field_agora_base_area
           table: node__field_agora_base_area
@@ -53,49 +60,14 @@ display:
           entity_field: field_agora_base_area
           plugin_id: field
           label: Area
-        field_agora_base_declaration:
-          id: field_agora_base_declaration
-          table: node__field_agora_base_declaration
-          field: field_agora_base_declaration
+        field_agora_base_financial_year:
+          id: field_agora_base_financial_year
+          table: node__field_agora_base_financial_year
+          field: field_agora_base_financial_year
           entity_type: node
-          entity_field: field_agora_base_declaration
+          entity_field: field_agora_base_financial_year
           plugin_id: field
-          label: 'Asset declaration'
-        field_agora_base_position:
-          id: field_agora_base_position
-          table: node__field_agora_base_position
-          field: field_agora_base_position
-          entity_type: node
-          entity_field: field_agora_base_position
-          plugin_id: field
-          label: Position
-          click_sort_column: value
-        field_agora_base_remuneration:
-          id: field_agora_base_remuneration
-          table: node__field_agora_base_remuneration
-          field: field_agora_base_remuneration
-          entity_type: node
-          entity_field: field_agora_base_remuneration
-          plugin_id: field
-          label: 'Annual remuneration'
-          click_sort_column: value
-        field_agora_base_severance:
-          id: field_agora_base_severance
-          table: node__field_agora_base_severance
-          field: field_agora_base_severance
-          entity_type: node
-          entity_field: field_agora_base_severance
-          plugin_id: field
-          label: 'Severance payment'
-          click_sort_column: value
-        field_agora_base_summary:
-          id: field_agora_base_summary
-          table: node__field_agora_base_summary
-          field: field_agora_base_summary
-          entity_type: node
-          entity_field: field_agora_base_summary
-          plugin_id: field
-          label: 'Profile and career'
+          label: 'Financial year'
       pager:
         type: full
         options:
@@ -105,7 +77,7 @@ display:
       exposed_form:
         type: basic
         options:
-          submit_button: Filter
+          submit_button: Search
           reset_button: true
           reset_button_label: Reset
       access:
@@ -123,7 +95,7 @@ display:
           relationship: none
           plugin_id: text_custom
           empty: true
-          content: 'No people have been published yet.'
+          content: 'No documents or datasets have been published yet.'
           tokenize: false
       sorts: {  }
       filters:
@@ -136,7 +108,8 @@ display:
           plugin_id: bundle
           operator: in
           value:
-            agora_base_person: agora_base_person
+            agora_base_document: agora_base_document
+            agora_base_dataset: agora_base_dataset
           group: 1
           exposed: false
         status:
@@ -150,6 +123,28 @@ display:
           value: '1'
           group: 1
           exposed: false
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          entity_type: node
+          entity_field: title
+          plugin_id: string
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: title_op
+            label: Search
+            description: 'Search for words in the title.'
+            use_operator: false
+            operator: title_op
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+          is_grouped: false
         field_agora_base_area_target_id:
           id: field_agora_base_area_target_id
           table: node__field_agora_base_area
@@ -178,6 +173,34 @@ display:
           hierarchy: false
           limit: true
           error_message: true
+        field_agora_base_financial_year_target_id:
+          id: field_agora_base_financial_year_target_id
+          table: node__field_agora_base_financial_year
+          field: field_agora_base_financial_year_target_id
+          relationship: none
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_agora_base_financial_year_target_id_op
+            label: 'Financial year'
+            description: ''
+            use_operator: false
+            operator: field_agora_base_financial_year_target_id_op
+            identifier: year
+            required: false
+            remember: false
+            multiple: false
+            reduce: false
+          is_grouped: false
+          reduce_duplicates: false
+          vid: agora_base_financial_year
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
       style:
         type: table
         options:
@@ -186,16 +209,20 @@ display:
           default_row_class: true
           columns:
             title: title
+            type: type
             field_agora_base_area: field_agora_base_area
-            field_agora_base_declaration: field_agora_base_declaration
-            field_agora_base_position: field_agora_base_position
-            field_agora_base_remuneration: field_agora_base_remuneration
-            field_agora_base_severance: field_agora_base_severance
-            field_agora_base_summary: field_agora_base_summary
+            field_agora_base_financial_year: field_agora_base_financial_year
           default: title
           info:
             title:
               sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            type:
+              sortable: false
               default_sort_order: asc
               align: ''
               separator: ''
@@ -208,35 +235,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            field_agora_base_declaration:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_agora_base_position:
-              sortable: true
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_agora_base_remuneration:
-              sortable: true
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_agora_base_severance:
-              sortable: true
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_agora_base_summary:
+            field_agora_base_financial_year:
               sortable: false
               default_sort_order: asc
               align: ''
@@ -247,7 +246,7 @@ display:
           summary: ''
           order: asc
           empty_table: false
-          caption: 'One row per person in the organisation chart.'
+          caption: 'One row per published document or dataset.'
           description: ''
       row:
         type: fields
@@ -271,11 +270,7 @@ display:
         - user.permissions
       tags:
         - 'config:field.storage.node.field_agora_base_area'
-        - 'config:field.storage.node.field_agora_base_declaration'
-        - 'config:field.storage.node.field_agora_base_position'
-        - 'config:field.storage.node.field_agora_base_remuneration'
-        - 'config:field.storage.node.field_agora_base_severance'
-        - 'config:field.storage.node.field_agora_base_summary'
+        - 'config:field.storage.node.field_agora_base_financial_year'
   page_1:
     id: page_1
     display_title: Page
@@ -283,16 +278,16 @@ display:
     position: 1
     display_options:
       display_extenders: {  }
-      path: people
+      path: library
       menu:
         type: normal
-        title: People
-        description: 'The people table.'
-        weight: 1
+        title: 'Document library'
+        description: 'Browse and search the published documents and datasets.'
+        weight: -49
         enabled: true
         expanded: false
         menu_name: main
-        parent: 'views_view:views.agora_base_publications.page_1'
+        parent: ''
         context: ''
     cache_metadata:
       max-age: -1
@@ -305,8 +300,4 @@ display:
         - user.permissions
       tags:
         - 'config:field.storage.node.field_agora_base_area'
-        - 'config:field.storage.node.field_agora_base_declaration'
-        - 'config:field.storage.node.field_agora_base_position'
-        - 'config:field.storage.node.field_agora_base_remuneration'
-        - 'config:field.storage.node.field_agora_base_severance'
-        - 'config:field.storage.node.field_agora_base_summary'
+        - 'config:field.storage.node.field_agora_base_financial_year'

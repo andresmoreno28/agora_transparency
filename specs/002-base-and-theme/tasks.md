@@ -112,6 +112,44 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-603 — the two surfaces above the six tables, and the column rule IS the accessibility
+  argument.** `/publications` lists all six bundles; `/library` lists Document + Dataset, which is
+  D-026's own pairing (*"budget is not a node type: it is a Document plus a Dataset"*). `config/`
+  is now **102 objects, 8 views**. **PHPUnit: `15 tests, 1662 assertions, 0 failures`** (was 13 /
+  1423).
+  **The row's disjunction is settled: a `<table>` on both surfaces**, with `<caption>` and
+  `<th scope="col">` on every header cell. *"Equivalent semantic list"* is not built and not
+  asserted — a criterion a test cannot decide is not a criterion.
+  ⚠️ **A cross-type listing IS a union type, so its columns are the INTERSECTION of its bundles'
+  fields, never the union.** That is the same argument D-026 rejected the three-type model on:
+  cells that are empty *by design* are indistinguishable from missing data to a screen-reader
+  user. The intersection is **computed from the field definitions** and cross-checked against a
+  transcribed list, so two independent sources must agree. `área` is the only field all six
+  bundles carry; scoping the library to two bundles is what buys it `financial year`.
+  ✅ **The label guard fired on its first run, and it is a real finding**:
+  `field_agora_base_summary` is intersected by both library bundles and labelled **`Summary`** on
+  Document and **`Description`** on Dataset — one storage, two correct per-bundle labels, and **no
+  honest shared heading**. The column is dropped **by name**, and the test asserts the drop is a
+  **choice** — both bundles must still carry the field — rather than an absence nobody noticed.
+  **The search box is a core Views string filter on the title**, `operator: contains`, exposed as
+  `?search=`. No Search API, no Facets, no dependency — [andres]'s ruling applied. The facet spine
+  was **reused verbatim** from T-615; the six views' filters were not touched.
+  ✅ **The menu landed in `config/`, not `content/`** — the finding this row was told to look for.
+  Defined as Views page-display `menu` options, which core derives into `views_view:*` link
+  **plugins** riding inside each view's own config. **`content/` still holds exactly 1 file** and
+  `system.menu.main` is never modified. All nine keys of the mapping are written, not the five
+  needed: `PathPluginBase::getMenuLinks()` reads five of them with **direct array access and no
+  null coalescing**. 8 links verified live on the rig, correct hierarchy and order.
+  ⚠️ **Step 4b did not fire**: the export's `recipe.yml` came back **byte-identical**.
+  🟡 **A reachability gap remains and it is not this row's to close**: the links exist in the menu
+  tree and render wherever a main-menu block is placed, but the provisional `blank` theme places
+  **zero blocks** — measured, 14 blocks on the site and all of them admin themes. So today the
+  links exist and nothing renders them. Owned by the theme's block placements and wave 7's swap.
+  ✅ **Both new assertions were broken before being trusted.** Adding a fifth column to the
+  cross-type listing makes the functional test fail **with exactly four empty cells**, at the four
+  bundles that have no financial year, and the kernel intersection assertion fails independently.
+  Stripping one view's menu block fails both layers with named messages. A third falsification
+  found itself: the test's own assertion counter refused the arithmetic (`194 is not 188`).
 - **T-509 / T-510 / T-611 — THE ACCESSIBILITY GATE RUNS, AND IT HAS BEEN SEEN TO FAIL.**
   **Observed job list, pipeline `935800`, commit `f6943c3`: 9 jobs, every one `success`, every one
   `allow_failure: false`, zero named exceptions.** `nightwatch` reports **6 tests, 128 assertions,
@@ -489,7 +527,7 @@ none of which needed the theme repository to exist:
       permissions — not because it is clean, but because `is_admin = TRUE` stores none. A test
       keyed on the role **ID** would let it pass by accident and would also let any future
       `is_admin` role pass. **Key on `isAdmin()`, never on the string `administrator`.** | ~~T-601~~ **—** — *blocker corrected: its criterion concerns roles and permissions, not fields; nothing in it needs the content model* |
-| T-603 | T | Base views: document library with facets, cross-type listing, search box — the surfaces **above** the per-bundle tables T-615 builds | A functional test asserts each view's route returns **200** and that the rendered listing contains a `<table>` with `<th scope>` on every header cell, or an equivalent semantic list — count of cells asserted. ⚠️ **Two corrections 2026-08-24.** (a) *"Equivalent semantic list"* has **no definition a test can evaluate** — name the chosen structure per surface in this row before implementing, and assert that one. (b) **The facet spine was owned twice**: this row said *"with facets"* and T-615 says *"the shared facet spine (`área · año · estado`)"*. Whichever ran second would either redo it or skip it, and **both look like progress**. Assigned once, to **T-615**, where the six per-bundle tables live; this row keeps the library, the cross-type listing and the search box | T-615 |
+| T-603 ✓ | T | Base views: document library with facets, cross-type listing, search box — the surfaces **above** the per-bundle tables T-615 builds | A functional test asserts each view's route returns **200** and that the rendered listing contains a `<table>` with `<th scope>` on every header cell, or an equivalent semantic list — count of cells asserted. ⚠️ **Two corrections 2026-08-24.** (a) *"Equivalent semantic list"* has **no definition a test can evaluate** — name the chosen structure per surface in this row before implementing, and assert that one. (b) **The facet spine was owned twice**: this row said *"with facets"* and T-615 says *"the shared facet spine (`área · año · estado`)"*. Whichever ran second would either redo it or skip it, and **both look like progress**. Assigned once, to **T-615**, where the six per-bundle tables live; this row keeps the library, the cross-type listing and the search box | T-615 |
 | T-604 ✓ | T | Canvas component enable/disable review for the **front-end** (the inherited list is admin-only) | `recipe.yml`'s `config.actions` block names each component with a one-line reason; ~~a test asserts the recipe applies with **0** unresolved `?`-optional keys that were expected to exist~~ — ⚠️ **not evaluable, corrected 2026-08-24: the `?` prefix means *apply if present, SILENTLY skip if not*, and there is no API that reports what was skipped. Silence is the feature.** Restated: after apply, for **each** `?`-prefixed config name, either the config **exists** (→ the `?` is unnecessary and is **dropped**) or it does not (→ the `?` **stays** and this row records why). The count of `?`-prefixed names inspected is printed | ~~T-601~~ **—** — *blocker corrected: it writes `recipe.yml`, not `config/`, and needs Canvas installed rather than six bundles. ⚠️ It should run **before** the export loop, not after: this row and T-605 decide what `recipe.yml` must say, and `recipe.yml` is exactly what the tool overwrites — settling them afterwards means settling them twice* |
 | T-605 ✓ | T | The `page.front` gap: `recipe.yml` declares `/home`, the installed site reports `/page/1` | A functional assertion that `/home` returns 200 **and** that `system.site` `page.front` on the installed site equals the declared value — or, if it legitimately cannot, a dated note explaining why and an amended declaration. Silence is not an outcome. ✅ **The mechanism is no longer a mystery, read at source 2026-08-24:** `drupal_cms_helper/src/GenericConfigurationListener.php:45-46` rewrites `system.site` `page.front` to **the alias of the current front page** on export, and `src/ContentLoader.php:29` puts `path_alias` on the exporter's hard reject list with the comment *"Path aliases are created when the content is, and therefore should not be exported."* So the alias `/home` is a property of the **content**, the content is exported **without** its alias, and on a fresh install the alias does not exist — leaving `page.front` at the raw system path. The `/home` in today's hand-written `recipe.yml` is **starter-kit inheritance, never something this project measured**.
       ✅ **MEASURED 2026-08-24 — and the premise above is REFUTED. The `/home` alias DOES exist on a

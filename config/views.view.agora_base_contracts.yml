@@ -13,6 +13,7 @@ dependencies:
     - field.storage.node.field_agora_base_subject
     - field.storage.node.field_agora_base_tender_amount
     - node.type.agora_base_contract
+    - system.menu.main
     - taxonomy.vocabulary.agora_base_area
     - taxonomy.vocabulary.agora_base_status
   module:
@@ -386,6 +387,16 @@ display:
     display_options:
       display_extenders: {  }
       path: contracts
+      menu:
+        type: normal
+        title: Contracts
+        description: 'The contracts table.'
+        weight: 2
+        enabled: true
+        expanded: false
+        menu_name: main
+        parent: 'views_view:views.agora_base_publications.page_1'
+        context: ''
     cache_metadata:
       max-age: -1
       contexts:

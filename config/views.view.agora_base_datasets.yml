@@ -10,6 +10,7 @@ dependencies:
     - field.storage.node.field_agora_base_licence
     - field.storage.node.field_agora_base_summary
     - node.type.agora_base_dataset
+    - system.menu.main
     - taxonomy.vocabulary.agora_base_area
     - taxonomy.vocabulary.agora_base_financial_year
   module:
@@ -328,6 +329,16 @@ display:
     display_options:
       display_extenders: {  }
       path: datasets
+      menu:
+        type: normal
+        title: Datasets
+        description: 'The datasets table.'
+        weight: 5
+        enabled: true
+        expanded: false
+        menu_name: main
+        parent: 'views_view:views.agora_base_publications.page_1'
+        context: ''
     cache_metadata:
       max-age: -1
       contexts:

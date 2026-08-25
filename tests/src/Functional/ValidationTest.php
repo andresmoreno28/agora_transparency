@@ -208,6 +208,210 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
+   * The two T-603 surfaces, and how many rows each shows over the fixture set.
+   *
+   * The row count is the point of the pair: the cross-type listing shows one
+   * row per bundle, the library shows only the two bundles whose payload is a
+   * published file. A surface that quietly started listing everything would
+   * pass every column assertion and fail here.
+   */
+  private const SURFACE_ROWS = [
+    'agora_base_publications' => 6,
+    'agora_base_library' => 2,
+  ];
+
+  /**
+   * The eight routes the main menu must link, in menu order.
+   *
+   * Transcribed rather than derived, on purpose: derived from the views, this
+   * would assert that the menu links whatever it links.
+   */
+  private const MENU_ROUTES = [
+    '/publications' => 'All publications',
+    '/documents' => 'Documents',
+    '/people' => 'People',
+    '/contracts' => 'Contracts',
+    '/agreements' => 'Agreements',
+    '/grants' => 'Grants',
+    '/datasets' => 'Datasets',
+    '/library' => 'Document library',
+  ];
+
+  /**
+   * Tests the library, the cross-type listing, the search box and the menu.
+   *
+   * FOUR THINGS THAT NEED A RUNNING SITE. The kernel test reads `config/` and
+   * can prove what the two surfaces DECLARE; none of the four below is visible
+   * there.
+   *
+   * (1) THE EMPTY STATE, which unit 002 IS. Both routes return 200, say why
+   * they are empty, and do not emit a table carrying headers and no rows.
+   *
+   * (2) THE RENDERED TABLE. One `<table>`, one `<caption>`, a
+   * `<th scope="col">` for every column, and a `<td>` for every column in
+   * every row. The T-603 row allowed "a `<table>` with `<th scope>` on every
+   * header cell, OR an equivalent semantic list". That disjunction has no
+   * definition a test can evaluate, so the structure is CHOSEN - a table, on
+   * both surfaces - and the table is what is asserted.
+   *
+   * (3) NO CELL IS EMPTY, and here that assertion means something it would not
+   * mean on a per-bundle table. These two surfaces show the INTERSECTION of
+   * their bundles' fields; that is their entire design, and this is what makes
+   * it falsifiable. Add a column only some of the listed bundles carry - a
+   * financial year on the six-bundle listing, say - and rows of the other
+   * bundles render a structurally empty cell, which is exactly the union-type
+   * defect D-026 refused. Verified BY FALSIFICATION before being trusted: with
+   * `field_agora_base_financial_year` added to the cross-type listing this
+   * assertion fails on four of the six rows.
+   *
+   * (4) THE SEARCH BOX ACTUALLY FILTERS. A `<input name="search">` in the
+   * exposed form proves a box exists; only a request with a value in it proves
+   * the box is wired to the query. Both are asserted, and so is the no-match
+   * case, which must fall back to the empty state rather than an empty table.
+   *
+   * AND THE MENU, which is the carried debt this row absorbed: six accessible
+   * tables nobody can reach is not a delivered feature. The links are declared
+   * as views page-display menu options, so what has to be proved on a live
+   * site is that core's deriver turns them into real menu links with real
+   * hrefs - the config could be perfect and the deriver still produce nothing,
+   * because a menu link whose parent does not resolve is silently moved to
+   * the root, and a flat menu still looks like a menu.
+   */
+  public function testBaseSurfacesAndMenu(): void {
+    $this->applyRecipe(self::getRecipePath());
+    $this->drupalLogin($this->drupalCreateUser(['access content']));
+
+    $assert = $this->assertSession();
+    $columns = [];
+    $empty_text = [];
+    $paths = [];
+
+    // -- (1) The empty state, before a single node exists --------------------
+    foreach (self::SURFACE_ROWS as $view_id => $expected_rows) {
+      $view = View::load($view_id);
+      $this->assertNotNull($view, "$view_id must have been imported by the recipe.");
+      $display = $view->getDisplay('default')['display_options'];
+
+      $columns[$view_id] = count($display['fields']);
+      $this->assertGreaterThan(0, $columns[$view_id], "$view_id must declare columns, or every count below holds vacuously.");
+
+      $empty_text[$view_id] = reset($display['empty'])['content'];
+      $paths[$view_id] = $view->getDisplay('page_1')['display_options']['path'];
+
+      $this->drupalGet($paths[$view_id]);
+      $assert->statusCodeEquals(200);
+      $assert->elementExists('css', self::VIEW_CONTAINER);
+      $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text[$view_id]);
+      $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
+
+      // (4a) The box is present even with nothing to search, which is when a
+      // reader is most likely to reach for it.
+      $assert->elementExists('css', self::VIEW_CONTAINER . ' input[name="search"]');
+      // WCAG 2.2 AA 3.3.2: the input carries a label, not just a placeholder.
+      $assert->elementExists('css', self::VIEW_CONTAINER . ' label[for]');
+    }
+
+    // -- The fixture: one node per bundle, every field populated -------------
+    // Identical in kind to testTableViews()'s fixture and for the same reason:
+    // it lives in this class, uses the test database, and therefore never goes
+    // near `drush site:export`, which is what keeps `content/` at one file BY
+    // CONSTRUCTION rather than by anyone remembering.
+    $titles = [];
+    foreach (self::TABLE_VIEWS as $bundle_view => $bundle) {
+      $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1];
+      $definitions = \Drupal::service('entity_field.manager')
+        ->getFieldDefinitions('node', $bundle);
+      foreach ($definitions as $field_name => $definition) {
+        if ($definition instanceof FieldConfig) {
+          $values[$field_name] = $this->fixtureValue($definition);
+        }
+      }
+      $this->drupalCreateNode($values);
+      $titles[$bundle] = $values['title'];
+    }
+    $this->assertCount(6, $titles, 'One node per bundle, or the row counts below are measuring the fixture.');
+
+    // -- (2) and (3): the rendered tables ------------------------------------
+    $cells = 0;
+    foreach (self::SURFACE_ROWS as $view_id => $expected_rows) {
+      $count = $columns[$view_id];
+      $this->drupalGet($paths[$view_id]);
+      $assert->statusCodeEquals(200);
+      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table', 1);
+      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table > caption', 1);
+      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table thead th[scope="col"]', $count);
+      // Every header cell, not merely as many as there are columns: a `<th>`
+      // without a scope in a table that also has scoped ones would slip past a
+      // count that only looked at the scoped set.
+      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table thead th', $count);
+      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr', $expected_rows);
+      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr td', $count * $expected_rows);
+      $assert->pageTextNotContains($empty_text[$view_id]);
+
+      // (3) Not one structurally empty cell, on a surface whose columns are
+      // the intersection precisely so that there cannot be one.
+      $tds = $this->getSession()->getPage()
+        ->findAll('css', self::VIEW_CONTAINER . ' table tbody td');
+      $this->assertCount($count * $expected_rows, $tds, "$view_id must render every cell it declares.");
+      $empty_cells = [];
+      foreach ($tds as $index => $td) {
+        if (trim($td->getText()) === '') {
+          $empty_cells[] = $index;
+        }
+      }
+      $this->assertSame([], $empty_cells, "$view_id renders a cell that is empty BY DESIGN, which a screen-reader user cannot tell from missing data. A column here must be one every listed bundle carries.");
+
+      $cells += $count * $expected_rows;
+    }
+    $this->assertSame(32, $cells, 'The two surfaces together render 4 columns x 6 rows plus 4 columns x 2 rows.');
+
+    // -- (4b) The search box is wired to the query ---------------------------
+    $needle = $titles['agora_base_grant'];
+    $this->drupalGet($paths['agora_base_publications'], ['query' => ['search' => $needle]]);
+    $assert->statusCodeEquals(200);
+    $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr', 1);
+    $assert->elementTextContains('css', self::VIEW_CONTAINER . ' table tbody', $needle);
+
+    // A search that matches nothing must reach the empty state, not an empty
+    // table - the same accessibility defect, arrived at from the other side.
+    $this->drupalGet($paths['agora_base_publications'], ['query' => ['search' => 'zzzz-no-such-record']]);
+    $assert->statusCodeEquals(200);
+    $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
+    $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text['agora_base_publications']);
+
+    // -- The menu, on a live site --------------------------------------------
+    // Rebuilt explicitly: the links are plugin DERIVATIVES of the views, so
+    // they exist only once the menu link manager has looked at the views the
+    // recipe imported.
+    \Drupal::service('plugin.manager.menu.link')->rebuild();
+    $block = $this->drupalPlaceBlock('system_menu_block:main', ['region' => 'content']);
+    $selector = '#block-' . str_replace('_', '-', $block->id());
+
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $assert->elementExists('css', $selector);
+
+    foreach (self::MENU_ROUTES as $route => $title) {
+      $link = $assert->elementExists('css', $selector . ' a[href="' . $route . '"]');
+      $this->assertSame($title, trim($link->getText()), "The main menu's link to $route must carry the title T-603 gives it.");
+    }
+    // Exactly eight, so a ninth link appearing from somewhere is a change
+    // somebody has to make on purpose.
+    $assert->elementsCount('css', $selector . ' a', count(self::MENU_ROUTES));
+
+    // The six tables hang UNDER the cross-type listing rather than beside it,
+    // which is the difference between a menu and a list of eight things.
+    $assert->elementsCount('css', $selector . ' li li a', count(self::TABLE_VIEWS));
+    $assert->elementExists('css', $selector . ' li li a[href="/contracts"]');
+
+    // And every route the menu offers actually answers.
+    foreach (array_keys(self::MENU_ROUTES) as $route) {
+      $this->drupalGet(ltrim($route, '/'));
+      $assert->statusCodeEquals(200);
+    }
+  }
+
+  /**
    * Builds a value that fills one field, whatever kind of field it is.
    *
    * Driven by the field DEFINITION rather than by a table of field names, so

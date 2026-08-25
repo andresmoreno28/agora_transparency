@@ -702,6 +702,149 @@ final class ContentModelTest extends KernelTestBase {
   ];
 
   /**
+   * The two surfaces above the six per-bundle tables (T-603).
+   *
+   * `field_columns` are the shipped columns that are `field.field.node.*`
+   * objects; `dropped` are fields the bundles all carry that this surface
+   * deliberately does not show. Their union must equal the COMPUTED
+   * intersection of the listed bundles' fields - see `testBaseSurfaces()`.
+   *
+   * The paths are short, English and at the site root, because they are what
+   * a citizen is handed in a link.
+   */
+  private const BASE_SURFACES = [
+    'agora_base_publications' => [
+      'label' => 'All publications',
+      'path' => 'publications',
+      'bundles' => [
+        'agora_base_document',
+        'agora_base_person',
+        'agora_base_contract',
+        'agora_base_agreement',
+        'agora_base_grant',
+        'agora_base_dataset',
+      ],
+      'columns' => ['title', 'type', 'field_agora_base_area', 'changed'],
+      'field_columns' => ['field_agora_base_area'],
+      'dropped' => [],
+      'facets' => ['field_agora_base_area'],
+      'expose_bundle' => TRUE,
+      'menu' => [
+        'title' => 'All publications',
+        'weight' => -50,
+        'parent' => '',
+      ],
+    ],
+    'agora_base_library' => [
+      'label' => 'Document library',
+      'path' => 'library',
+      'bundles' => [
+        'agora_base_document',
+        'agora_base_dataset',
+      ],
+      'columns' => [
+        'title',
+        'type',
+        'field_agora_base_area',
+        'field_agora_base_financial_year',
+      ],
+      'field_columns' => [
+        'field_agora_base_area',
+        'field_agora_base_financial_year',
+      ],
+      'dropped' => ['field_agora_base_summary'],
+      'facets' => [
+        'field_agora_base_area',
+        'field_agora_base_financial_year',
+      ],
+      'expose_bundle' => FALSE,
+      'menu' => [
+        'title' => 'Document library',
+        'weight' => -49,
+        'parent' => '',
+      ],
+    ],
+  ];
+
+  /**
+   * The node BASE fields a T-603 surface may show as a column.
+   *
+   * Three, and the reason each is safe is the same: it is populated on every
+   * node that exists at all, whatever its bundle. A `field.field.node.*`
+   * object is not safe that way, which is what the intersection assertion in
+   * `testBaseSurfaces()` exists to enforce.
+   */
+  private const SURFACE_BASE_FIELD_COLUMNS = ['title', 'type', 'changed'];
+
+  /**
+   * The view whose menu link the six per-bundle tables hang from.
+   */
+  private const MENU_PARENT_VIEW = 'agora_base_publications';
+
+  /**
+   * The menu links on the six per-bundle views (T-603's carried debt).
+   *
+   * Order is D-026's own order for the six bundles, which is the order the
+   * weights encode.
+   */
+  private const SURFACE_MENU_CHILDREN = [
+    'agora_base_documents' => [
+      'title' => 'Documents',
+      'weight' => 0,
+      'parent' => 'views_view:views.agora_base_publications.page_1',
+    ],
+    'agora_base_people' => [
+      'title' => 'People',
+      'weight' => 1,
+      'parent' => 'views_view:views.agora_base_publications.page_1',
+    ],
+    'agora_base_contracts' => [
+      'title' => 'Contracts',
+      'weight' => 2,
+      'parent' => 'views_view:views.agora_base_publications.page_1',
+    ],
+    'agora_base_agreements' => [
+      'title' => 'Agreements',
+      'weight' => 3,
+      'parent' => 'views_view:views.agora_base_publications.page_1',
+    ],
+    'agora_base_grants' => [
+      'title' => 'Grants',
+      'weight' => 4,
+      'parent' => 'views_view:views.agora_base_publications.page_1',
+    ],
+    'agora_base_datasets' => [
+      'title' => 'Datasets',
+      'weight' => 5,
+      'parent' => 'views_view:views.agora_base_publications.page_1',
+    ],
+  ];
+
+  /**
+   * The nine keys of a page display's `menu` mapping, in core's own order.
+   *
+   * Asserted as an ordered list rather than a set because that is what the
+   * exporter writes, and a divergence in order means the mapping was written
+   * by something other than the export loop D-032 mandates.
+   */
+  private const MENU_KEYS = [
+    'type',
+    'title',
+    'description',
+    'weight',
+    'enabled',
+    'expanded',
+    'menu_name',
+    'parent',
+    'context',
+  ];
+
+  /**
+   * The number of assertions `assertMenuLink()` makes on one menu mapping.
+   */
+  private const MENU_ASSERTIONS = 9;
+
+  /**
    * Tests that the shared spine is present, complete and no larger than stated.
    */
   public function testSharedSpine(): void {
@@ -1528,14 +1671,18 @@ final class ContentModelTest extends KernelTestBase {
     // -- The shipped set of views equals the six, both directions ------------
     // A seventh view shipped without a row fails here, and so does one of the
     // six that never made it out of the rig.
+    // T-603's two surfaces are named here too, and deliberately so: this is
+    // the one assertion in the file that would otherwise have had to be
+    // RELAXED to let a legitimate new view through. Widening it by name keeps
+    // it a set equality instead of turning it into a floor.
     $shipped = $storage->listAll('views.view.');
     sort($shipped);
     $expected_views = array_map(
       static fn (string $view_id): string => 'views.view.' . $view_id,
-      array_keys(self::TABLE_VIEWS),
+      array_merge(array_keys(self::TABLE_VIEWS), array_keys(self::BASE_SURFACES)),
     );
     sort($expected_views);
-    $this->assertSame($expected_views, $shipped, 'config/ must ship exactly the six table views T-615 declares.');
+    $this->assertSame($expected_views, $shipped, 'config/ must ship exactly the six table views T-615 declares plus the two surfaces T-603 declares.');
     $assertions++;
 
     $paths = [];
@@ -1720,6 +1867,313 @@ final class ContentModelTest extends KernelTestBase {
       + (6 * $facets_total)
       + 1;
     $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
+  }
+
+  /**
+   * Tests the two surfaces above the six tables, and the menu (T-603).
+   *
+   * WHAT THE TWO SURFACES ARE, and why the column sets are the whole design.
+   *
+   * D-026 rejected a single union content type on ONE argument: a `<td>` that
+   * is empty BY DESIGN is indistinguishable, to a screen-reader user, from
+   * missing data. A cross-type listing is a union type by construction - it
+   * puts rows of six different bundles in one table - so the argument applies
+   * to it with full force, and the answer is that its columns are the
+   * INTERSECTION of what every bundle it lists carries, never the union.
+   *
+   * That intersection is COMPUTED here from `config/field.field.node.*` and
+   * compared with the column list transcribed below. Two independent sources
+   * have to agree: a column that is not universal fails, and a bundle that
+   * loses a field the surface shows fails too. This is the same shape of
+   * assertion as `testTableViews()`, aimed at the opposite property - that
+   * one asserts each table shows its bundle's WHOLE field set, this one
+   * asserts each surface shows only the SHARED part of several.
+   *
+   * A column may be DROPPED from the intersection, by name, and the drop is
+   * asserted rather than merely permitted: `dropped` fields must still be
+   * carried by every listed bundle, so a field that quietly disappeared from
+   * the model cannot hide in the drop list. The library drops one - the
+   * summary - because Document labels that field `Summary` while Dataset
+   * labels it `Description`. Same storage, two per-bundle labels, both
+   * correct for their bundle, and no honest single heading for a shared
+   * column. Found by the modelling script's own guard on its first run.
+   *
+   * THE SEARCH BOX is a core Views exposed string filter on the node title,
+   * `contains`, under the query identifier `search`. [andres] ruled the
+   * mechanism for the facet spine - core Views, no Search API, no Facets, no
+   * new dependency - and it governs here. Asserted by plugin and operator, not
+   * by the presence of a filter called something search-like.
+   *
+   * THE MENU, which is the carried debt this row absorbed. Nothing linked to
+   * the six routes T-615 built. The links are declared as page-display `menu`
+   * options, which core derives into `views_view:*` menu link PLUGINS. That
+   * choice is load-bearing for this repository: `menu_link_content` entities
+   * are CONTENT, they would land in `content/`, and `content/` holds
+   * exactly one file which `ValidationTest` asserts. Declared this way the
+   * links are config, they ride inside the view they point at, and
+   * `system.menu.main` - core's own default config - is never modified. That
+   * last part is what kept D-032's step 4b silent on this row: a change to
+   * core, System or User default config is captured by the export in its
+   * `recipe.yml` and nowhere else, and the export's `recipe.yml` came back
+   * byte-identical to the baseline's.
+   *
+   * All nine keys of the `menu` mapping are asserted PRESENT rather than only
+   * correct. `PathPluginBase::getMenuLinks()` reads `title`, `description`,
+   * `parent`, `enabled` and `expanded` with direct array access and no null
+   * coalescing, so a mapping missing one raises a PHP warning during menu
+   * rebuild - on a code path that only runs once a menu link exists, which is
+   * to say on nobody's machine until it is on everybody's.
+   */
+  public function testBaseSurfaces(): void {
+    $path = dirname(__FILE__, 4);
+    $storage = new FileStorage($path . '/config');
+    $assertions = 0;
+
+    // -- The census, for the same reason as every method above ---------------
+    $this->assertCount(2, self::BASE_SURFACES, 'T-603 ships two surfaces: the document library and the cross-type listing.');
+    $assertions++;
+    $this->assertCount(6, self::SURFACE_MENU_CHILDREN, 'Every one of the six per-bundle routes must be linked, or the carried debt is not paid.');
+    $assertions++;
+    $this->assertCount(9, self::MENU_KEYS, 'The menu mapping core reads has nine keys, five of them without a null check.');
+    $assertions++;
+    $this->assertCount(3, self::SURFACE_BASE_FIELD_COLUMNS, 'Three node base fields may be a column here; widening this is a change to what the assertion below can catch.');
+    $assertions++;
+
+    $surface_paths = [];
+    $field_columns_total = 0;
+    $facets_total = 0;
+    $bundles_total = 0;
+
+    foreach (self::BASE_SURFACES as $view_id => $spec) {
+      $name = 'views.view.' . $view_id;
+      $data = $storage->read($name);
+
+      $this->assertIsArray($data, "$name must be shipped in config/.");
+      $assertions++;
+      $this->assertSame($view_id, $data['id'], "$name must declare its own machine name.");
+      $assertions++;
+      $this->assertSame($spec['label'], $data['label'], "$name must carry its English label (D-033).");
+      $assertions++;
+      $this->assertNotEmpty($data['description'], "$name must say what it lists.");
+      $assertions++;
+      $this->assertSame('node_field_data', $data['base_table'], "$name must list nodes.");
+      $assertions++;
+      $this->assertSame('en', $data['langcode'], "$name must declare English (D-033).");
+      $assertions++;
+      $this->assertTrue($data['status'], "$name must be enabled, or its route does not exist.");
+      $assertions++;
+
+      $options = $data['display']['default']['display_options'];
+
+      // -- Access, and it is the whole point of a transparency portal --------
+      $this->assertSame('perm', $options['access']['type'], "$name must gate on a permission.");
+      $assertions++;
+      $this->assertSame('access content', $options['access']['options']['perm'], "$name must be readable by anyone who can read content.");
+      $assertions++;
+
+      // -- The table, and the two accessibility flags ------------------------
+      $this->assertSame('table', $options['style']['type'], "$name must render a table. The T-603 row allowed 'or an equivalent semantic list'; a disjunction a test cannot decide is not a criterion, so the structure is CHOSEN here and it is a table.");
+      $assertions++;
+      $this->assertNotEmpty($options['style']['options']['caption'], "$name must caption its table (WCAG 2.2 AA, 1.3.1).");
+      $assertions++;
+      $this->assertFalse($options['style']['options']['empty_table'], "$name must not emit headers with no rows under them; that is an accessibility defect, not an empty state.");
+      $assertions++;
+      $this->assertNotEmpty(reset($options['empty'])['content'], "$name must say why it is empty, because an empty portal is a real shipping state.");
+      $assertions++;
+
+      // -- The columns, both directions --------------------------------------
+      $this->assertSame($spec['columns'], array_keys($options['fields']), "$name must declare exactly the columns T-603 records, in order.");
+      $assertions++;
+      $this->assertSame($spec['columns'], array_keys($options['style']['options']['columns']), "$name's table style must lay out exactly the fields it declares.");
+      $assertions++;
+
+      foreach ($options['style']['options']['info'] as $column => $info) {
+        // The flag that made a table render with no cells at all in T-615.
+        $this->assertFalse($info['empty_column'], "$name column $column must not vanish on empty data; the number of cells in a row must depend on the model, not on the data.");
+        $assertions++;
+      }
+
+      // -- The intersection, computed rather than transcribed ----------------
+      $intersection = NULL;
+      foreach ($spec['bundles'] as $bundle) {
+        $prefix = 'field.field.node.' . $bundle . '.';
+        $attached = array_map(
+          static fn (string $config_name): string => substr($config_name, strlen($prefix)),
+          $storage->listAll($prefix),
+        );
+        $this->assertNotEmpty($attached, "$bundle must carry fields, or the intersection below is empty for the wrong reason.");
+        $assertions++;
+        $bundles_total++;
+        $intersection = $intersection === NULL
+          ? $attached
+          : array_values(array_intersect($intersection, $attached));
+      }
+      sort($intersection);
+
+      $claimed = array_merge($spec['field_columns'], $spec['dropped']);
+      sort($claimed);
+      $this->assertSame($intersection, $claimed, "$name must show the intersection of its bundles' fields, or a subset named in its drop list. A column half the rows cannot fill is the union type D-026 refused.");
+      $assertions++;
+
+      // A dropped column must be a CHOICE, never an absence.
+      foreach ($spec['dropped'] as $dropped) {
+        $this->assertContains($dropped, $intersection, "$name drops $dropped, so every bundle it lists must actually carry it.");
+        $assertions++;
+        $this->assertNotContains($dropped, $spec['columns'], "$name cannot both drop $dropped and show it.");
+        $assertions++;
+      }
+
+      // Every column is either one of the three allowed base fields or one of
+      // the intersected fields. Nothing else may become a column.
+      foreach ($spec['columns'] as $column) {
+        $allowed = in_array($column, self::SURFACE_BASE_FIELD_COLUMNS, TRUE)
+          || in_array($column, $spec['field_columns'], TRUE);
+        $this->assertTrue($allowed, "$name column $column is neither an allowed base field nor an intersected field.");
+        $assertions++;
+      }
+      $field_columns_total += count($spec['field_columns']);
+
+      // -- The bundles this surface lists ------------------------------------
+      $bundle_filter = $options['filters']['type'];
+      $this->assertSame('bundle', $bundle_filter['plugin_id'], "$name must restrict itself by bundle.");
+      $assertions++;
+      $this->assertSame($spec['bundles'], array_values($bundle_filter['value']), "$name must list exactly the bundles T-603 records.");
+      $assertions++;
+      $this->assertSame($spec['expose_bundle'], !empty($bundle_filter['exposed']), "$name must expose the type filter only where mixing types makes it meaningful.");
+      $assertions++;
+      if ($spec['expose_bundle']) {
+        $this->assertTrue($bundle_filter['expose']['reduce'], "$name must offer only the bundles it lists in its type select, not every node type on the site.");
+        $assertions++;
+      }
+
+      // -- Published only ----------------------------------------------------
+      $this->assertSame('1', $options['filters']['status']['value'], "$name must list published records only.");
+      $assertions++;
+      $this->assertFalse($options['filters']['status']['exposed'], "$name must not let a reader ask for unpublished records.");
+      $assertions++;
+
+      // -- THE SEARCH BOX ----------------------------------------------------
+      $search = $options['filters']['title'];
+      $this->assertSame('string', $search['plugin_id'], "$name's search box must be a core Views string filter. No Search API, no Facets, no new dependency.");
+      $assertions++;
+      $this->assertSame('contains', $search['operator'], "$name's search box must match words inside the title, not the whole title.");
+      $assertions++;
+      $this->assertTrue($search['exposed'], "$name's search box must be exposed, or there is no box.");
+      $assertions++;
+      $this->assertSame('search', $search['expose']['identifier'], "$name's search box must answer on ?search=, which is what any link into it will use.");
+      $assertions++;
+      $this->assertNotEmpty($search['expose']['label'], "$name's search box must be labelled; an unlabelled input fails WCAG 2.2 AA 3.3.2.");
+      $assertions++;
+      $this->assertFalse($search['expose']['required'], "$name's search box must not be required, or the surface cannot be browsed at all.");
+      $assertions++;
+
+      // -- The facets, reused from T-615's spine rather than reinvented ------
+      foreach ($spec['facets'] as $facet_field) {
+        $filter_id = $facet_field . '_target_id';
+        $this->assertArrayHasKey($filter_id, $options['filters'], "$name must expose the $facet_field facet.");
+        $assertions++;
+        $filter = $options['filters'][$filter_id];
+        $this->assertSame('taxonomy_index_tid', $filter['plugin_id'], "$name's $facet_field facet must be the same core filter the six tables use.");
+        $assertions++;
+        $this->assertTrue($filter['exposed'], "$name's $facet_field facet must be exposed.");
+        $assertions++;
+        $this->assertSame(self::FACET_SPINE[$facet_field], $filter['vid'], "$name's $facet_field facet must read the spine's own vocabulary.");
+        $assertions++;
+        // A facet on a field only some rows carry silently deletes the rest.
+        $this->assertContains($facet_field, $spec['field_columns'], "$name may only facet on a field every bundle it lists carries.");
+        $assertions++;
+        $facets_total++;
+      }
+
+      // -- The page display and its menu link --------------------------------
+      $page = $data['display']['page_1']['display_options'];
+      $this->assertSame($spec['path'], $page['path'], "$name must answer on the path T-603 records.");
+      $assertions++;
+      $surface_paths[] = $page['path'];
+
+      $assertions += $this->assertMenuLink($page['menu'] ?? [], $name, $spec['menu']);
+    }
+
+    // -- The six per-bundle views are LINKED, which is the carried debt ------
+    // Six accessible tables nobody can reach is not a delivered feature.
+    $child_paths = [];
+    foreach (self::SURFACE_MENU_CHILDREN as $view_id => $link) {
+      $name = 'views.view.' . $view_id;
+      $data = $storage->read($name);
+      $this->assertIsArray($data, "$name must be shipped in config/.");
+      $assertions++;
+      $page = $data['display']['page_1']['display_options'];
+      $assertions += $this->assertMenuLink($page['menu'] ?? [], $name, $link);
+      $child_paths[] = $page['path'];
+
+      // The parent must be a view this template actually ships. A menu link
+      // whose parent does not exist is a link core silently moves to the
+      // root, and the menu still looks fine while the hierarchy is gone.
+      $parent_view = self::MENU_PARENT_VIEW;
+      $this->assertSame('views_view:views.' . $parent_view . '.page_1', $link['parent'], "$name must hang from the cross-type listing.");
+      $assertions++;
+      $this->assertArrayHasKey($parent_view, self::BASE_SURFACES, 'The menu parent must be a view T-603 ships.');
+      $assertions++;
+    }
+
+    // -- No two routes may collide -------------------------------------------
+    $all_paths = array_merge($surface_paths, $child_paths);
+    $this->assertCount(count($all_paths), array_unique($all_paths), 'Two views on one path is a race Drupal resolves by weight, and the loser is unreachable while every assertion above still passes.');
+    $assertions++;
+    $this->assertCount(8, $all_paths, 'Eight routes are linked: two surfaces and the six tables.');
+    $assertions++;
+
+    // -- The assertion count, asserted rather than printed -------------------
+    $columns_total = 0;
+    foreach (self::BASE_SURFACES as $spec) {
+      $columns_total += count($spec['columns']);
+    }
+    $dropped_total = 0;
+    foreach (self::BASE_SURFACES as $spec) {
+      $dropped_total += count($spec['dropped']);
+    }
+    $exposed_bundle_total = 0;
+    foreach (self::BASE_SURFACES as $spec) {
+      $exposed_bundle_total += $spec['expose_bundle'] ? 1 : 0;
+    }
+    $expected_assertions = 4
+      + (28 * count(self::BASE_SURFACES))
+      + (2 * $columns_total)
+      + (2 * $dropped_total)
+      + $exposed_bundle_total
+      + $bundles_total
+      + (5 * $facets_total)
+      + (self::MENU_ASSERTIONS * (count(self::BASE_SURFACES) + count(self::SURFACE_MENU_CHILDREN)))
+      + (3 * count(self::SURFACE_MENU_CHILDREN))
+      + 2;
+    $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
+  }
+
+  /**
+   * Asserts one page display's menu mapping, and returns the count.
+   *
+   * @param array $menu
+   *   The `menu` mapping read from the page display, or [] if there is none.
+   * @param string $name
+   *   The config object name, for the failure messages.
+   * @param array $expected
+   *   The expected title, weight and parent.
+   *
+   * @return int
+   *   The number of assertions made, so the caller can keep its own count.
+   */
+  protected function assertMenuLink(array $menu, string $name, array $expected): int {
+    $this->assertNotEmpty($menu, "$name must declare a menu link. Nothing linking to a route is the debt T-603 carried.");
+    $this->assertSame(self::MENU_KEYS, array_keys($menu), "$name's menu mapping must carry all nine keys; core reads five of them without a null check.");
+    $this->assertSame('normal', $menu['type'], "$name must be a normal menu entry, not a tab.");
+    $this->assertSame('main', $menu['menu_name'], "$name must land in the main menu.");
+    $this->assertTrue($menu['enabled'], "$name's link must be enabled, or it is not a link.");
+    $this->assertSame($expected['title'], $menu['title'], "$name's link must carry its English title (D-033).");
+    $this->assertNotEmpty($menu['description'], "$name's link must describe itself.");
+    $this->assertSame($expected['weight'], $menu['weight'], "$name's link must sit where T-603 puts it.");
+    $this->assertSame($expected['parent'], $menu['parent'], "$name's link must hang where T-603 puts it.");
+
+    return self::MENU_ASSERTIONS;
   }
 
 }
