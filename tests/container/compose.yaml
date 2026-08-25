@@ -1,0 +1,158 @@
+# ==========================================================================================
+# The gate toolchain, pinned - Agora, T-802 (carries T-208, redefined by D-019).
+#
+# WHAT THIS IS. The single, versioned definition of the environment in which
+# tests/bin/gate-a-wave1.sh and tests/bin/gate-a-wave3.sh are meant to be
+# evaluated. Not a development environment, not a site: this repository is a
+# recipe package and is never `ddev start`ed on its own (D-019, the paragraph
+# that superseded T-208's original request for a .ddev/config.yaml). Drive it
+# with tests/bin/gate-in-container, which reads this file rather than
+# re-stating any of it.
+#
+# WHY IT EXISTS, measured rather than asserted. All five false greens of unit
+# 001 came from the HOST, not from this project's own code (D-019's evidence
+# list): jq and python3 emitting CRLF (I-025), a python3 that satisfies
+# `command -v` and then fails (I-026), a grep that ABORTS on -F combined with
+# -i (I-027), a host Python defaulting to cp1252, and a gate that could not be
+# evaluated at all for want of jq and composer. The drupalcode pipeline proves
+# the toolchain in CI and says nothing whatever about the local half. This
+# file is the local half.
+#
+# WHY A DIGEST AND NOT A TAG. A tag is mutable. `:production` today is not the
+# same bytes as `:production` next month, and an environment that silently
+# moves while calling itself pinned is worse than an unpinned one, because it
+# looks reproducible. The digest below is a content address: it either
+# resolves to exactly these bytes or it does not resolve.
+#
+# HOW THE DIGEST WAS OBTAINED, so it can be re-derived rather than trusted:
+#
+#   docker manifest inspect --verbose \
+#     registry.gitlab.com/drupal-infrastructure/drupalci/drupalci-environments/php-8.3-ubuntu-apache:production
+#
+# and read `.Descriptor.digest` - the MANIFEST digest, which is what
+# `image@sha256:...` resolves, NOT the `.config.digest` that the non-verbose
+# form prints first and that is easy to copy by mistake. Read 2026-08-25 from
+# the linux/amd64 descriptor.
+#
+# WHICH IMAGE, AND WHY THIS ONE. D-020 rider (c) names the Drupal
+# Association's own gate image first and debian:bookworm-slim as the fallback,
+# and forbids alpine by name, because BusyBox grep is a different
+# implementation and would reintroduce I-027's entire class. That rider was
+# explicitly recorded as UNVERIFIED - the Docker daemon was down the day it
+# was signed. It is now verified, and the first preference wins on the
+# measurement: the image supplies every tool both runners touch, so NOTHING is
+# installed at run time. An environment that apt-installs ten packages on
+# every start is not pinned either; this one installs nothing, which is the
+# only reason the pin means anything.
+#
+# Inventoried inside the image at this digest, 2026-08-25:
+#   bash 5.2.21 · GNU grep 3.11 · GNU sed 4.9 · mawk 1.3.4 · GNU tar 1.35
+#   jq 1.7 · python3 3.12.3 · git 2.43.0 · curl 8.5.0 · sha256sum
+#   composer 2.10.2 · PHP 8.3.33 (NTS) · Ubuntu 24.04.4 LTS
+#   coreutils: sort tr cut wc head tail date mktemp dirname basename xargs
+# Added at run time: nothing.
+# Absent and deliberately not added: file(1) - surveyed across every script in
+# tests/bin/ and invoked by none of them (the string "file" occurs only as an
+# English word in comments).
+#
+# One hazard this image DELETES. GNU grep 3.11 here returns 0 for `grep -Fi`,
+# the exact combination that ABORTS on the Git-for-Windows grep 3.0 of I-027:
+# not guarded, deleted, which is the move D-019 was signed to make. PHP here is
+# also 8.3 NTS with Composer already present, retiring the "PHP 8.4 ZTS on the
+# dev host" blocker D-020(c) names.
+#
+# One hazard it does NOT delete, measured rather than assumed, and said out
+# loud so nobody reads "pinned" as "safe". The awk here is MAWK, not gawk, and
+# mawk counts BYTES. The reproduction is six accented characters, twelve bytes,
+# and it is written out below rather than described, because a hazard you have
+# to reconstruct is a hazard nobody re-runs. It is scoped out of the spell check
+# in place (D-024(3), the verbatim bucket) instead of being declared vocabulary:
+# a repeated accented vowel is not a word this project uses.
+# cspell:disable-next-line
+#   printf 'áááááá' | awk '{print length}'   ->  12, not 6
+# That is precisely the byte-versus-character trap that turned the pipeline red
+# twice with `awk 'length>80'`. It costs nothing today only because the single
+# script that uses awk - tests/bin/config-inventory, 7 invocations - never asks
+# it for a length (`grep -c length tests/bin/config-inventory` -> 0). The day
+# one does, this image will be as wrong as the host was.
+#
+# WHAT THIS CONTAINER DOES NOT COVER, said plainly rather than left as a gap
+# somebody later assumes is closed. `tests/bin/spellcheck` does NOT run in
+# here. It is a pre-flight, not one of the wave runners, and it needs pnpm
+# (`pnpm dlx cspell@...`, spellcheck:181) plus the network. Measured in the
+# image at this digest, 2026-08-25: node v20.20.2, npm 10.8.2 and npx are
+# present; pnpm is NOT. Installing it would mean adding a package at run time,
+# which is the property this pin exists to keep, and reaching for the npm that
+# IS here is forbidden outright - pnpm exclusively, CLAUDE.md rule 5, docs and
+# CI included. So spellcheck stays a HOST command, and its `parity` line
+# remains the only thing that tells you whether it read the same dictionary
+# version the gate will. Anyone quoting "the gate ran in the container" is
+# quoting the two wave runners and nothing else.
+#
+# WHAT SHIPS TO END USERS FROM THIS FILE: nothing. `/tests export-ignore` in
+# .gitattributes already excludes this whole directory from the packaged
+# tarball, which is also why this definition lives under tests/ and not at the
+# repository root. A container definition sitting at the root of a site
+# template would tell a Drupal.org reviewer that this package is something you
+# run - which is the same false assertion that got T-208's .ddev/config.yaml
+# superseded in the first place. Being export-ignored would hide it from the
+# tarball; it would not stop it saying the wrong thing to a human browsing the
+# repository.
+# ==========================================================================================
+
+services:
+
+  gate:
+    # The pin. Replace this line only together with a fresh
+    # `docker manifest inspect --verbose` output quoted in the commit message,
+    # and re-run both runners on host and in the container in that same commit
+    # (D-019 rider e: no verification change counts as existing until it has
+    # been made to fail).
+    image: registry.gitlab.com/drupal-infrastructure/drupalci/drupalci-environments/php-8.3-ubuntu-apache@sha256:b10d5e31c0bcb3ea7e12423f59aa52140e20d5bb3f712541467f77748f3b5193
+
+    # The image's own entrypoint starts Apache. We want a shell and nothing
+    # else; the command is supplied by tests/bin/gate-in-container.
+    entrypoint: ["/bin/bash", "-lc"]
+
+    working_dir: /repo
+
+    volumes:
+      # Relative to THIS file's directory, so the mount is correct from
+      # whatever directory the runner happens to be invoked in.
+      #
+      # READ-ONLY on purpose. Neither runner is supposed to modify the working
+      # tree, and "supposed to" is not a measurement. `ro` turns that into one:
+      # if a gate ever starts writing into the repository it fails here loudly
+      # instead of quietly leaving root-owned files in a bind mount. Scratch
+      # space is /tmp, which stays writable.
+      - ../..:/repo:ro
+
+    environment:
+      # The bind-mounted tree is owned by a different uid than this container's
+      # user, so git refuses it as "dubious ownership" and `git rev-parse`
+      # fails. MEASURED, not feared: without this, gate-a-wave1.sh reports
+      # `61 checks - 9 failures`, the whole of G8 collapsing behind an empty
+      # `git archive`. Set through GIT_CONFIG_* rather than by writing a
+      # gitconfig, so nothing is left behind and the read-only mount holds.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /repo
+
+      # composer needs a writable home. Pointed at /tmp so it can never be
+      # tempted to write next to the mounted composer.json.
+      COMPOSER_HOME: /tmp/composer-home
+
+      # Determinism, not decoration. A host Python defaulting to cp1252 is one
+      # of D-019's five false greens; an unset locale also leaves `sort` order
+      # and every tool's byte handling to whatever the daemon happened to
+      # inherit. Pinned explicitly so the answer does not depend on the host.
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      TZ: UTC
+
+    # sbom-check queries drupal.org and is explicitly NOT skipped when the
+    # network is unavailable (gate-a-wave3.sh, G4), so the default bridge
+    # network is required, not incidental.
+    network_mode: bridge
+
+    init: true

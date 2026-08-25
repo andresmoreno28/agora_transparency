@@ -43,5 +43,29 @@
 # breaking their shebang. `eol` governs checkout in every clone, unlike `export-ignore`
 # above, which only shapes the packaged tarball. Scoped to shell scripts, never a
 # blanket `* text=auto`.
+# ONE LINE ENDING EVERYWHERE, ADDED 2026-08-25, AND IT IS A DEFECT FIX RATHER THAN A
+# PREFERENCE. The line below used to be scoped to tests/bin and *.sh only, on the
+# reasoning that a CRLF shebang does not execute. That was right and insufficient.
+#
+# What T-802's container measured: git's BLOBS are LF (1 genuine CRLF blob out of 179),
+# but with core.autocrlf=true a Windows checkout materialises 50 of them as CRLF - and
+# MSYS grep CANNOT SEE those carriage returns. `grep -c $'' recipe.yml` returns 0 while
+# `od -c` shows the carriage return. So end-anchored checks PASS ON THIS HOST BY ACCIDENT:
+# run the same
+# runners in a Linux container against the same working tree and two of them fail, because
+# GNU grep 3.11 sees what MSYS grep hides.
+#
+# CI and end users were never affected - they read the LF blobs. The host was the liar,
+# and it was lying in the direction that says everything is fine.
+#
+# `text=auto eol=lf` makes every working tree LF, on Windows and macOS alike, so the host,
+# the container, CI and the packaged tarball all read the same bytes. [andres] confirmed
+# on 2026-08-25 that he will work from macOS too, which turns this from tidiness into a
+# requirement: a project whose checks depend on the shell cannot afford three dialects of
+# the same file.
+* text=auto eol=lf
+
+# Kept explicit even though the line above now covers them: a CRLF shebang does not
+# execute, and that failure is silent on the runner and invisible here.
 tests/bin/** text eol=lf
 *.sh text eol=lf

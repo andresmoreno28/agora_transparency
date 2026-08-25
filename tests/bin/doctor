@@ -390,7 +390,18 @@ report_tool composer 'composer (composer --version, exit)' "$COMPOSER_GOT" '0'
 group '3. Coreutils used by tests/bin/* (surveyed 2026-08-22, not guessed)'
 note 'real invocations found (not comments/mentions) across no-boilerplate, no-ci-allow-dev,'
 note 'no-code-in-template, no-patches, no-secrets, no-unstable-deps, sbom-check and both gate'
-note 'runners. awk, xargs and checksum tools were searched for and are NOT currently used.'
+note 'runners. xargs and checksum tools were searched for and are NOT currently used.'
+# CORRECTION, re-measured 2026-08-25 (T-802). The 2026-08-22 survey above also
+# listed `awk` as unused, and that has stopped being true: tests/bin/config-inventory
+# (T-601, landed after the survey) invokes it 7 times. The line is corrected rather
+# than left standing, because a diagnostic that PRINTS a false statement about the
+# toolchain is the exact hazard this script exists to catch. What is NOT done here,
+# deliberately: awk is still not probed below, so a broken awk would pass this
+# script and then fail config-inventory. Adding a probe changes this script's
+# contract and belongs to whoever owns the toolchain floor (T-317/T-803), not to a
+# container task - it is reported as an open gap, not quietly patched.
+note 'CORRECTED 2026-08-25 (T-802): awk IS now used - 7 invocations in config-inventory'
+note '(T-601, added after that survey). It is reported here but NOT probed below; see T-803.'
 
 SED_GOT=$(printf 'a' | sed 's/a/b/' 2>&1)
 report_tool sed 'sed (printf a | sed s/a/b/)' "$SED_GOT" 'b'
@@ -628,6 +639,77 @@ fi
 note "verdict: $CONTAINER_SUMMARY"
 note '(informational only - D-019 rider (c) keeps host mode valid with no container at all)'
 
+# ---- the pin (T-802) -------------------------------------------------
+# D-019 put the gate's toolchain in a container; T-802 requires that
+# container to be named by sha256 DIGEST and requires this script to
+# REPORT that digest. A digest stored but never shown is not reported: the
+# whole failure mode being guarded here is an environment that moves while
+# calling itself pinned, and nobody notices because nobody is ever told
+# what it is running.
+#
+# Read out of tests/container/compose.yaml rather than restated. Two
+# scripts naming the same image is exactly the drift this is meant to
+# prevent, so there is one source and everything else reads it.
+#
+# `tr -d '\r'` first: on a Windows checkout compose.yaml is CRLF
+# (core.autocrlf is set at system scope by the Git for Windows installer,
+# and .gitattributes pins only tests/bin/** and *.sh to LF), and without
+# this the digest would be printed with a stray carriage return in it.
+note ''
+GATE_COMPOSE='tests/container/compose.yaml'
+GATE_IMAGE_REF=''
+GATE_DIGEST=''
+if [ -f "$GATE_COMPOSE" ]; then
+  GATE_IMAGE_REF=$(tr -d '\r' < "$GATE_COMPOSE" | sed -n 's/^[[:space:]]*image:[[:space:]]*//p' | head -1)
+fi
+if [ -z "$GATE_IMAGE_REF" ]; then
+  GATE_PIN_SUMMARY="NO PIN FOUND - $GATE_COMPOSE is missing or names no image (T-802)"
+  note "gate container pin: ${C_WARN}not found${C_OFF} in $GATE_COMPOSE"
+else
+  GATE_IMAGE_NAME=${GATE_IMAGE_REF%@*}
+  case "$GATE_IMAGE_REF" in
+    *@sha256:*)
+      GATE_DIGEST=${GATE_IMAGE_REF##*@}
+      note "gate container image:  $GATE_IMAGE_NAME"
+      note "gate container digest: $GATE_DIGEST"
+      GATE_PIN_SUMMARY="$GATE_DIGEST"
+      ;;
+    *)
+      # A tag where a digest was promised. Reported as a WARNING and named
+      # for what it is, never quietly accepted: `:production` today is not
+      # the same bytes as `:production` next month.
+      note "gate container image:  $GATE_IMAGE_REF"
+      note "gate container digest: ${C_BAD}NONE - that is a TAG, not a sha256 digest${C_OFF} (T-802)"
+      GATE_PIN_SUMMARY="NOT PINNED - $GATE_COMPOSE names a tag, not a digest (T-802)"
+      ;;
+  esac
+fi
+
+# Is the pinned image actually on this machine, and is it these bytes? Only
+# asked when a daemon was found above; a missing image is not a problem, it
+# is a `docker pull` away, so this reports rather than judges.
+if [ -n "$GATE_DIGEST" ]; then
+  GATE_LOCAL_OUT=''
+  GATE_LOCAL_RC=1
+  if [ -n "$DOCKER_PATH" ] && [ "$DOCKER_DAEMON" = reachable ]; then
+    GATE_LOCAL_OUT=$(docker image inspect "$GATE_IMAGE_REF" --format '{{.Id}}' 2>&1)
+    GATE_LOCAL_RC=$?
+  elif [ -n "${WSL_EXE:-}" ] && { [ "$WSL_STATE" = docker_ok ] || [ "$WSL_STATE" = docker_ok_dd_stopped ]; }; then
+    GATE_LOCAL_OUT=$("$WSL_EXE" -e bash -lc "docker image inspect '$GATE_IMAGE_REF' --format '{{.Id}}'" 2>&1)
+    GATE_LOCAL_RC=$?
+    GATE_LOCAL_OUT=$(printf '%s' "$GATE_LOCAL_OUT" | tr -d '\0' | tr -d '\r')
+  fi
+  if [ "$GATE_LOCAL_RC" -eq 0 ] && [ -n "$GATE_LOCAL_OUT" ]; then
+    note "gate container local:  present ($(printf '%s' "$GATE_LOCAL_OUT" | cut -c1-19)...)"
+  elif [ -n "$GATE_LOCAL_OUT" ]; then
+    note 'gate container local:  not pulled yet - run:'
+    note "  docker pull $GATE_IMAGE_REF"
+  else
+    note 'gate container local:  not checked (no reachable daemon to ask)'
+  fi
+  note "run the gate in it with: tests/bin/gate-in-container"
+fi
+
 # ----------------------------------------------------------------- summary --
 TOOLS_UNUSABLE=$((TOOLS_MISSING + TOOLS_BROKEN))
 
@@ -640,6 +722,7 @@ printf '  tools missing:   %d\n' "$TOOLS_MISSING"
 printf '  tools broken:    %d\n' "$TOOLS_BROKEN"
 printf '  hazards probed:  %d (%d present - informational, already handled at their call sites)\n' "$HAZ_TOTAL" "$HAZ_PRESENT"
 printf '  container:       %s\n' "$CONTAINER_SUMMARY"
+printf '  gate image pin:  %s\n' "$GATE_PIN_SUMMARY"
 if [ "$CERT_STATUS" = yes ]; then
   printf '  certification:   %sCERTIFIED%s (matrix run %s, %s)\n' "$C_OK" "$C_OFF" "$CERT_DATE" "$CERT_TASK"
 else

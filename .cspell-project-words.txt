@@ -46,7 +46,9 @@ drud                  # DDEV's original vendor namespace
 jqlang                # jq's upstream org, appears in the toolchain PATH
 winget                # Windows package manager, in the environment doctor output
 msys                  # MSYS2, the Git Bash runtime tests/bin/ must survive on
+wslpath               # the WSL command that translates a Windows path into the /mnt/c view
 ggrep                 # GNU grep under its coreutils-prefixed name
+mawk                  # the awk implementation shipped by the pinned gate image, not gawk
 defusedxml            # Python XML library named in the sbom-check parser notes
 bitstream             # font vendor named in the license inventory
 
@@ -58,6 +60,7 @@ symref                # git symbolic ref, central to the default-branch analysis
 shortlog              # git shortlog
 worktree              # git worktree
 testdox               # PHPUnit --testdox
+PATHCONV              # MSYS_NO_PATHCONV, the variable that stops Git Bash rewriting path arguments
 coreutils
 findutils
 localrepo             # Gitaly's internal/git/localrepo package, cited in D-022

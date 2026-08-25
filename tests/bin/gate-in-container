@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+#
+# gate-in-container - Agora - T-802 (carries T-208, redefined by D-019).
+#
+# THIS IS A DRIVER, NOT A GATE. It runs the existing gate runners somewhere
+# else; it computes nothing, counts nothing and decides nothing. It never
+# prints an "N checks - M failures" line of its own - that phrase belongs to
+# tests/bin/gate-a-wave1.sh and tests/bin/gate-a-wave3.sh, and what you read
+# below it is their output, passed through byte for byte. Its exit status is
+# the runner's exit status.
+#
+# WHAT IT DRIVES. tests/container/compose.yaml, which is the ONLY place the
+# image, its digest, the mount and the environment are stated. This script
+# re-states none of them: it reads the image reference back out of that file
+# so the two can never drift. If you find yourself adding a `docker run` here
+# with the flags spelled out, stop - that is the drift.
+#
+# WHY (D-019). The drupalcode pipeline proves the toolchain in CI and says
+# nothing about the local half, and the local half is where this project keeps
+# getting caught: `grep -Fi` aborting on the host's grep 3.0 (I-027), `awk
+# 'length>80'` counting bytes where phpcs counts characters, a spell check
+# reading a newer dictionary than the gate, `cd ""` returning 0 without
+# moving. Those are measurable before a push, but only if the gate can be run
+# in the pinned toolchain, on demand, on the machine you are sitting at.
+#
+# HOST MODE STAYS VALID. D-019 rider (c): a laptop away from home should not
+# need Docker running to do useful work. Nothing here deprecates running the
+# runners directly; `tests/bin/doctor` labels the platform, and a result from
+# an uncertified platform is reported as such.
+#
+# WINDOWS. Docker on this project's Windows host is docker-ce inside WSL2 -
+# DDEV's own recommended setup, not a degraded one (I-046), and the Windows
+# side has no docker CLI at all. So on a Windows host this script hops through
+# wsl.exe. Two things bite there, both handled below and both worth knowing:
+#   - MSYS PATH CONVERSION. Git Bash rewrites any argument that looks like an
+#     absolute POSIX path before the child process sees it. Passing
+#     `-e GIT_CONFIG_VALUE_0=/repo` through wsl.exe arrives as
+#     `C:/Program Files/Git/repo`. MSYS_NO_PATHCONV / MSYS2_ARG_CONV_EXCL are
+#     set around every wsl.exe call for that reason - this cost a debugging
+#     round to find, and it will cost the next person the same one.
+#   - The repository path has to be translated into the WSL view (/mnt/c/...),
+#     which is done with wslpath, with an explicit fallback.
+#
+# HOUSE RULES for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; grep rc >= 2 is an error, never "no match"; never `-F` with `-i`. The
+# canonical copy of that block lives in the header of tests/bin/no-ci-allow-dev.
+#
+# Usage:
+#   tests/bin/gate-in-container                 # both wave runners, in order
+#   tests/bin/gate-in-container tests/bin/gate-a-wave1.sh [more...]
+#   tests/bin/gate-in-container --print-image   # the pinned reference, one line
+#   tests/bin/gate-in-container --exec 'grep --version'   # anything, in the pin
+
+set -u
+# No `set -e`: a failing runner must be reported with its own exit code, not
+# abort this script before the second runner has been given its turn.
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+COMPOSE_REL='tests/container/compose.yaml'
+COMPOSE_ABS="$REPO_ROOT/$COMPOSE_REL"
+
+C_BAD=""; C_WARN=""; C_OFF=""
+if [ -t 1 ]; then C_BAD=$'\033[31m'; C_WARN=$'\033[33m'; C_OFF=$'\033[0m'; fi
+
+# The colour codes get their own placeholder rather than being glued to the
+# message. A conversion specifier followed immediately by a word makes cspell
+# read the two as one token and report an unknown word that exists nowhere in
+# the running program; a word that is an artefact of a format string gets
+# removed, never declared as vocabulary (D-024(3), fourth bucket). The same
+# trap catches the comment explaining it, so this one does not spell the
+# offending sequence out either.
+die() { printf '%s%s%s\n' "$C_BAD" "gate-in-container: $1" "$C_OFF" >&2; exit 2; }
+
+# ------------------------------------------------- the pin, read not restated --
+# `tr -d '\r'` first: on a Windows checkout this file is CRLF (core.autocrlf is
+# set at system scope by the Git for Windows installer, and .gitattributes pins
+# only tests/bin/** and *.sh to LF), so without this the digest would carry a
+# trailing carriage return into everything downstream.
+[ -f "$COMPOSE_ABS" ] || die "the container definition is missing: $COMPOSE_REL"
+
+IMAGE_REF=$(tr -d '\r' < "$COMPOSE_ABS" | sed -n 's/^[[:space:]]*image:[[:space:]]*//p' | head -1)
+[ -n "$IMAGE_REF" ] || die "no image: line found in $COMPOSE_REL"
+
+# A tag where a digest was promised is the failure this task exists to prevent,
+# so it is refused here rather than reported as a curiosity.
+case "$IMAGE_REF" in
+  *@sha256:*) : ;;
+  *) die "$COMPOSE_REL names '$IMAGE_REF' - that is a tag, not a sha256 digest (T-802)" ;;
+esac
+IMAGE_DIGEST=${IMAGE_REF##*@}
+IMAGE_NAME=${IMAGE_REF%@*}
+
+if [ "${1-}" = '--print-image' ]; then printf '%s\n' "$IMAGE_REF"; exit 0; fi
+
+# --------------------------------------------------------- what to run inside --
+EXEC_CMD=''
+if [ "${1-}" = '--exec' ]; then
+  [ $# -ge 2 ] || die '--exec needs a command'
+  EXEC_CMD=$2
+  shift 2
+fi
+
+RUNNERS=""
+if [ -z "$EXEC_CMD" ]; then
+  if [ $# -gt 0 ]; then
+    RUNNERS="$*"
+  else
+    RUNNERS='tests/bin/gate-a-wave1.sh tests/bin/gate-a-wave3.sh'
+  fi
+  for _r in $RUNNERS; do
+    [ -f "$REPO_ROOT/$_r" ] || die "no such runner in this repository: $_r"
+  done
+fi
+
+# ------------------------------------------------------- where docker answers --
+# Three states, distinguished rather than collapsed: a usable daemon here; no
+# daemon here but one inside WSL; neither. Reporting "docker unavailable" from
+# the Windows side alone is I-046, and it cost a day.
+HOP=''
+WSL_EXE=''
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  HOP=none
+else
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*)
+      WSL_EXE=$(command -v wsl.exe 2>/dev/null)
+      [ -z "$WSL_EXE" ] && WSL_EXE=$(command -v wsl 2>/dev/null)
+      [ -n "$WSL_EXE" ] || die 'no docker daemon here and no wsl.exe to hop through'
+      if MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
+         "$WSL_EXE" -e bash -lc 'docker info >/dev/null 2>&1'; then
+        HOP=wsl
+      else
+        die 'no docker daemon on the Windows side and none inside WSL either - see tests/bin/doctor'
+      fi
+      ;;
+    *) die 'no reachable docker daemon - see tests/bin/doctor' ;;
+  esac
+fi
+
+# The repository as the daemon will see it.
+if [ "$HOP" = wsl ]; then
+  WIN_ROOT=$(cd "$REPO_ROOT" && pwd -W 2>/dev/null)
+  WSL_ROOT=''
+  if [ -n "$WIN_ROOT" ]; then
+    WSL_ROOT=$(MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
+      "$WSL_EXE" -e wslpath -a "$WIN_ROOT" 2>/dev/null | tr -d '\r' | tr -d '\0')
+  fi
+  # Fallback: MSYS renders drives as /c/..., WSL as /mnt/c/... . Only used if
+  # wslpath was unavailable or silent; never used to "correct" its answer.
+  if [ -z "$WSL_ROOT" ]; then
+    WSL_ROOT=$(printf '%s' "$REPO_ROOT" | sed -E 's|^/([a-zA-Z])/|/mnt/\1/|')
+  fi
+  [ -n "$WSL_ROOT" ] || die 'could not translate the repository path into the WSL view'
+  DAEMON_LABEL='inside WSL (the Windows side has no docker CLI - I-046)'
+else
+  WSL_ROOT="$REPO_ROOT"
+  DAEMON_LABEL='local'
+fi
+
+# -------------------------------------------------------------------- banner --
+printf '=========================================================================================================\n'
+printf 'GATE IN CONTAINER -- driver only. Every count below is a runner reporting on itself.\n'
+printf '=========================================================================================================\n'
+printf '  definition:  %s\n' "$COMPOSE_REL"
+printf '  image:       %s\n' "$IMAGE_NAME"
+printf '  digest:      %s\n' "$IMAGE_DIGEST"
+printf '  daemon:      %s\n' "$DAEMON_LABEL"
+printf '  repository as the daemon sees it: %s\n' "$WSL_ROOT"
+printf '=========================================================================================================\n'
+
+# ---------------------------------------------------------------- execution --
+# One helper, so the compose invocation is written in exactly one place.
+# The inner command is single-quoted for the container's shell; any embedded
+# single quote is closed, escaped and reopened the standard way.
+shell_quote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+
+in_container() { # <shell command to run inside>
+  _inner="cd $(shell_quote "$WSL_ROOT") && docker compose --progress quiet -f $(shell_quote "$COMPOSE_REL") run --rm --no-TTY gate $(shell_quote "$1")"
+  if [ "$HOP" = wsl ]; then
+    MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$WSL_EXE" -e bash -lc "$_inner"
+  else
+    bash -lc "$_inner"
+  fi
+}
+
+RC=0
+if [ -n "$EXEC_CMD" ]; then
+  in_container "$EXEC_CMD"
+  RC=$?
+else
+  for _r in $RUNNERS; do
+    printf '\n--------------------------------------------------------------------------- %s\n' "$_r"
+    in_container "bash $_r"
+    _rc=$?
+    [ "$_rc" -ne 0 ] && RC=$_rc
+    printf '%s exit: %s\n' "$_r" "$_rc"
+  done
+fi
+
+if [ "$RC" -ne 0 ]; then
+  printf '\n%sA runner exited non-zero inside the pinned toolchain.%s Compare it against the same\n' "$C_WARN" "$C_OFF"
+  printf 'runner on this host before assuming either one is wrong: when the two disagree, the\n'
+  printf 'disagreement itself is the finding (T-802), not something to be adjusted away.\n'
+fi
+exit "$RC"
