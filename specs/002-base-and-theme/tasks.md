@@ -148,7 +148,14 @@ none of which needed the theme repository to exist:
   on an unbounded list, so a second format is a second node.
   ⚠️ **`update_frequency` did not fit** — 16 characters against the 15 left by the
   `field_agora_base_` prefix. The field is `frequency` and the **label** carries the full name.
-  🟡 **A gap that falls between two rows, found now:** D-026 says the Dataset's *rendered* table is
+    ✅ **The gap below is RULED, 2026-08-25 [ejecutor], and it costs no task row.** It goes to
+  **unit 003**, not to T-615 and not to a new row here — and the reason is the project's own
+  standard rather than convenience: **unit 002 ships no demo content**, so there is no CSV for a
+  renderer to render, and a renderer built here could only be proven by a test that asserts nothing
+  about a real distribution. Building what cannot be proven is the failure this unit has spent all
+  day catching. Recorded in the carried-debt table with an owner, so it is carried rather than
+  forgotten — which is the whole distinction D-031's headroom is protecting.
+🟡 **A gap that falls between two rows, found now:** D-026 says the Dataset's *rendered* table is
   the accessible source of truth the charts read. This row ships the file and the fields; **nothing
   yet renders a CSV distribution as a `<table>` with a `<caption>` and `<th scope>`**, and no signed
   row owns it — T-615 owns view columns, unit 003 owns demo content, and the rendering falls
@@ -363,6 +370,7 @@ none of which needed the theme repository to exist:
 | T-317 (toolchain floor; macOS NOT CERTIFIED) | T-803 | owned, wave 8 |
 | Wave-1 rider (`blank` + `extra` adjusted check) | T-703 | owned, wave 7 |
 | `page.front` declared `/home` vs landed `/page/1` | T-605 | owned, wave 6 |
+| Rendering a Dataset's CSV distribution as an accessible `<table>` (D-026 calls that table the source of truth the charts read) | **unit 003** | owned, ruled 2026-08-25 |
 
 ~~**Count: 34 tasks. Budget 38. Headroom 4.**~~
 
