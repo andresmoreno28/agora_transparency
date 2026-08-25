@@ -96,6 +96,42 @@ fetch() {
   echo "  fetched  $name"
 }
 
+# ---------------------------------------------------------------- the parity check
+# WHY THIS EXISTS, and it is the reason the branch above is not just a corrected constant.
+#
+# Three times in one day a local pre-flight disagreed with the gate it models: phpcs (comment
+# lines only, characters not bytes), stylelint (CI symlinks core's .prettierrc.json first), and
+# this script (core dictionaries read from the development branch). The first two were NOISIER
+# than the gate, which is annoying. This one was QUIETER, which is dangerous - a pre-flight that
+# accepts what the gate rejects does not merely fail to help, it actively certifies a red push.
+#
+# So the branch is no longer trusted as a constant. It is CHECKED against the value the pipeline
+# actually uses, read at source from gitlab_templates:
+#   CORE_STABLE, in includes/include.drupalci.hidden-variables.yml, is what DRUPAL_CORE resolves
+#   to, and the dictionaries live on that release's branch (11.4.5 -> 11.4.x).
+#
+# When Drupal releases a new stable minor, THIS SAYS SO AND STOPS, instead of going quiet and
+# certifying words the gate will reject. Being told is the whole point: a silent divergence is
+# what cost the theme a red pipeline.
+UPSTREAM_HIDDEN="https://git.drupalcode.org/project/gitlab_templates/-/raw/main/includes/include.drupalci.hidden-variables.yml"
+CORE_STABLE="$(curl -sS "$UPSTREAM_HIDDEN" 2>/dev/null | sed -n "s/^[[:space:]]*CORE_STABLE:[[:space:]]*.\([0-9.]*\).*/\1/p" | head -1)"
+if [ -z "$CORE_STABLE" ]; then
+  echo "  UNVERIFIED  could not read CORE_STABLE upstream - the dictionary branch is UNCHECKED this run"
+  echo "              (offline, or the variables file moved. The result may be quieter than the gate.)"
+else
+  EXPECTED_BRANCH="$(echo "$CORE_STABLE" | cut -d. -f1,2).x"
+  if [ "$EXPECTED_BRANCH" = "$CORE_BRANCH" ]; then
+    echo "  parity    CORE_STABLE=$CORE_STABLE upstream -> dictionaries on $EXPECTED_BRANCH, which is what this script reads"
+  else
+    echo "FATAL: this pre-flight would be QUIETER THAN THE GATE." >&2
+    echo "  upstream CORE_STABLE = $CORE_STABLE, so CI reads core's dictionaries from $EXPECTED_BRANCH." >&2
+    echo "  this script reads    $CORE_BRANCH." >&2
+    echo "  A newer dictionary accepts words the blocking cspell job rejects, and a run that says" >&2
+    echo "  \"0 issues\" would then be certifying a red push. Set CORE_BRANCH=$EXPECTED_BRANCH and" >&2
+    echo "  re-run with --refresh so the cached dictionaries are re-fetched from it." >&2
+    exit 2
+  fi
+fi
 echo "upstream inputs (core dictionaries from branch $CORE_BRANCH - the branch CI installs)"
 fetch "$UPSTREAM_CONFIG" "$CACHE/upstream.cspell.json" "gitlab_templates assets/.cspell.json"
 fetch "$CORE_DICT"       "$CACHE/dictionary.txt"        "Drupal core dictionary.txt"

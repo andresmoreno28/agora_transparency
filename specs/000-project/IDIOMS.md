@@ -459,3 +459,24 @@
   structured form, and "fixing" the model script to match it — which breaks it again, in the
   direction that looks like consistency. Rule: **when a value round-trips through a tool, verify
   the shape on BOTH sides before assuming they are the same shape.** Recorded 2026-08-25.
+- I-054 · **A pre-flight that is QUIETER than its gate is worse than one that is noisier, and the
+  two failures look identical from the inside.** Three local checks disagreed with their gates in
+  one day. `phpcs`: the 80-character limit applies to **comment lines only** and counts
+  **characters, not bytes**, so a naïve `awk` reported 27 where the gate reported 2. `stylelint`:
+  the CI job **symlinks core's `.prettierrc.json` before running** and a local run does not, so the
+  local pass and the CI failure were both correct. `cspell`: the replica fetched core's
+  dictionaries from the **11.x development branch** while CI installs **stable** core —
+  `vincentlanglet` is in one and not the other, so the local run said *"30 files checked, 0
+  issues"* and the blocking job then failed on exactly that word.
+  **The first two were noisy; the third was quiet, and only the quiet one is dangerous.** A noisy
+  pre-flight wastes attention. A quiet one **certifies a red push** — it does not merely fail to
+  help, it actively tells you the thing it cannot see is fine.
+  Rule, and it is stronger than *"keep the replica in sync"*: **a replica must CHECK its own
+  inputs against the gate's, and stop when they diverge.** `tests/bin/spellcheck` now reads
+  `CORE_STABLE` from `gitlab_templates` at source, derives the branch its dictionaries live on,
+  prints the parity line on a match and **exits 2 on a mismatch**. Offline is a **third state**,
+  reported as `UNVERIFIED`, never as a pass. The test of such a guard is not that it passes today:
+  it is that when Drupal ships 11.5.0 the script **says so and stops**, instead of silently
+  reading a larger dictionary. ⚠️ And note the shape of the trap it closes — pointing the branch
+  back at `11.x` **would not look like a mistake, it would look like an upgrade**.
+  Recorded 2026-08-25.
