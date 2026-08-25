@@ -1039,8 +1039,9 @@ class ValidationTest extends BrowserTestBase {
     // The eight markers must be eight DIFFERENT strings, or marker (b)
     // identifies the project and not the route, and any one of these routes
     // could be serving any other one's table.
-    // assertCount, not assertSame(count(), count()): phpstan's phpunit.assertCount
-    // rule is blocking here and rejected the latter on 2026-08-25.
+    // assertCount, never assertSame(count(), count()): phpstan's
+    // phpunit.assertCount rule is blocking here and rejected the
+    // latter on 2026-08-25.
     $this->assertCount(
       count($captions),
       array_unique($captions),
