@@ -112,6 +112,43 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-801 — nine key routes asserted, and the falsification found a PRODUCT DEFECT.**
+  **PHPUnit: 16 tests, 1717 assertions, 0 failures** (was 15 / 1665 on this rig).
+  `config-inventory` prints **`key routes asserted: 9 · distinct route markers: 8 of 8`**.
+  **Key route = a route this template's own config creates, plus the front page.** Administrative
+  paths are excluded deliberately: they are rendered by Gin and belong to upstream recipes, so
+  asserting them would measure somebody else's work. The eight are **not typed as a list and
+  trusted** — set equality is asserted in both directions against the views actually imported, so
+  a ninth view fails **by name** before it can silently change the total.
+  **Two markers, and status alone is asserted nowhere:** `main.agora-page__main` with its
+  `a#main-content[tabindex="-1"]` — emitted by **this theme's `page.html.twig` and nothing else**,
+  so it asserts the wave-7 swap's actual claim — and the view's `<caption>` **with its exact text
+  read from the imported config**, which identifies the *route* rather than the project. Rejected
+  with reasons: the site name, core's body classes, and **the theme's stylesheet URL**, because
+  CSS aggregation is on and a grep for it returns **0 with the theme perfectly active**.
+  ✅ **The headline falsification:** with `system.theme` set to `stark` — Ágora's theme not the
+  site's theme at all — the full run is **`7 tests, 208 assertions, 1 failure`**: **all six
+  pre-existing methods pass green and only `testKeyRoutes` fails.** Before today, **not one route
+  assertion in this repository could tell Ágora's theme from stock Drupal.** That is precisely
+  what T-402 was deferred to avoid writing, and what this row closes.
+  Five falsifications, each with a named failure, plus three script dirty cases. The last hole was
+  found by walking its own zero case: guarding the **total** would have let all eight views vanish
+  while the front page carried the count to 1, with the uniqueness check agreeing **vacuously**
+  that 0 of 0 markers are distinct. The guard is on the view routes.
+  🔴 **THE THEME'S TABLE TEMPLATE IS BYPASSED ON EVERY ROUTE THE PORTAL SERVES.** Views renders
+  through `views-view-table.html.twig`, a theme hook `agora_theme` **does not override**, so the
+  served markup is core's — `grep -c agora-table` on a real register page returns **0**. Three
+  consequences: the template whose own header calls it *"THE MOST IMPORTANT TEMPLATE IN THIS
+  THEME"* **renders no table this portal actually serves**; its `tabindex="0"` scroll wrapper —
+  the theme's whole answer to SC 1.4.10 reflow and to axe's `scrollable-region-focusable` — is
+  **absent from every register page**; and the theme's axe fixtures therefore exercised
+  `#type: table` elements the site never serves. **The wrong-thing-scanned species, one layer
+  down.** Owner: the theme. ⭐ **Ruled (a): add `views-view-table.html.twig` to the theme** — (b),
+  accepting core's markup, means the theme's most-documented template **ships dead** and its
+  accessibility argument loses a claim it makes in writing.
+  🟡 **`~/agora-smoke` is no longer pristine and was NOT partially restored** — `core-dev` was
+  added to run PHPUnit. A partial restore would have made it *look* clean without being it, which
+  is the false green this project refuses. **Rebuild before the next clean-install smoke.**
 - **T-703 / T-704 / T-705 — wave 7 closed, and two of the three rows were wrong about themselves.**
   **T-703's "revert" half was ALREADY discharged** by the swap commit, whose own tripwire demanded
   it there. `no-boilerplate` was never adjusted for this rider. What remained was **new coverage**,
@@ -681,7 +718,7 @@ none of which needed the theme repository to exist:
 
 | # | Repo | Task | Success criterion | Blocked by |
 |---|---|---|---|---|
-| T-801 | T | **T-402** (carried): route assertions in the functional tests | Each key route asserted for status **and** for a rendered marker; the test prints the number of routes asserted; the number is quoted in the closure report | Wave 7 |
+| T-801 ✓ | T | **T-402** (carried): route assertions in the functional tests | Each key route asserted for status **and** for a rendered marker; the test prints the number of routes asserted; the number is quoted in the closure report | Wave 7 |
 | T-802 | · | **T-208** (carried, redefined): the digest-pinned local gate container | The container definition names an image by **sha256 digest**, not a tag; `tests/bin/doctor` reports the digest; running the wave runners inside it reproduces the host's counts **exactly**, both numbers quoted | D-019 |
 | T-803 | · | **T-317** (carried): toolchain floor measured on the macOS host | The floor (grep flavour, `-F` behaviour, line endings, `sha256sum` availability) recorded per host; **either** macOS is certified with its counts **or** it is recorded as NOT CERTIFIED with the named blocking difference. An unmeasured host is a **failure** | — |
 | T-804 | H | **T-206(b)** (carried): Playwright visual regression on GitHub Actions, non-blocking per D-009 | Baselines committed; the workflow runs and reports **`S` screenshots compared**, `S` stated. Non-blocking, but **it may never lie** (D-020) | Wave 6 |

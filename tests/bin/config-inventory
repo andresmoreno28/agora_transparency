@@ -225,6 +225,109 @@ for v in "$CONFIG_DIR"/views.view.*.yml; do
 done
 printf '  table views: %s\n' "$VIEWS"
 
+# ------------------------------------------------- key-route denominator --
+# T-801 (carried from unit 001 as T-402) asks for the NUMBER OF ROUTES ASSERTED
+# to be printed. Same division of labour as every block above, and for the same
+# hard reason: PHPUnit turns any output a test emits, STDOUT and STDERR alike,
+# into an exception (pipeline 934619). `ValidationTest::testKeyRoutes()` asserts
+# the number; this prints it, together with the marker each route is asserted on,
+# so that a reader can see WHAT was checked and not only how many.
+#
+# WHY THE MARKER IS PRINTED AND NOT JUST THE COUNT. A route asserted for status
+# alone is worth nothing here - a 200 proves a page exists, not that ÁGORA's page
+# exists - so the count on its own would be the same badge this whole file exists
+# to refuse. The caption strings below are the per-route markers: they are written
+# by this template's own view config, they are rendered into the table's
+# `<caption>`, and they must be DISTINCT, or a route serving another route's table
+# would satisfy every one of them. Non-uniqueness is therefore a finding here and
+# an assertion in PHP.
+#
+# THE THEME-LEVEL MARKER IS NOT VISIBLE FROM THIS SCRIPT and is not claimed here.
+# `main.agora-page__main` is emitted by `agora_theme`'s page template, which lives
+# in a different repository and is only observable on a rendered page. That half
+# is asserted in PHP alone, and this block says so rather than implying a coverage
+# it cannot see.
+printf '\nkey routes (the set ValidationTest::testKeyRoutes() asserts, T-801):\n'
+# Named here rather than reused from the optional-key block below, which runs
+# later in the file: a variable read before it is assigned is exactly the silent
+# empty scope this script refuses everywhere else.
+RECIPE_FILE="recipe.yml"
+ROUTES=0
+VIEW_ROUTES=0
+CAPTION_LIST=$(mktemp -t config-inventory-captions.XXXXXX) || fatal "cannot create a temp file"
+trap 'rm -f "$FINDINGS_FILE" "$FILE_LIST" "$CAPTION_LIST"' EXIT
+for v in "$CONFIG_DIR"/views.view.agora_base_*.yml; do
+  [ -e "$v" ] || break
+  id=${v#"$CONFIG_DIR"/views.view.}
+  id=${id%.yml}
+  # The page display's own path, and the caption of the default display's table
+  # style. Both read from the file rather than typed, for the same reason the
+  # column counts above are: a number or a string typed beside a check is a
+  # check that agrees with itself.
+  route=$(awk '
+    /^  page_1:$/ { inp = 1; next }
+    inp && /^      path: / { sub(/^      path: /, ""); print; exit }
+  ' "$v")
+  caption=$(awk '
+    /^          caption: / { sub(/^          caption: /, ""); print; exit }
+  ' "$v")
+  # Strip the exporter's single quotes so the printed string is the string a
+  # reader would see in the page, not its YAML spelling.
+  caption=${caption#\'}
+  caption=${caption%\'}
+  if [ -z "$route" ]; then
+    finding "$v" "0" "no page display path; a view with no route cannot be a key route"
+    continue
+  fi
+  if [ -z "$caption" ]; then
+    finding "$v" "0" "no table caption; the route would be asserted on status alone (T-801)"
+    continue
+  fi
+  printf '%s\n' "$caption" >> "$CAPTION_LIST"
+  ROUTES=$((ROUTES + 1))
+  VIEW_ROUTES=$((VIEW_ROUTES + 1))
+  printf '  /%-14s marker: caption "%s"\n' "$route" "$caption"
+done
+
+# The front page, whose route marker is theme-level only: `content/` ships one
+# deliberately blank landing page, so there is no Ágora-specific TEXT on it to
+# assert. Stated rather than padded into the table above.
+FRONT=$(tr -d '\r' < "$RECIPE_FILE" 2>/dev/null | awk '
+  /^        page\.front: / { sub(/^        page\.front: /, ""); print; exit }
+')
+FRONT=${FRONT#\'}
+FRONT=${FRONT%\'}
+if [ -n "$FRONT" ]; then
+  ROUTES=$((ROUTES + 1))
+  printf '  %-15s marker: theme only (main.agora-page__main) - the landing page is blank by design\n' "$FRONT"
+else
+  finding "$RECIPE_FILE" "0" "no page.front declared; the front page is not a route this template owns"
+fi
+
+# `wc -l` over a listing, never `grep -c`, because this value IS compared:
+# house rule, T-321(c).
+UNIQUE=$(LC_ALL=C sort -u < "$CAPTION_LIST" | wc -l | tr -d '[:space:]')
+TOTAL_CAPTIONS=$(wc -l < "$CAPTION_LIST" | tr -d '[:space:]')
+printf '  key routes asserted: %s   distinct route markers: %s of %s\n' \
+  "$ROUTES" "$UNIQUE" "$TOTAL_CAPTIONS"
+if [ "${UNIQUE:-0}" -ne "${TOTAL_CAPTIONS:-0}" ]; then
+  finding "$CONFIG_DIR/views.view.agora_base_*.yml" "0" \
+    "two routes share a caption; the marker would identify the project, not the route"
+fi
+# Zero routes is a failure, not "nothing to report" - the same tautology this
+# file opens with. T-321(b): defaulted because zero means FAIL here.
+#
+# ⚠️ THE GUARD IS ON THE VIEW ROUTES, NOT ON THE TOTAL, and the difference is
+# the whole point. Guarding `ROUTES` alone would let all eight views disappear
+# and still pass, because the front page would carry the total to 1 - and the
+# uniqueness check above would agree, vacuously, that 0 of 0 markers are
+# distinct. Found by walking this block's own zero case rather than by running
+# it, which is the only way a degenerate branch is ever found.
+if [ "${VIEW_ROUTES:-0}" -eq 0 ]; then
+  finding "$CONFIG_DIR" "0" \
+    "no view route found; testKeyRoutes() would assert over an empty set (T-801)"
+fi
+
 # ------------------------------------------------------ role denominators --
 # T-602's criterion asks for the number of roles and permissions INSPECTED to be
 # printed. Same division of labour as the blocks above and for the same hard

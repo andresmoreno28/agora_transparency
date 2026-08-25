@@ -873,6 +873,193 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
+   * The nine key routes, each asserted for status AND for an Ágora marker.
+   *
+   * T-801, carried from unit 001 as T-402. THE SECOND CLAUSE IS THE WHOLE ROW.
+   * A 200 proves a page exists; it does not prove that ÁGORA'S page exists.
+   * Unit 001 deferred this rather than write it weak, and it was right to: with
+   * no content model and no theme, every route the site served came from the
+   * Drupal CMS base recipes, so a status-only assertion would have passed with
+   * Ágora entirely absent - a test that cannot fail for the reason it claims to
+   * test (I-032). That is no longer true, so the row is payable.
+   *
+   * WHAT COUNTS AS A KEY ROUTE, and what deliberately does not. The nine are
+   * the eight routes this template's own `views.view.agora_base_*` config
+   * creates - the six per-bundle registers, the cross-type listing and the
+   * library - plus the front page, which is the one route every visitor reaches
+   * without being sent there. Administrative paths are NOT key routes: they are
+   * rendered by the admin theme, they belong to upstream recipes rather than to
+   * this template, and asserting them would measure Gin.
+   *
+   * THE MARKER PER ROUTE, and why each cannot appear by accident:
+   *
+   *   (a) `main.agora-page__main`, and the skip-link anchor inside it. Emitted
+   *       by `agora_theme`'s own `page.html.twig` and by nothing else: core's
+   *       page template writes no such class, and the `<a id="main-content"
+   *       tabindex="-1">` immediately inside <main> is this theme's answer to
+   *       WCAG 2.2 SC 2.4.1 rather than anything core emits. The pair is
+   *       therefore a statement that ÁGORA'S THEME RENDERED THIS PAGE - which
+   *       is what the wave-7 swap actually claims, and which no assertion in
+   *       this class checked before today.
+   *
+   *   (b) The table's `<caption>`, asserted for its EXACT TEXT, read from the
+   *       view that was imported rather than typed here. The text is written by
+   *       this template's own `views.view.agora_base_*` config and by nothing
+   *       else; core emits a caption only when the view declares one; and the
+   *       eight strings are DISTINCT, which is what makes this a marker for the
+   *       ROUTE rather than for the project. A route serving some other view's
+   *       table fails it, and so does a route whose caption was lost - the
+   *       defect a config-level check cannot see, and which this unit has
+   *       already met once, in the shape of a view column that passed its
+   *       config check and never rendered.
+   *
+   *       ⚠️ THIS SELECTOR WAS WRITTEN WRONG FIRST, AND THE WRONG VERSION IS
+   *       WHAT FOUND THE DEFECT BELOW. It began as
+   *       `table.agora-table > caption.agora-table__caption`, on the reasoning
+   *       that the theme's `table.html.twig` renders the portal's tables. It
+   *       does not. Views renders through `views-view-table.html.twig`, a
+   *       different theme hook that this theme does not override, so the served
+   *       markup is `<table class="cols-8">` with a bare `<caption>` and the
+   *       string `agora-table` appears ZERO times on the page. The class-based
+   *       selector matched nothing, and the assertion failed by name rather
+   *       than passing on a coincidence. What follows from that is stated in
+   *       the closure report and owned outside this row: the theme's table
+   *       template - its own README calls it the most important one it ships -
+   *       renders no table this portal actually serves, so `agora-table__scroll
+   *       [tabindex="0"]`, the theme's whole answer to horizontal overflow and
+   *       to axe's `scrollable-region-focusable`, is absent from every register
+   *       page. The `scope="col"` that the sibling methods assert is CORE's,
+   *       from the views table preprocess, not this theme's.
+   *
+   * MARKERS CONSIDERED AND REJECTED, because a rejected marker is the part of
+   * this row that is easiest to get wrong:
+   *   - the site name: emitted by core's `html.html.twig` on every page of
+   *     every Drupal site, and settable by anyone. It says nothing about Ágora.
+   *   - `<title>Home</title>` on the front page: the word is generic, the
+   *     landing page is deliberately blank, and any site with a page called
+   *     Home would pass.
+   *   - `path-frontpage`, `page-node-type-*` and the other body classes: core.
+   *   - the theme's stylesheet URL: CSS AGGREGATION IS ON, so grepping the
+   *     served HTML for `agora_theme/css/tokens.css` returns nothing WITH THE
+   *     THEME PERFECTLY ACTIVE. T-705 worked around it by reading the
+   *     aggregate; asserting the DOM the template emits is better still,
+   *     because a library can be attached to a page the theme never rendered.
+   *
+   * THE FRONT PAGE'S MARKER IS THEME-LEVEL ONLY, AND THAT IS A GAP, STATED.
+   * `content/` holds exactly one file, a deliberately blank Canvas landing
+   * page, so the front page has no Ágora-specific TEXT to assert - there is
+   * none to render. Comparing its document against the one served at `/home`
+   * was considered and rejected: under the harnesses where `redirect`'s route
+   * normalizer fires, `/home` 301s to `/` and the comparison is a tautology.
+   * The front page's route identity is asserted by `testFrontPageRoundTrip()`;
+   * what this method adds there is the theme. Demo content is unit 003.
+   *
+   * NO LITERAL PATH IS ASSERTED. `drupalGet()` resolves a relative path against
+   * the harness's own base path, and the markers below are DOM, not hrefs - so
+   * nothing here can go green on a `/`-rooted DDEV and red on a `/web`-rooted
+   * drupalci, which is what I-056 cost this project two pipelines to learn.
+   *
+   * THE COUNT IS ASSERTED HERE AND PRINTED BY `tests/bin/config-inventory`.
+   * A test cannot print: PHPUnit turns any output a test emits, STDOUT and
+   * STDERR alike, into an exception (pipeline 934619).
+   */
+  public function testKeyRoutes(): void {
+    $this->applyRecipe(self::getRecipePath());
+
+    // A reader, because these routes exist to be read.
+    $this->drupalLogin($this->drupalCreateUser(['access content']));
+    $assert = $this->assertSession();
+
+    // -- The route set, named AND checked against the site -------------------
+    // Named, so that a route silently disappearing fails; checked against what
+    // was actually imported, so that a NINTH view landing with no assertions
+    // fails too. Either direction alone would let this method quietly stop
+    // covering the thing it is named after.
+    $named = array_merge(array_keys(self::TABLE_VIEWS), array_keys(self::SURFACE_ROWS));
+    sort($named);
+    $imported = array_filter(
+      array_keys(\Drupal::entityTypeManager()->getStorage('view')->loadMultiple()),
+      static fn (string $id): bool => str_starts_with($id, 'agora_base_'),
+    );
+    $imported = array_values($imported);
+    sort($imported);
+    $this->assertSame($named, $imported, 'The views this template ships and the views this method asserts must be the same set, in both directions.');
+    $this->assertCount(8, $named, 'Eight view routes, which with the front page is the nine this row counts.');
+
+    // -- The fixture: one node per bundle, so every table has rows -----------
+    // Built from the field definitions and living only in the test database,
+    // exactly as the sibling methods do. `content/` holds one file and a test
+    // asserts it; nothing here can reach an export.
+    foreach (self::TABLE_VIEWS as $bundle) {
+      $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1];
+      $definitions = \Drupal::service('entity_field.manager')
+        ->getFieldDefinitions('node', $bundle);
+      foreach ($definitions as $field_name => $definition) {
+        if ($definition instanceof FieldConfig) {
+          $values[$field_name] = $this->fixtureValue($definition);
+        }
+      }
+      $this->drupalCreateNode($values);
+    }
+
+    // -- The eight view routes ----------------------------------------------
+    $main = 'main.agora-page__main';
+    $caption_selector = $main . ' ' . self::VIEW_CONTAINER . ' table > caption';
+    $routes = 0;
+    $captions = [];
+
+    foreach ($named as $view_id) {
+      $view = View::load($view_id);
+      $this->assertNotNull($view, "$view_id must have been imported by the recipe.");
+      $default = $view->getDisplay('default')['display_options'];
+      $caption = (string) ($default['style']['options']['caption'] ?? '');
+      $this->assertNotSame('', trim($caption), "$view_id must declare a caption, or the marker asserted below is the empty string and proves nothing.");
+      $captions[$view_id] = $caption;
+      $path = $view->getDisplay('page_1')['display_options']['path'];
+
+      $this->drupalGet($path);
+
+      // Clause one: the status.
+      $assert->statusCodeEquals(200);
+
+      // Clause two, marker (a): Ágora's theme rendered this page.
+      $assert->elementsCount('css', $main, 1);
+      $assert->elementExists('css', $main . ' > a#main-content[tabindex="-1"]');
+
+      // Clause two, marker (b): and the page it rendered is THIS route's.
+      // Scoped inside the main landmark on purpose - a caption rendered
+      // outside the region the skip link leads to would satisfy neither the
+      // theme claim nor the accessibility one.
+      $assert->elementsCount('css', $caption_selector, 1);
+      $assert->elementTextEquals('css', $caption_selector, $caption);
+
+      $routes++;
+    }
+
+    // The eight markers must be eight DIFFERENT strings, or marker (b)
+    // identifies the project and not the route, and any one of these routes
+    // could be serving any other one's table.
+    $this->assertSame(
+      count($captions),
+      count(array_unique($captions)),
+      'Every route marker must be unique, or a route serving the wrong view would pass.',
+    );
+
+    // -- The ninth route: the front page -------------------------------------
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $assert->elementsCount('css', $main, 1);
+    $assert->elementExists('css', $main . ' > a#main-content[tabindex="-1"]');
+    $routes++;
+
+    // The number this row asks for, asserted because it cannot be printed.
+    // It is not a constant typed beside the loop: eight of it is pinned by the
+    // set-equality above, so a ninth view arriving fails there, by name, before
+    // it can silently change this total.
+    $this->assertSame(9, $routes, 'Nine key routes: the eight views this template creates, and the front page.');
+  }
+
+  /**
    * Checks that the site template includes all Canvas components that it uses.
    */
   protected function assertCanvasComponentsAreIncluded(): void {
