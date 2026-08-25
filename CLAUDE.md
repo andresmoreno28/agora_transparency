@@ -188,15 +188,17 @@ a test. The sibling layout is the guard — that is why it is a sibling and not 
 ⚠️ **Chosen by [ejecutor] 2026-08-24 under standing delegation, and it is reversible.** A
 `workspace/` parent holding both is the right shape at five repositories; at two it would mean
 moving the working copy a session is running in, on the day wave 5 starts.
-## Gate A (the drupalcode pipeline IS the gate — **job list observed**, 2026-08-24)
+## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26)
 
 - `composer validate` + clean install.
-- **Observed inventory.** Pipeline `934387`, ref `1.x`, commit `25f6163`, read from
-  `/api/v4/projects/project%2Fagora_transparency/pipelines/934387/jobs` — not from the UI, not from
-  the badge:
+- **Observed inventory — the site template.** Pipeline `936386`, ref `1.x`, commit `23b3838`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/936386/jobs` on 2026-08-26 —
+  not from the UI, not from the badge:
 
   | job | stage | status | `allow_failure` |
   |---|---|---|---|
+  | `Drupal CMS` | build | success | false |
+  | `agora-invariants` | validate | success | false |
   | `composer` | build | success | false |
   | `composer-lint` | validate | success | false |
   | `cspell` | validate | success | false |
@@ -204,49 +206,64 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `phpcs` | validate | success | false |
   | `phpstan` | validate | success | false |
   | `phpunit` | test | success | false |
-  | `agora-invariants` | validate | success | false |
 
-  **Eight jobs · all blocking · zero named exceptions.** The job *list* is unchanged since pipeline
-  `933556` (2026-08-23), which had itself superseded a seven-job table read from `933342`; what
-  changed is that the list is **observed green again after three pipelines in which it was not**.
-  `cspell` failed on `934242`, `934297` and `934329` — blocking, so the gate was red — while three
-  commits were reported as clean, because the local pre-flight this file pointed at loaded no
-  dictionary and printed 905 findings against a job that finds none (I-051). Use
-  **`bash tests/bin/spellcheck`**, which fetches the job's real inputs and was verified against
-  `934329` itself. `stylelint` remains
-  absent because the package contains no CSS — and since the theme is a **separate project**
-  (D-014), it may never run in this repository at all. **Derived lists are forbidden here: this
-  table is replaced only by another observation, and it is a dated measurement, not a promise: the
-  commit that changes the CI job list, the packaged file set or a gate's denominator is the commit
-  that updates it.**
+  **Nine jobs · all blocking · zero named exceptions.** This single table replaces the pair that
+  stood here until 2026-08-26 — eight rows read from `934387` plus a ninth appended from `934533`,
+  which was two observations of one list, split by the commit that produced each and increasingly
+  hard to read as one thing. Nothing about the list changed in the merge; it is the same nine jobs,
+  re-read whole. `stylelint` is absent because this package contains no CSS, and since the theme is
+  a **separate project** (D-014) it may never run here at all — see the theme's own table below,
+  where it does.
 
-  ✅ **THE NINTH JOB IS OBSERVED. Pipeline `934533`, ref `1.x`, commit `09fb47b`, read from
-  `/api/v4/projects/project%2Fagora_transparency/pipelines/934533/jobs` on 2026-08-24** — not
-  from the UI, not from the badge. T-511, under the Amendment to D-020.
+  **Derived lists are forbidden here: this table is replaced only by another observation, and it is
+  a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
+  set or a gate's denominator is the commit that updates it.**
+
+- **Observed inventory — the theme.** Pipeline `936390`, ref `1.x`, commit `7bb6396`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/936390/jobs` on 2026-08-26. It is recorded in
+  **this** file because `agora_theme` has no `CLAUDE.md` of its own: it is a theme, and its
+  repository holds code, not the process layer.
 
   | job | stage | status | `allow_failure` |
   |---|---|---|---|
-  | `Drupal CMS` | build | success | false |
+  | `agora-invariants` | validate | success | false |
+  | `composer` | build | success | false |
+  | `composer-lint` | validate | success | false |
+  | `cspell` | validate | success | false |
+  | `eslint` | validate | success | false |
+  | `nightwatch` | test | success | false |
+  | `phpcs` | validate | success | false |
+  | `phpstan` | validate | success | false |
+  | `stylelint` | validate | success | false |
 
-  **Nine jobs · all blocking · zero named exceptions.** The eight-row table above and this row are
-  the same observation split by the commit that produced each; the floor set by D-023(5) is now
-  **`jobs >= 9`**, not `7`. ⚠️ The quotation of D-023(5) below still reads `jobs >= 7` **because it
-  is a quotation** — the rule's text is not edited to match a later measurement (rule 8); the
-  operative floor is the number in this paragraph.
+  ⚠️ **Nine jobs here too — and it is NOT the same nine. Reading the count and skipping the names
+  is the mistake this pair of tables is shaped to prevent.** Three jobs differ. The theme runs
+  **`nightwatch`** (the axe gate) and **`stylelint`** (it has CSS), and it runs **no `phpunit`**
+  and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
+  and *"both are at nine"* is not the same statement as *"both run what they need to run"*. The
+  **denominators** are the part that carries meaning: on this pipeline `nightwatch` printed
+  `agora_theme axe gate: 4 pages scanned, 89-89 axe rules run per page, 0 violations` and
+  `128 total assertions`, and that job has been **seen to fail** on a real missing `alt`
+  (pipeline `935776`) — so its green is a measurement, not an absence.
 
-  *Both failure modes named in advance did not occur, and saying so is the point of naming them:*
-  the job **materialised** (so `jobs >= 9` is met, and I-050's *defined ≠ materialised ≠ collected
-  ≠ executed* was checked rather than assumed), and it arrived **`allow_failure: false`** on its
-  own — `_ALL_VALIDATE_ALLOW_FAILURE: '0'` does **not** reach it, since it is declared in the
-  `build` stage. So **no exception was needed and the exception list stays empty**.
+  ⚠️ **The theme has no `phpunit` job because it has no PHP tests, and that is a gap with an
+  owner, not a property of themes.** It is named here rather than left to be inferred from a
+  missing row.
 
-  *What this job actually proves, stated narrowly:* it builds a fresh `drupal/cms` at `2.1.3`,
-  installs **this package** into it through a Composer path repository, and runs Drupal CMS's own
-  compatibility test against it. It is the clean-install smoke, and it now runs **where a
-  Drupal.org reviewer can re-run it**. The GitHub workflow keeps running and stays informative
-  (D-020); what ended is its monopoly. ⚠️ It resolves dependencies from `packages.drupal.org`,
-  which is why it was landed **today, on a tree that requires no theme** — wave 7 adds
-  `drupal/agora_theme` to `require`, and a red then is attributable to the swap and nothing else.
+- **The clean-install smoke runs on drupalcode and is observed, not merely declared.** The
+  `Drupal CMS` job builds a fresh `drupal/cms` at `2.1.3`, installs **this package** into it
+  through a Composer path repository, and runs Drupal CMS's own compatibility test against it —
+  `OK (1 test, 1 assertion)` in job `11771967`. It is the clean-install smoke, and it runs **where
+  a Drupal.org reviewer can re-run it**. The GitHub workflow keeps running and stays informative
+  (D-020); what ended is its monopoly.
+
+  ⚠️ **And the same log is where discharge condition 2 is visible.** It resolves from
+  `packages.drupal.org`, and it prints `Locking drupal/agora_theme (1.0.0)` · `Downloading` ·
+  `Installing`. **`1.0.0` is the release in which `templates/views-view-table.html.twig` does not
+  exist at all** — so every install today, including the one those 1717 assertions ran against,
+  gets the pre-fix theme. Publishing `1.0.1` is [andres]'s action and it is a **blocker on closing
+  unit 002**, not a nicety. The log naming the resolved version is what makes this a fact rather
+  than a suspicion.
 
 - **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
   non-negotiable rule 9's second sentence and D-006 on this point):
@@ -265,8 +282,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. **Read `9`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
-  repository's **87** tracked files, `bash tests/bin/spellcheck` opens **82** and finds 0 issues
-  (re-measured 2026-08-24 during T-511; the previous pair, 70 and 65, was one file behind the tree);
+  repository's **183** tracked files, `bash tests/bin/spellcheck` opens **178** and finds 0 issues
+  (re-measured 2026-08-26 at T-805; the previous pair, 87 and 82, was 96 files behind the tree — the
+  config export landed in between, and a denominator that stale is the reason this line is
+  re-measured rather than carried forward);
   the other five (`.eslintrc.json`, `.gitignore`, `LICENSE.txt`, `composer.json`, `screenshot.webp`)
   are skipped by the upstream `.cspell.json` defaults, not by omission. The CI job's own count runs
   two higher — it also opens two files the runner generates and this repository does not track. The
@@ -290,7 +309,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
 - PHPUnit runs with **`--fail-on-empty-test-suite`** on every runner — **observed on drupalcode**,
   not inferred: the flag in the executed command line, `_PHPUNIT_CONCURRENT=0`, and
-  `OK (3 tests, 38 assertions)` from the same log. A suite that executed 0 tests is a **failed**
+  `OK (16 tests, 1717 assertions)` from job
+  `11771974` on pipeline `936386` (re-measured 2026-08-26 at T-805; it read `3 tests, 38
+  assertions` until then). A suite that executed 0 tests is a **failed**
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
@@ -301,14 +322,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
   test emits, STDERR included, into an error. Measured locally on Windows, not on the runner.
 
 - **Install smoke:** apply the template on a CLEAN Drupal CMS and verify key routes/render.
-  **Declared on drupalcode as the blocking `Drupal CMS` job since 2026-08-24 (T-511, Amendment to
-  D-020) — and not yet observed running there**; see the placeholder row above. Until that row is
-  filled from the API, the only surface on which this has actually executed is the GitHub workflow,
-  which D-020 classifies as an **informative** surface: it may fail without blocking, but it may
-  never lie, and no wave closes on its green. D-020's holding is unchanged and GitHub keeps running
-  as a second opinion; what the amendment ends is GitHub's **monopoly** on running this smoke.
+  ✅ **Observed running on drupalcode as the blocking `Drupal CMS` job** — see its own bullet
+  above, with the pipeline, the job id and the line it printed. This paragraph said *"not yet
+  observed running there"* until 2026-08-26, pointing at a placeholder row; the row is filled and
+  the placeholder is gone. D-020's holding is unchanged and the GitHub workflow keeps running as an
+  **informative** second opinion — it may fail without blocking, but it may never lie, and no wave
+  closes on its green. What the amendment ended is GitHub's **monopoly** on running this smoke.
 - Playwright: functional + visual regression of the demo pages.
-- axe (a11y) with no violations on the demo pages.
+  ⏸ **NOT RUNNING ANYWHERE, and not counted as coverage until it is.** T-804 is **deferred to unit
+  003 with the mirror as its prerequisite**: D-009(d) puts visual regression on the GitHub mirror,
+  and no GitHub repository exists for `agora_theme` yet (`gh repo view` → *"Could not resolve to a
+  Repository"*). With no demo content until unit 003, the only pages a screenshot could capture are
+  four synthetic fixtures. **Prerequisite: [andres] creates the mirror.**
+- axe (a11y) with no violations on the demo pages. **Running in the theme, not here**, as the
+  blocking `nightwatch` job — 4 pages, 89 rules per page, 0 violations; see the theme's table.
+  ⚠️ *"on the demo pages"* is still aspirational: there are no demo pages until unit 003, so what
+  it scans today is fixtures.
 - `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches.
 ## Available commands
 
