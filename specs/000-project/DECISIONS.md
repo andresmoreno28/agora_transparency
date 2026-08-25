@@ -1494,3 +1494,131 @@ All three verified as SIL OFL 1.1 at source on 2026-08-24 (licence file URLs in 
      which T-406 forbids modifying.
   2. **T-103** must account for the **three** `_comment` occurrences in `composer.json`.
   3. **`ValidationTest.php`** is added to the set of kit files watched by the gate.
+
+---
+
+## Decisions opened by unit 003
+
+> Scaffolded [ejecutor] 2026-08-26. **None of these is closed here.** Three are new (D-035, D-036,
+> D-037), one has been open since 2026-08-21 (D-010), and two are riders. Verified on disk before
+> numbering: the highest existing number was **D-034**.
+
+### D-010 · Scope of the v1 demo content — **open since 2026-08-21, and it is this unit's**
+
+Not new. This file already reads *"Postponed to unit 003, once the content model exists. Keep it
+open."* The model exists. It must be signed **before wave 10 authors a node**, because it is the
+single largest determinant of this unit's task count.
+
+*Context in one line:* how many rows per bundle, and what municipality is the demo pretending to be?
+
+| | Option | Real cost |
+|---|---|---|
+| A | Minimal — 3-5 rows per bundle | Every table is smaller than one screen; the **pager never renders**, so `heading-order`, focus visibility and target size are untested on the one component that exercises them. Cheapest to author, and it leaves three WCAG criteria unmeasured |
+| **B ★** | **Sized by what must be testable**, not by taste: ≥26 Documents (the library's `items_per_page` is **25**, so 26 is the smallest number that paginates); ≥3 rows per remaining bundle; ≥3 distinct `procedure_type` values; ≥1 counterparty holding two contracts | Roughly 50-60 nodes. More authoring, and every number in it is defensible from a config file rather than from an opinion. It is also the smallest corpus in which the art. 8.1.a) statistic is non-degenerate |
+| C | Rich — a full fictional year of a real-sized municipality | The most convincing demo and the largest `no-real-people` surface. `haven` ships 75 MB; a corpus this size invites the same |
+
+★ **B.** It is the only option whose size is derived from a measurement — `items_per_page: 25` in
+`config/views.view.agora_base_library.yml` — rather than chosen, and it is the smallest corpus in
+which the accessibility gate can test what it claims to test.
+
+**Rider needed either way:** the fictional municipality's **name**. Everything downstream — the org
+chart, the domain in email addresses, the deny-list `no-real-people` is built from — depends on it,
+and it must be a name that is *provably* not a real Spanish municipality.
+
+### D-035 · The demo content is bilingual and the interface cannot be — what ships?
+
+*Context in one line:* **rule 6** says demo content is bilingual ES/EN; **D-033** puts every shipped
+config string in English and records that four locks stop the Spanish translation reaching an
+installed site — so a Spanish demo page shows Spanish content inside English chrome, and unmarked
+that is a **WCAG 2.2 SC 3.1.2 (AA) failure**, not a cosmetic complaint.
+
+Measured, so the options are not argued from taste
+(`specs/003-demo-content/research/2026-08-26-demo-content-mechanics.md` §5, §4):
+
+- `Importer.php:257` — a translation for a language the site has not configured is **dropped silently**.
+- `haven` and `byte`, the two published site templates: **0 of 213 content files carry a
+  `translations:` key.** Ágora would be the first, with no worked example to copy.
+- No template in `agora-theme/templates/` emits a `lang` attribute today.
+
+| | Option | Real cost |
+|---|---|---|
+| **A ★** | **Ship bilingual content; mark every English fragment with `lang="en"` in the theme** | Honest, standards-correct, and it turns the awkwardness into a demonstrated WCAG competence — a transparency template that gets 3.1.2 right is making its own argument. Costs **T-1011**: seven theme templates gain a `lang` mechanism, and it must be maintained as templates are added |
+| B | Ship bilingual content; **do not** mark the fragments | Cheaper today. It ships a **known AA failure** in the product whose thesis is "real AA, verified", and the reviewer most likely to find it is the Spanish one. Not recommended, listed so the trade-off is visible |
+| C | **Ship English-only demo content**; document ES as a post-install step | Zero WCAG risk, matches both published precedents exactly, and removes the whole multilingual config layer (~13 config files) and T-902's probe. **It contradicts non-negotiable rule 6**, so it costs an amendment to rule 6, not a task |
+| D | Ship bilingual content and ALSO the Spanish interface translation inside the template | **Rejected on mechanics, not preference** — D-033 already established there is no seam: `RecipeConfigInstaller` hard-codes `DEFAULT_COLLECTION`, `ConfigConfigurator` opens `config/` non-recursively, and a `.po` file needs an `.info.yml` key the package cannot have |
+
+★ **A.** It is the only option where the product's accessibility claim and its bilingual claim are
+both true at once, and the cost is one mechanism in one repository rather than a permanent
+exception. **But C is a legitimate answer and it is cheaper by roughly four task rows** — if
+[andres] would rather rule 6 be amended than pay for `lang` handling, that is a defensible call and
+it needs to be made **now**, because T-1001 and T-1011 are both blocked on it.
+
+### D-036 · Where does axe run over the **demo pages**, and where does Playwright run?
+
+*Context in one line:* D-027 proved Nightwatch **cannot be collected** in the template repository
+(recipes install outside the docroot; Nightwatch's glob is rooted at the docroot), and the demo
+pages exist only in the template — so *"axe with no violations on the demo pages"* has **no surface
+today**, and D-027 said so explicitly: *"the demo pages do not exist until unit 003, so the gap is
+not being introduced here, only made visible."* It is now visible.
+
+| | Option | Real cost |
+|---|---|---|
+| A | Theme repo's Nightwatch builds a site **with the template applied**, then scans | Keeps the blocking axe gate in one place and keeps it on drupalcode where a reviewer can re-run it. **Creates a reverse edge**: the theme would know about the template, which `specs/002-base-and-theme/plan.md:218-221` forbids — *"There is no reverse edge and none is permitted"* |
+| B | Axe over demo pages on the **template's GitHub mirror**, informative | The mirror **already exists** so there is no prerequisite. But D-009 discarded exactly this for the axe gate: *"the accessibility gate, which is the product's thesis, would live where a Drupal.org contributor can neither see it nor re-run it"* |
+| **C ★** | **Split by what each surface can actually prove.** Blocking `nightwatch` **stays in the theme** over theme fixtures (unchanged). Demo-page axe runs on the template's **`Drupal CMS` job**, which already builds a real site from this package and is already blocking — driven from PHPUnit `FunctionalJavascript` or a Nightwatch run inside that job's docroot | Needs axe-core reachable inside that job. D-027 rejected a related idea partly on *"vendoring it into a package whose defining rule is 'contains no code'"* — but a **CI-time npm fetch inside a job** is not vendoring, and it is **NOT MEASURED**. Wave 12's row is written with the surface unnamed precisely so this is measured before it is chosen |
+| D | Accept the gap for unit 003; demo-page axe is unit 006's | Honest, and it makes the unit's headline claim — *"axe stops scanning fixtures"* — false for another two units |
+
+★ **C, conditional on one measurement**: whether axe-core can be installed and run inside the
+existing `Drupal CMS` job. That measurement belongs in wave 9 or early wave 12 and it is **one
+task-row's worth of reserve**, which the budget carries. If it fails, **B** is the fallback and the
+gap is stated rather than hidden.
+
+**And the same decision settles Playwright's home.** T-804 was written `H` (theme), but demo pages
+live in the template, whose mirror exists — while the theme has **no GitHub repository at all**
+(`gh repo view` → *"Could not resolve to a Repository"*). So the prerequisite [andres] has been
+asked for may be for the **wrong repository**. Recommendation: **demo-page visual regression goes to
+the template's existing mirror**, and the theme mirror becomes a separate, smaller, later question.
+**This would remove a prerequisite from unit 003's critical path entirely.**
+
+### D-037 · Does a chart module enter the SBOM for the budgets page?
+
+*Context in one line:* the ROADMAP asks for *"lightweight visualization + accessible table as the
+source of truth (avoid heavy chart modules)"*; D-026 already ruled the table **is** the source of
+truth; rule 2 forbids any contrib module without its `DECISIONS.md` line.
+
+| | Option | Real cost |
+|---|---|---|
+| **A ★** | **No chart. The table is the deliverable.** | Zero SBOM growth, zero new attack surface, zero new accessibility surface. The screenshot is less striking. ⚠️ `drupal/charts 5.2.3` is in the 2026-08-20 SBOM research as *stable with security coverage* — so this is a genuine choice, not a constraint |
+| B | Inline SVG generated by a Twig template in the theme, no module | No dependency. Costs real theme work and a genuine a11y surface — an SVG chart needs `role`, an accessible name and `aria-hidden` on decoration |
+| C | `drupal/charts ^5.2` | A real dependency on the flagship **free** template, for one page. It pulls a JS charting library whose licence must enter the manifest, and it adds a component to unit 006's final SBOM sweep |
+
+★ **A for v1**, with B as a unit-006 improvement if the screenshot needs it. The reasoning is the
+project's own: *"when in doubt, solve it with what Drupal CMS already ships"* (rule 2), and the
+table is not a fallback — D-026 already made it the primary artefact.
+
+### Rider requested · The accessibility statement's unit
+
+Not a decision, a **contradiction between two on-disk documents** that needs one word.
+`ROADMAP.md:101` → unit 003. `specs/002-base-and-theme/plan.md:94` → unit 006.
+Recommendation: **003**, as **T-1105**, because the statement's substance is this unit's axe
+denominators and a statement written in 006 against numbers taken in 003 rots in between. If
+[andres] prefers 006, T-1105 leaves this unit and the budget drops to 33.
+
+### Rider requested · Four-digit task ids from wave 10
+
+`specs/002-base-and-theme/plan.md:137` predicted this expiry. It touches the signed
+`T-<wave><nn>` convention, so it is noted rather than assumed: unit 003 runs waves **9-12**, ids
+`T-901…T-1206`, and every count in the unit uses the anchored, bounded regex recorded in
+`specs/003-demo-content/plan.md` §4 — **verified collision-free by command**: it returns **30**
+against unit 003's `tasks.md` and **0** against both unit 001's and unit 002's.
+**The convention is unchanged; only its rendering widens.**
+
+### ⚠️ Two divergences found on disk during this scaffolding, recorded rather than resolved quietly
+
+**(a) The accessibility statement is assigned to two different units by two on-disk documents** —
+the rider above. **(b) Visual regression is assigned to two different units**: the 002 plan's NO-list
+sends it to unit 006, while T-804, amended two days later with its evidence, defers it to unit 003.
+The tasks.md amendment is later and names its evidence, so it governs — but the 002 plan's NO-list
+was never amended, so a reader arriving at unit 006 will find visual regression waiting for them
+there too. Neither is edited here (rule 8); both are recorded so the next reader is not the one who
+discovers them.

@@ -83,7 +83,18 @@ grep_failed() { # <rc> <pattern> <subject>
 DECISIONS='specs/000-project/DECISIONS.md'
 
 # A citation: the bare task id, anywhere in the decision record.
-CITATION_PATTERN='T-[0-9]{3}'
+#
+# {3,4}, NOT {3}, AND IT WAS THIS SCRIPT THAT PROVED WHY. Unit 003 runs waves 9-12, so its ids
+# go four digits - T-1001, T-1206 - exactly as specs/002-base-and-theme/plan.md:137 predicted
+# ("known expiry: from global wave 10 the numbers go four-digit"). With {3}, `T-1001` matched as
+# `T-100` and `T-1206` as `T-120`, and this script reported two dangling citations naming ids
+# that were never written down by anyone. The prediction was recorded; the tool that would break
+# on it was not adjusted, and the unit-003 scaffolding turn is what collected the debt.
+#
+# The range is greedy in ERE, so `T-1001` matches all four digits rather than stopping at three.
+# Verified in both directions before this line was trusted: with {3} the run printed
+# `findings: 4`, naming T-100 and T-120; with {3,4} it prints them not at all.
+CITATION_PATTERN='T-[0-9]{3,4}'
 
 # A DEFINITION: a markdown list item in a tasks.md whose leading bold token is
 # the task id, with an OPTIONAL status marker in square brackets in between.
@@ -114,7 +125,16 @@ CITATION_PATTERN='T-[0-9]{3}'
 # stayed at 0 only because nothing cited those three ids yet, so the detector would have started
 # lying at the first decision that did. Caught by watching the DENOMINATOR move (115 -> 113)
 # rather than the verdict, which is I-045 applied to this repository's own invariant.
-DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3}\*\*|\|[[:space:]]*T-[0-9]{3}[[:space:]]*(✓[[:space:]]*)?\|)'
+# THE MARKER SET GREW, and this too was found by the script rather than reasoned about.
+# T-804 was amended on 2026-08-26 to `| T-804 ⏸ |` - deferred, with a named prerequisite, which is
+# a THIRD state beside pending and signed. The row still existed and still answered for the number,
+# but the pattern knew only `✓`, so signing-by-deferral DELETED the definition and two citations of
+# T-804 in DECISIONS.md were reported dangling. That is the same defect the ✓ alternative was added
+# for, arriving through a new marker: a status glyph in the id cell must never be able to unmake a
+# definition. The set is now ✓ (done), ⏸ (deferred) and 👤 (needs [andres]'s hands), and it stays
+# LITERAL for the reason the comment above already gives - `[^|]*` would swallow carried-debt rows.
+# A fourth glyph will break this again, and that is deliberate: it fails loudly, naming the id.
+DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3,4}\*\*|\|[[:space:]]*T-[0-9]{3,4}[[:space:]]*((✓|⏸|👤)[[:space:]]*)?\|)'
 
 # ---------------------------------------------------------------- preflight --
 for tool in find grep sort wc cut mktemp; do

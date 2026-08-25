@@ -636,3 +636,46 @@
   prediction of where the red will be — read the caveat as a work item, not as a disclaimer.** The
   caveat is what made the failure take minutes to diagnose instead of an afternoon, which is the
   argument for writing them down. Recorded 2026-08-26.
+
+- I-067 · **A `before()` hook aborts at its first unguarded failure, so every later assertion
+  reports the wrong thing.** The theme's `nightwatch` job failed with **9 of 11 assertions** naming
+  a missing `.agora-page__main`. The theme marker was not the problem and neither was the fixture
+  module, which the failure screenshot shows **rendering its rows correctly** — unstyled, in Stark.
+  What happened is that core's post-install readiness probe (`drupalInstallModule.js:39`, waiting
+  for the enable checkbox to turn `:disabled`) timed out on a site where the module was **already
+  installed**; that wait carries no `abortOnFailure: false`, so the hook aborted there and
+  `/admin/theme/install_default/agora_theme` **never ran** — verified by the absence of its
+  *"Loading url"* line, not inferred. Rule: **in a suite whose setup is a hook, count the failures
+  that share a cause before believing any of their messages**, and check the log for the step that
+  is *missing* rather than the step that is complaining. Recorded 2026-08-26.
+
+- I-068 · **The artifact settles what two layers of reasoning got wrong.** Both hypotheses handed to
+  the implementer for I-067 were false — *"the module never installed"* and *"Nightwatch 3 parses
+  `waitForElementPresent(sel, 10000, false, cb)` into the wrong slots so `Continue` is never
+  clicked"*. The second was falsified **at source**, by extracting `nightwatch@3.12.3` and reading
+  `setCallback` and `_waitFor.js`, and by finding that core exercises its own `force` path in
+  `navigation`'s own test. The first was falsified by **one screenshot in the job's artifacts**.
+  Rule: **when a job produces artifacts, open them before theorising** — this project already
+  learned it once at I-056, from a `browser_output` artifact, and paid for it again here. ⚠️ Note
+  what did **not** happen: the fix was **not** built on the still-unknown reason the probe missed
+  the state (the runner flush-batches timestamps, so the 2.4-second window cannot be resolved). It
+  removes the probe from the path instead, via `drupalInstall({ setupFile })`. **A fix resting on
+  an unexplained intermittent is a fix you cannot defend.** Recorded 2026-08-26.
+
+- I-069 · **Config shipped by a module survives that module's uninstall, and CI can never see it.**
+  `views.view.agora_theme_test_register` remained in active configuration after
+  `drush pm:uninstall agora_theme_test`, because its **computed** dependencies name `node`, `user`
+  and `views` and never the module that ships it. Reinstalling then fails outright: *"Configuration
+  objects (…) provided by agora_theme_test already exist in active configuration."* The remedy is
+  `dependencies.enforced.module`. Rule: **any module shipping `config/install` needs `enforced`, and
+  the gate will never tell you** — CI installs a fresh site every run, so this class of defect is
+  invisible to it by construction and shows up only on a human's development site. It is how a rig
+  got stuck during this very work. Recorded 2026-08-26.
+
+- I-070 · **I-066 held, and its explanation was wrong twice — which is the useful part.** The
+  implementer had flagged exactly one step as *"reasoned, not run"*: `drupalInstallModule(module,
+  force)`. That is precisely where the red landed. But **both** explanations offered for *why* — mine
+  and the hypothesis I passed on — were falsified. Rule: **a named unverified step tells you WHERE
+  reliably and WHY not at all.** Use the caveat to aim the investigation; do not let it supply the
+  conclusion, and do not let a plausible mechanism substitute for opening the evidence.
+  Recorded 2026-08-26.
