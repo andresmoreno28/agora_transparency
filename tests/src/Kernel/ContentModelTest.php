@@ -586,6 +586,122 @@ final class ContentModelTest extends KernelTestBase {
   ];
 
   /**
+   * The six table views (T-615), one per bundle, with the path each answers on.
+   *
+   * WHAT THE COLUMNS ARE IS NOT WRITTEN HERE, and that is the point. The
+   * expected column set is DERIVED from what `config/` attaches to the bundle,
+   * and asserted for set equality in BOTH directions against what the view
+   * declares. Transcribing the columns into this file would let two
+   * hand-written lists agree with each other while both disagreed with the
+   * model, which is exactly the failure a set-equality assertion exists to
+   * catch.
+   *
+   * The `facets` entry IS transcribed, from the measurement recorded in the
+   * T-615 row, and is then cross-checked against the derived intersection of
+   * the spine with the bundle's own fields. Two independent sources have to
+   * agree: a view that exposes a filter its bundle does not carry fails, and so
+   * does a bundle that grows a spine field its view does not expose.
+   */
+  private const TABLE_VIEWS = [
+    'agora_base_documents' => [
+      'bundle' => 'agora_base_document',
+      'label' => 'Documents',
+      'path' => 'documents',
+      'facets' => [
+        'field_agora_base_area',
+        'field_agora_base_financial_year',
+      ],
+    ],
+    'agora_base_people' => [
+      'bundle' => 'agora_base_person',
+      'label' => 'People',
+      'path' => 'people',
+      'facets' => [
+        'field_agora_base_area',
+      ],
+    ],
+    'agora_base_contracts' => [
+      'bundle' => 'agora_base_contract',
+      'label' => 'Contracts',
+      'path' => 'contracts',
+      'facets' => [
+        'field_agora_base_area',
+        'field_agora_base_status',
+      ],
+    ],
+    'agora_base_agreements' => [
+      'bundle' => 'agora_base_agreement',
+      'label' => 'Agreements',
+      'path' => 'agreements',
+      'facets' => [
+        'field_agora_base_area',
+        'field_agora_base_status',
+      ],
+    ],
+    'agora_base_grants' => [
+      'bundle' => 'agora_base_grant',
+      'label' => 'Grants',
+      'path' => 'grants',
+      'facets' => [
+        'field_agora_base_area',
+        'field_agora_base_status',
+      ],
+    ],
+    'agora_base_datasets' => [
+      'bundle' => 'agora_base_dataset',
+      'label' => 'Datasets',
+      'path' => 'datasets',
+      'facets' => [
+        'field_agora_base_area',
+        'field_agora_base_financial_year',
+      ],
+    ],
+  ];
+
+  /**
+   * The BASE fields a view column may show on top of the bundle's own fields.
+   *
+   * Exactly one: the node title, which is the row's identifier and the link to
+   * the record. Everything else must be a `field.field.node.<bundle>.*` object,
+   * so `created`, `uid`, `nid` or a field belonging to another regime all fail
+   * the set-equality assertion below.
+   *
+   * The T-615 row phrases the criterion as "the set of field columns equals the
+   * set of fields attached to that bundle". Read strictly that forbids a title
+   * column, which would leave a table of contracts with no contract name and no
+   * link to the record - an accessibility defect, not a purer assertion. The
+   * exception is therefore ONE named base field, declared here so it is part of
+   * what the test asserts rather than a hole in it: the allowlist's own size is
+   * asserted, so widening it is a visible change to this file.
+   */
+  private const VIEW_BASE_FIELD_COLUMNS = ['title'];
+
+  /**
+   * The facet spine (T-615, from T-603): field name => its vocabulary.
+   *
+   * `area`, `financial year`, `status` - one spine for the whole model, and
+   * [andres] ruled the mechanism: CORE VIEWS EXPOSED FILTERS. No Search API, no
+   * Facets, no new dependency; three exposed selects is what a spine is at this
+   * size and it adds nothing a marketplace reviewer has to justify.
+   *
+   * IT DOES NOT APPLY UNIFORMLY, and nothing here tries to make it. Measured in
+   * T-612 and re-measured against `config/` by the assertions below: Document
+   * and Dataset carry `area` and `financial year` but no `status`; Person
+   * carries `area` alone; and the three financial regimes carry `area` and
+   * `status` but NOT `financial year` - their temporal field is `period`, a
+   * date RANGE naming the term of the contract, which is not a taxonomy facet
+   * and is not pretended to be one. Adding a financial year to them to square
+   * the spine would be attaching a field the regime's own statute does not
+   * name, which is precisely the accretion D-026 forbids and precisely what
+   * `testFinancialRegimeBundles()` fails on.
+   */
+  private const FACET_SPINE = [
+    'field_agora_base_area' => 'agora_base_area',
+    'field_agora_base_financial_year' => 'agora_base_financial_year',
+    'field_agora_base_status' => 'agora_base_status',
+  ];
+
+  /**
    * Tests that the shared spine is present, complete and no larger than stated.
    */
   public function testSharedSpine(): void {
@@ -1366,6 +1482,243 @@ final class ContentModelTest extends KernelTestBase {
       + (2 * count(self::DATASET_REUSED_STORAGES))
       + (2 * $term_references)
       + 2;
+    $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
+  }
+
+  /**
+   * Tests the six table views at config level (T-615, layer (a)).
+   *
+   * THIS IS THE LAYER THAT ACTUALLY TESTS D-026'S CLAIM. The T-615 row
+   * originally asked for a functional assertion that no rendered `<td>` is
+   * structurally empty; that was unsatisfiable three ways, and the third is the
+   * one this method answers: the claim is about the MODEL, and the model can be
+   * read straight out of `config/` with no site, no content and no fixtures.
+   * For each of the six views, the set of columns it declares must equal the
+   * set of fields attached to its bundle - asserted in BOTH directions, so a
+   * column belonging to another regime fails and a field with no column fails
+   * too. A union type could not pass this: `Grant` would have to declare
+   * `bidder_count` as a column to render one, and declaring it fails here.
+   *
+   * The set sizes are asserted rather than printed, for the reason every method
+   * in this file repeats: PHPUnit turns any output a test emits into an
+   * exception (pipeline 934619). `tests/bin/config-inventory` prints them.
+   *
+   * LAYER (d) HAS A HALF HERE TOO. `empty_table: false` is what makes Views
+   * render the empty area INSTEAD of a table when there are no rows; with it
+   * true, an empty view emits a `<table>` carrying `<th>`s and not one row,
+   * which is an accessibility defect rather than an empty state. The other half
+   * - that the rendered page really does behave that way - is asserted in
+   * `ValidationTest::testTableViews()`, which is the only place it can be.
+   */
+  public function testTableViews(): void {
+    $path = dirname(__FILE__, 4);
+    $storage = new FileStorage($path . '/config');
+    $assertions = 0;
+
+    // -- The census, for the same reason as in the four methods above --------
+    $this->assertCount(6, self::TABLE_VIEWS, 'T-615 ships one table view per bundle.');
+    $assertions++;
+    $this->assertCount(self::BUNDLE_COUNT, self::TABLE_VIEWS, 'One view per bundle, and D-026 fixes the bundles at six.');
+    $assertions++;
+    $this->assertCount(3, self::FACET_SPINE, 'The spine is three facets: area, financial year, status.');
+    $assertions++;
+    $this->assertCount(1, self::VIEW_BASE_FIELD_COLUMNS, 'Exactly one base field may be a column. Widening this allowlist is a change to the model\'s falsifiability, not a detail.');
+    $assertions++;
+
+    // -- The shipped set of views equals the six, both directions ------------
+    // A seventh view shipped without a row fails here, and so does one of the
+    // six that never made it out of the rig.
+    $shipped = $storage->listAll('views.view.');
+    sort($shipped);
+    $expected_views = array_map(
+      static fn (string $view_id): string => 'views.view.' . $view_id,
+      array_keys(self::TABLE_VIEWS),
+    );
+    sort($expected_views);
+    $this->assertSame($expected_views, $shipped, 'config/ must ship exactly the six table views T-615 declares.');
+    $assertions++;
+
+    $paths = [];
+    $columns_total = 0;
+    $facets_total = 0;
+
+    foreach (self::TABLE_VIEWS as $view_id => $spec) {
+      $bundle = $spec['bundle'];
+      $name = 'views.view.' . $view_id;
+      $data = $storage->read($name);
+
+      $this->assertIsArray($data, "$name must be shipped in config/.");
+      $assertions++;
+      $this->assertSame($view_id, $data['id'], "$name must declare its own machine name.");
+      $assertions++;
+      $this->assertSame($spec['label'], $data['label'], "$name must carry its English label (D-033).");
+      $assertions++;
+      $this->assertNotEmpty($data['description'], "$name must say what it lists; the description is what a site builder reads in the Views UI.");
+      $assertions++;
+      $this->assertSame('node_field_data', $data['base_table'], "$name must list nodes.");
+      $assertions++;
+      $this->assertSame('en', $data['langcode'], "$name must declare English, which is the ONE field core consults before it will translate a string at all (D-033).");
+      $assertions++;
+      $this->assertTrue($data['status'], "$name must be enabled; a disabled view ships as dead weight.");
+      $assertions++;
+
+      $options = $data['display']['default']['display_options'];
+
+      // -- LAYER (a): SET EQUALITY, BOTH DIRECTIONS --------------------------
+      // The expected set is DERIVED from config/, never transcribed: two
+      // hand-written lists can agree with each other while both disagree with
+      // the model, and that is the failure this assertion exists to catch.
+      $prefix = 'field.field.node.' . $bundle . '.';
+      $attached = array_map(
+        static fn (string $object): string => substr($object, strlen($prefix)),
+        $storage->listAll($prefix),
+      );
+      $this->assertNotEmpty($attached, "$bundle must have fields attached, or the set equality below would hold vacuously (I-028).");
+      $assertions++;
+
+      $columns = array_keys($options['fields']);
+      sort($columns);
+      $columns_total += count($columns);
+      $expected_columns = array_merge(self::VIEW_BASE_FIELD_COLUMNS, $attached);
+      sort($expected_columns);
+      $this->assertSame($expected_columns, $columns, "$view_id must show exactly $bundle's own fields plus the node title - a column from another regime is the union typing D-026 refuses, and a field with no column is a field the table silently hides.");
+      $assertions++;
+      $this->assertCount(count($attached) + count(self::VIEW_BASE_FIELD_COLUMNS), $columns, "$view_id's column set must be the size $bundle's field set gives it.");
+      $assertions++;
+
+      // -- The table, and the half of layer (d) that lives in config ---------
+      $style = $options['style'];
+      $this->assertSame('table', $style['type'], "$view_id must render a table: this portal publishes salaries and contracts, and a table is the accessible shape for them.");
+      $assertions++;
+      $declared = array_keys($style['options']['columns']);
+      sort($declared);
+      $this->assertSame($columns, $declared, "$view_id must give every field a column of its own and declare no column without a field.");
+      $assertions++;
+      // WCAG 2.2 AA, 1.3.1: the table says what it is, inside the table.
+      $this->assertNotEmpty($style['options']['caption'], "$view_id's table must carry a caption.");
+      $assertions++;
+      // Layer (d), at config level. With this TRUE, an empty view renders a
+      // table of headers and no rows, which is a defect and not an empty state.
+      $this->assertFalse($style['options']['empty_table'], "$view_id must render its empty text INSTEAD of the table, never a table with headers and no rows.");
+      $assertions++;
+
+      foreach ($columns as $column) {
+        // A column that disappears when every row happens to be empty makes
+        // the number of cells in a row depend on the DATA rather than on the
+        // model - which is exactly what ValidationTest asserts it does not.
+        $this->assertFalse($style['options']['info'][$column]['empty_column'], "$column must keep its column on $view_id even when every value is empty.");
+        $assertions++;
+        // A column header with no label is an unlabelled `<th>`.
+        $this->assertNotEmpty($options['fields'][$column]['label'], "$column must carry a column header on $view_id.");
+        $assertions++;
+        // The hole this closes was found by falsifying the layer above rather
+        // than by reading the schema: a field marked `exclude` is DECLARED as a
+        // column and never RENDERED as one, so the set equality above passes
+        // while the table quietly shows one column fewer. Proven, not argued -
+        // excluding one field made ValidationTest report 5 header cells where 6
+        // were expected while every assertion in this method still passed.
+        $this->assertFalse((bool) ($options['fields'][$column]['exclude'] ?? FALSE), "$column must actually render on $view_id; an excluded column is declared and then hidden.");
+        $assertions++;
+      }
+
+      // -- The two filters that are never exposed ----------------------------
+      // The view IS the bundle, and it is published content only. Exposing
+      // either would let a reader ask a listing of contracts for documents, or
+      // for unpublished work.
+      $filters = $options['filters'];
+      $this->assertSame([$bundle => $bundle], $filters['type']['value'], "$view_id must list $bundle and nothing else.");
+      $assertions++;
+      $this->assertFalse($filters['type']['exposed'], "$view_id's bundle filter must not be exposed.");
+      $assertions++;
+      $this->assertSame('1', $filters['status']['value'], "$view_id must list published content only.");
+      $assertions++;
+      $this->assertFalse($filters['status']['exposed'], "$view_id's published filter must not be exposed.");
+      $assertions++;
+
+      // -- THE FACET SPINE, and the fact that it is NOT uniform --------------
+      // Two independent sources have to agree: what the T-615 row measured
+      // (self::TABLE_VIEWS) and what the bundle's own field set yields today.
+      $exposed = array_filter(
+        $filters,
+        static fn (array $filter): bool => !empty($filter['exposed']),
+      );
+      $exposed_fields = [];
+      foreach (array_keys($exposed) as $filter_id) {
+        $this->assertStringEndsWith('_target_id', $filter_id, "$filter_id on $view_id must be a taxonomy term reference filter.");
+        $assertions++;
+        $exposed_fields[] = substr($filter_id, 0, -strlen('_target_id'));
+      }
+      sort($exposed_fields);
+
+      $declared_facets = $spec['facets'];
+      sort($declared_facets);
+      $this->assertSame($declared_facets, $exposed_fields, "$view_id must expose exactly the facets the T-615 row measured for $bundle.");
+      $assertions++;
+
+      $derived_facets = array_values(array_intersect(array_keys(self::FACET_SPINE), $attached));
+      sort($derived_facets);
+      $this->assertSame($derived_facets, $exposed_fields, "$view_id must expose the spine fields $bundle ACTUALLY carries - no more, which would need a field the regime does not name, and no fewer, which would hide a facet the bundle has.");
+      $assertions++;
+
+      foreach ($exposed as $filter_id => $filter) {
+        $facets_total++;
+        $field_name = substr($filter_id, 0, -strlen('_target_id'));
+        $this->assertSame('taxonomy_index_tid', $filter['plugin_id'], "$filter_id must be a core Views exposed filter: [andres] ruled the mechanism, and no Search API and no Facets module enters the SBOM for a spine of three selects.");
+        $assertions++;
+        $this->assertSame(self::FACET_SPINE[$field_name], $filter['vid'], "$filter_id must offer terms from one vocabulary only.");
+        $assertions++;
+        $this->assertNotEmpty($filter['expose']['label'], "$filter_id must label its select element; an unlabelled select is a WCAG 2.2 AA failure and an English label is D-033.");
+        $assertions++;
+        $this->assertNotEmpty($filter['expose']['identifier'], "$filter_id must name the query parameter it answers to.");
+        $assertions++;
+        $this->assertContains($field_name, $attached, "$filter_id filters on a field $bundle does not carry.");
+        $assertions++;
+      }
+
+      // -- The empty text exists at all --------------------------------------
+      // With `empty_table: false` and no empty area, an empty view renders
+      // NOTHING: a 200 with a page that says nothing at all about why.
+      $empty = $options['empty'];
+      $this->assertNotEmpty($empty, "$view_id must say something when it has no rows.");
+      $assertions++;
+      $area = reset($empty);
+      $this->assertTrue($area['empty'], "$view_id's empty area must be marked as such.");
+      $assertions++;
+      $this->assertNotEmpty($area['content'], "$view_id's empty text must not be blank.");
+      $assertions++;
+
+      // -- The page display --------------------------------------------------
+      $page = $data['display']['page_1'];
+      $this->assertSame('page', $page['display_plugin'], "$view_id must answer on a route of its own.");
+      $assertions++;
+      $this->assertSame($spec['path'], $page['display_options']['path'], "$view_id must answer on the path the T-615 row declares.");
+      $assertions++;
+      $paths[] = $page['display_options']['path'];
+
+      // -- Access -------------------------------------------------------------
+      // A transparency portal's tables are readable by whoever can read
+      // content, which for an anonymous visitor is the whole point.
+      $this->assertSame('perm', $options['access']['type'], "$view_id must gate on a permission.");
+      $assertions++;
+      $this->assertSame('access content', $options['access']['options']['perm'], "$view_id must be readable by anyone who can read content.");
+      $assertions++;
+    }
+
+    // -- No two views may answer on the same path ----------------------------
+    // Two views on one path is a race Drupal resolves by weight, and the loser
+    // is unreachable while every test above still passes.
+    $this->assertCount(count(self::TABLE_VIEWS), array_unique($paths), 'Each of the six views must answer on a path of its own.');
+    $assertions++;
+
+    // -- The assertion count, asserted rather than printed -------------------
+    // Derived from the loops' own accumulators, so a legitimate growth of the
+    // model updates it instead of forcing this file to be relaxed.
+    $expected_assertions = 4
+      + 1
+      + (27 * count(self::TABLE_VIEWS))
+      + (3 * $columns_total)
+      + (6 * $facets_total)
+      + 1;
     $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
   }
 

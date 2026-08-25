@@ -182,6 +182,49 @@ for t in "$CONFIG_DIR"/node.type.*.yml; do
 done
 printf '  node types: %s\n' "$BUNDLES"
 
+# ---------------------------------------------------- per-view denominators --
+# T-615's criterion asks for the six view column-set SIZES to be stated beside
+# the set-equality assertion ContentModelTest::testTableViews() makes in both
+# directions - the view's columns against the bundle's own fields, which is
+# what makes D-026's "six node types, not one union type" falsifiable rather
+# than an opinion. Same division of labour as the block above, and for the same
+# hard reason: PHPUnit turns any output a test emits, STDOUT and STDERR alike,
+# into an exception (pipeline 934619), so the assertion lives in PHP and the
+# number is printed here.
+#
+# The exposed-filter count is printed beside it because THE FACET SPINE IS NOT
+# UNIFORM and the numbers are the honest way to say so: Document and Dataset
+# carry area and financial year, the three financial regimes carry area and
+# status, and Person carries area alone. A row of identical numbers here would
+# mean somebody had squared the spine by attaching a field a bundle's own
+# regime does not name.
+#
+# NOTHING here is a finding and nothing is compared to an expected value, for
+# the same reason as the block above.
+printf '\nper-view column sets (the sizes ContentModelTest asserts by equality):\n'
+VIEWS=0
+for v in "$CONFIG_DIR"/views.view.*.yml; do
+  [ -e "$v" ] || break
+  n=${v#"$CONFIG_DIR"/views.view.}
+  n=${n%.yml}
+  VIEWS=$((VIEWS + 1))
+  # The `fields:` block of the default display, counted by walking the region
+  # between its key and the next key at the same indent. The exporter's YAML
+  # indentation is two spaces and byte-stable run to run (D-032), which is what
+  # makes this readable without a YAML parser this repository does not ship.
+  cols=$(awk '
+    /^      fields:$/ { inf = 1; next }
+    inf && /^      [a-z_]+:/ { inf = 0 }
+    inf && /^        [A-Za-z0-9_]+:$/ { n++ }
+    END { print n + 0 }
+  ' "$v")
+  # `wc -l` over a listing, never `grep -c` for a compared value: house rule,
+  # T-321(c). Nothing here is compared, but the house rule is not conditional.
+  facets=$(grep '^          exposed: true$' "$v" 2>/dev/null | wc -l | tr -d '[:space:]')
+  printf '  %-24s %s column(s), %s exposed filter(s)\n' "$n" "${cols:-0}" "${facets:-0}"
+done
+printf '  table views: %s\n' "$VIEWS"
+
 # The three legal citations D-033 permits are the only shipped strings that may
 # carry a byte above 0x7F, and only two of them are accented. Printed with the
 # same byte RANGE the audit uses - never a `[^\x00-\x7F]` bracket class, which

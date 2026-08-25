@@ -1,0 +1,347 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_agora_base_area
+    - field.storage.node.field_agora_base_distribution
+    - field.storage.node.field_agora_base_financial_year
+    - field.storage.node.field_agora_base_format
+    - field.storage.node.field_agora_base_frequency
+    - field.storage.node.field_agora_base_licence
+    - field.storage.node.field_agora_base_summary
+    - node.type.agora_base_dataset
+    - taxonomy.vocabulary.agora_base_area
+    - taxonomy.vocabulary.agora_base_financial_year
+  module:
+    - file
+    - node
+    - options
+    - taxonomy
+    - text
+    - user
+id: agora_base_datasets
+label: Datasets
+module: views
+description: 'Every published dataset, with its distribution file, format and licence.'
+tag: ''
+base_table: node_field_data
+base_field: nid
+display:
+  default:
+    id: default
+    display_title: Default
+    display_plugin: default
+    position: 0
+    display_options:
+      title: Datasets
+      fields:
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          entity_type: node
+          entity_field: title
+          plugin_id: field
+          label: Title
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+        field_agora_base_area:
+          id: field_agora_base_area
+          table: node__field_agora_base_area
+          field: field_agora_base_area
+          entity_type: node
+          entity_field: field_agora_base_area
+          plugin_id: field
+          label: Area
+        field_agora_base_distribution:
+          id: field_agora_base_distribution
+          table: node__field_agora_base_distribution
+          field: field_agora_base_distribution
+          entity_type: node
+          entity_field: field_agora_base_distribution
+          plugin_id: field
+          label: 'Distribution file'
+        field_agora_base_financial_year:
+          id: field_agora_base_financial_year
+          table: node__field_agora_base_financial_year
+          field: field_agora_base_financial_year
+          entity_type: node
+          entity_field: field_agora_base_financial_year
+          plugin_id: field
+          label: 'Financial year'
+        field_agora_base_format:
+          id: field_agora_base_format
+          table: node__field_agora_base_format
+          field: field_agora_base_format
+          entity_type: node
+          entity_field: field_agora_base_format
+          plugin_id: field
+          label: Format
+        field_agora_base_frequency:
+          id: field_agora_base_frequency
+          table: node__field_agora_base_frequency
+          field: field_agora_base_frequency
+          entity_type: node
+          entity_field: field_agora_base_frequency
+          plugin_id: field
+          label: 'Update frequency'
+        field_agora_base_licence:
+          id: field_agora_base_licence
+          table: node__field_agora_base_licence
+          field: field_agora_base_licence
+          entity_type: node
+          entity_field: field_agora_base_licence
+          plugin_id: field
+          label: Licence
+        field_agora_base_summary:
+          id: field_agora_base_summary
+          table: node__field_agora_base_summary
+          field: field_agora_base_summary
+          entity_type: node
+          entity_field: field_agora_base_summary
+          plugin_id: field
+          label: Description
+      pager:
+        type: full
+        options:
+          offset: 0
+          items_per_page: 25
+          id: 0
+      exposed_form:
+        type: basic
+        options:
+          submit_button: Filter
+          reset_button: true
+          reset_button_label: Reset
+      access:
+        type: perm
+        options:
+          perm: 'access content'
+      cache:
+        type: tag
+        options: {  }
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          plugin_id: text_custom
+          empty: true
+          content: 'No datasets have been published yet.'
+          tokenize: false
+      sorts: {  }
+      filters:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          operator: in
+          value:
+            agora_base_dataset: agora_base_dataset
+          group: 1
+          exposed: false
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          entity_type: node
+          entity_field: status
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+        field_agora_base_area_target_id:
+          id: field_agora_base_area_target_id
+          table: node__field_agora_base_area
+          field: field_agora_base_area_target_id
+          relationship: none
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_agora_base_area_target_id_op
+            label: Area
+            description: ''
+            use_operator: false
+            operator: field_agora_base_area_target_id_op
+            identifier: area
+            required: false
+            remember: false
+            multiple: false
+            reduce: false
+          is_grouped: false
+          reduce_duplicates: false
+          vid: agora_base_area
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
+        field_agora_base_financial_year_target_id:
+          id: field_agora_base_financial_year_target_id
+          table: node__field_agora_base_financial_year
+          field: field_agora_base_financial_year_target_id
+          relationship: none
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_agora_base_financial_year_target_id_op
+            label: 'Financial year'
+            description: ''
+            use_operator: false
+            operator: field_agora_base_financial_year_target_id_op
+            identifier: year
+            required: false
+            remember: false
+            multiple: false
+            reduce: false
+          is_grouped: false
+          reduce_duplicates: false
+          vid: agora_base_financial_year
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
+      style:
+        type: table
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+          columns:
+            title: title
+            field_agora_base_area: field_agora_base_area
+            field_agora_base_distribution: field_agora_base_distribution
+            field_agora_base_financial_year: field_agora_base_financial_year
+            field_agora_base_format: field_agora_base_format
+            field_agora_base_frequency: field_agora_base_frequency
+            field_agora_base_licence: field_agora_base_licence
+            field_agora_base_summary: field_agora_base_summary
+          default: title
+          info:
+            title:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agora_base_area:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agora_base_distribution:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agora_base_financial_year:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agora_base_format:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agora_base_frequency:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agora_base_licence:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agora_base_summary:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+          sticky: false
+          summary: ''
+          order: asc
+          empty_table: false
+          caption: 'One row per published dataset.'
+          description: ''
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      query:
+        type: views_query
+        options: {  }
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.node.field_agora_base_area'
+        - 'config:field.storage.node.field_agora_base_distribution'
+        - 'config:field.storage.node.field_agora_base_financial_year'
+        - 'config:field.storage.node.field_agora_base_format'
+        - 'config:field.storage.node.field_agora_base_frequency'
+        - 'config:field.storage.node.field_agora_base_licence'
+        - 'config:field.storage.node.field_agora_base_summary'
+  page_1:
+    id: page_1
+    display_title: Page
+    display_plugin: page
+    position: 1
+    display_options:
+      display_extenders: {  }
+      path: datasets
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.node.field_agora_base_area'
+        - 'config:field.storage.node.field_agora_base_distribution'
+        - 'config:field.storage.node.field_agora_base_financial_year'
+        - 'config:field.storage.node.field_agora_base_format'
+        - 'config:field.storage.node.field_agora_base_frequency'
+        - 'config:field.storage.node.field_agora_base_licence'
+        - 'config:field.storage.node.field_agora_base_summary'

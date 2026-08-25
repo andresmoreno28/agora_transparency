@@ -97,6 +97,15 @@ install:
   # it silently and the field storage would fail to import on a clean install.
   # Core, so it adds nothing to `composer.json` and needs no SBOM line.
   - datetime_range
+  # Core module. The six per-bundle table views (T-615) are `views.view.*` config and
+  # cannot import without it. It is ALREADY provided three times over by the declared
+  # chain - `drupal_cms_media` and `drupal_cms_seo_basic` both install it, and
+  # `drupal_cms_admin_ui` installs `views_ui` - so this line changes nothing today.
+  # It is here because a transitive guarantee is a guarantee about somebody else's
+  # recipe: the day one of those three drops it, our views fail to import and the
+  # cause is three files away. Declared for the same reason `datetime_range` above is.
+  # Core, so it adds nothing to `composer.json` and needs no SBOM line.
+  - views
   # By default, Drupal installs Stark as the default theme. It must be listed here, at
   # least initially, to prevent bugs if it's not present. You can remove it later if you
   # want to; just uninstall it before exporting the site as a recipe.
