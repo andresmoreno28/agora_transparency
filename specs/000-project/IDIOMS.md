@@ -603,3 +603,36 @@
   was in the repository and in no release. Rule: **for a dependency resolved from a package server,
   the unit of shipping is the RELEASE, not the commit** — and the resolved version is printed in the
   install log, so this is checkable rather than inferable. Recorded 2026-08-26.
+
+- I-064 · **The tool written to end false greens shipped with a false green in it, and the shape
+  of the hole is the lesson: a verdict that does not name its subject is not a verdict.**
+  `tests/bin/watch-gate --wait` resolved HEAD **once** and watched that sha to the end. Push again
+  while it waits — the normal rhythm of a working session — and one of two things happens. The
+  visible one is a **false red**: GitLab auto-cancels the superseded pipeline, so the script
+  reported `NOT GREEN` over a commit nothing was wrong with, twice; a red that has to be explained
+  away teaches whoever reads the next one to explain it away too. The dangerous one is the same
+  defect with the timing reversed — if the watched pipeline finishes *before* the newer push
+  registers, the script prints **GREEN for a commit that is no longer HEAD**, while the code
+  actually on the branch has been tested by nothing. Rule: **any check that reports on "the current
+  state" must re-read what current means on every iteration, and announce it when it moves.**
+  Recorded 2026-08-26.
+
+- I-065 · **Enumerating states from memory produces a list that is right about the states you have
+  seen and silent about the one you have not.** The fix for I-064 handled `canceled` and missed
+  `canceling` — GitLab cancels in **two** steps. A run that reached the API mid-transition returned
+  six jobs `canceled`, two `canceling` and one `success`, fell through the terminal-state case and
+  delivered a verdict about a pipeline that had not finished being cancelled. Both halves of this
+  fix came from **an observed run**, neither from reasoning; the enumeration written from memory was
+  wrong within an hour of being written. Rule: **when a check switches on an external system's state
+  names, get the list from the system, and treat every unlisted state as non-terminal rather than as
+  failure.** Recorded 2026-08-26.
+
+- I-066 · **The step an implementer flags as "reasoned, not run" is the step that breaks.** The
+  theme's Views-table coverage was delivered with one honest caveat — `drupalInstallModule(module,
+  force)` had been reasoned about rather than executed, because the host has no chromedriver. That
+  is precisely and only what failed in CI: the `/admin/modules` confirm form appeared, the module
+  never installed, and **9 of 11 assertions failed downstream of that one step**, every one of them
+  reporting a missing theme marker rather than the real cause. Rule: **a named unverified step is a
+  prediction of where the red will be — read the caveat as a work item, not as a disclaimer.** The
+  caveat is what made the failure take minutes to diagnose instead of an afternoon, which is the
+  argument for writing them down. Recorded 2026-08-26.
