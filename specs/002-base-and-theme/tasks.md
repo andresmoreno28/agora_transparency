@@ -28,7 +28,7 @@ atomic swap and wave 8's carried debts are most likely to need. Crossing **38** 
 | T-509 ✓ | H | **The unit's centrepiece.** `tests/src/Nightwatch/Accessibility/axe.js`: `'@tags': ['agora_theme']`, `drupalInstall`, navigate to at least one theme-rendered page, `browser.axeInject().axeRun('html', {})` | The `nightwatch` job is **in the observed job list** with `allow_failure: false`; its log shows **`N` tests executed, `N >= 1`**; the axe result names the **number of rules run** and the number of violations. `0 tests` is a **failure**. ⚠️ **Added 2026-08-24 — this row could pass having scanned the wrong theme.** `drupalInstall` gives you a site, not a site using `agora_theme`, so a green here is compatible with axe having audited **Olivero**. That is the exact species of false green this project keeps catching, on the unit's centrepiece. Also required: **the log names the active theme as `agora_theme`, and the scanned page's markup contains a marker emitted only by this theme** | T-507, D-027 |
 | T-510 ✓ | H | **Dirty case for T-509** (D-019 rider e): prove on a throwaway branch that a deliberately inaccessible fragment — an `<img>` with no `alt` — turns the `nightwatch` job **red** | A pipeline id and job id where `nightwatch` is `failed` and the log names the axe rule that fired. The branch is then deleted; the evidence is the pipeline record, not the branch | T-509 |
 | T-511 ✓ | T | Promote the install smoke: add `OPT_IN_TEST_DRUPAL_CMS: '1'` and `_AUTORUN_DRUPAL_CMS: 'all'` to the template's `.gitlab-ci.yml`, with a comment citing `include.drupalci.main.yml:487-496` | The next pipeline's job list contains `Drupal CMS` with `status: success` and `allow_failure: false`; **`jobs >= 9`**; the CLAUDE.md gate-A table is updated **in the same commit** (the derived-list prohibition) | Amendment to D-020 |
-| T-512 | · | Record **I-053** — ⚠️ **renumbered 2026-08-24, from I-051, before the task ran**: I-051 and I-052 were taken the same day by the cspell episode, so this row's citation would have pointed at a different lesson (I-044's shape, caught by writing the number down rather than by a script). Use the next free number on disk, not the one this row was drafted with — the fourth rung — *defined upstream · materialised in this pipeline · collected by the harness · actually executed* — with the `nightwatch.conf.js` glob and the `DRUPAL_PROJECT_FOLDER` branch as the two halves of the evidence | The idiom is in `IDIOMS.md` under the **next free number verified on disk**, cites both file:line references, and states the rule: **read where the harness looks, not only where CI puts you** | T-509 |
+| T-512 ✓ | · | Record **I-053** — ⚠️ **renumbered 2026-08-24, from I-051, before the task ran**: I-051 and I-052 were taken the same day by the cspell episode, so this row's citation would have pointed at a different lesson (I-044's shape, caught by writing the number down rather than by a script). Use the next free number on disk, not the one this row was drafted with — the fourth rung — *defined upstream · materialised in this pipeline · collected by the harness · actually executed* — with the `nightwatch.conf.js` glob and the `DRUPAL_PROJECT_FOLDER` branch as the two halves of the evidence | The idiom is in `IDIOMS.md` under the **next free number verified on disk**, cites both file:line references, and states the rule: **read where the harness looks, not only where CI puts you** | T-509 |
 
 ---
 
@@ -112,6 +112,16 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-512 — recorded as I-055**, the next free number verified on disk (I-053 and I-054 were taken
+  by the config-shape and pre-flight-parity lessons). ⚠️ **The row was renumbered twice before it
+  ran** — drafted citing I-051, corrected to I-053, landing at I-055 — which is itself the
+  argument for its own criterion saying *"the next free number verified on disk"* rather than a
+  fixed one.
+  Both halves of the evidence are cited: the `nightwatch.conf.js` `src_folders` walk and CI's
+  `exists:` rule, **two different programs reading two different globs**, only one of which is in
+  the file being edited. The rule it states: **read where the HARNESS looks, not only where CI puts
+  you.** And the corollary that makes it a species rather than an incident — the identical pair
+  exists for PHPUnit, which is exactly why `--fail-on-empty-test-suite` had to be invented.
 - **T-603 — the two surfaces above the six tables, and the column rule IS the accessibility
   argument.** `/publications` lists all six bundles; `/library` lists Document + Dataset, which is
   D-026's own pairing (*"budget is not a node type: it is a Document plus a Dataset"*). `config/`

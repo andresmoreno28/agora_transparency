@@ -480,3 +480,23 @@
   reading a larger dictionary. ⚠️ And note the shape of the trap it closes — pointing the branch
   back at `11.x` **would not look like a mistake, it would look like an upgrade**.
   Recorded 2026-08-25.
+- I-055 · **The fourth rung: defined upstream · materialised in this pipeline · COLLECTED BY THE
+  HARNESS · actually executed.** I-050 named the first three. T-509 found the fourth, and it is the
+  one that fails most quietly, because the job is *present and green*.
+  **Two globs have to match and only one of them is the CI rule.** CI materialises `nightwatch` on
+  `exists: tests/src/Nightwatch/**/*.js` (`include.drupalci.main.yml`, the `.nightwatch-tests-exist`
+  rule) — **any** path under that tree. But Drupal's own `nightwatch.conf.js` builds `src_folders`
+  by walking `$DRUPAL_PROJECT_FOLDER` and keeping **only** paths containing
+  `Nightwatch/Tests`, `Nightwatch/Commands`, `Nightwatch/Assertions` or `Nightwatch/Pages`.
+  So a test at `Nightwatch/Accessibility/axe.js` — **the path this project's own signed task row
+  specified** — passes the first and fails the second: **the job appears, collects nothing, runs
+  zero tests and reports success.** Nothing in the job list, the badge or the status field
+  distinguishes that from a real pass.
+  ⚠️ **The rule: read where the HARNESS looks, not only where CI puts you.** A job's `exists:`
+  condition tells you the job will run; it says nothing about whether the runner inside it will
+  find your file. Those are two different programs reading two different globs, and only one of
+  them is in the file you are editing.
+  Corollary, and it is why this is a species rather than an incident: **the same shape exists
+  wherever a CI rule and a test-runner's discovery disagree** — PHPUnit's `testsuite` directories
+  against `exists: '**/tests/**/*Test.php'` is the identical pair, and `--fail-on-empty-test-suite`
+  exists precisely because someone met this rung before. Recorded 2026-08-25 (T-512).
