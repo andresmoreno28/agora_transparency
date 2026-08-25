@@ -241,10 +241,21 @@ moving the working copy a session is running in, on the day wave 5 starts.
   **`nightwatch`** (the axe gate) and **`stylelint`** (it has CSS), and it runs **no `phpunit`**
   and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
   and *"both are at nine"* is not the same statement as *"both run what they need to run"*. The
-  **denominators** are the part that carries meaning: on this pipeline `nightwatch` printed
-  `agora_theme axe gate: 4 pages scanned, 89-89 axe rules run per page, 0 violations` and
-  `128 total assertions`, and that job has been **seen to fail** on a real missing `alt`
-  (pipeline `935776`) — so its green is a measurement, not an absence.
+  **denominators** are the part that carries meaning: on pipeline `936455`, commit `d558d00`,
+  `nightwatch` printed `agora_theme axe gate: 5 pages scanned, 89-89 axe rules run per page,
+  0 violations` and `167 total assertions`, and that job has been **seen to fail** on a real
+  missing `alt` (pipeline `935776`) — so its green is a measurement, not an absence.
+
+  ⚠️ **Those two numbers moved on 2026-08-26 and the movement is the point.** They read
+  `4 pages` and `128 assertions` until the Views-table coverage landed; the fifth page is the
+  fixture that renders a real Views table, and the 39 new assertions are what now notices if
+  `templates/views-view-table.html.twig` disappears. **Five of them were watched going red with
+  the template moved aside** — the scroll wrapper and its `tabindex`, the themed table class, the
+  themed caption class, and the two counts behind them — while core's own `<caption>`, `scope`
+  and `headers` markers stayed green, because an override that disturbed those would be a
+  regression the fix caused. ⚠️ The suite also asserts `rows >= 3` **before** any markup
+  assertion: with an empty result set Views renders **no `<table>` at all** and axe reports no
+  violations, truthfully and about nothing (I-062).
 
   ⚠️ **The theme has no `phpunit` job because it has no PHP tests, and that is a gap with an
   owner, not a property of themes.** It is named here rather than left to be inferred from a

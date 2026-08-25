@@ -679,3 +679,33 @@
   reliably and WHY not at all.** Use the caveat to aim the investigation; do not let it supply the
   conclusion, and do not let a plausible mechanism substitute for opening the evidence.
   Recorded 2026-08-26.
+
+- I-071 · **A predicted expiry that nobody scheduled is a defect with a date on it.** On 2026-08-24
+  `specs/002-base-and-theme/plan.md:137` wrote down, correctly: *"known expiry: from global wave 10
+  the numbers go four-digit."* The prediction was recorded and **nothing was adjusted**, so when
+  unit 003's scaffolding introduced `T-1001`, `tests/bin/cited-tasks-exist` — whose pattern was
+  `T-[0-9]{3}` — matched it as `T-100` and reported two dangling citations naming ids **nobody has
+  ever written down**. Rule: **writing down that something will break is not a mitigation.** A
+  prediction with no owner and no task is a finding scheduled for later, and the later is always a
+  turn where somebody is busy with something else. Recorded 2026-08-26.
+
+- I-072 · **A status glyph in an id cell can silently unmake a task's definition.** `cited-tasks-exist`
+  recognises `| T-502 ✓ |` as a definition and, as its own comment records, the `✓` alternative was
+  added because **signing a task used to delete its definition**. On 2026-08-26 the same defect
+  arrived through a new glyph: amending T-804 to `| T-804 ⏸ |` — deferred, a third state beside
+  pending and signed — deleted the definition again, and two citations of it went dangling. Rule:
+  **when a check keys on a marker set, adding a marker is a change to the check**, and the two edits
+  belong in the same commit. The set is now `✓ ⏸ 👤`, still literal rather than a wildcard, because
+  `[^|]*` would swallow carried-debt rows and turn citations of debt into definitions.
+  Recorded 2026-08-26.
+
+- I-073 · **A route that fails loudly is worth more than a route that works, and the strict one is
+  the one to pick.** The theme's fixture module installed cleanly under `drush en` — `[success]`,
+  quoted — and failed under `scripts/test-site.php` with one line: *"'is_grouping' is not a supported
+  key"*. `drush` does not run strict config schema checking; `test-site.php` does. So moving the
+  fixture install from the browser path to the setup-file path **raised** the standard, and the
+  first thing the stricter route did was name a real defect in the view — the key is `is_grouped`,
+  and the `expose` block was three keys where core's own `views.view.frontpage.yml` carries twelve.
+  Rule: **prefer the mechanism that refuses early and says why.** The two failures cost minutes and
+  an afternoon respectively, and the difference was entirely in how each one reported.
+  Recorded 2026-08-26.
