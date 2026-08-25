@@ -56,9 +56,10 @@ if [ -t 1 ]; then
 fi
 
 # ---------------------------------------------------------------- deny-list --
-# Verbatim strings from the starter kit, matched case-insensitively as fixed
-# strings. Each one is a phrase that describes a DIFFERENT product than Agora,
-# or a placeholder the kit expects you to replace.
+# Verbatim strings from the starter kit, matched case-insensitively as BREs
+# (see the scanner: -F is banned here, I-027). Each one is a phrase that
+# describes a DIFFERENT product than Agora, or a placeholder the kit expects you
+# to replace.
 #
 # FORBIDDEN: deleting a term from this list to turn the invariant green. A term
 # leaves this list only when the string it guards can no longer be reintroduced,
@@ -73,8 +74,42 @@ my-site-template
 Site Template Starter Kit
 my amazing site template
 drupal_cms_site_template_base
+drupal-site-template
 EOF
 )
+# --------------------------------------------------- the ninth term (T-703) --
+# NEW COVERAGE, not a revert. The wave-1 rider's "adjusted check" was never in
+# this file: it was the `.extra["drupal-site-template"]` tripwire in
+# tests/bin/gate-a-wave1.sh, and the atomic swap (9dc5722) flipped it from
+# 'present' to 'absent' in the same commit, exactly as that check's own header
+# demanded. That half of T-703 was already discharged when T-703 ran. This term
+# is the half that was NOT: the key had one watcher on the packaged tree, and
+# now it has two facing in opposite directions - gate-a-wave1.sh fails if the
+# JSON key COMES BACK, this list fails if the STRING reappears anywhere at all,
+# in any packaged file, including the prose that describes the site to the user.
+#
+# WHY `drupal-site-template` AND NOT `extra\.drupal-site-template`, measured
+# rather than argued (both run over `git archive 9dc5722~1`):
+#   `extra\.drupal-site-template` -> 2 hits, BOTH in recipe.yml comments, and
+#       NONE in composer.json. The key in the JSON is nested (`"extra": {`
+#       ... `"drupal-site-template": {`), so the dotted path never appears as
+#       a literal string in the file that actually carried the block. It would
+#       have passed the row's criterion while missing the row's subject.
+#   `drupal-site-template`        -> 3 hits, and the first is composer.json:28,
+#       the block itself. 0 hits at HEAD, so the invariant stays green.
+# No metacharacter, so no escaping is needed and the preflight above compiles it.
+#
+# WHY `blank` IS NOT HERE, also measured. The pre-audit's argument was sound -
+# the README's `blank` claims had no watcher - but the term over-matches on
+# CURRENT, CORRECT content. Over `git archive HEAD` it produces 4 hits and 0
+# true positives: `.gitattributes:45` ("blanket"), README.md:128 and :136 (the
+# prose that correctly describes THIS swap, naming the theme it replaced), and
+# content/canvas_page/...yml:1 ("a totally blank Canvas landing page", which is
+# the Canvas page, not the theme). `blank theme` narrows it to 2 hits and both
+# are still the legitimate README prose. Adding any of them would turn this
+# invariant red on the truth, and the only way back to green would be deleting a
+# term - the exact move the FORBIDDEN clause above exists to stop. The README's
+# `blank` claims are covered instead by T-705 re-measuring them on a rebuilt rig.
 
 # T-321(a), house rule 1: `wc -l`, never `grep -c`. This value feeds the
 # TERM_COUNT == 0 guard further down, and `grep -c` prints NOTHING on rc >= 2 -
@@ -224,9 +259,10 @@ scan_one() {
     #
     # Hence both defences: the deny-list preflight above compiles every term
     # before the scan starts, and the exit status below is read on every file.
-    # None of the seven terms above contains a metacharacter; whoever adds an
-    # eighth must keep that true or escape it - and if they do not, the run
-    # aborts instead of reporting `findings: 0`.
+    # None of the nine terms above contains a metacharacter; whoever adds a
+    # tenth must keep that true or escape it - and if they do not, the run
+    # aborts instead of reporting `findings: 0`. (The count read "seven" while
+    # the list held eight; T-703 corrected it and added the ninth.)
     _out=$(grep -Iin -- "$_term" "$_file" 2>/dev/null)
     _grc=$?
     if [ "$_grc" -ge 2 ]; then

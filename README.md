@@ -92,6 +92,7 @@ git clone <this-repository> source
 ddev composer repository add source path source
 ddev composer config allow-plugins.drupal/site_template_helper true
 ddev composer require --update-with-all-dependencies "drupal/agora_transparency:@dev"
+ddev composer require --dev "drush/drush:^13"
 ```
 
 Composer places the template in `recipes/agora_transparency`, outside the docroot. The
@@ -102,6 +103,13 @@ line it stops and asks. The step is mandatory, not optional. Check that the pack
 ```shell
 test -d ./recipes/agora_transparency && echo present
 ```
+
+⚠️ **The `drush` line is not optional and it used to be missing.** `drupal/recommended-project`
+does not ship drush, and the command-line install below is a drush command — without it the
+sequence stops at `drush is not available`. This was found on 2026-08-25 by T-705, the first time
+anyone built this rig **from nothing**: every earlier rig had drush added by hand long before,
+so a refreshed rig could never have surfaced it. A published sequence that does not run is the
+defect I-024 is named for.
 
 Then install Drupal with the template applied — either through the web installer, choosing **Ágora**
 at the site template step:

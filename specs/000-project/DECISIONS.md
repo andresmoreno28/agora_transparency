@@ -1424,6 +1424,37 @@ All three verified as SIL OFL 1.1 at source on 2026-08-24 (licence file URLs in 
   in **one atomic commit**) **owns that debt** and is the one that reverts the adjustment or skip.
   **Debt = a task with an owner and an exit gate, never a known red light.**
 
+  ✅ **CLOSED 2026-08-25 by T-703, and the closure is in two halves that must not be confused.**
+  Appended, not edited: the rider above stands as signed.
+  **(1) The adjusted check — DISCHARGED, and it was already discharged before T-703 ran.** The
+  "affected check" this rider names is `.extra["drupal-site-template"]` in
+  `tests/bin/gate-a-wave1.sh`, and the atomic swap `9dc5722` flipped it from `'present'` to
+  `'absent'` in the same commit as the four coordinated changes, which is what that check's own
+  header both demanded and forbade doing anywhere else. T-703 verified the flip on disk rather
+  than re-performing it; the tripwire now points the other way and fails if the generated-theme
+  block ever returns.
+  **(2) The deny-list term — NEW COVERAGE, which inherits no part of (1)'s discharge.**
+  `tests/bin/no-boilerplate` was **never** adjusted for this rider: its list held **8** verbatim
+  starter-kit strings and neither `blank` nor `extra.drupal-site-template` was among them, so the
+  string that describes the wrong product to the user had exactly one watcher and it lived in a
+  different file. T-703 adds a **ninth** term, `drupal-site-template` (8 → 9), and it was **watched
+  failing** before being trusted: run against a clone checked out at `9dc5722~1`, the invariant
+  reports **6 findings, exit 1**, naming `HEAD:composer.json:28` and `WORKTREE:composer.json:28`
+  — the `extra` block itself — plus two `recipe.yml` comment lines in each pass. At `HEAD`:
+  **116 packaged entries · 224 files scanned · 9 deny-list terms · 0 findings · exit 0.**
+  **Two rulings, both measured rather than argued.** The term is `drupal-site-template` and **not**
+  `extra\.drupal-site-template`, because the JSON key is nested and the dotted path never appears
+  as a literal in `composer.json`: the escaped form produces 2 hits at `9dc5722~1`, both in
+  `recipe.yml` comments and **none** in the file that actually carried the block. And **`blank` is
+  deliberately NOT a term**, against the pre-audit's recommendation, because it over-matches on
+  content that is currently correct: over `git archive HEAD` it yields **4 hits and 0 true
+  positives** — `.gitattributes:45` ("blanket"), `README.md:128` and `:136` (the prose that
+  correctly describes this very swap) and the Canvas landing page's own comment; narrowing it to
+  `blank theme` still leaves 2 hits of legitimate README prose. Adding it would have turned the
+  invariant red on the truth, and the only route back to green would have been deleting a term —
+  the move this list's FORBIDDEN clause exists to stop. The README's `blank` claims are retired
+  instead by **T-705** re-measuring them on a rebuilt rig.
+
 - **On the specification corrections found by the `tester` in wave 1, 2026-08-21.** All three adopted:
   1. **T-209** is specified as *"`CI_ALLOW_DEV` is not **defined** in any versioned file"*, never
      *"not mentioned"* — the string legitimately lives in `tests/src/Kernel/RequirementsTest.php:55`,

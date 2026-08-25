@@ -112,6 +112,58 @@ none of which needed the theme repository to exist:
   3 identity files / 13 packaged files naming the product / 1 root info file · `no-unstable-deps`
   **0 require entries** (vacuous **and saying so**, per I-028) · `shared-invariants` 6 records over
   9 swept files · 0 findings anywhere.
+- **T-703 / T-704 / T-705 — wave 7 closed, and two of the three rows were wrong about themselves.**
+  **T-703's "revert" half was ALREADY discharged** by the swap commit, whose own tripwire demanded
+  it there. `no-boilerplate` was never adjusted for this rider. What remained was **new coverage**,
+  and it is described that way so it inherits no part of a discharge it did not earn.
+  ✅ **`blank` was measured and REJECTED, which reverses my own suggestion.** Over the packaged tree
+  it produces **4 hits and 0 true positives**: the word **blanket** in `.gitattributes`, whose first five letters are the term , two README lines
+  that *correctly* describe this very swap, and a Canvas landing page described as "totally
+  blank". Adding it would turn the invariant **red on the truth**, and the only route back to green
+  would be deleting a term — the exact move the deny list's own FORBIDDEN clause exists to stop.
+  🔴 **And the term the row proposed would have MISSED ITS OWN SUBJECT.** Measured at the pre-swap
+  commit: `extra\.drupal-site-template` matches **2 lines, both `recipe.yml` comments, and NONE in
+  `composer.json`** — because the JSON key is **nested**, so the dotted path never appears as a
+  literal in the file that actually carried the block. It would have satisfied the criterion while
+  watching nothing. The term is **`drupal-site-template`**: 3 hits at the pre-swap commit, **the
+  first being `composer.json:28`, the block itself**. Deny list **8 → 9**.
+  ✅ **The dirty case ran on a clone checked out at the pre-swap commit** — the row's own wording
+  was not executable, because `no-boilerplate` takes no arguments: **6 findings, exit 1**, naming
+  both `HEAD:` and `WORKTREE:` copies. Clean at HEAD: 116 entries, 224 scanned, 9 terms, 0
+  findings.
+  **T-704 is bookkeeping and says so in both places it touches.** T-106 asked *"resolve the theme
+  approach"*; **D-014=B resolved it on 2026-08-21**, four days before this row moved. ⚠️ Half its
+  criterion — *"`cited-tasks-exist` exits 0"* — was **already true** and discriminates nothing;
+  replaced by an assertion that reads both rows and requires CLOSED **and** the commit sha **and**
+  that the original signed text survives. **"The blockers table" resolved to exactly one file** —
+  `grep '^## .*[Bb]locker'` across `specs/` returns a single hit, in the **closed unit 001** — so
+  it was amended **append-only under rule 8**, the deferred text left verbatim.
+  ✅ **T-705: the rig was REBUILT FROM NOTHING, and the fourth reason was worse than the three the
+  dispatch named.** The old rig had been installed from the **`standard` profile**, not from
+  Ágora's recipe at all — so re-applying over it would have proven nothing about a template
+  install, and `config.strict: false` would have left `blank` standing.
+  **The result, on a site that never had the old theme:** `site:install` exit **0**, `system.theme
+  default` = **`agora_theme`**, front page **HTTP 200**, **`blank` is not a known theme on this
+  site**, and `find -name blank` returns nothing. The theme was **downloaded from
+  `ftp.drupal.org`**, not from a path repository — the one resolution path a refresh could never
+  exercise.
+  ⚠️ **The CSS criterion was a false negative waiting to happen, and it was replaced by measurement
+  rather than by disabling aggregation.** A literal grep for `agora_theme/css/` in the served HTML
+  returns **0** — with the theme perfectly active. The served page carries **two aggregates**, both
+  200 and both stamped `theme=agora_theme`, and one contains **5 `--agora` custom properties**.
+  Asserting the aggregate proves the path a real visitor gets. Plus the rendered markup carries
+  `agora-page__main`, so the theme's own template rendered it rather than a fallback.
+  ⚠️ **The `Drupal CMS` clause was unachievable and is replaced by what that job CAN show**, read
+  from its log rather than its name: it builds a fresh Drupal CMS 2.1.3, **locks and installs
+  `drupal/agora_theme 1.0.0` from packages.drupal.org**, and applies the recipe — `OK (1 test, 1
+  assertion)`. `grep -c system.theme` over the whole log returns **0** and it fetches no front
+  page. It proves resolution and application, blocking; **only the rebuilt rig can prove the
+  default theme and a rendered page**, and it did.
+  🟡 **A published install sequence that does not run, found because this was the first rig built
+  from nothing.** The README told the reader to run a **drush** command after a
+  `drupal/recommended-project` create — which ships no drush. It failed with *"drush is not
+  available"*. **Every earlier rig had drush added by hand long before**, so a refreshed rig could
+  never have surfaced it. Fixed in this commit; it is I-024's own shape.
 - **T-701 / T-702 / T-706 — THE ATOMIC SWAP. The template now ships Ágora's own theme.**
   **T-701:** `drupal/agora_theme 1.0.0` released and **packaged in ~90 seconds** —
   `packages.drupal.org` 200 with `['1.0.0']`, requiring only `drupal/core ^11`. ⚠️ That closes the
@@ -618,9 +670,9 @@ none of which needed the theme repository to exist:
 |---|---|---|---|---|
 | T-701 ✓ | · | **[andres]** Cut `agora_theme` **1.0.0 stable** on drupal.org | `curl -s "https://updates.drupal.org/release-history/agora_theme/current"` lists a `<version>1.0.0</version>` with `<status>published</status>`; `packages.drupal.org/files/packages/8/p2/drupal/agora_theme.json` returns 200 containing `1.0.0` | Wave 6 gate green, D-025 |
 | T-702 ✓ | T | **The atomic commit.** Delete `extra.drupal-site-template` from `composer.json`; add `"drupal/agora_theme": "^1.0"` to `require`; replace `blank` with `agora_theme` in `recipe.yml` `install:`; set `system.theme` `default: 'agora_theme'`. One commit, nothing else in it | `grep -c "drupal-site-template" composer.json` → **0**; `grep -c "blank" recipe.yml` → **0**; `RequirementsTest` green (still **0** `*.info.yml`, constraint `^1.0` does not match the pin regex); `composer validate --strict` exit 0 | T-701 |
-| T-703 | T | Discharge the wave-1 rider **by name**: revert the adjusted `no-boilerplate` check, add `extra.drupal-site-template` to the deny list, prove the deny list fires on the pre-swap file | The deny list grows from 8 to 9 entries; running it against the `HEAD~1` `composer.json` exits non-zero and names the key; running it against `HEAD` exits 0. The rider text in `DECISIONS.md` gains a closure note citing T-703 | T-702 |
-| T-704 | T | Discharge **T-106** (deferred from unit 001 against D-014=B) and record its closure in the blockers table | The blockers table row for T-106 reads ✅ CLOSED with the T-702 commit sha; `tests/bin/cited-tasks-exist` exits 0 | T-702 |
-| T-705 | T | Prove the swap on a **clean** install: rebuild `~/agora-smoke` from scratch (rebuild, not `git pull` — CLAUDE.md), apply the template, confirm `agora_theme` is the default theme and the front page renders | `drush config:get system.theme default` → `agora_theme`; front page HTTP **200**; the theme's stylesheet is in the served HTML; **and** the `Drupal CMS` job on drupalcode shows the same, `allow_failure: false` | T-702, T-511 |
+| T-703 ✓ | T | Discharge the wave-1 rider **by name**: revert the adjusted `no-boilerplate` check, add `extra.drupal-site-template` to the deny list, prove the deny list fires on the pre-swap file | The deny list grows from 8 to 9 entries; running it against the `HEAD~1` `composer.json` exits non-zero and names the key; running it against `HEAD` exits 0. The rider text in `DECISIONS.md` gains a closure note citing T-703 | T-702 |
+| T-704 ✓ | T | Discharge **T-106** (deferred from unit 001 against D-014=B) and record its closure in the blockers table | The blockers table row for T-106 reads ✅ CLOSED with the T-702 commit sha; `tests/bin/cited-tasks-exist` exits 0 | T-702 |
+| T-705 ✓ | T | Prove the swap on a **clean** install: rebuild `~/agora-smoke` from scratch (rebuild, not `git pull` — CLAUDE.md), apply the template, confirm `agora_theme` is the default theme and the front page renders | `drush config:get system.theme default` → `agora_theme`; front page HTTP **200**; the theme's stylesheet is in the served HTML; **and** the `Drupal CMS` job on drupalcode shows the same, `allow_failure: false` | T-702, T-511 |
 | T-706 ✓ | T | `sbom-check` against a first-party dependency: `drupal/agora_theme` has no third-party security-coverage answer until 2026-09-03 | The invariant either reports the theme as covered (if the date has passed and coverage was granted) or **names it explicitly as a first-party exception with its eligibility date**, and its D-NNN line exists in `DECISIONS.md`. A silent pass is a **failure** | T-702 |
 
 ---
@@ -643,12 +695,12 @@ none of which needed the theme repository to exist:
 
 | Existing task | Carried as | State |
 |---|---|---|
-| T-106 (theme approach, deferred unit 001) | T-704 | owned, wave 7 |
+| T-106 (theme approach, deferred unit 001) | T-704 | ✅ **CLOSED 2026-08-25 by T-704** · recorded in the **only** blockers table this repository has, `specs/001-foundation/tasks.md` §“Active blockers”, as an append-only amendment (rule 8) citing `9dc5722`. Bookkeeping, not engineering: D-014=B answered the question on 2026-08-21 |
 | T-402 (route assertions, deferred unit 001) | T-801 | owned, wave 8 |
 | T-208 (gate container, redefined by D-019) | T-802 | owned, wave 8 |
 | T-206(b) (axe + visual regression) | T-509/T-611 (axe) + T-804 (visual) | **split** — axe is wave 5/6 and blocking; visual is wave 8 and informative |
 | T-317 (toolchain floor; macOS NOT CERTIFIED) | T-803 | owned, wave 8 |
-| Wave-1 rider (`blank` + `extra` adjusted check) | T-703 | owned, wave 7 |
+| Wave-1 rider (`blank` + `extra` adjusted check) | T-703 | ✅ **CLOSED 2026-08-25 by T-703** · the adjusted check (`gate-a-wave1.sh`) was **already** discharged by `9dc5722`; T-703 verified that and added the coverage that never existed — `no-boilerplate`’s deny list **8 → 9**, watched failing at `9dc5722~1` with **6 findings, exit 1**. `blank` measured and **rejected** as over-matching (4 hits at HEAD, 0 true positives) |
 | `page.front` declared `/home` vs landed `/page/1` | T-605 | owned, wave 6 |
 | Rendering a Dataset's CSV distribution as an accessible `<table>` (D-026 calls that table the source of truth the charts read) | **unit 003** | owned, ruled 2026-08-25 |
 | Menu placement: nothing links to the six per-bundle routes | **T-603** | owned, ruled 2026-08-25 |
