@@ -231,12 +231,14 @@ a test. The sibling layout is the guard — that is why it is a sibling and not 
 ⚠️ **Chosen by [ejecutor] 2026-08-24 under standing delegation, and it is reversible.** A
 `workspace/` parent holding both is the right shape at five repositories; at two it would mean
 moving the working copy a session is running in, on the day wave 5 starts.
-## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26)
+## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `936386`, ref `1.x`, commit `23b3838`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/936386/jobs` on 2026-08-26 —
-  not from the UI, not from the badge:
+- **Observed inventory — the site template.** Pipeline `937268`, ref `1.x`, commit `d7cf665`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/937268/jobs` on 2026-08-26 —
+  not from the UI, not from the badge. **Re-read at T-1204; the list is unchanged since `936386`,
+  and it is re-read rather than carried because a table nobody re-opened is a claim, not a
+  measurement:**
 
   | job | stage | status | `allow_failure` |
   |---|---|---|---|
@@ -262,8 +264,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `936390`, ref `1.x`, commit `7bb6396`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/936390/jobs` on 2026-08-26. It is recorded in
+- **Observed inventory — the theme.** Pipeline `937289`, ref `1.x`, commit `813b32a`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/937289/jobs` on 2026-08-26 (T-1204; the list
+  is unchanged since `936390`). It is recorded in
   **this** file because `agora_theme` has no `CLAUDE.md` of its own: it is a theme, and its
   repository holds code, not the process layer.
 
@@ -284,9 +287,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   **`nightwatch`** (the axe gate) and **`stylelint`** (it has CSS), and it runs **no `phpunit`**
   and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
   and *"both are at nine"* is not the same statement as *"both run what they need to run"*. The
-  **denominators** are the part that carries meaning: on pipeline `936572`, commit `51cd4a3`,
+  **denominators** are the part that carries meaning: on pipeline `937289`, commit `813b32a`,
   `nightwatch` printed `agora_theme axe gate: 6 pages scanned, 89-89 axe rules run per page,
-  0 violations, heading-order reported on 6 of 6 pages` and `297 total assertions`, and that job
+  0 violations, heading-order reported on 6 of 6 pages` and `297 total assertions` — **re-read at
+  T-1204 and identical to `936572`'s, which is itself the finding: the theme gained a template and
+  a config directory in between and the accessibility surface did not move**, and that job
   has been **seen to fail** on a real missing `alt` (pipeline `935776`) — so its green is a
   measurement, not an absence.
 
@@ -351,7 +356,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. **Read `9`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
-  repository's **382** tracked files, `bash tests/bin/spellcheck` opens **343** and finds 0 issues
+  repository's **386** tracked files, `bash tests/bin/spellcheck` opens **347** and finds 0 issues
   (re-measured 2026-08-26 at T-806's audit; it read 183/178 for the few hours between the unit-003
   scaffolding commit, which added three files, and this one — the previous pair, 87 and 82, was 96
   files behind the tree — the
@@ -380,9 +385,12 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
 - PHPUnit runs with **`--fail-on-empty-test-suite`** on every runner — **observed on drupalcode**,
   not inferred: the flag in the executed command line, `_PHPUNIT_CONCURRENT=0`, and
-  `OK (16 tests, 1717 assertions)` from job
-  `11771974` on pipeline `936386` (re-measured 2026-08-26 at T-805; it read `3 tests, 38
-  assertions` until then). A suite that executed 0 tests is a **failed**
+  `OK (16 tests, 1951 assertions)` from job
+  `11787158`'s successor on pipeline `937268` (re-measured 2026-08-26 at T-1204; it read
+  `16 tests, 1717 assertions` at T-805 and `3 tests, 38 assertions` before that). ⚠️ **The test
+  count did not move and the assertion count rose by 234**, which is the shape to expect from a
+  unit that populated a corpus: the same sixteen methods now walk 56 nodes, 8 rendered surfaces and
+  two Canvas pages instead of a handful of fixtures. A suite that executed 0 tests is a **failed**
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
