@@ -241,13 +241,28 @@ moving the working copy a session is running in, on the day wave 5 starts.
   **`nightwatch`** (the axe gate) and **`stylelint`** (it has CSS), and it runs **no `phpunit`**
   and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
   and *"both are at nine"* is not the same statement as *"both run what they need to run"*. The
-  **denominators** are the part that carries meaning: on pipeline `936455`, commit `d558d00`,
-  `nightwatch` printed `agora_theme axe gate: 5 pages scanned, 89-89 axe rules run per page,
-  0 violations` and `167 total assertions`, and that job has been **seen to fail** on a real
-  missing `alt` (pipeline `935776`) — so its green is a measurement, not an absence.
+  **denominators** are the part that carries meaning: on pipeline `936572`, commit `51cd4a3`,
+  `nightwatch` printed `agora_theme axe gate: 6 pages scanned, 89-89 axe rules run per page,
+  0 violations, heading-order reported on 6 of 6 pages` and `297 total assertions`, and that job
+  has been **seen to fail** on a real missing `alt` (pipeline `935776`) — so its green is a
+  measurement, not an absence.
 
-  ⚠️ **Those two numbers moved on 2026-08-26 and the movement is the point.** They read
-  `4 pages` and `128 assertions` until the Views-table coverage landed; the fifth page is the
+  ⚠️ **The `heading-order reported on 6 of 6 pages` clause is the newest and the most useful.**
+  A rule that did not run cannot have passed, and axe files a rule it never applied in a bucket
+  that reads exactly like a pass (I-045). The suite now asserts **which bucket** the rule landed in
+  per page and compares that count against the page count, so a rule that quietly stops applying
+  fails the gate instead of disappearing into the green.
+
+  ⚠️ **Those numbers moved THREE TIMES on 2026-08-26 and the movement is the point.**
+  `4 · 128` → `5 · 167` → **`6 · 297`**, each in the commit that moved it. The sixth page is a node
+  rendered through the entity path, and the jump from 167 to 297 is what the theme's **first
+  `config/` directory** bought: until that commit the theme shipped **no block placements at all**,
+  so no real page had a page title, an `<h1>`, a menu or status messages, and `menu`, `node` and
+  `field.html.twig` were exercised by nothing. ⚠️ **And the fixtures had been carrying TWO `<h1>`
+  elements each** — one hand-written, one from `SimplePageVariant`, because the fixture site had no
+  `block` module — which nothing counted and axe does not flag. The assertion is now `h1 === 1`,
+  not `>= 1`: zero and two are both defects and `>= 1` hides one of them. The earlier note read:
+  the fifth page is the
   fixture that renders a real Views table, and the 39 new assertions are what now notices if
   `templates/views-view-table.html.twig` disappears. **Five of them were watched going red with
   the template moved aside** — the scroll wrapper and its `tabindex`, the themed table class, the
