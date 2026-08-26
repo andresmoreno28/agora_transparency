@@ -112,6 +112,7 @@ SCANNED=$(wc -l < "$FILE_LIST" | tr -d '[:space:]')
 OBJECTS=0
 NESTED=0
 EMPTY=0
+NEWLINE=0
 
 while IFS= read -r f; do
   [ -n "$f" ] || continue
@@ -143,6 +144,36 @@ while IFS= read -r f; do
     EMPTY=$((EMPTY + 1))
     finding "$f" "0" "zero bytes; an empty config object carries no config"
   fi
+
+  # EXACTLY ONE trailing newline, and this check exists because `phpcs` turned
+  # the gate red for the third time in one day over something no local tool
+  # could see. `Drupal.Files.EndFileNewline` is blocking, `phpcs` cannot run on
+  # this host (T-803), and `drush config:get --format=yaml` writes a trailing
+  # BLANK LINE - so every config object exported that way arrives one newline
+  # too long and nothing local says so until CI does.
+  #
+  # It is checked HERE rather than in a new script because the defect is a
+  # property of a config object, and this is the invariant that already opens
+  # every config object and already prints their count. A separate script would
+  # be a second denominator over the same set.
+  #
+  # Both directions are findings on purpose. A missing final newline is the
+  # commoner mistake in most projects; a doubled one is the mistake THIS
+  # project's own tooling makes.
+  if [ -s "$f" ]; then
+    _tail=$(tail -c 2 "$f" | od -An -c 2>/dev/null | tr -d ' ')
+    case "$_tail" in
+      *'\n\n')
+        NEWLINE=$((NEWLINE + 1))
+        finding "$f" "0" \
+          "ends with a blank line; Drupal.Files.EndFileNewline wants exactly one newline and phpcs is blocking. drush config:get --format=yaml writes this - strip it before committing" ;;
+      *'\n') ;;
+      *)
+        NEWLINE=$((NEWLINE + 1))
+        finding "$f" "0" \
+          "does not end with a newline; Drupal.Files.EndFileNewline is blocking" ;;
+    esac
+  fi
 done < "$FILE_LIST"
 
 # ------------------------------------------------------------------ report --
@@ -153,6 +184,7 @@ printf 'config objects: %s (%s/*.yml, the set FileStorage::listAll() enumerates)
   "$OBJECTS" "$CONFIG_DIR"
 printf 'nested files:   %s (below %s/, enumerated by nothing)\n' "$NESTED" "$CONFIG_DIR"
 printf 'zero-byte objects: %s\n' "$EMPTY"
+printf 'trailing-newline findings: %s (exactly one newline, Drupal.Files.EndFileNewline)\n' "$NEWLINE"
 printf 'exclusions: none - every file under %s/ is inspected\n' "$CONFIG_DIR"
 
 # -------------------------------------------------- per-bundle denominators --

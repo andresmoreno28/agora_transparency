@@ -917,3 +917,22 @@
   broken wherever that component happens not to exist — which is every site but one. ⚠️ Note what
   caught it: not the rig, not any local invariant, but a test the **starter kit** shipped and this
   project inherited. Recorded 2026-08-26.
+
+- I-092 · **`drush`'s export is a starting point, not an artefact — and it took three consecutive
+  red pipelines on the same three files to finish learning it.** Three
+  `canvas.component.block.views_block.*` objects were exported from a rig and committed. Each push
+  failed on a different rule, and **not one of them was a rule this project wrote**:
+  1. `ValidationTest::testApply` — the components were **missing**, because they had been dropped on
+     the correct measurement that the pages render without them. *"It renders"* and *"it is
+     self-contained"* are different claims, and a site template is judged on the second.
+  2. `RequirementsTest` — they carried a **`uuid` key**. A package that ships UUIDs imposes
+     identities on every site that installs it; **0 of the other 102** shipped config objects had
+     one. Stripped, and Drupal generates its own on install — verified, three fresh UUIDs.
+  3. `phpcs` — `Drupal.Files.EndFileNewline`: `drush config:get --format=yaml` writes a trailing
+     **blank line**, so every object exported that way arrives one newline too long.
+  A package ships **less** than a site has: no `_core`, no `uuid`, no `default_config_hash`, and no
+  stray newline. Rule: **after exporting config, subtract before committing**, and treat each of
+  those three as a separate subtraction rather than as one vague "clean it up". ⚠️ The third one is
+  now mechanical — `tests/bin/config-inventory` checks for exactly one trailing newline, in **both**
+  directions, falsified both ways — because `phpcs` cannot run on this host and had turned the gate
+  red three times in one day over something no local tool could see. Recorded 2026-08-26.

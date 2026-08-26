@@ -23,4 +23,3 @@ id: block.views_block.agora_base_publications-block_2
 provider: views
 source: block
 source_local_id: 'views_block:agora_base_publications-block_2'
-
