@@ -351,7 +351,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. **Read `9`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
-  repository's **193** tracked files, `bash tests/bin/spellcheck` opens **187** and finds 0 issues
+  repository's **382** tracked files, `bash tests/bin/spellcheck` opens **343** and finds 0 issues
   (re-measured 2026-08-26 at T-806's audit; it read 183/178 for the few hours between the unit-003
   scaffolding commit, which added three files, and this one — the previous pair, 87 and 82, was 96
   files behind the tree — the

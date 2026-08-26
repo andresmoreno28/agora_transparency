@@ -103,29 +103,52 @@ class ValidationTest extends BrowserTestBase {
   private const VIEW_CONTAINER = 'div[class*="js-view-dom-id-"]';
 
   /**
-   * Tests the six table views on a real site, empty and then populated (T-615).
+   * Tests the six table views on a real site, populated and then emptied.
    *
-   * THE TWO LAYERS THAT NEED A RUNNING SITE, and one of them can only be tested
-   * from this unit.
+   * THE TWO LAYERS THAT NEED A RUNNING SITE, and one of them can only be
+   * tested from this unit.
    *
-   * LAYER (d) - THE EMPTY STATE. Unit 002 ships no demo content, so an
-   * installed Ágora IS the empty state; it is a real shipping state and not an
-   * edge case. Each route must return 200, must say why it is empty, and must
-   * NOT emit a table carrying `<th>`s and no rows - an empty table with headers
-   * is an accessibility defect, because a screen-reader user navigating by
-   * table is told there is a table and then finds nothing in it. UNIT 003
-   * CANNOT MAKE THIS ASSERTION: by then there is demo content, and every one of
-   * these views has rows.
+   * LAYER (d) - THE SHIPPED STATE, AND IT USED TO ASSERT THE OPPOSITE. While
+   * the package shipped no demo content an installed Ágora WAS the empty
+   * state, so this layer asserted each view's empty text and the absence of a
+   * `<table>`. That was true and worth guarding then. The package now ships a
+   * published demo corpus, so on a clean install these views are NEVER empty
+   * and the old assertion was asserting the absence of the product. What
+   * replaces it is strictly stronger, and it is the promise a site template
+   * actually makes - install this and the portal ALREADY PUBLISHES SOMETHING:
+   * every register renders a table whose row count equals the published
+   * records of its bundle, across every page of its pager, with a cell for
+   * every column and its empty text nowhere on the page.
    *
-   * LAYER (b) - ONE NODE PER BUNDLE, EVERY FIELD POPULATED. The number of
-   * `<td>` in a row must equal the view's column count, which is the rendered
-   * half of the set-equality that `ContentModelTest::testTableViews()` asserts
-   * in config. THE FIXTURE LIVES IN THIS CLASS AND IS BUILT FROM THE FIELD
-   * DEFINITIONS, never from a hand-written list, and it exists only in the test
-   * database. It therefore never goes near `drush site:export`, which is what
-   * satisfies the NO-list's narrow demo-content exception BY CONSTRUCTION
-   * rather than by anyone remembering: `content/` cannot acquire a file from a
-   * fixture that was never in the export rig at all.
+   * NO CORPUS SIZE IS TYPED HERE. Every expected count is read from the site
+   * with an entity query over the bundle, so adding a demo node changes the
+   * denominator instead of breaking a test that somebody then edits downward.
+   * The DENOMINATOR IS ASSERTED BEFORE THE PROPERTY: a bundle that shipped
+   * zero published nodes fails by name, so none of the counts below can hold
+   * vacuously over an import that silently did nothing.
+   *
+   * THE EMPTY-STATE GUARD IS KEPT, not dropped, and is reached two ways: an
+   * out-of-range page, which a stale bookmark or a crawler reaches on a live
+   * site, and one bundle whose nodes are all unpublished, which is the
+   * genuine "nothing published yet" state an administrator sees on day one.
+   * The defect guarded is unchanged - headers with no rows under them, which
+   * tells a screen-reader user there is a table and then leaves them nothing
+   * in it. Both paths assert the empty text AND that NO `<table>` is emitted,
+   * and that second half is load-bearing: Views emits no table at all for an
+   * empty result set (I-062), so a check that only looked for the empty text
+   * would pass against a page with nothing on it.
+   *
+   * LAYER (b) - ONE FIXTURE NODE PER BUNDLE, EVERY FIELD POPULATED. The demo
+   * corpus cannot carry this claim, because a real record may legitimately
+   * leave an optional field blank; only a node built from the FIELD
+   * DEFINITIONS can prove that a fully populated record renders text in every
+   * column. So the fixture stays, and the assertion sharpens: its row is
+   * located by title among the rendered rows and must carry no empty cell,
+   * which fails if a column is wired to a field the bundle does not have.
+   * THE FIXTURE LIVES IN THIS CLASS and exists only in the test database. It
+   * therefore never goes near `drush site:export`, which is what satisfies
+   * the NO-list's narrow demo-content exception BY CONSTRUCTION rather than
+   * by anyone remembering.
    */
   public function testTableViews(): void {
     $this->applyRecipe(self::getRecipePath());
@@ -137,8 +160,11 @@ class ValidationTest extends BrowserTestBase {
     $assert = $this->assertSession();
     $columns = [];
     $empty_text = [];
+    $paths = [];
+    $per_page = [];
+    $shipped = [];
 
-    // -- LAYER (d): the empty state, before a single node exists -------------
+    // -- The denominators, read from the site BEFORE anything is created ----
     foreach (self::TABLE_VIEWS as $view_id => $bundle) {
       $view = View::load($view_id);
       $this->assertNotNull($view, "$view_id must have been imported by the recipe.");
@@ -147,19 +173,19 @@ class ValidationTest extends BrowserTestBase {
       $columns[$view_id] = count($display['fields']);
       $this->assertGreaterThan(0, $columns[$view_id], "$view_id must declare columns, or every count below holds vacuously.");
 
-      $empty_text[$view_id] = reset($display['empty'])['content'];
-      $path = $view->getDisplay('page_1')['display_options']['path'];
+      $per_page[$view_id] = (int) $display['pager']['options']['items_per_page'];
+      $this->assertGreaterThan(0, $per_page[$view_id], "$view_id must declare a page size, or the page walk below has no stride.");
 
-      $this->drupalGet($path);
-      $assert->statusCodeEquals(200);
-      $assert->elementExists('css', self::VIEW_CONTAINER);
-      $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text[$view_id]);
-      // The defect being guarded: headers with no rows under them.
-      $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
+      $empty_text[$view_id] = reset($display['empty'])['content'];
+      $paths[$view_id] = $view->getDisplay('page_1')['display_options']['path'];
+
+      // The shipped corpus, measured before this test adds anything to it.
+      $shipped[$view_id] = $this->publishedCount([$bundle]);
+      $this->assertGreaterThan(0, $shipped[$view_id], "This package must ship at least one published $bundle. A register with nothing in it is not a site template that publishes something, and every row count below would hold over an empty table.");
     }
 
     // -- The fixture: one node per bundle, every field populated -------------
-    $paths = [];
+    $titles = [];
     foreach (self::TABLE_VIEWS as $view_id => $bundle) {
       $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1];
       $definitions = \Drupal::service('entity_field.manager')
@@ -172,52 +198,109 @@ class ValidationTest extends BrowserTestBase {
         }
       }
       // Every column except the title comes from one of these fields, so a
-      // bundle whose fields were not all populated would under-count cells and
-      // the layer-(b) assertion would be measuring the fixture again - the very
-      // failure the T-615 row was rewritten to avoid.
-      $this->assertSame($columns[$view_id] - 1, $populated, "Every field on $bundle must be populated, or the cell count below tests the fixture instead of the model.");
+      // bundle whose fields were not all populated would leave a blank cell
+      // on the fixture row and the layer-(b) assertion would be measuring the
+      // fixture again - the very failure the T-615 row was rewritten to avoid.
+      $this->assertSame($columns[$view_id] - 1, $populated, "Every field on $bundle must be populated, or the empty-cell check below tests the fixture instead of the model.");
       $this->drupalCreateNode($values);
-
-      $paths[$view_id] = View::load($view_id)
-        ->getDisplay('page_1')['display_options']['path'];
+      $titles[$view_id] = $values['title'];
     }
 
-    // -- LAYER (b): 200, one row, and a cell for every column ----------------
-    $cells = 0;
+    // -- LAYER (d), INVERTED: every register renders what the site holds ----
+    $rendered = 0;
     foreach (self::TABLE_VIEWS as $view_id => $bundle) {
       $count = $columns[$view_id];
-      $this->drupalGet($paths[$view_id]);
-      $assert->statusCodeEquals(200);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table', 1);
-      // WCAG 2.2 AA, 1.3.1: the table says what it is, and every header cell
-      // declares what it heads. This portal's core content IS tables.
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table > caption', 1);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table thead th[scope="col"]', $count);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr', 1);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr td', $count);
-      // And the empty text is gone, which is what says the two states are
-      // genuinely different rather than both being rendered all the time.
-      $assert->pageTextNotContains($empty_text[$view_id]);
-      $cells += $count;
+      $expected = $shipped[$view_id] + 1;
+      // The fixture is the only node this test added, so the expected row
+      // count stays tied to the SHIPPED corpus rather than drifting with it.
+      $this->assertSame($expected, $this->publishedCount([$bundle]), "The published $bundle records must be the shipped corpus plus this test's one fixture node.");
+
+      [$headers, $rows] = $this->assertPagedTable($paths[$view_id], $count, $expected, $per_page[$view_id], $empty_text[$view_id]);
+      $rendered += count($rows);
+
+      // -- LAYER (b): the one row whose every field was populated -----------
+      $fixture_row = array_values(array_filter(
+        $rows,
+        static fn (array $row): bool => in_array($titles[$view_id], $row, TRUE),
+      ));
+      $this->assertCount(1, $fixture_row, "$view_id must list the fixture node exactly once; a register that cannot show a record of its own bundle is not a register.");
+      $this->assertSame([], $this->blankCells($headers, $fixture_row[0]), "$view_id renders an empty cell on a row whose every field was populated, so one of its columns is not reaching its field.");
     }
 
-    // The total, asserted rather than printed: a functional test cannot print
-    // either (pipeline 934619). Derived from the imported views, so it grows
-    // with the model instead of having to be relaxed.
-    $this->assertSame(array_sum($columns), $cells, 'Every one of the six routes must have been counted.');
+    // The six registers together must account for the whole corpus of their
+    // six bundles: nothing missing from its register, nothing listed twice.
+    // Not a tautology - the left side is an entity query and the right side
+    // is what eighteen-odd rendered pages actually contained.
+    $this->assertSame(
+      $this->publishedCount(array_values(self::TABLE_VIEWS)),
+      $rendered,
+      'The six registers together must render exactly the published records of their six bundles.',
+    );
+
+    // -- The empty state, kept, and reached without deleting the corpus -----
+    foreach (self::TABLE_VIEWS as $view_id => $bundle) {
+      // A page index one past the last. MEASURED on a populated install on
+      // 2026-08-26 rather than assumed: 200, the view's own empty text, and
+      // zero `<table>` - the same rendering path an empty result set takes,
+      // and a state a stale bookmark reaches on a live site.
+      $beyond = intdiv($shipped[$view_id], $per_page[$view_id]) + 1;
+      $this->assertEmptyState($paths[$view_id], ['query' => ['page' => $beyond]], $empty_text[$view_id]);
+    }
+
+    // And the genuine "nothing published yet" state, on the bundle with the
+    // fewest records so that this stays cheap however far the corpus grows.
+    $smallest = (string) array_search(min($shipped), $shipped, TRUE);
+    $this->assertArrayHasKey($smallest, self::TABLE_VIEWS, 'The bundle with the fewest shipped records must be one of the six registers.');
+    $storage = \Drupal::entityTypeManager()->getStorage('node');
+    $nodes = $storage->loadByProperties(['type' => self::TABLE_VIEWS[$smallest]]);
+    $this->assertNotEmpty($nodes, 'The bundle chosen for the empty-state check must actually have nodes to unpublish.');
+    foreach ($nodes as $node) {
+      $node->setUnpublished()->save();
+    }
+    $this->assertSame(0, $this->publishedCount([self::TABLE_VIEWS[$smallest]]), 'Every node of the chosen bundle must now be unpublished, or the empty state below is not the state being tested.');
+    $this->assertEmptyState($paths[$smallest], [], $empty_text[$smallest]);
+
+    // Restored, and the table comes back. The transition is what says the two
+    // states are genuinely different rather than one of them being rendered
+    // all the time - neither state alone can say that.
+    foreach ($nodes as $node) {
+      $node->setPublished()->save();
+    }
+    $this->drupalGet($paths[$smallest]);
+    $assert->statusCodeEquals(200);
+    $assert->elementsCount('css', self::VIEW_CONTAINER . ' table', 1);
+    $assert->pageTextNotContains($empty_text[$smallest]);
   }
 
   /**
-   * The two T-603 surfaces, and how many rows each shows over the fixture set.
+   * The two T-603 surfaces, and the bundles each of them is meant to list.
    *
-   * The row count is the point of the pair: the cross-type listing shows one
-   * row per bundle, the library shows only the two bundles whose payload is a
-   * published file. A surface that quietly started listing everything would
-   * pass every column assertion and fail here.
+   * TRANSCRIBED, NEVER READ FROM THE VIEW, and that is the whole point of the
+   * pair. Read from each view's own bundle filter, the expected row counts
+   * would agree with whatever the view lists, and a library that quietly
+   * started listing all six bundles would pass. Transcribed, the count is
+   * DERIVED from the site - an entity query over these bundles - so the
+   * numbers track the demo corpus while the SET stays a decision somebody has
+   * to change on purpose.
+   *
+   * This replaces a pair of hard-coded row counts (6 and 2) that were true
+   * only while the sole content on the site was this test's own six-node
+   * fixture. The package now ships a demo corpus, both surfaces paginate, and
+   * two constants clamped to the page size would have proved nothing.
    */
-  private const SURFACE_ROWS = [
-    'agora_base_publications' => 6,
-    'agora_base_library' => 2,
+  private const SURFACE_BUNDLES = [
+    'agora_base_publications' => [
+      'agora_base_document',
+      'agora_base_person',
+      'agora_base_contract',
+      'agora_base_agreement',
+      'agora_base_grant',
+      'agora_base_dataset',
+    ],
+    'agora_base_library' => [
+      'agora_base_document',
+      'agora_base_dataset',
+    ],
   ];
 
   /**
@@ -244,8 +327,15 @@ class ValidationTest extends BrowserTestBase {
    * can prove what the two surfaces DECLARE; none of the four below is visible
    * there.
    *
-   * (1) THE EMPTY STATE, which unit 002 IS. Both routes return 200, say why
-   * they are empty, and do not emit a table carrying headers and no rows.
+   * (1) THE POPULATED STATE, WHICH USED TO BE THE EMPTY ONE. Unit 002 shipped
+   * no content, so this asserted that both routes said why they were empty.
+   * The package now ships a published demo corpus, so both routes are never
+   * empty on a clean install and that assertion had inverted into a claim
+   * that the product is absent. What is asserted instead is the stronger
+   * half - both surfaces render every published record they list, across
+   * every page of the pager - and the empty state is kept, reached through a
+   * search that matches nothing, which is a state a real reader reaches and
+   * which needs no content to be deleted to get there.
    *
    * (2) THE RENDERED TABLE. One `<table>`, one `<caption>`, a
    * `<th scope="col">` for every column, and a `<td>` for every column in
@@ -263,6 +353,14 @@ class ValidationTest extends BrowserTestBase {
    * defect D-026 refused. Verified BY FALSIFICATION before being trusted: with
    * `field_agora_base_financial_year` added to the cross-type listing this
    * assertion fails on four of the six rows.
+   *
+   * ⚠️ IT NOW RUNS OVER THE DEMO CORPUS TOO, NOT ONLY OVER THE FIXTURE, AND
+   * THAT IS DELIBERATE. A cell left blank because a record has no value is
+   * indistinguishable, to a screen-reader user, from a cell blank because the
+   * column does not belong on the surface; WCAG 2.2 AA 1.3.1 does not care
+   * which cause produced it. So the failure message names the COLUMN and the
+   * RECORD, and either fix is legitimate: give the record a value, or drop
+   * the column from a surface where it cannot always be filled.
    *
    * (4) THE SEARCH BOX ACTUALLY FILTERS. A `<input name="search">` in the
    * exposed form proves a box exists; only a request with a value in it proves
@@ -285,9 +383,11 @@ class ValidationTest extends BrowserTestBase {
     $columns = [];
     $empty_text = [];
     $paths = [];
+    $per_page = [];
+    $shipped = [];
 
-    // -- (1) The empty state, before a single node exists --------------------
-    foreach (self::SURFACE_ROWS as $view_id => $expected_rows) {
+    // -- (1) The denominators, read before this test creates anything -------
+    foreach (self::SURFACE_BUNDLES as $view_id => $bundles) {
       $view = View::load($view_id);
       $this->assertNotNull($view, "$view_id must have been imported by the recipe.");
       $display = $view->getDisplay('default')['display_options'];
@@ -295,27 +395,44 @@ class ValidationTest extends BrowserTestBase {
       $columns[$view_id] = count($display['fields']);
       $this->assertGreaterThan(0, $columns[$view_id], "$view_id must declare columns, or every count below holds vacuously.");
 
+      $per_page[$view_id] = (int) $display['pager']['options']['items_per_page'];
+      $this->assertGreaterThan(0, $per_page[$view_id], "$view_id must declare a page size, or the page walk below has no stride.");
+
       $empty_text[$view_id] = reset($display['empty'])['content'];
       $paths[$view_id] = $view->getDisplay('page_1')['display_options']['path'];
 
+      $shipped[$view_id] = $this->publishedCount($bundles);
+      $this->assertGreaterThan(0, $shipped[$view_id], "This package must ship published records for $view_id to list, or every row count below holds over an empty table.");
+
       $this->drupalGet($paths[$view_id]);
       $assert->statusCodeEquals(200);
-      $assert->elementExists('css', self::VIEW_CONTAINER);
-      $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text[$view_id]);
-      $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
-
-      // (4a) The box is present even with nothing to search, which is when a
-      // reader is most likely to reach for it.
+      // (4a) The box is present on the listing itself, which is where a
+      // reader reaches for it.
       $assert->elementExists('css', self::VIEW_CONTAINER . ' input[name="search"]');
       // WCAG 2.2 AA 3.3.2: the input carries a label, not just a placeholder.
       $assert->elementExists('css', self::VIEW_CONTAINER . ' label[for]');
     }
 
+    // The pair is only discriminating if the two numbers differ. Asserted on
+    // the DERIVED counts rather than on two constants: the library lists the
+    // two bundles whose payload is a published file, so it must be a strict
+    // subset of the listing that shows every type. A library that quietly
+    // started listing everything fails here, by name, before any markup is
+    // looked at.
+    $this->assertLessThan(
+      $shipped['agora_base_publications'],
+      $shipped['agora_base_library'],
+      'The library must list strictly fewer records than the cross-type listing, or the two surfaces are the same surface twice.',
+    );
+
     // -- The fixture: one node per bundle, every field populated -------------
     // Identical in kind to testTableViews()'s fixture and for the same reason:
     // it lives in this class, uses the test database, and therefore never goes
-    // near `drush site:export`, which is what keeps `content/` at one file BY
-    // CONSTRUCTION rather than by anyone remembering.
+    // near `drush site:export`, so nothing it creates can reach `content/` BY
+    // CONSTRUCTION rather than by anyone remembering. It is still needed now
+    // that the package ships a corpus: a real record may leave an optional
+    // field blank, so only a node built from the field definitions gives the
+    // search below a title that is unique and certain to exist.
     $titles = [];
     foreach (self::TABLE_VIEWS as $bundle_view => $bundle) {
       $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1];
@@ -331,58 +448,70 @@ class ValidationTest extends BrowserTestBase {
     }
     $this->assertCount(6, $titles, 'One node per bundle, or the row counts below are measuring the fixture.');
 
-    // -- (2) and (3): the rendered tables ------------------------------------
-    $cells = 0;
-    foreach (self::SURFACE_ROWS as $view_id => $expected_rows) {
+    // -- (2) and (3): the rendered tables, every page of them ----------------
+    $observed = [];
+    foreach (self::SURFACE_BUNDLES as $view_id => $bundles) {
       $count = $columns[$view_id];
-      $this->drupalGet($paths[$view_id]);
-      $assert->statusCodeEquals(200);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table', 1);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table > caption', 1);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table thead th[scope="col"]', $count);
-      // Every header cell, not merely as many as there are columns: a `<th>`
-      // without a scope in a table that also has scoped ones would slip past a
-      // count that only looked at the scoped set.
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table thead th', $count);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr', $expected_rows);
-      $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr td', $count * $expected_rows);
-      $assert->pageTextNotContains($empty_text[$view_id]);
+      // The shipped corpus plus the fixture nodes of the bundles THIS surface
+      // lists - two of the six for the library, all six for the listing.
+      // Bound to a variable rather than written inline: phpstan's
+      // phpunit.assertCount rule is blocking here and rejects a `count()`
+      // sitting directly in an assertion's arguments.
+      $fixtures_here = count($bundles);
+      $expected_rows = $this->publishedCount($bundles);
+      $this->assertSame($shipped[$view_id] + $fixtures_here, $expected_rows, "The records $view_id lists must be the shipped corpus plus one fixture node per bundle it lists.");
 
-      // (3) Not one structurally empty cell, on a surface whose columns are
-      // the intersection precisely so that there cannot be one.
-      $tds = $this->getSession()->getPage()
-        ->findAll('css', self::VIEW_CONTAINER . ' table tbody td');
-      $this->assertCount($count * $expected_rows, $tds, "$view_id must render every cell it declares.");
-      $empty_cells = [];
-      foreach ($tds as $index => $td) {
-        if (trim($td->getText()) === '') {
-          $empty_cells[] = $index;
-        }
+      [$headers, $rows] = $this->assertPagedTable($paths[$view_id], $count, $expected_rows, $per_page[$view_id], $empty_text[$view_id]);
+      $observed[$view_id] = $rows;
+
+      // (3) Not one empty cell, on a surface whose columns are the
+      // intersection precisely so that there cannot be one.
+      $blank = [];
+      foreach ($rows as $row) {
+        $blank = array_merge($blank, $this->blankCells($headers, $row));
       }
-      $this->assertSame([], $empty_cells, "$view_id renders a cell that is empty BY DESIGN, which a screen-reader user cannot tell from missing data. A column here must be one every listed bundle carries.");
-
-      $cells += $count * $expected_rows;
+      $this->assertSame([], $blank, "$view_id renders a cell a screen-reader user cannot tell from missing data. Either the record needs a value, or the column is not one every listed bundle can always fill and does not belong on an intersection surface.");
     }
-    $this->assertSame(32, $cells, 'The two surfaces together render 4 columns x 6 rows plus 4 columns x 2 rows.');
+
+    // The same claim the two hard-coded row counts used to make, now made on
+    // what was actually rendered: the library is a strict subset. This is the
+    // assertion a surface that started listing everything fails.
+    $listed = count($observed['agora_base_publications']);
+    $shelved = count($observed['agora_base_library']);
+    $this->assertLessThan(
+      $listed,
+      $shelved,
+      'The library must render strictly fewer rows than the cross-type listing.',
+    );
 
     // -- (4b) The search box is wired to the query ---------------------------
+    // The needle is the fixture grant's title, which is unique on the site
+    // and belongs to a bundle the library does NOT list - so one row on the
+    // cross-type listing is a claim about filtering, and it now has to be
+    // one row out of a corpus rather than one row out of six.
     $needle = $titles['agora_base_grant'];
     $this->drupalGet($paths['agora_base_publications'], ['query' => ['search' => $needle]]);
     $assert->statusCodeEquals(200);
     $assert->elementsCount('css', self::VIEW_CONTAINER . ' table tbody tr', 1);
     $assert->elementTextContains('css', self::VIEW_CONTAINER . ' table tbody', $needle);
 
+    // -- (1) The empty state, reached without deleting anything --------------
     // A search that matches nothing must reach the empty state, not an empty
-    // table - the same accessibility defect, arrived at from the other side.
-    $this->drupalGet($paths['agora_base_publications'], ['query' => ['search' => 'zzzz-no-such-record']]);
-    $assert->statusCodeEquals(200);
-    $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
-    $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text['agora_base_publications']);
+    // table - the same accessibility defect, arrived at from the other side,
+    // and now the cheapest way to reach a state the shipped corpus no longer
+    // puts these surfaces in. Asserted on BOTH surfaces, where it used to be
+    // asserted on publications alone.
+    foreach (array_keys(self::SURFACE_BUNDLES) as $view_id) {
+      $this->assertEmptyState($paths[$view_id], ['query' => ['search' => 'zzzz-no-such-record']], $empty_text[$view_id]);
+    }
 
     // -- The menu, on a live site --------------------------------------------
-    // Rebuilt explicitly: the links are plugin DERIVATIVES of the views, so
-    // they exist only once the menu link manager has looked at the views the
-    // recipe imported.
+    // Rebuilt explicitly: the designed links are plugin DERIVATIVES of the
+    // views, so they exist only once the menu link manager has looked at the
+    // views the recipe imported. ⚠️ The rebuild is also what makes the
+    // duplicate check below meaningful: `menu_link_content` entities imported
+    // from `content/` land in the same menu from the other direction, and
+    // only a menu with BOTH sources resolved shows whether the two collide.
     \Drupal::service('plugin.manager.menu.link')->rebuild();
     $block = $this->drupalPlaceBlock('system_menu_block:main', ['region' => 'content']);
     $selector = '#block-' . str_replace('_', '-', $block->id());
@@ -417,6 +546,22 @@ class ValidationTest extends BrowserTestBase {
     }
     // Exactly eight, so a ninth link appearing from somewhere is a change
     // somebody has to make on purpose.
+    //
+    // ⚠️ AND THE HREFS ARE LISTED, not merely counted, because a bare count
+    // says "16, expected 8" and leaves whoever reads it to find out why. The
+    // failure this catches is a SECOND set of links to the same eight routes
+    // - the exact shape a menu acquires when links are declared twice, once
+    // as views page-display menu options and once as `menu_link_content`
+    // entities in `content/`. A duplicated main navigation is a WCAG 2.2
+    // problem before it is a tidiness one: a keyboard user tabs the whole
+    // navigation twice, and a screen-reader user hears every destination
+    // announced twice with no way to tell the two apart.
+    $hrefs = array_map(
+      static fn ($link): string => (string) $link->getAttribute('href'),
+      $this->getSession()->getPage()->findAll('css', $selector . ' a'),
+    );
+    $duplicated = array_values(array_unique(array_diff_assoc($hrefs, array_unique($hrefs))));
+    $this->assertSame([], $duplicated, 'The main menu links the same route more than once. Each of these destinations is declared twice, so every reader meets the whole navigation twice over.');
     $assert->elementsCount('css', $selector . ' a', count(self::MENU_ROUTES));
 
     // The six tables hang UNDER the cross-type listing rather than beside it,
@@ -429,6 +574,164 @@ class ValidationTest extends BrowserTestBase {
       $this->drupalGet(ltrim($route, '/'));
       $assert->statusCodeEquals(200);
     }
+  }
+
+  /**
+   * Counts the published nodes the site holds in the given bundles.
+   *
+   * THE DENOMINATOR, and it is read from the site rather than typed. Every
+   * expected row count in this class derives from this method, so adding a
+   * demo node moves the number instead of breaking a test that somebody then
+   * edits downward. It is deliberately NOT read from the view being tested:
+   * a count taken from the view's own bundle filter would assert that the
+   * view lists whatever it lists.
+   *
+   * @param string[] $bundles
+   *   The node bundles to count across.
+   *
+   * @return int
+   *   How many published nodes of those bundles exist.
+   */
+  protected function publishedCount(array $bundles): int {
+    return (int) \Drupal::entityTypeManager()
+      ->getStorage('node')
+      ->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('type', $bundles, 'IN')
+      ->condition('status', 1)
+      ->count()
+      ->execute();
+  }
+
+  /**
+   * Walks every page of a rendered table view and asserts its structure.
+   *
+   * WHY EVERY PAGE AND NOT ONLY THE FIRST. The package ships more records
+   * than a page holds, so a check confined to page one would assert the page
+   * size and nothing else - and page two, the page that carries the
+   * remainder, is where an off-by-one in a pager actually shows up. Walking
+   * the pager also ties the rendered rows to the entity count: a register
+   * that dropped records, or listed one twice, changes the total and fails
+   * here rather than passing on a full first page.
+   *
+   * @param string $path
+   *   The view page's path.
+   * @param int $columns
+   *   How many columns the view declares.
+   * @param int $expected_rows
+   *   How many data rows the site's content should produce, in total.
+   * @param int $per_page
+   *   The pager's page size.
+   * @param string $empty_text
+   *   The view's empty text, which must appear on none of these pages.
+   *
+   * @return array
+   *   A two-element list: the header labels, and one entry per data row
+   *   holding that row's cell texts in column order.
+   */
+  protected function assertPagedTable(string $path, int $columns, int $expected_rows, int $per_page, string $empty_text): array {
+    $this->assertGreaterThan(0, $expected_rows, "$path is expected to render no rows at all, so every assertion below would hold vacuously.");
+
+    $assert = $this->assertSession();
+    $container = self::VIEW_CONTAINER;
+    $pages = intdiv($expected_rows - 1, $per_page) + 1;
+    $headers = [];
+    $rows = [];
+
+    for ($page = 0; $page < $pages; $page++) {
+      $this->drupalGet($path, $page === 0 ? [] : ['query' => ['page' => $page]]);
+      $assert->statusCodeEquals(200);
+      $assert->elementsCount('css', $container . ' table', 1);
+      // WCAG 2.2 AA, 1.3.1: the table says what it is, and every header cell
+      // declares what it heads. This portal's core content IS tables.
+      $assert->elementsCount('css', $container . ' table > caption', 1);
+      $assert->elementsCount('css', $container . ' table thead th[scope="col"]', $columns);
+      // Every header cell, not merely as many as there are columns: a `<th>`
+      // without a scope in a table that also has scoped ones would slip past
+      // a count that only looked at the scoped set.
+      $assert->elementsCount('css', $container . ' table thead th', $columns);
+      // The empty text on a page that has rows would mean both states are
+      // rendered all the time, which would make every empty-state assertion
+      // in this class meaningless.
+      $assert->pageTextNotContains($empty_text);
+
+      $on_this_page = min($per_page, $expected_rows - count($rows));
+      $assert->elementsCount('css', $container . ' table tbody tr', $on_this_page);
+      $assert->elementsCount('css', $container . ' table tbody tr td', $on_this_page * $columns);
+
+      if ($headers === []) {
+        foreach ($this->getSession()->getPage()->findAll('css', $container . ' table thead th') as $header) {
+          // The label only; a sortable column's cell also carries the text
+          // of its sort link, which is noise in a failure message.
+          $headers[] = trim(explode("\n", trim($header->getText()))[0]);
+        }
+        $this->assertCount($columns, $headers, "$path must expose one header label per column.");
+      }
+
+      foreach ($this->getSession()->getPage()->findAll('css', $container . ' table tbody tr') as $row) {
+        $cells = array_map(
+          static fn ($cell): string => trim($cell->getText()),
+          $row->findAll('css', 'td'),
+        );
+        $this->assertCount($columns, $cells, "Every row on $path must carry one cell per column.");
+        $rows[] = $cells;
+      }
+    }
+
+    $this->assertCount($expected_rows, $rows, "$path must render every published record it lists, across all of its pages.");
+    return [$headers, $rows];
+  }
+
+  /**
+   * Asserts that a view with an empty result set renders its empty state.
+   *
+   * BOTH HALVES ARE LOAD-BEARING. Views emits NO `<table>` at all for an
+   * empty result set (I-062), so a check that only looked for the empty text
+   * would pass against a page with nothing on it; and a check that only
+   * looked for the absent table would pass against a page that never told
+   * the reader why it is blank. The defect guarded by the second is a table
+   * carrying headers with no rows under them, which announces a table to a
+   * screen-reader user and then leaves them nothing in it.
+   *
+   * @param string $path
+   *   The view page's path.
+   * @param array $options
+   *   Options for drupalGet(), carrying whatever makes the result set empty.
+   * @param string $empty_text
+   *   The empty text the view declares.
+   */
+  protected function assertEmptyState(string $path, array $options, string $empty_text): void {
+    $assert = $this->assertSession();
+    $this->drupalGet($path, $options);
+    $assert->statusCodeEquals(200);
+    $assert->elementExists('css', self::VIEW_CONTAINER);
+    $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text);
+    $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
+  }
+
+  /**
+   * Names the blank cells in one rendered row, by column and by record.
+   *
+   * A failure message that says "cell 63 is empty" costs whoever reads it a
+   * page of counting; one that names the column and the record is a fix.
+   *
+   * @param string[] $headers
+   *   The table's header labels, in column order.
+   * @param string[] $row
+   *   One row's cell texts, in column order.
+   *
+   * @return string[]
+   *   One entry per blank cell, empty when the row is complete.
+   */
+  protected function blankCells(array $headers, array $row): array {
+    $blank = [];
+    foreach ($row as $index => $cell) {
+      if ($cell === '') {
+        $column = $headers[$index] ?? ('column ' . $index);
+        $blank[] = sprintf('%s on "%s"', $column, $row[0] ?? '(untitled row)');
+      }
+    }
+    return $blank;
   }
 
   /**
@@ -946,13 +1249,15 @@ class ValidationTest extends BrowserTestBase {
    *     because a library can be attached to a page the theme never rendered.
    *
    * THE FRONT PAGE'S MARKER IS THEME-LEVEL ONLY, AND THAT IS A GAP, STATED.
-   * `content/` holds exactly one file, a deliberately blank Canvas landing
-   * page, so the front page has no Ágora-specific TEXT to assert - there is
-   * none to render. Comparing its document against the one served at `/home`
-   * was considered and rejected: under the harnesses where `redirect`'s route
-   * normalizer fires, `/home` 301s to `/` and the comparison is a tautology.
-   * The front page's route identity is asserted by `testFrontPageRoundTrip()`;
-   * what this method adds there is the theme. Demo content is unit 003.
+   * The package now ships a demo corpus, but its landing page is still a
+   * deliberately blank Canvas page - RE-MEASURED on a populated install on
+   * 2026-08-26, where `/` serves no table and no register content - so the
+   * front page still has no Ágora-specific TEXT to assert. Comparing its
+   * document against the one served at `/home` was considered and rejected:
+   * under the harnesses where `redirect`'s route normalizer fires, `/home`
+   * 301s to `/` and the comparison is a tautology. The front page's route
+   * identity is asserted by `testFrontPageRoundTrip()`; what this method adds
+   * there is the theme.
    *
    * NO LITERAL PATH IS ASSERTED. `drupalGet()` resolves a relative path against
    * the harness's own base path, and the markers below are DOM, not hrefs - so
@@ -975,7 +1280,7 @@ class ValidationTest extends BrowserTestBase {
     // was actually imported, so that a NINTH view landing with no assertions
     // fails too. Either direction alone would let this method quietly stop
     // covering the thing it is named after.
-    $named = array_merge(array_keys(self::TABLE_VIEWS), array_keys(self::SURFACE_ROWS));
+    $named = array_merge(array_keys(self::TABLE_VIEWS), array_keys(self::SURFACE_BUNDLES));
     sort($named);
     $imported = array_filter(
       array_keys(\Drupal::entityTypeManager()->getStorage('view')->loadMultiple()),
@@ -986,20 +1291,18 @@ class ValidationTest extends BrowserTestBase {
     $this->assertSame($named, $imported, 'The views this template ships and the views this method asserts must be the same set, in both directions.');
     $this->assertCount(8, $named, 'Eight view routes, which with the front page is the nine this row counts.');
 
-    // -- The fixture: one node per bundle, so every table has rows -----------
-    // Built from the field definitions and living only in the test database,
-    // exactly as the sibling methods do. `content/` holds one file and a test
-    // asserts it; nothing here can reach an export.
-    foreach (self::TABLE_VIEWS as $bundle) {
-      $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1];
-      $definitions = \Drupal::service('entity_field.manager')
-        ->getFieldDefinitions('node', $bundle);
-      foreach ($definitions as $field_name => $definition) {
-        if ($definition instanceof FieldConfig) {
-          $values[$field_name] = $this->fixtureValue($definition);
-        }
-      }
-      $this->drupalCreateNode($values);
+    // -- The rows these routes need now come from the package ----------------
+    // THE FIXTURE THAT USED TO STAND HERE IS GONE, and dropping it makes this
+    // method stronger rather than cheaper. Marker (b) is a `<caption>`, and
+    // Views renders no `<table>` - so no caption - for an empty result set
+    // (I-062); the fixture existed only to give these eight routes rows to
+    // render. The package now ships published records for every bundle, so
+    // the rows are the product's, and a content import that silently did
+    // nothing fails HERE instead of being papered over by six nodes this test
+    // created for itself. Asserted before it is relied on, so the denominator
+    // can never be zero unnoticed.
+    foreach (self::TABLE_VIEWS as $view_id => $bundle) {
+      $this->assertGreaterThan(0, $this->publishedCount([$bundle]), "This package must ship at least one published $bundle, or $view_id renders no table, marker (b) has no caption to match, and the route's assertion holds vacuously.");
     }
 
     // -- The eight view routes ----------------------------------------------

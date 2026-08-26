@@ -7,6 +7,7 @@ _meta:
   depends:
     80bb1073-9e51-502e-8cd5-a1789c14ea4a: taxonomy_term
     4eeb8798-0a79-5d60-879e-b6c91d135df7: file
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
 default:
   revision_uid:
     -
@@ -50,6 +51,9 @@ default:
   field_agora_base_licence:
     -
       value: cc-zero-1.0
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
   field_agora_base_summary:
     -
       value: 'One row per tree in the municipal inventory, with the species, the street, the year of planting and the date of the last inspection. Updated when a survey is carried out rather than on a fixed calendar.'
