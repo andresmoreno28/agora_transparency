@@ -749,3 +749,50 @@
   where you caused it.** For the translation case there is no line to find, which is why the guard
   has to be an assertion about the installed site — count the entities that have the translation —
   rather than an inspection of the shipped files. Recorded 2026-08-26.
+
+- I-078 · **Git’s executable-bit setting, disabled on Windows, hides a missing executable bit until the Linux runner
+  finds it, and the local gate cannot tell.** Four new `tests/bin/` scripts would have been committed
+  `100644`. `gate-a-wave3.sh` gates every invariant on `[ -x "$INV" ]`, which under MSYS is **true
+  regardless of mode** — so every local run passed, and on the runner two whole groups would have
+  taken the `else` branch and reported **4 FAILs** for a reason nothing local could reproduce. Caught
+  before the push and staged with `git add --chmod=+x`; the index now shows `100755` for all four,
+  matching the other 20 scripts. Rule: **on this host, check the INDEX mode of every new executable
+  (`git ls-files -s`), because the filesystem's answer is not the one the runner will get.** ⚠️ A
+  `git reset` before committing drops the mode again. Recorded 2026-08-26.
+
+- I-079 · **The subject of a scan is not its denominator, and confusing the two produces a guard that
+  cannot be armed honestly.** `media-licence` must assert `N > 0` or a scan of zero files exits 0
+  exactly like a clean tree (I-028) — but `content/` holds no binaries until wave 10, so the
+  invariant as specified could not pass on the day it landed. The coordinator proposed arming it on
+  *"a binary exists or the manifest exists"*, and the implementer refused: while unarmed it would
+  still have **no asserted denominator at all**, printing the same words whether the scan worked or
+  `find` silently returned nothing. The resolution is that **"N binaries" is what the script is
+  looking FOR; the denominator is whether it looked**. `content entries` is asserted, FATAL at zero,
+  from the first run — so the enumerator and the classifier are both proven to have run before the
+  script says anything about media. Rule: **when a check cannot yet find what it hunts, assert that
+  it searched.** Recorded 2026-08-26.
+
+- I-080 · **A shared verbatim invariant was changed in one repository, and nothing in either can see
+  it.** `no-secrets` is one of D-028's five shared scripts; `agora_theme`'s manifest pins it at
+  `local == source == 134f6f1a…`. T-906 extended the template's copy with a binary sweep, so that
+  `source_sha256` now describes a file that no longer exists at the template's HEAD. **The theme's
+  gate stays green** — `shared-invariants` says in its own header that it *"cannot see UPSTREAM
+  drift"* and assigns it to a dated unit-006 review — so the mechanism is behaving exactly as
+  documented, and the consequence is still that the theme ships **no binary sweep** while believing
+  its copy is current. Rule: **a drift detector that can only see one direction must have the other
+  direction on somebody's calendar with a name on it**, or the honest limitation quietly becomes a
+  real gap. Owner [ejecutor], target unit 006, named on the row rather than left in prose.
+  Recorded 2026-08-26.
+
+- I-081 · **Two NUL bytes in a Markdown file made every `LC_ALL=C grep` over it return nothing, and
+  the file looked perfectly normal.** Writing up T-906 I quoted the EXIF marker as a literal escape;
+  the escaping collapsed and **two real NUL bytes** landed in `specs/003-demo-content/tasks.md`. GNU
+  grep then classified the whole file as **binary** — it printed `Binary file … matches` and **one**
+  match instead of thirty. `cited-tasks-exist` promptly reported **10 dangling citations**, naming
+  ids that are defined on the very lines grep had stopped reading. Nothing looked wrong: the file
+  rendered correctly, `wc` and `sort` were unaffected, and a plain `grep -c` in the ambient locale
+  still returned **30** — only the invariant's own `LC_ALL=C grep -o` saw binary. Rule: **treat
+  `Binary file X matches` as a hard failure, never as a match**, and never paste a byte-level escape
+  into prose without checking what actually landed (count the NUL bytes with a language that will not re-escape them for you, which the very next paragraph of this idiom failed to do). ⚠️ The wider
+  point is that the failure was **loud and specific because an invariant was watching** — the same
+  invariant widened hours earlier for an unrelated reason. Recorded 2026-08-26.

@@ -247,3 +247,12 @@ subsetting            # trimming a font to a subset of codepoints - rejected in 
 # which is the stable branch CI installs. That difference is what made the local pre-flight
 # more permissive than the gate on 2026-08-25; tests/bin/spellcheck now reads 11.4.x.
 vincentlanglet        # the vendor of twig-cs-fixer, cited by name as evidence in T-609
+
+# Binary-container vocabulary, from T-906's EXIF/XMP sweep (tests/bin/no-secrets-binary.py).
+# Every entry is a literal structure name in a published file-format specification, quoted so
+# the sweep's header can say which bytes it looks for. They are not abbreviations we coined.
+xmpmeta               # <x:xmpmeta>, the root element of an Adobe XMP packet
+xpacket               # <?xpacket begin ...?>, the XMP packet's own processing instruction
+fourcc                # RIFF's four-character chunk identifier, walked to find WebP's EXIF chunk
+IEND                  # the terminating chunk of a PNG datastream, where the PNG walk stops
+exiftool              # the external EXIF reader T-906 REFUSES to adopt; named to say why not

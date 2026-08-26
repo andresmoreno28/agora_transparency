@@ -1,0 +1,489 @@
+#!/usr/bin/env bash
+#
+# media-licence - Ágora - unit 003, wave 9, task T-904.
+#
+# Every non-YAML, non-JSON file shipped under content/ - a photograph, a PDF, a
+# CSV distribution - is a thing somebody else may own. This invariant requires
+# each one to carry a nameable licence in content/MEDIA-LICENCES.md, and it
+# requires the manifest and the tree to agree in BOTH directions: a file with no
+# row is a finding, and a row naming no file is a finding too.
+#
+# The precedent is worse than the requirement. Measured for the unit 003 plan
+# (§2): neither published Drupal CMS site template documents any media licence
+# at all - `haven` ships 22 Unsplash-named JPEGs and one GPL LICENSE.txt for the
+# code. A template whose thesis is accountability cannot be the third.
+#
+# ---------------------------------------------------------------------------
+# WHY THIS SCRIPT IS NOT RED ON THE DAY IT LANDS, AND WHY THAT IS NOT A HOLE
+# ---------------------------------------------------------------------------
+# The contract in plan.md §6.1 says "scanned: N binaries; N must be > 0 or this
+# script FAILS", citing I-028: a scan of zero files exits 0 exactly like a clean
+# tree, and this repository has been caught by that twice.
+#
+# content/ holds ONE file today - a blank Canvas landing page - and ZERO media.
+# Wave 10 (T-1007) authors the media. So a literal reading of that rule ships an
+# invariant that is RED from the day it lands until a task three weeks away, and
+# I-020 says a red that everybody has learned to step over is worse than no red
+# at all. The other direction - printing "clean" over an empty scan - is the
+# exact hazard the rule was written to prevent. Both options are wrong.
+#
+# The way out is to notice that "N binaries" is the SUBJECT of this scan, not
+# its DENOMINATOR. The question I-028 actually asks is "did the scan happen?",
+# and that question has an answer today:
+#
+#   * content/ is ENUMERATED in both scopes, and both enumerations must be > 0
+#     or this script exits FATAL. Today that is 1 working / 1 packaged - the
+#     Canvas page. This assertion is load-bearing NOW and can never be vacuous,
+#     because a site template with an empty content/ is broken for other reasons.
+#   * The CLASSIFIER is proved too: the enumerated entries are sorted into media
+#     and non-media, and both halves are printed. A classifier that returned
+#     nothing at all would take the enumeration to zero and hit the FATAL above.
+#
+# So the always-true denominator is the enumeration, and the media count is the
+# subject it discriminates. On top of that the media rules ARM themselves:
+#
+#   ARMED  <=>  a media file exists in either scope, OR the manifest holds >= 1
+#               data row.
+#
+# Unarmed, the summary line says NOT YET LOAD-BEARING in those words and exits
+# 0. It never says "clean" over an empty scan. Armed, every rule below applies
+# and `media files > 0` becomes an assertion exactly as §6.1 wrote it.
+#
+# Wave 10's first image arms it with no edit here and nobody having to remember.
+# That last property is the whole point, and it is the same argument the theme
+# repository's shared-invariants.manifest makes for installing its vacuous
+# no-unstable-deps early: "whoever adds that dependency is the last person who
+# will think to bring a guard along with it." The difference - and it is why
+# this file argues the case at length rather than citing that one - is that the
+# theme's vacuous invariant prints `require entries: 0` and stops there, while
+# this one asserts a denominator that is positive today.
+#
+# Contract (shared by every invariant in tests/bin/):
+#   scope:    the exact set of files inspected
+#   scanned:  the content/ enumeration, and it must be > 0 or this script fails
+#   findings: M, each printed as  path:line  reason
+#   exit 0 if and only if M == 0
+#
+# TWO scopes, and they answer different questions - the pattern is
+# no-code-in-template's, deliberately:
+#   1. WORKING TREE (`find`). `git grep` and friends never see an uncommitted
+#      offender (I-019), and an unlicensed image is at its most dangerous in the
+#      minutes after it is dropped into the tree.
+#   2. PACKAGED TREE (`git archive --format=tar HEAD | tar -tf -`). What a
+#      marketplace reviewer downloads is the tarball, not the checkout. This is
+#      the authoritative scope for the licence question, because it is the set
+#      of files this project actually redistributes.
+# A file present in one scope and absent from the other is itself a finding: it
+# means either an uncommitted addition or an export-ignore that is quietly
+# dropping media somebody wrote a licence row for.
+#
+# FATAL, not an ordinary finding, and printing NO summary line (I-029): content/
+# absent or unreadable; either enumeration returning zero entries; `git archive`
+# producing nothing; the allow-list being empty; the manifest file being absent
+# while the scan is ARMED; any `grep` exiting >= 2. The closing metrics line is
+# a claim about a scan that happened.
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev.
+#
+# FORBIDDEN: adding a path to an ignore list. A false positive is fixed by
+# fixing the MANIFEST or by removing the file - never by shrinking the scope.
+# This clause exists because the only route from a red deny-list back to green
+# is deleting a term, and that is the move no-boilerplate's own FORBIDDEN clause
+# was written to stop (T-703). The same applies to the allow-list of licences:
+# a licence this project may not ship is removed from the FILE, never added to
+# the list.
+#
+# Usage: tests/bin/media-licence   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# ---------------------------------------------------------------- repo root --
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+# ------------------------------------------------- single source of truth ----
+CONTENT_DIR='content'
+MANIFEST='content/MEDIA-LICENCES.md'
+
+# Files under content/ that are NOT media and therefore need no licence row.
+# Declared by exact path, never by extension: a `*.md` glob would silently adopt
+# the next Markdown file somebody drops in there, and the whole point of the
+# closed world is that adopting a file is a decision somebody makes on purpose.
+NON_MEDIA_DECLARED='content/MEDIA-LICENCES.md
+content/PEOPLE.md'
+
+# The allow-list. PRINTED on every run, per §6.1: "A licence not on it is a
+# finding, never a silent pass - an unrecognised string must not read as
+# absence." Every entry is a licence this project may lawfully redistribute
+# inside a GPL-2.0-or-later package.
+ALLOWED_LICENCES='CC0-1.0
+CC-BY-4.0
+CC-BY-SA-4.0
+OFL-1.1
+own work'
+
+FINDINGS=0
+WORKDIR=$(mktemp -d -t media-licence.XXXXXX) || { echo "FATAL: mktemp -d failed"; exit 1; }
+trap 'rm -rf "$WORKDIR"' EXIT INT TERM
+
+finding() { # <file> <line> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "${1#./}" "$2" "$C_OFF" "$3"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+fatal() { # <reason>
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run has NO result, which is not a clean result (I-029).\n'
+  exit 1
+}
+
+grep_fatal() { # <rc> <pattern> <subject>
+  fatal "grep exited $1 on $3 while matching: $2 - a file that could not be searched is NOT a file that is correct (I-027)."
+}
+
+is_declared_non_media() { # <path>
+  while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    [ "$1" = "$d" ] && return 0
+  done <<EOF
+$NON_MEDIA_DECLARED
+EOF
+  return 1
+}
+
+# A path is MEDIA when it is under content/, is not *.yml, is not *.json and is
+# not a declared non-media file. Deliberately NOT "is it binary": T-1006 ships
+# CSV distributions, which are text and are still somebody's data under somebody
+# else's licence.
+is_media() { # <path>
+  case "$1" in
+    "$CONTENT_DIR"/*) ;;
+    *) return 1 ;;
+  esac
+  case "$1" in
+    *.yml | *.json) return 1 ;;
+  esac
+  is_declared_non_media "$1" && return 1
+  return 0
+}
+
+printf '=========================================================================================================\n'
+printf 'media-licence - Ágora - every shipped media file carries a nameable licence (T-904)\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+# ------------------------------------------------------------- preflight -----
+for tool in find grep sort wc git tar; do
+  command -v "$tool" >/dev/null 2>&1 || \
+    fatal "required tool not available: $tool - the scan cannot be evaluated, and unevaluated is not clean."
+done
+
+[ -d "$CONTENT_DIR" ] || fatal "$CONTENT_DIR/ does not exist - a site template with no content/ is broken for reasons this script is not the right one to report."
+
+ALLOWED_COUNT=0
+while IFS= read -r l; do
+  [ -n "$l" ] || continue
+  ALLOWED_COUNT=$((ALLOWED_COUNT + 1))
+done <<EOF
+$ALLOWED_LICENCES
+EOF
+# Zero means FAIL here, which is the only direction in which the `:-0` default
+# is safe (I-031). An empty allow-list would make every licence a finding, not
+# a pass - but it would also mean the declaration had been emptied, and that is
+# a state nobody should be able to reach quietly.
+if [ "${ALLOWED_COUNT:-0}" -eq 0 ]; then
+  fatal 'the licence allow-list is empty - the declaration has been emptied and this scan discriminates nothing (I-028).'
+fi
+
+printf '\ndeclared scope\n'
+note "content directory:   $CONTENT_DIR/"
+note "manifest:            $MANIFEST"
+note "non-media declared:  $(printf '%s' "$NON_MEDIA_DECLARED" | tr '\n' ' ')"
+note "allow-list ($ALLOWED_COUNT):     $(printf '%s' "$ALLOWED_LICENCES" | tr '\n' ' ' | sed 's/  */ /g')"
+note 'media = under content/, not *.yml, not *.json, not a declared non-media file'
+
+# =========================================== scope 1: the working tree ========
+printf '\nscope 1 (early warning): working tree - find %s\n' "$CONTENT_DIR"
+printf '          catches the uncommitted offender that scope 2 is structurally unable to see (I-019)\n'
+
+find "$CONTENT_DIR" -type f -print 2>/dev/null | sed 's|^\./||' | LC_ALL=C sort > "$WORKDIR/work-all"
+WORK_ENTRIES=$(wc -l < "$WORKDIR/work-all" | tr -d ' ')
+printf 'content entries (working): %s\n' "$WORK_ENTRIES"
+# The always-positive denominator. Zero means FAIL, so `:-0` is the safe
+# direction (I-031). This is the assertion that makes an unarmed run honest.
+if [ "${WORK_ENTRIES:-0}" -eq 0 ]; then
+  fatal "$CONTENT_DIR/ enumerated 0 files in the working tree - the scan did not happen (I-007/I-028)."
+fi
+
+: > "$WORKDIR/work-media"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  is_media "$f" && printf '%s\n' "$f" >> "$WORKDIR/work-media"
+done < "$WORKDIR/work-all"
+WORK_MEDIA=$(wc -l < "$WORKDIR/work-media" | tr -d ' ')
+printf 'binaries (working):        %s\n' "$WORK_MEDIA"
+
+# =========================================== scope 2: the packaged tree =======
+printf '\nscope 2 (authoritative): packaged tree - git archive --format=tar HEAD | tar -tf -\n'
+printf '          what a marketplace reviewer downloads is the tarball, not the checkout\n'
+
+git rev-parse --verify HEAD >/dev/null 2>&1 || fatal 'no git HEAD - the packaged scope cannot be resolved, and an unresolvable scope is not an empty one.'
+ARCHIVE_LIST=$(git archive --format=tar HEAD 2>/dev/null | tar -tf - 2>/dev/null)
+ARCHIVE_RC=$?
+if [ "$ARCHIVE_RC" -ne 0 ] || [ -z "$ARCHIVE_LIST" ]; then
+  fatal "git archive HEAD produced nothing (exit $ARCHIVE_RC) - an empty archive would pass every check here through the back door."
+fi
+
+PKG_MATCHED=$(printf '%s\n' "$ARCHIVE_LIST" | grep -E "^$CONTENT_DIR/" 2>/dev/null)
+PKG_RC=$?
+[ "$PKG_RC" -ge 2 ] && grep_fatal "$PKG_RC" "^$CONTENT_DIR/" 'the archive listing'
+printf '%s\n' "$PKG_MATCHED" | grep -v '/$' 2>/dev/null | grep -v '^$' 2>/dev/null \
+  | LC_ALL=C sort > "$WORKDIR/pkg-all"
+PKG_ENTRIES=$(wc -l < "$WORKDIR/pkg-all" | tr -d ' ')
+printf 'content entries (packaged): %s\n' "$PKG_ENTRIES"
+# Same assertion, other scope. Zero means FAIL (I-031).
+if [ "${PKG_ENTRIES:-0}" -eq 0 ]; then
+  fatal "$CONTENT_DIR/ contributes 0 files to the packaged tree - either content/ became export-ignored or the archive broke; either way this run proves nothing (I-028)."
+fi
+
+: > "$WORKDIR/pkg-media"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  is_media "$f" && printf '%s\n' "$f" >> "$WORKDIR/pkg-media"
+done < "$WORKDIR/pkg-all"
+PKG_MEDIA=$(wc -l < "$WORKDIR/pkg-media" | tr -d ' ')
+printf 'binaries (packaged):        %s\n' "$PKG_MEDIA"
+
+# The union is what gets a licence row: a file in either scope is a file this
+# project is responsible for.
+sort -u "$WORKDIR/work-media" "$WORKDIR/pkg-media" > "$WORKDIR/media-union"
+MEDIA_UNION=$(wc -l < "$WORKDIR/media-union" | tr -d ' ')
+
+# Third set, used only by rule 3: what is COMMITTED at HEAD, which is not the
+# same question as what the archive contains - `export-ignore` sits between the
+# two, and the gap between them is a defect nothing else in tests/bin/ can see.
+: > "$WORKDIR/tracked-media"
+TRACKED_LIST=$(git ls-tree -r --name-only HEAD -- "$CONTENT_DIR" 2>/dev/null)
+TRACKED_RC=$?
+[ "$TRACKED_RC" -ne 0 ] && fatal "git ls-tree HEAD -- $CONTENT_DIR failed (exit $TRACKED_RC) - rule 3 would compare against an empty set and report agreement it never measured."
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  is_media "$f" && printf '%s\n' "$f" >> "$WORKDIR/tracked-media"
+done <<EOF
+$TRACKED_LIST
+EOF
+TRACKED_MEDIA=$(wc -l < "$WORKDIR/tracked-media" | tr -d ' ')
+printf 'binaries (committed at HEAD): %s\n' "$TRACKED_MEDIA"
+
+# ================================================ the manifest ================
+printf '\nmanifest - %s\n' "$MANIFEST"
+
+MANIFEST_ROWS=0
+: > "$WORKDIR/rows"
+if [ -r "$MANIFEST" ]; then
+  # A data row is a table row whose first cell is a path under content/. The
+  # header row and the `|---|` separator therefore exclude themselves, and no
+  # line-number arithmetic is needed to skip them.
+  ROW_MATCHED=$(grep -nE "^\|[[:space:]]*$CONTENT_DIR/" "$MANIFEST" 2>/dev/null)
+  ROW_RC=$?
+  [ "$ROW_RC" -ge 2 ] && grep_fatal "$ROW_RC" "^\\|[[:space:]]*$CONTENT_DIR/" "$MANIFEST"
+  if [ "$ROW_RC" -eq 0 ]; then
+    printf '%s\n' "$ROW_MATCHED" > "$WORKDIR/rows"
+    MANIFEST_ROWS=$(wc -l < "$WORKDIR/rows" | tr -d ' ')
+  fi
+  note "present, $MANIFEST_ROWS data row(s)"
+else
+  note 'absent'
+fi
+
+# The first cell of every data row, one per line. Built as a PRE-PASS so rule 1
+# can ask "is this file listed?" with `grep -qxF` against a literal set, rather
+# than building a regex out of a filename - a path holding a `.` or a `+` would
+# otherwise match files it does not name, and the failure would be a silent PASS.
+: > "$WORKDIR/row-paths"
+while IFS= read -r rec; do
+  [ -n "$rec" ] || continue
+  _row=${rec#*:}
+  _body=${_row#|}
+  _first=${_body%%|*}
+  _first="${_first#"${_first%%[![:space:]]*}"}"
+  _first="${_first%"${_first##*[![:space:]]}"}"
+  printf '%s\n' "$_first" >> "$WORKDIR/row-paths"
+done < "$WORKDIR/rows"
+
+# ================================================ arming ======================
+# ARMED <=> a media file exists in either scope, OR the manifest holds a row.
+# Both halves matter: the first arms on wave 10's first image, the second arms
+# on a manifest row whose file was deleted - which is exactly dirty case (b)
+# taken to its limit and must not read as "nothing to do here".
+ARMED=no
+if [ "${MEDIA_UNION:-0}" -gt 0 ] || [ "${MANIFEST_ROWS:-0}" -gt 0 ]; then
+  ARMED=yes
+fi
+
+printf '\nstate: %s\n' "$([ "$ARMED" = yes ] && echo 'ARMED - every media rule below applies' || echo 'NOT YET LOAD-BEARING - no media and no manifest rows')"
+
+if [ "$ARMED" = yes ] && [ ! -r "$MANIFEST" ]; then
+  fatal "$MANIFEST is absent or unreadable while media files exist - every row check below would be vacuous, and a vacuous pass over shipped media is the failure this invariant exists to prevent (I-029)."
+fi
+
+# ================================================ the rules ===================
+if [ "$ARMED" = yes ]; then
+  printf '\n1. every media file has a manifest row\n'
+  R1=0
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    if ! grep -qxF "$f" "$WORKDIR/row-paths" 2>/dev/null; then
+      finding "$f" '0' "shipped under $CONTENT_DIR/ with no row in $MANIFEST - somebody may own this file and the package does not say who"
+      R1=$((R1 + 1))
+    fi
+  done < "$WORKDIR/media-union"
+  [ "$R1" -eq 0 ] && note "all $MEDIA_UNION media file(s) are listed"
+
+  printf '\n2. every manifest row names an existing media file, and its six cells are filled\n'
+  R2=0
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    _ln=${rec%%:*}
+    _row=${rec#*:}
+    # Strip the leading and trailing pipe, then split on the remaining ones.
+    _body=${_row#|}
+    _body=${_body%|}
+    _path=''; _title=''; _author=''; _source=''; _licence=''; _date=''
+    _i=0
+    # A trailing pipe is appended so the last cell terminates like every other
+    # one. Without it the loop needs a "no pipe left" branch, and that branch is
+    # where an empty final cell - exactly the "empty date retrieved" case rule 2
+    # is meant to catch - silently disappears.
+    _rest="$_body|"
+    while [ -n "$_rest" ]; do
+      _cell=${_rest%%|*}
+      _rest=${_rest#*|}
+      # Trim surrounding whitespace without an external process.
+      _cell="${_cell#"${_cell%%[![:space:]]*}"}"
+      _cell="${_cell%"${_cell##*[![:space:]]}"}"
+      _i=$((_i + 1))
+      case "$_i" in
+        1) _path=$_cell ;;
+        2) _title=$_cell ;;
+        3) _author=$_cell ;;
+        4) _source=$_cell ;;
+        5) _licence=$_cell ;;
+        6) _date=$_cell ;;
+      esac
+    done
+
+    if [ "$_i" -ne 6 ]; then
+      finding "$MANIFEST" "$_ln" "row has $_i cell(s), expected 6 (path | title | author | source URL | SPDX id or \"own work\" | date retrieved)"
+      R2=$((R2 + 1))
+      continue
+    fi
+
+    if ! grep -qxF "$_path" "$WORKDIR/media-union" 2>/dev/null; then
+      finding "$MANIFEST" "$_ln" "row names [$_path], which is not a media file in either scope - the row has outlived its file, or the path is mistyped"
+      R2=$((R2 + 1))
+    fi
+    for pair in "title:$_title" "author:$_author" "source URL:$_source" "date retrieved:$_date"; do
+      _label=${pair%%:*}
+      _value=${pair#*:}
+      if [ -z "$_value" ]; then
+        finding "$MANIFEST" "$_ln" "empty $_label for [$_path] - an empty attribution field is a claim nobody can check"
+        R2=$((R2 + 1))
+      fi
+    done
+
+    _ok=no
+    while IFS= read -r a; do
+      [ -n "$a" ] || continue
+      [ "$_licence" = "$a" ] && _ok=yes
+    done <<EOF
+$ALLOWED_LICENCES
+EOF
+    if [ "$_ok" != yes ]; then
+      finding "$MANIFEST" "$_ln" "licence [$_licence] is not on the allow-list ($(printf '%s' "$ALLOWED_LICENCES" | tr '\n' '/' | sed 's|/$||')) - an unrecognised string must not read as absence. Remove the FILE or relicense it; the list is not the thing that moves"
+      R2=$((R2 + 1))
+    fi
+  done < "$WORKDIR/rows"
+  [ "$R2" -eq 0 ] && note "all $MANIFEST_ROWS row(s) resolve, are complete and name an allow-listed licence"
+
+  printf '\n3. the two scopes agree\n'
+  # THREE sets, not two, and the third is what keeps this rule from crying wolf
+  # through the whole of wave 10. TRACKED is `git ls-tree HEAD`, which sees a
+  # committed file whether or not `export-ignore` keeps it out of the tarball;
+  # PACKAGED is the archive. So:
+  #   tracked but not packaged  -> an export-ignore is dropping shipped media.
+  #                                A real defect, and one nothing else catches.
+  #   packaged but not working  -> the tarball ships a file nobody here can open.
+  #   working but not tracked   -> the file is simply not committed yet. That is
+  #                                the normal state of a file being authored, and
+  #                                calling it a finding would make the invariant
+  #                                red for the entire duration of every authoring
+  #                                session - which is how a red gets ignored
+  #                                (I-020). Counted and PRINTED, never silent.
+  R3=0
+  UNCOMMITTED=0
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    if grep -qxF "$f" "$WORKDIR/tracked-media" 2>/dev/null; then
+      grep -qxF "$f" "$WORKDIR/pkg-media" 2>/dev/null || {
+        finding "$f" '0' 'committed media that the packaged tarball does not contain - an export-ignore rule is dropping a file this manifest says we redistribute'
+        R3=$((R3 + 1))
+      }
+    else
+      UNCOMMITTED=$((UNCOMMITTED + 1))
+      note "$f: present in the working tree, not committed yet (not a finding; counted)"
+    fi
+  done < "$WORKDIR/work-media"
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    grep -qxF "$f" "$WORKDIR/work-media" 2>/dev/null || {
+      finding "$f" '0' 'media in the packaged tree but absent from the working tree - the tarball ships a file nobody here can inspect'
+      R3=$((R3 + 1))
+    }
+  done < "$WORKDIR/pkg-media"
+  [ "$R3" -eq 0 ] && note "committed media sets agree; $UNCOMMITTED uncommitted file(s)"
+else
+  printf '\n1-3. skipped: there is no media to license and no row claiming there is\n'
+  note 'this is NOT a clean scan of media - it is the absence of media, and the summary line says so in those words'
+  note "the rules arm themselves on wave 10's first image (T-1007); no edit here, nothing to remember"
+fi
+
+# ----------------------------------------------------------------- summary ---
+printf '\n---------------------------------------------------------------------------------------------------------\n'
+printf 'content entries: %s (working) · %s (packaged)\n' "$WORK_ENTRIES" "$PKG_ENTRIES"
+printf '%s binaries (working) · %s binaries (packaged) · %s manifest rows · %s allow-listed licences · %s findings' \
+  "$WORK_MEDIA" "$PKG_MEDIA" "$MANIFEST_ROWS" "$ALLOWED_COUNT" "$FINDINGS"
+if [ "$ARMED" = yes ]; then
+  printf '\n'
+else
+  printf ' · NOT YET LOAD-BEARING\n'
+fi
+
+if [ "$FINDINGS" -eq 0 ]; then
+  # The word "clean" is reserved for a scan that had something to scan. An
+  # unarmed run prints a different sentence on purpose: "clean" over an empty
+  # set is the exact string I-028 says a degenerate run must never be able to
+  # counterfeit, and a reader skimming CI output reads the last line.
+  if [ "$ARMED" = yes ]; then
+    printf '%s%s%s\n' "$C_OK" 'media-licence: clean' "$C_OFF"
+  else
+    printf '%s%s%s\n' "$C_DIM" 'media-licence: 0 findings - NOT YET LOAD-BEARING, there is no media in either scope' "$C_OFF"
+  fi
+  exit 0
+fi
+printf '%s%s%s%s%s\n' "$C_BAD" 'media-licence: ' "$FINDINGS" ' finding(s)' "$C_OFF"
+exit 1

@@ -160,11 +160,23 @@ PRODUCT_ERE='Ágora|Agora|agora_transparency'
 # (D-021): AGENTS.md is scaffolded into the END USER's site root by
 # composer.json's drupal-scaffold.file-mapping, and recommended.yml is consumed
 # by Project Browser BY PERMALINK - both are read with no README adjacent.
+#
+# content/PEOPLE.md and content/MEDIA-LICENCES.md joined the list on 2026-08-26
+# (T-905, T-904). They are IDENTITY files rather than prose-only, and the test
+# is D-021's own: is this read by someone with no other context on the same
+# surface? Both are shipped in the tarball, both make a claim a marketplace
+# reviewer is entitled to check on its own terms - "every person here is
+# invented", "every media file here is licensed" - and neither sits below a
+# heading that has already named the product. The closed world caught them the
+# moment they were written, with `findings: 2`, which is the mechanism working
+# rather than an obstacle to route around.
 IDENTITY_FILES='recipe.yml
 composer.json
 README.md
 AGENTS.md
-recommended.yml'
+recommended.yml
+content/PEOPLE.md
+content/MEDIA-LICENCES.md'
 
 # Prose-only: packaged files that legitimately mention the product below a
 # surface that has already named it, or in a comment addressed to a maintainer

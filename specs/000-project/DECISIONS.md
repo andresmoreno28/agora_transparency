@@ -1155,6 +1155,19 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   their area block, each new package earning its `DECISIONS.md` line per rule 2 · (6) the export's
   `content/` is **discarded wholesale** in unit 002 · (7) pre-commit review adds four checks the
   skill lacks: `config/` file count printed and **> 0**, `git status --porcelain content/` empty,
+  ⚠️ **RETIRED 2026-08-26, in the commit that first made it false — by name, never deleted.**
+  `content/` now holds **3** files: the blank Canvas landing page it was written about, plus
+  `MEDIA-LICENCES.md` and `PEOPLE.md`, the two manifests T-904 and T-905 read. The check said `1`
+  because at the time anything else in `content/` was an accident. That stopped being true the
+  moment this unit shipped manifests, and it will stop being true again at every wave of unit 003.
+  **Its replacement is mechanical rather than a number in prose**: `tests/bin/media-licence`
+  asserts `content entries (working) >= 1` **and** `content entries (packaged) >= 1`, both FATAL at
+  zero, on every gate run — which is what the `1` was actually guarding (that the enumeration
+  happened at all), stated in a form that survives the directory filling up. Neither manifest is
+  content: Drupal's `Finder` globs only `*.yml` and `*.json`, so a `.md` file under `content/` is
+  inert to the importer while still shipping in the tarball, which is exactly what a manifest a
+  reviewer must be able to read needs to do. The original text is not edited (rule 8):
+
   `find content -type f | wc -l` still **1**, and `git diff recipe.yml` showing only hand-made,
   area-blocked changes.
 

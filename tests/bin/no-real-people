@@ -1,0 +1,378 @@
+#!/usr/bin/env bash
+#
+# no-real-people - Ágora - unit 003, wave 9, task T-905.
+#
+# ===========================================================================
+# WHAT THIS CANNOT DO, SAID FIRST BECAUSE IT IS THE MOST IMPORTANT LINE HERE
+# ===========================================================================
+# THIS INVARIANT CANNOT PROVE THAT A PERSON IS FICTIONAL. Nothing can. An
+# ordinary Spanish full name is one a script cannot distinguish from an invented
+# one, and any script claiming otherwise is lying to whoever reads its green.
+# A check that claims more than it does is worse than no check at all, because
+# the green is then load-bearing for a claim nobody verified.
+#
+# It proves three narrower things, each falsifiable:
+#
+#   (1) ROSTER COMPLETENESS. Every person name this package ships is declared in
+#       content/PEOPLE.md, whose every row states `fictional` and carries a
+#       one-line provenance. This is what catches a REAL name pasted in during
+#       authoring - the actual failure mode - because the pasted name is not on
+#       the roster somebody wrote deliberately.
+#   (2) A DENY-LIST of real, named office-holders. The realistic accident is
+#       somebody copying a real town hall's org chart "as a template" and
+#       forgetting to change it.
+#   (3) SHAPES THAT ARE PERSONAL DATA WHATEVER THE NAME - DNI, NIE, IBAN,
+#       telephone, a routable email address, a street address with a number.
+#       A fictional person with a real IBAN is a data leak with a made-up name
+#       on it, and (1) and (2) would both pass it.
+#
+# Two further limits, stated rather than discovered later:
+#   - (1) reads PERSON ENTITIES, not free prose. A real name typed into a
+#     contract's counterparty field is not caught by (1); it is caught by (2)
+#     only if that person is on the deny-list. The mitigation is the closed
+#     world over entity types below, which at least guarantees that a NEW
+#     place where names could live cannot appear unnoticed.
+#   - (2) matches FULL NAMES, never surnames. The three commonest surnames in
+#     Spain are carried by millions of people, so a deny term consisting of one
+#     of them would fire on a legitimately fictional person - and the only route
+#     back to green would be deleting a term, which is the move a FORBIDDEN
+#     clause exists to stop. The list in the matcher spells this out with the
+#     actual surnames, inside a cspell-scoped block.
+#
+# ---------------------------------------------------------------------------
+# ON THE REMUNERATION FIGURES - READ THIS BEFORE "HARDENING" ANYTHING
+# ---------------------------------------------------------------------------
+# The org chart ships salary and severance figures - the two fields named
+# `..._remuneration` and `..._severance` - because Spanish transparency law art.
+# 8.1.f) requires them in a sortable table. THEY ARE NOT FINDINGS AND MUST NEVER
+# BECOME ONE. They are fictional numbers about fictional people; they become
+# personal data only when attached to a real person, which is exactly what (1)
+# and (2) exist to prevent. Written down here because an invariant that flags
+# the product is an invariant somebody weakens - and the weakening would be
+# aimed at this script, while the defect would be in the reasoning.
+#
+# Mechanically they are safe because the shapes in (3) are shapes, not numbers:
+# a remuneration is five or six digits and the bare-national telephone shape
+# requires exactly nine beginning 6-9. That is a measurement, not a hope; it is
+# re-measured by the dirty-case run recorded in the T-905 report.
+#
+# Contract (shared by every invariant in tests/bin/):
+#   scope:    the exact set of files inspected
+#   scanned:  N files, and N must be > 0 or this script fails
+#   findings: M, each printed as  path:line  reason
+#   exit 0 if and only if M == 0
+#
+# TWO scopes, as media-licence and no-code-in-template:
+#   1. WORKING TREE (`find`) - `git grep` never sees an uncommitted offender
+#      (I-019), and a pasted name is at its most dangerous before it is
+#      committed.
+#   2. PACKAGED TREE (`git archive HEAD`, extracted) - what a marketplace
+#      reviewer downloads is the tarball, not the checkout.
+# Unlike media-licence, this scan needs the BYTES of every packaged file, not
+# just its name, so the archive is extracted to a temp directory rather than
+# listed. The extraction is read-only with respect to this repository.
+#
+# THE ROSTER IS ITSELF IN SCOPE for (2) and (3), and that is not an oversight.
+# The roster is the file that makes a name acceptable, so a real name pasted
+# into it would otherwise vouch for itself - which would turn (1) into a machine
+# for laundering exactly the mistake it exists to catch.
+#
+# FATAL, not an ordinary finding, and printing NO summary line (I-029): content/
+# absent; zero files in either scope; the roster absent or unreadable; an empty
+# deny-list or an empty shape-pattern set; python3 unavailable or failing; any
+# `grep` exiting >= 2.
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block
+# lives in the header of tests/bin/no-ci-allow-dev.
+#
+# FORBIDDEN: adding a path, a name or a pattern to an exclusion so a run turns
+# green. The ROSTER is corrected, or the CONTENT is corrected; the scope is not.
+# The two allow-lists that do exist - reserved example domains, and organisation
+# addresses - are DECLARATIONS printed on every run, and adding a real domain or
+# a real person's address to either is the same forbidden move wearing a hat.
+#
+# Usage: tests/bin/no-real-people   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# ---------------------------------------------------------------- repo root --
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+CONTENT_DIR='content'
+ROSTER='content/PEOPLE.md'
+HELPER="$SCRIPT_DIR/no-real-people.py"
+
+# --------------------------------------------------- the closed world --------
+# Entity types (and, for nodes, bundles) that may appear under content/. An
+# UNDECLARED one is a finding, because a new entity type is a new place a human
+# name can live and assertion (1) would not know to look there. Declaring is one
+# line and a decision; not declaring is a silent gap.
+#
+# Format: `entity_type` covers every bundle of that type; `entity_type/bundle`
+# covers one. The six agora_base_* node bundles are named individually so that a
+# seventh cannot arrive without somebody saying which side of the line it is on.
+PERSON_BEARING='node/agora_base_person'
+
+NON_PERSON_BEARING='canvas_page
+node/agora_base_agreement
+node/agora_base_contract
+node/agora_base_dataset
+node/agora_base_document
+node/agora_base_grant
+taxonomy_term
+media
+file
+menu_link_content
+path_alias
+block_content
+shortcut'
+
+FINDINGS=0
+WORKDIR=$(mktemp -d -t no-real-people.XXXXXX) || { echo "FATAL: mktemp -d failed"; exit 1; }
+trap 'rm -rf "$WORKDIR"' EXIT INT TERM
+
+finding() { # <file> <line> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "${1#./}" "$2" "$C_OFF" "$3"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+fatal() { # <reason>
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run has NO result, which is not a clean result (I-029).\n'
+  exit 1
+}
+
+printf '=========================================================================================================\n'
+printf 'no-real-people - Ágora - roster, deny-list and personal-data shapes over content/ (T-905)\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+printf '\nWHAT THIS PROVES: roster completeness, a deny-list of real office-holders, and personal-data\n'
+printf 'SHAPES. WHAT IT CANNOT PROVE: that a person is fictional. Nothing can. See the header.\n'
+
+# ------------------------------------------------------------- preflight -----
+for tool in find grep sort wc git tar python3; do
+  command -v "$tool" >/dev/null 2>&1 || \
+    fatal "required tool not available: $tool - the scan cannot be evaluated, and unevaluated is not clean."
+done
+python3 -c 'pass' >/dev/null 2>&1 || \
+  fatal 'python3 resolves but does not run - on this host that is the Microsoft Store stub (I-026). A tool that is located but broken is not a tool.'
+[ -d "$CONTENT_DIR" ] || fatal "$CONTENT_DIR/ does not exist."
+[ -r "$HELPER" ] || fatal "$HELPER is missing - the shape matcher lives there and this script cannot evaluate (3) without it."
+[ -r "$ROSTER" ] || fatal "$ROSTER is absent or unreadable - assertion (1) compares every shipped name against it, and an absent roster would make every comparison vacuous."
+
+# =========================================== scope 1: the working tree ========
+printf '\nscope 1 (early warning): working tree - find %s -name *.yml -o -name *.json, plus the roster\n' "$CONTENT_DIR"
+find "$CONTENT_DIR" -type f \( -name '*.yml' -o -name '*.json' \) -print 2>/dev/null \
+  | sed 's|^\./||' | LC_ALL=C sort > "$WORKDIR/work"
+WORK_FILES=$(wc -l < "$WORKDIR/work" | tr -d ' ')
+printf 'scanned: %s file(s) (working)\n' "$WORK_FILES"
+# Zero means FAIL, which is the only direction in which `:-0` is safe (I-031).
+if [ "${WORK_FILES:-0}" -eq 0 ]; then
+  fatal "$CONTENT_DIR/ holds no *.yml or *.json in the working tree - the scan did not happen (I-007/I-028)."
+fi
+
+# =========================================== scope 2: the packaged tree =======
+printf '\nscope 2 (authoritative): packaged tree - git archive HEAD, EXTRACTED (the bytes are needed, not the names)\n'
+git rev-parse --verify HEAD >/dev/null 2>&1 || fatal 'no git HEAD - the packaged scope cannot be resolved.'
+mkdir -p "$WORKDIR/pkg" || fatal 'cannot create the extraction directory.'
+if ! git archive --format=tar HEAD 2>/dev/null | tar -xf - -C "$WORKDIR/pkg" 2>/dev/null; then
+  fatal 'git archive HEAD | tar -x produced nothing - an empty archive would pass every check here through the back door.'
+fi
+( cd "$WORKDIR/pkg" && find "$CONTENT_DIR" -type f \( -name '*.yml' -o -name '*.json' \) -print 2>/dev/null ) \
+  | LC_ALL=C sort > "$WORKDIR/pkg-rel"
+PKG_FILES=$(wc -l < "$WORKDIR/pkg-rel" | tr -d ' ')
+printf 'scanned: %s file(s) (packaged)\n' "$PKG_FILES"
+if [ "${PKG_FILES:-0}" -eq 0 ]; then
+  fatal "the packaged tree contributes no *.yml or *.json under $CONTENT_DIR/ - either content/ became export-ignored or the archive broke (I-028)."
+fi
+
+# ---------------------------------------------------- the stream to python ---
+# The helper is handed BYTES ON STDIN, never a path, and that is a portability
+# decision rather than a style one. This repository's working copy is a Windows
+# checkout driven from Git Bash: `mktemp -d` returns an MSYS path (/tmp/...)
+# that the native python3 on the same machine cannot open, and the failure mode
+# is a file reported as unreadable rather than an error - which is to say, a
+# silent hole in the scan. sbom-check hit the same wall and answered it the same
+# way (its header, "PARSE with python3 + xml.etree reading from stdin").
+#
+# Framing: a header line `FILE <bytes> <label>` followed by exactly that many
+# raw bytes. A byte count, not a sentinel: a sentinel is a string, and any
+# string a sentinel could be is a string a scanned file could contain.
+SCAN_TOTAL=0
+: > "$WORKDIR/stream"
+
+stream_add() { # <label> <readable path>
+  _bytes=$(wc -c < "$2" 2>/dev/null | tr -d ' ')
+  [ -n "$_bytes" ] || fatal "cannot size $2 - a file that cannot be measured cannot be streamed, and a file that was not streamed was never scanned."
+  printf 'FILE %s %s\n' "$_bytes" "$1" >> "$WORKDIR/stream"
+  cat "$2" >> "$WORKDIR/stream" || fatal "cannot read $2"
+  SCAN_TOTAL=$((SCAN_TOTAL + 1))
+}
+
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  stream_add "$f" "$f"
+done < "$WORKDIR/work"
+stream_add "$ROSTER" "$ROSTER"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  stream_add "<packaged>/$f" "$WORKDIR/pkg/$f"
+done < "$WORKDIR/pkg-rel"
+[ -r "$WORKDIR/pkg/$ROSTER" ] && stream_add "<packaged>/$ROSTER" "$WORKDIR/pkg/$ROSTER"
+
+printf '\ntotal in scope: %s file(s) = %s working + %s packaged + the roster in each scope\n' \
+  "$SCAN_TOTAL" "$WORK_FILES" "$PKG_FILES"
+
+# ================================================ (1) the roster ==============
+printf '\n(1) roster completeness - %s\n' "$ROSTER"
+
+# The roster holds EXACTLY ONE Markdown table, and that is a rule about the file
+# rather than an accident of how it is written today: every explanatory list in
+# it is a bullet list on purpose, so that "a line beginning with |" and "a roster
+# row" are the same set. A second table would make the parse below ambiguous, and
+# an ambiguous parse is the shape a silent skip hides in.
+#
+# Four columns: name | position | status | provenance.
+# The status cell must be exactly `fictional`. A data row that does not say it is
+# a FINDING, never an absence: it is a person the roster names without making the
+# claim the roster exists to make - which is precisely what a pasted real name
+# looks like.
+ROSTER_ROWS=0
+: > "$WORKDIR/roster-names"
+ROW_MATCHED=$(grep -nE '^\|' "$ROSTER" 2>/dev/null)
+ROW_RC=$?
+[ "$ROW_RC" -ge 2 ] && fatal "grep exited $ROW_RC on $ROSTER - a roster that could not be read is not an empty roster (I-027)."
+if [ "$ROW_RC" -eq 0 ]; then
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    _ln=${rec%%:*}
+    _row=${rec#*:}
+    _body=${_row#|}
+    _body=${_body%|}
+    _n=0; _name=''; _position=''; _status=''; _prov=''
+    _rest="$_body|"
+    while [ -n "$_rest" ]; do
+      _cell=${_rest%%|*}
+      _rest=${_rest#*|}
+      _cell="${_cell#"${_cell%%[![:space:]]*}"}"
+      _cell="${_cell%"${_cell##*[![:space:]]}"}"
+      _n=$((_n + 1))
+      case "$_n" in
+        1) _name=$_cell ;;
+        2) _position=$_cell ;;
+        3) _status=$_cell ;;
+        4) _prov=$_cell ;;
+      esac
+    done
+    # The header row and the `|---|` separator identify themselves and are the
+    # only two lines allowed to be neither.
+    [ "$_name" = 'name' ] && continue
+    case "$_name" in ---*|:--*) continue ;; esac
+
+    ROSTER_ROWS=$((ROSTER_ROWS + 1))
+    if [ "$_n" -ne 4 ]; then
+      finding "$ROSTER" "$_ln" "row has $_n cell(s), expected 4 (name | position | status | provenance)"
+      continue
+    fi
+    if [ -z "$_name" ]; then
+      finding "$ROSTER" "$_ln" 'roster row with an empty name cell'
+      continue
+    fi
+    if [ "$_status" != 'fictional' ]; then
+      finding "$ROSTER" "$_ln" "status for [$_name] is [$_status], expected exactly [fictional] - a roster row that does not make the claim is a name the roster is carrying without vouching for it"
+    fi
+    if [ -z "$_prov" ]; then
+      finding "$ROSTER" "$_ln" "no provenance for [$_name] - \"fictional\" with nothing behind it is an assertion, and this file exists so the assertion can be checked by a person"
+    fi
+    printf '%s\n' "$_name" >> "$WORKDIR/roster-names"
+  done <<EOF
+$ROW_MATCHED
+EOF
+fi
+
+note "roster data rows: $ROSTER_ROWS"
+
+# ================================================ (2) + (3) the helper ========
+printf '\n(2) deny-list of real office-holders, and (3) personal-data shapes\n'
+
+HELPER_OUT="$WORKDIR/helper.out"
+ROSTER_NAMES_ARG=$(cat "$WORKDIR/roster-names" 2>/dev/null)
+python3 "$HELPER" \
+  --roster "$ROSTER" \
+  --roster-names "$ROSTER_NAMES_ARG" \
+  --person-bearing "$PERSON_BEARING" \
+  --non-person-bearing "$NON_PERSON_BEARING" \
+  < "$WORKDIR/stream" > "$HELPER_OUT" 2>"$WORKDIR/helper.err"
+HELPER_RC=$?
+if [ "$HELPER_RC" -ne 0 ]; then
+  printf '%s\n' "$(cat "$WORKDIR/helper.err")"
+  fatal "the shape matcher exited $HELPER_RC - assertions (1), (2) and (3) were not evaluated. A matcher that did not run is not a matcher that found nothing (I-027)."
+fi
+
+DENY_TERMS=0
+SHAPE_PATTERNS=0
+NAMES_FOUND=0
+SUPPRESSED=0
+ALLOW_DOMAINS=0
+ALLOW_ADDRESSES=0
+BUNDLES_SEEN=0
+HELPER_RECORDS=0
+
+while IFS=$'\t' read -r kind a b c; do
+  [ -n "$kind" ] || continue
+  HELPER_RECORDS=$((HELPER_RECORDS + 1))
+  case "$kind" in
+    COUNT)
+      case "$a" in
+        deny_terms)      DENY_TERMS=$b ;;
+        shape_patterns)  SHAPE_PATTERNS=$b ;;
+        names_found)     NAMES_FOUND=$b ;;
+        suppressed)      SUPPRESSED=$b ;;
+        allow_domains)   ALLOW_DOMAINS=$b ;;
+        allow_addresses) ALLOW_ADDRESSES=$b ;;
+        bundles_seen)    BUNDLES_SEEN=$b ;;
+      esac
+      ;;
+    NOTE)    note "$a" ;;
+    FINDING) finding "$a" "$b" "$c" ;;
+  esac
+done < "$HELPER_OUT"
+
+# I-029: the helper printing nothing at all is a matcher that did not run, and
+# it must not be read as a matcher that found nothing.
+if [ "${HELPER_RECORDS:-0}" -eq 0 ]; then
+  fatal 'the shape matcher produced no records at all - not one count, not one note. It did not run (I-028).'
+fi
+if [ "${DENY_TERMS:-0}" -eq 0 ]; then
+  fatal 'the deny-list is empty - assertion (2) discriminated nothing while reporting zero findings (I-028).'
+fi
+if [ "${SHAPE_PATTERNS:-0}" -eq 0 ]; then
+  fatal 'the shape-pattern set is empty - assertion (3) discriminated nothing while reporting zero findings (I-028).'
+fi
+
+# ----------------------------------------------------------------- summary ---
+printf '\n---------------------------------------------------------------------------------------------------------\n'
+printf 'scanned: %s files (%s working + %s packaged + roster) · %s roster rows · %s deny-list terms · %s shape patterns · %s findings\n' \
+  "$SCAN_TOTAL" "$WORK_FILES" "$PKG_FILES" "$ROSTER_ROWS" "$DENY_TERMS" "$SHAPE_PATTERNS" "$FINDINGS"
+printf 'person names found in content: %s · entity types/bundles seen: %s · suppressed: %s · allow-listed example domains: %s · allow-listed organisation addresses: %s\n' \
+  "$NAMES_FOUND" "$BUNDLES_SEEN" "$SUPPRESSED" "$ALLOW_DOMAINS" "$ALLOW_ADDRESSES"
+
+if [ "$FINDINGS" -eq 0 ]; then
+  printf '%s%s%s\n' "$C_OK" 'no-real-people: clean - and "clean" here means the three things in the header, not that anybody is fictional' "$C_OFF"
+  exit 0
+fi
+printf '%s%s%s%s%s\n' "$C_BAD" 'no-real-people: ' "$FINDINGS" ' finding(s)' "$C_OFF"
+exit 1

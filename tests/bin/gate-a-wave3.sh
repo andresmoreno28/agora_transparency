@@ -2,7 +2,7 @@
 #
 # gate-a-wave3.sh - Agora - Unit 001, wave 3 gate A verification.
 #
-# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the ELEVEN
+# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the THIRTEEN
 # invariants that exist on disk today - the tasks.md "Gate A wave 3" block
 # still loops over only four (no-unstable-deps no-patches no-secrets
 # sbom-check); no-code-in-template, no-ci-allow-dev, no-boilerplate,
@@ -16,6 +16,19 @@
 # invariant checks = 31 before T-223; G9 (cited-tasks-exist, T-223) adds 2, for
 # 33; G10 (identity-strings, T-322) adds 2, for 35; G11 (config-inventory,
 # T-601) adds 2, for 37.
+#
+# UNIT 003 WAVE 9 (2026-08-26) takes it from 37 to 43, and from ELEVEN
+# invariants to THIRTEEN. Written out term by term so the total is stated rather
+# than inferred:
+#   T-906  G3 gains a THIRD check - the binary-metadata sweep's own denominator
+#          ("binaries opened"). The sweep lives inside no-secrets rather than in
+#          a script of its own (plan.md 6.3: it closes a hole in that invariant's
+#          is_text() guard), so it gets a check rather than a group.   37 -> 38
+#   T-904  G12 media-licence, 2 checks.                                38 -> 40
+#   T-905  G13 no-real-people, 3 checks - exit, scanned, and the
+#          deny-list term count, for the reason G7 already gives about
+#          no-boilerplate: a degenerate list of zero terms prints
+#          "0 findings" and passes by construction (I-028).            40 -> 43
 #
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
@@ -245,12 +258,20 @@ if [ -x "$INV" ]; then
   run_invariant "$INV"
   # own summary line: "scanned: N files - config/: ... - content/: ... - findings: N"
   CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  # T-906: the binary-metadata sweep's own denominator. It is deliberately NOT
+  # called "binaries scanned" in the invariant's summary line - the ERE above
+  # takes the LAST `scanned:` match, so a second one would silently redirect
+  # this group's denominator from the text scan to the binary sweep and nobody
+  # would see it happen.
+  BIN_CNT=$(extract_count "$INV_OUT" 'binaries opened:[[:space:]]*[0-9]+')
   note "$(printf '%s' "$INV_OUT" | grep -E '^scanned:' | tail -1)"
   check 'no-secrets (exit)'                "$INV_RC" '0'
   check_positive 'no-secrets (scanned)'    "$CNT"
+  check_positive 'no-secrets (binaries opened)' "$BIN_CNT"
 else
   check 'no-secrets present'               "$(trunc "$INV" 24)" 'present'
   check_positive 'no-secrets (scanned)'    ''
+  check_positive 'no-secrets (binaries opened)' ''
 fi
 
 # --------------------------------------------------------- G4 - sbom-check (T-304/306) --
@@ -412,6 +433,61 @@ if [ -x "$INV" ]; then
 else
   check 'config-inventory present'         "$(trunc "$INV" 24)" 'present'
   check_positive 'config-inventory (scanned)' ''
+fi
+
+# ---------------------------------------------------- G12 - media-licence (T-904) --
+group 'G12 - media-licence'
+INV=tests/bin/media-licence
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary line: "content entries: N (working) · M (packaged)" followed by
+  # "N binaries (working) · M binaries (packaged) · K manifest rows · ...".
+  #
+  # Its scope metric is the CONTENT ENUMERATION, not the binary count, and that
+  # choice is the whole reason this invariant could land before wave 10 authors
+  # any media. content/ holds one file and zero binaries today, so pinning the
+  # gate to "binaries > 0" would ship a check that is RED from birth - and a red
+  # everybody steps over is worse than no red (I-020). The enumeration is
+  # positive today, is asserted by the invariant itself as a FATAL, and cannot
+  # be vacuous: a site template with an empty content/ is broken for other
+  # reasons. The binary count is printed beside it as a census.
+  #
+  # The two `content entries (working):` / `(packaged):` lines carry a
+  # parenthesis before the colon, so the ERE below matches only the summary
+  # line - one match, not three.
+  CNT=$(extract_count "$INV_OUT" 'content entries:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(content entries|[0-9]+ binaries)' | tr '\n' ' ')"
+  check 'media-licence (exit)'             "$INV_RC" '0'
+  check_positive 'media-licence (content entries)' "$CNT"
+else
+  check 'media-licence present'            "$(trunc "$INV" 24)" 'present'
+  check_positive 'media-licence (content entries)' ''
+fi
+
+# --------------------------------------------------- G13 - no-real-people (T-905) --
+group 'G13 - no-real-people'
+INV=tests/bin/no-real-people
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary line: "scanned: N files (A working + B packaged + roster) ·
+  # R roster rows · D deny-list terms · S shape patterns · F findings".
+  # `tail -1` inside extract_count picks that line rather than the two per-scope
+  # `scanned:` lines printed above it.
+  CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  # The deny-list term count, asserted for the reason G7 gives for
+  # no-boilerplate: a degenerate zero-term list prints "0 findings" and passes
+  # by construction (I-028). Only "> 0" is checked, never a specific number -
+  # T-1001 legitimately adds the office-holders of whatever real municipality
+  # the demo is modelled on, and a pinned count would have to be relaxed then.
+  DENY_CNT=$(extract_count "$INV_OUT" '[0-9]+ deny-list terms')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scanned:|person names found)' | tail -2 | tr '\n' ' ')"
+  check 'no-real-people (exit)'            "$INV_RC" '0'
+  check_positive 'no-real-people (scanned)' "$CNT"
+  check_positive 'no-real-people (deny terms)' "$DENY_CNT"
+else
+  check 'no-real-people present'           "$(trunc "$INV" 24)" 'present'
+  check_positive 'no-real-people (scanned)' ''
+  check_positive 'no-real-people (deny terms)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

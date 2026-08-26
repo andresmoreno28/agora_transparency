@@ -293,7 +293,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. **Read `9`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
-  repository's **186** tracked files, `bash tests/bin/spellcheck` opens **181** and finds 0 issues
+  repository's **193** tracked files, `bash tests/bin/spellcheck` opens **187** and finds 0 issues
   (re-measured 2026-08-26 at T-806's audit; it read 183/178 for the few hours between the unit-003
   scaffolding commit, which added three files, and this one — the previous pair, 87 and 82, was 96
   files behind the tree — the
@@ -328,8 +328,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (61 checks · 0 failures) and `gate-a-wave3.sh` (**37** checks · 0 failures), **11** invariants in total —
+  (61 checks · 0 failures) and `gate-a-wave3.sh` (**43** checks · 0 failures), **13** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **They moved again on 2026-08-26 — from 37 · 11 to 43 · 13** — and the arithmetic is stated
+  rather than left to be inferred: T-906 adds one check to G3 (`no-secrets (binaries opened)`),
+  T-904 adds G12 with two, T-905 adds G13 with three (exit, scanned, **deny terms** — a deny-list
+  whose length is not printed is a deny-list somebody can shorten). The two new invariants are
+  `media-licence` and `no-real-people`; the third change extends `no-secrets` rather than adding a
+  script, because its `is_text()` guard skips every binary **by design** and EXIF is therefore
+  invisible to it.
   The wave 3 numbers moved from 35 · 10 on 2026-08-24: `config-inventory` (T-601) is the eleventh,
   and it exists because a **kernel test cannot print a denominator** — PHPUnit turns any output a
   test emits, STDERR included, into an error. Measured locally on Windows, not on the runner.
