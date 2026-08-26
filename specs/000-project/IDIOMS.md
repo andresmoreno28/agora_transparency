@@ -863,3 +863,18 @@
   red would be. Here **nothing was flagged**, because the implementer did not know there were two
   doors — and the only thing that found it was **rendering a real page and counting the `<h1>`
   elements**, which nothing in either repository's gate does. Recorded 2026-08-26.
+
+- I-088 · **`grep -I` calls a file binary only when it finds a NUL byte, so the metadata sweep was
+  blind to the file type it was most likely to meet.** T-906 scoped level 3 of `no-secrets` to *"the
+  files `grep -I` skips"*. When 39 binaries landed in `content/`, it opened **2 of them**. The other
+  37 were 34 PDFs and 3 CSVs — and a PDF has no NUL near its head, so `grep` classifies it as
+  **text**. Meanwhile levels 1 and 2 hunt credential shapes, not XMP packets. **A PDF carrying an XMP
+  packet is the ordinary case, not the exotic one**: every tool that writes a PDF writes one, and it
+  routinely names the author and the software. So the invariant's own selector guaranteed it would
+  miss the commonest instance of the thing it was built to catch. Widened to *(grep says binary) OR
+  (the extension names a container)*, with the extension list **printed on every run**; the sweep
+  went from **2 to 80** files opened across both scopes, and an XMP packet injected into a corpus PDF
+  now produces **2 findings naming the marker and its byte offset** where the old code found nothing.
+  Rule: **when a check defines its scope as "whatever some tool excludes", the tool's definition
+  becomes your specification** — and `grep -I`'s definition of binary is narrower than any reasonable
+  reading of the word. Recorded 2026-08-26.
