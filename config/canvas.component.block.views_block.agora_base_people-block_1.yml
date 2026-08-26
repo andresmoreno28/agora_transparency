@@ -1,0 +1,27 @@
+uuid: e544c0ef-845d-4e60-b0e2-a8371dcfb224
+langcode: en
+status: true
+dependencies:
+  config:
+    - views.view.agora_base_people
+  module:
+    - views
+active_version: 2bae4257e5ee8eb8
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:agora_base_people-block_1'
+        label: 'People: Organisation chart block'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: 'People: Organisation chart block'
+id: block.views_block.agora_base_people-block_1
+provider: views
+source: block
+source_local_id: 'views_block:agora_base_people-block_1'
+

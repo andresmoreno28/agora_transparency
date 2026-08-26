@@ -1,0 +1,27 @@
+uuid: ae1c3d28-f155-4549-88bf-a436cc67b165
+langcode: en
+status: true
+dependencies:
+  config:
+    - views.view.agora_base_publications
+  module:
+    - views
+active_version: 8c10a6f5a8253c6d
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:agora_base_publications-block_1'
+        label: 'All publications: Search block'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: 'All publications: Search block'
+id: block.views_block.agora_base_publications-block_1
+provider: views
+source: block
+source_local_id: 'views_block:agora_base_publications-block_1'
+

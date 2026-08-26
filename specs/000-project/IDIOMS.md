@@ -903,3 +903,17 @@
   discovered at the worst moment. Rule: **when you choose determinism, the recipe for it is part of
   the deliverable.** A reproducible output whose reproduction procedure lives only in a deleted
   scratch script is reproducible by nobody. Recorded 2026-08-26.
+
+- I-091 · **"I proved it is not needed" and "the test requires it" were both true, about different
+  things.** T-1101/T-1102 placed three views blocks on two Canvas pages, and the export produced
+  three `canvas.component.block.views_block.*` config entities. The implementer dropped them,
+  having **measured on a clean install that the pages render without them** — which is correct, and
+  it is why the rig showed nothing wrong. `ValidationTest::testApply` then failed:
+  *"the site template should include this component in its configuration"* — an assertion inherited
+  from the starter kit, walking every Canvas entity's component tree and requiring each component's
+  config dependency to be **shipped by the package**. Rule: **"it renders" and "it is
+  self-contained" are different claims, and a site template is judged on the second.** A page
+  referencing a component the package does not ship works on the machine that authored it and is
+  broken wherever that component happens not to exist — which is every site but one. ⚠️ Note what
+  caught it: not the rig, not any local invariant, but a test the **starter kit** shipped and this
+  project inherited. Recorded 2026-08-26.

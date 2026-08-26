@@ -1,0 +1,27 @@
+uuid: bea26306-0e70-49e6-a857-2f6a5fcc6daf
+langcode: en
+status: true
+dependencies:
+  config:
+    - views.view.agora_base_publications
+  module:
+    - views
+active_version: a2b661a27e658de8
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:agora_base_publications-block_2'
+        label: 'All publications: Key indicators block'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: 'All publications: Key indicators block'
+id: block.views_block.agora_base_publications-block_2
+provider: views
+source: block
+source_local_id: 'views_block:agora_base_publications-block_2'
+
