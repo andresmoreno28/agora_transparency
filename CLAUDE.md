@@ -87,7 +87,18 @@ noise), publishable (everything meets the marketplace terms from day 1).
    gate and never was: pipeline `933270` reported `success` with a **failed** `cspell` job inside
    it. The gate is a statement about the **job list** — see the Gate A block below.
 10. **Git hands:** you may commit and push to working branches if the dispatch delegates it.
-    Merges to the canonical branch, tags, releases and creation of the project on Drupal.org: human.
+    ~~Merges to the canonical branch, tags, releases and creation of the project on Drupal.org: human.~~
+    **⚠️ AMENDED by [andres] 2026-08-27, and the amendment is narrower than the sentence it
+    replaces.** The rule as written was read literally and produced a wrong refusal: a tag was
+    prepared as a copy-paste command for the human instead of being cut. The correction, in
+    [andres]'s own framing: **you push and you create the tags; the human creates the RELEASE on
+    drupal.org, because that is the only step you cannot perform** - and he creates it from the
+    data you hand him (description, short description, and whether it is a new feature, a bug fix
+    or both). So: **commits, pushes and tags are yours. Releases on drupal.org, and creating the
+    project there, are his.** Merges to the canonical branch are unchanged and stay with the human.
+    ⚠️ The practical consequence is that **a release now needs release NOTES from you**, not a
+    command for him to run - if you cut a tag and hand over nothing to paste into the form, you
+    have moved the work rather than done it.
 
 ## Repository structure
 
