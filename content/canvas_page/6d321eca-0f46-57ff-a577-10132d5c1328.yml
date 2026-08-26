@@ -1,0 +1,34 @@
+_meta:
+  version: '1.0'
+  entity_type: canvas_page
+  uuid: 6d321eca-0f46-57ff-a577-10132d5c1328
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  owner:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'The institution'
+  description:
+    -
+      value: 'Who runs the council, what each post covers and what every post is paid.'
+  components:
+    -
+      uuid: df39f4cf-02fa-55af-ba87-7e748553ed1b
+      component_id: block.views_block.agora_base_people-block_1
+      inputs:
+        label: 'Organisation chart'
+        label_display: visible
+        views_label: 'Organisation chart'
+        items_per_page: null
+  path:
+    -
+      alias: /institution
+      langcode: en
+  revision_translation_affected:
+    -
+      value: true

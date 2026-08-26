@@ -878,3 +878,28 @@
   Rule: **when a check defines its scope as "whatever some tool excludes", the tool's definition
   becomes your specification** — and `grep -I`'s definition of binary is narrower than any reasonable
   reading of the word. Recorded 2026-08-26.
+
+- I-089 · **Two gates rejected a working design, and rebuilding to satisfy them produced a better
+  one.** T-1101 and T-1102 were first built on two new views, `agora_base_indicators` and
+  `agora_base_areas`. Both pages rendered correctly. Then `config-inventory` reported **2 findings**
+  — *"no page display path; a view with no route cannot be a key route"* — and
+  `ValidationTest::testKeyRoutes()` failed, because it compares the shipped `agora_base_*` view set
+  against its named list **in both directions** and its own comment says *"a NINTH view landing with
+  no assertions fails too"*. **Neither gate knows about a view that exists only to be placed on a
+  page**, and both are right about routes. The implementer **withdrew the design rather than
+  weakening either check**, and rebuilt the same two pages from **block displays on views that
+  already exist** — adding no view id at all. `config-inventory` went back to `102 config objects · 0
+  findings` and the eight-view set is unchanged. Rule: **a red from a guard you cannot fault is a
+  design review you did not ask for.** Take it. And if a page-less view is genuinely wanted one day,
+  that is a decision with a number, not a task row that quietly adds a ninth id. Recorded 2026-08-26.
+
+- I-090 · **A generated identifier scheme that is not written down is not recoverable from its own
+  output.** Wave 10 exported 199 content files with **v5 UUIDs**, deliberately, so that a re-export
+  is a zero-line diff rather than 199 rewritten files. Wave 11 needed to add two entities to the same
+  corpus and could not reproduce the derivation: **36 namespaces × ~11 name forms brute-forced
+  against two known corpus UUIDs gave 0 matches**, and nothing in `specs/`, the commit messages or
+  `tests/` records the scheme. A new one was defined and documented instead, so **the corpus now
+  carries two different derivations** — harmless today, and exactly the kind of thing that is
+  discovered at the worst moment. Rule: **when you choose determinism, the recipe for it is part of
+  the deliverable.** A reproducible output whose reproduction procedure lives only in a deleted
+  scratch script is reproducible by nobody. Recorded 2026-08-26.

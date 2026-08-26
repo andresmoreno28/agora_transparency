@@ -276,6 +276,37 @@ display:
         - 'config:field.storage.node.field_agora_base_remuneration'
         - 'config:field.storage.node.field_agora_base_severance'
         - 'config:field.storage.node.field_agora_base_summary'
+  block_1:
+    id: block_1
+    display_title: 'Organisation chart block'
+    display_plugin: block
+    position: 2
+    display_options:
+      defaults:
+        use_more: false
+        use_more_always: false
+        use_more_text: false
+      display_description: 'The organisation chart as placed on the institution page.'
+      use_more: true
+      use_more_always: true
+      use_more_text: 'Open the full organisation chart'
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.node.field_agora_base_area'
+        - 'config:field.storage.node.field_agora_base_declaration'
+        - 'config:field.storage.node.field_agora_base_position'
+        - 'config:field.storage.node.field_agora_base_remuneration'
+        - 'config:field.storage.node.field_agora_base_severance'
+        - 'config:field.storage.node.field_agora_base_summary'
   page_1:
     id: page_1
     display_title: Page
