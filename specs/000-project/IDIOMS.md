@@ -796,3 +796,43 @@
   into prose without checking what actually landed (count the NUL bytes with a language that will not re-escape them for you, which the very next paragraph of this idiom failed to do). ⚠️ The wider
   point is that the failure was **loud and specific because an invariant was watching** — the same
   invariant widened hours earlier for an unrelated reason. Recorded 2026-08-26.
+
+- I-082 · **Extraction working is not delivery working, and the artefacts of a broken pipeline look
+  exactly like the artefacts of a working one.** `haven`, a published Drupal CMS site template, has
+  roughly **180 `.po` files per release** on `ftp.drupal.org`; one of them carries **168 real
+  Spanish strings** — <!-- cspell:disable -->`Home → Inicio`, `Tags → Etiquetas`<!-- cspell:enable --> — extracted from its `config/` by `potx`
+  and translated by volunteers. **No installed `haven` site can fetch a single one.**
+  `LocaleProjectRepository::getProjectList()` builds its project list from the **module and theme**
+  extension lists, and a site template contains **zero `*.info.yml`** by rule, so it is invisible to
+  the update system: no project entry, no server pattern, no fetch, ever. Rule: **a full pipeline of
+  intermediate outputs proves the early stages ran, and says nothing about whether anything arrives.**
+  Follow the last hop before believing the chain. Recorded 2026-08-26.
+
+- I-083 · **A decision that is right for the wrong reason will be reopened by the next person who
+  checks it.** D-033 concluded correctly that shipped config translations cannot reach an installed
+  site, and named as its sharpest evidence that a site template's config carries no
+  `_core.default_config_hash`. **Measured: 103 of 104 recipe-installed config objects DO carry it.**
+  `RequirementsTest` guards the **packaged YAML**; `LocaleConfigManager` reads the **active store in
+  the database**. Different objects, and the test was never the lock. The holding survives on five
+  other locks, one of them absolute — but a task row had already been written to depend on the false
+  clause, which is how a wrong reason propagates before anyone notices the conclusion was fine.
+  Rule: **amend the reasoning as loudly as you would amend the conclusion.** Recorded 2026-08-26.
+
+- I-084 · **A probe that stops you building something has paid for itself as fully as one that
+  enables it — and it is the cheaper of the two.** T-902 proved shipped ES translations work, and
+  found on the way that a recipe **cannot** create a language in its own `config/`, that `'*'` fails
+  where an explicitly ordered list works, and that a dropped translation logs **nothing at all**.
+  Hours later D-035 was signed English-only and every one of those mechanisms became unnecessary. The
+  row is **not withdrawn** (rule 8): its findings stay live for whoever adds `translations:` later.
+  Rule: **do not measure the value of a probe by whether the thing it probed got built** — the
+  alternative was discovering the same six failure modes across fifty authored nodes. Recorded
+  2026-08-26.
+
+- I-085 · **Answering a question can reveal a defect that neither answer would have fixed, and the
+  row that would have caught it can be the one you were about to delete.** D-035 asked whether to
+  ship bilingual content. Its research found **three Spanish legal-citation fragments already
+  shipped inside English config descriptions** — `convenio`, `subvención`,
+  `importe de adjudicación` — rendering on English admin forms **today**. That is **SC 3.1.2**,
+  live, and independent of the answer. It was owned by exactly one task row, **T-1011, which the
+  chosen option would otherwise have removed**. Rule: **before deleting a row a decision makes
+  unnecessary, ask what else it was the only owner of.** Recorded 2026-08-26.

@@ -1098,6 +1098,42 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   `isSupported()` requires, **and our own `RequirementsTest` forbids it**. Re-measure at unit 007
   rather than quoting this date (I-047).
 
+  ⚠️ **CORRECTION 2026-08-26 (D-035's research): the sentence above names the WRONG lock, and it is
+  false as written. D-033's HOLDING IS UNCHANGED and is now better supported — but a decision that
+  is right for a wrong reason is one the next person to check will reopen.** Not edited (rule 8).
+
+  **What was measured**, on `~/agora-smoke` with the Ágora recipe applied: **103 of 104**
+  Ágora-named *active* config objects **DO carry `_core.default_config_hash`**.
+  `RecipeConfigInstaller::installRecipeConfig()` calls `createConfiguration()` in the default
+  collection, and `ConfigInstaller` adds the hash there unconditionally. So `RequirementsTest`'s
+  `assertArrayNotHasKey('_core', …)` is a statement about **the YAML in the package**, while
+  `LocaleConfigManager` reads the hash from the **active store in the database**. They are different
+  objects, and the test is not the lock this sentence claims.
+
+  **The locks that actually hold are five, and the first is absolute:**
+  1. **A site template can never be a translation project at all.**
+     `LocaleProjectRepository::getProjectList()` builds its list from the **module and theme**
+     extension lists only; `RequirementsTest` requires **0 `*.info.yml`** in the package. No project
+     entry, no server pattern, no fetch, ever.
+  2. **Recipe config is invisible to the storage `isSupported()` reads** —
+     `LocaleDefaultConfigStorage` is two `ExtensionInstallStorage`s over modules, themes and
+     profiles, and a recipe's `config/` is none of the three. Measured: **0 of 102** supported,
+     against **208 of 520** for everything else in the same database. **This is what "sharpest"
+     should have said**, and it holds regardless of the hash.
+  3. `RecipeConfigInstaller` writes only `DEFAULT_COLLECTION`, so the language override collection
+     is unreachable. 4. `ConfigConfigurator` opens `config/` **flat**. 5. There is no feature to
+     reach for: `Drupal\Core\Recipe` never mentions translation in any of its 21 files.
+
+  ⚠️ **And it is a property of RECIPES, not of us.** In the same database, `node.type.page` and
+  `taxonomy.vocabulary.tags` — shipped by **Drupal CMS's own recipes** — report `isSupported`
+  **FALSE**, while module-shipped config reports TRUE. **Drupal CMS ships an untranslatable content
+  model too.**
+
+  ⚠️ **One consequence outside this record:** T-1001's success criterion said *"no `_core` key on any
+  new file, **which is also what keeps D-033's four locks accurately described**"*. The first half is
+  a real packaging requirement and stands; the clause after it rested on this false premise and is
+  corrected on that row.
+
 
 - **D-032** · **What is the authoritative producer of `config/`, `recipe.yml` and
   `composer.json`?** **SIGNED [ejecutor] 2026-08-24 under standing delegation** — this is
@@ -1606,7 +1642,64 @@ Measured, so the options are not argued from taste
 | C | **Ship English-only demo content**; document ES as a post-install step | Zero WCAG risk, matches both published precedents exactly, and removes the whole multilingual config layer (~13 config files) and T-902's probe. **It contradicts non-negotiable rule 6**, so it costs an amendment to rule 6, not a task |
 | D | Ship bilingual content and ALSO the Spanish interface translation inside the template | **Rejected on mechanics, not preference** — D-033 already established there is no seam: `RecipeConfigInstaller` hard-codes `DEFAULT_COLLECTION`, `ConfigConfigurator` opens `config/` non-recursively, and a `.po` file needs an `.info.yml` key the package cannot have |
 
-★ **A.** It is the only option where the product's accessibility claim and its bilingual claim are
+✅ **SIGNED C by [andres], 2026-08-26 — "C with the floor". The recommendation below was A and the
+evidence overturned it; recording that is the point of writing recommendations down.**
+
+**What is signed:** demo content is **English-only**; **non-negotiable rule 6 is amended** in
+`CLAUDE.md`; and exactly one piece of option A survives, sized to what exists rather than to a page
+that will not — the **three Spanish legal-citation fragments already shipped in `config/`** get
+`lang="es"`, because they are a live **SC 3.1.2** exposure **today, independent of this decision**.
+
+**The measurement that overturned A**, and it is one sentence: **`haven` has roughly 180 `.po` files
+per release on `ftp.drupal.org`, one carrying 168 real Spanish strings — and no installed `haven`
+site can fetch a single one.** Extraction works; delivery does not exist.
+
+*Five locks, measured on the rig, replacing the four this record asserted:*
+1. **A site template can never be a translation project.** `LocaleProjectRepository::getProjectList()`
+   builds its list from the **module and theme** extension lists only, and `RequirementsTest`
+   requires **0 `*.info.yml`** in the package. Absolute, and D-033 does not name it.
+2. **Recipe config is invisible to the storage `isSupported()` reads** —
+   `LocaleDefaultConfigStorage` is two `ExtensionInstallStorage`s over modules, themes and profiles.
+   Measured on an installed site: **0 of 102** Ágora config objects supported, against **208 of 520**
+   for everything else. This is what D-033 should have called sharpest.
+3. `RecipeConfigInstaller` writes only `DEFAULT_COLLECTION`, so the `language.<code>` override
+   collection is unreachable.
+4. `ConfigConfigurator` opens `config/` **flat**; `config/language/es/*.yml` is never seen.
+5. **There is no feature to reach for**: `Drupal\Core\Recipe` contains no occurrence of the word stem behind *translation*
+   **zero** times across all 21 files.
+
+⚠️ **It is a property of RECIPES, not of Ágora, and that is the reassuring half.** Measured in the
+same database: `node.type.page`, `field.field.node.page.field_content` and
+`taxonomy.vocabulary.tags` — all shipped by **Drupal CMS's own recipes** — report `isSupported`
+**FALSE**, while `views.view.content` and `image.style.large` from modules report TRUE. Drupal CMS
+ships an untranslatable content model too. No reviewer expectation is being missed.
+
+*Precedent, re-measured from the published archives rather than the rig:* `haven` 128 content files,
+`byte` 85, **0 with a `translations:` key** in either. The Marketplace Initiative criteria name
+**no language requirement whatsoever**.
+
+⚠️ **What C does NOT do, stated because the framing hid it.** On a **Spanish-language install** C is
+arguably worse than A: with no translation, a Spanish site would serve English prose under
+`<html lang="es">`, engaging **SC 3.1.1 (level A)** — lower level, more serious — and no theme
+`lang` handling can fix it, because the wrong langcode is on the entity. ⚠️ **Reachability is NOT
+MEASURED**: the install-task order suggests the branch that would cause it does not fire, read at
+source and **not observed**. Named rather than glossed.
+
+*What it costs, and it is smaller than the original C:* T-1001 loses its multilingual half
+(`config/` stays at **102** instead of rising to ~115); T-1002 loses its `translations.es` blocks;
+**T-1011 does not disappear — it shrinks and re-points** at the three shipped fragments; **T-902 is
+already signed and is neither deleted nor weakened** (rule 8) — its finding that the importer drops
+a translation **silently, with no log line at all** stays live in `IDIOMS.md` for whoever adds
+`translations:` later. A probe that stops you building a thing is as legitimate an outcome as one
+that enables it. One new paragraph of README documents the post-install Spanish path.
+
+*And Spanish has a verified home whenever it is wanted:* `drupal/agora_theme` **does** have an
+`.info.yml`, so it can declare `interface translation project` and be a real translation project —
+proven on the same database, where theme-shipped config reports `isSupported` **TRUE**.
+
+★ **The original recommendation, kept because a superseded recommendation is evidence about how the
+decision was made:** A. It is the only option where the product's accessibility claim and its
+bilingual claim are
 both true at once, and the cost is one mechanism in one repository rather than a permanent
 exception. **But C is a legitimate answer and it is cheaper by roughly four task rows** — if
 [andres] would rather rule 6 be amended than pay for `lang` handling, that is a defensible call and
@@ -1659,9 +1752,17 @@ table is not a fallback — D-026 already made it the primary artefact.
 
 Not a decision, a **contradiction between two on-disk documents** that needs one word.
 `ROADMAP.md:101` → unit 003. `specs/002-base-and-theme/plan.md:94` → unit 006.
-Recommendation: **003**, as **T-1105**, because the statement's substance is this unit's axe
-denominators and a statement written in 006 against numbers taken in 003 rots in between. If
-[andres] prefers 006, T-1105 leaves this unit and the budget drops to 33.
+✅ **RULED 003 by [andres], 2026-08-26.** The statement stays in this unit as **T-1105** and the
+budget stays at **34**. The reason it was worth one word rather than a shrug: the statement's
+substance **is** this unit's axe denominators — pages scanned, rules run per page, and by name the
+three WCAG 2.2 criteria axe cannot check — and one written in unit 006 against numbers taken in
+unit 003 rots in the gap. ⚠️ `specs/002-base-and-theme/plan.md:94` still sends it to unit 006 and is
+**not edited** (rule 8); this ruling supersedes it, and a reader arriving at unit 006 should find
+this line rather than rediscover the contradiction.
+
+**Recommendation as written before the ruling:** **003**, as **T-1105**, because the statement's
+substance is this unit's axe denominators and a statement written in 006 against numbers taken in
+003 rots in between. If [andres] prefers 006, T-1105 leaves this unit and the budget drops to 33.
 
 ### Rider requested · Four-digit task ids from wave 10
 

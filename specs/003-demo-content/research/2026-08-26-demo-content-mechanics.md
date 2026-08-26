@@ -143,6 +143,17 @@ the English is gone. That is core behaving as documented, not a defect, but it m
 **"the demo is bilingual" is false for a Spanish-language install**, and a test asserting two
 translations would fail there for a reason nobody would guess.
 
+⚠️ **CORRECTION 2026-08-26 (D-035's research): this branch is very likely UNREACHABLE, and the
+correction is read-at-source rather than observed.** `web/core/includes/install.core.inc:753-844`
+puts the recipe tasks where `install_profile_modules` used to be, which is **before**
+`install_import_translations()` — and that is the task which creates the `ConfigurableLanguage`
+entity and sets `system.site`'s `default_langcode`. So at content-import time the site default is
+still `en`, our `default_langcode` is `en`, and the clause `$default_language->getId() !==
+$default_langcode` is **FALSE**. ⚠️ **NOT MEASURED — the task order was read, a Spanish install was
+not run**, and §8's underlying question (does the Drupal CMS installer offer a language choice
+before the template applies?) remains open. It stopped mattering when D-035 was signed **C** and the
+demo became English-only, which is why it is corrected rather than measured.
+
 ### 4.3 · The configuration cost
 
 To have `es` exist at content-import time the template must ship:
@@ -202,6 +213,17 @@ label. This is theme work, in the theme repository, and it is not free.
 
 **This is D-035 and it is [andres]'s.** Framed with options in the open-questions list; not decided
 here, because it trades a signed decision (D-033) against a signed non-negotiable (rule 6).
+
+✅ **DECIDED 2026-08-26: C. Demo content is English-only and rule 6 is amended**, so the table above
+describes a page that will not exist. It is kept because the mechanism it documents is real and
+because the **three legal-citation fragments in the last-but-one row are still shipped** — Spanish
+passages inside English descriptions, an SC 3.1.2 exposure that survives the decision and is now
+T-1011's whole subject. ⚠️ **And this section's own reasoning was corrected on the way:** the lock
+it inherited from D-033 — no `_core.default_config_hash` — is **false on an installed site**, where
+103 of 104 recipe-installed objects carry it. The real locks are five and the absolute one is that a
+site template has **no `.info.yml`**, so the locale system cannot see it as a project at all. The
+memorable measurement: `haven` has ~180 `.po` files per release, one with 168 Spanish strings, and
+**no installed `haven` site can fetch any of them.**
 
 ## 6 · `RequirementsTest` and content — measured, and the answer is clean
 

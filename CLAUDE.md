@@ -53,7 +53,22 @@ noise), publishable (everything meets the marketplace terms from day 1).
 6. **Language (amended by D-017, 2026-08-21):** the ENTIRE repository is in English — process layer
    included: `CLAUDE.md`, `.claude/`, `specs/`, commit messages, identifiers, code and public docs.
    Spanish is the language of orchestration **outside** the repository (conversation with the human).
-   Demo content stays bilingual ES/EN. Supersedes D-005 on this point.
+   ~~Demo content stays bilingual ES/EN.~~ Supersedes D-005 on this point.
+   **⚠️ The struck sentence is AMENDED by D-035, signed by [andres] 2026-08-26: demo content is
+   ENGLISH-ONLY.** It is amended on evidence, not preference. A site template's shipped config
+   **cannot ever receive an interface translation** — the locale system builds its project list
+   from the module and theme extension lists alone, and `RequirementsTest` requires the package to
+   contain **zero `*.info.yml`**, so a site template is structurally invisible to it. Measured, and
+   the measurement is the memorable part: **`haven` has ~180 `.po` files per release on
+   ftp.drupal.org, one of them carrying 168 real Spanish strings — and no installed `haven` site
+   can fetch a single one.** Extraction works; delivery does not exist. This is a property of
+   **recipes**, not of Ágora: Drupal CMS's own recipe-installed content model measures the same way.
+   Both published site templates ship **0 translations across 213 content files**, and the
+   marketplace criteria name no language requirement at all. Spanish is documented as a
+   **post-install** path (`language` + `config_translation`, translated through the UI, which never
+   consults the mechanism that is blocked), and `drupal/agora_theme` — which **does** have an
+   `.info.yml` — is a real translation project whenever that is wanted. **This changes nothing
+   about D-017: the repository, this file and all orchestration prose stay exactly as they were.**
 7. **Commits: the Drupal convention, verified at source** (`/docs/develop/git/
    git-for-drupal-project-maintainers/the-format-of-the-git-commit-message`, updated 2026-04-24):
    *"As of November 2025, the Drupal Core project adopted Git commit messages formatted to comply
