@@ -1530,11 +1530,57 @@ single largest determinant of this unit's task count.
 | **B ★** | **Sized by what must be testable**, not by taste: ≥26 Documents (the library's `items_per_page` is **25**, so 26 is the smallest number that paginates); ≥3 rows per remaining bundle; ≥3 distinct `procedure_type` values; ≥1 counterparty holding two contracts | Roughly 50-60 nodes. More authoring, and every number in it is defensible from a config file rather than from an opinion. It is also the smallest corpus in which the art. 8.1.a) statistic is non-degenerate |
 | C | Rich — a full fictional year of a real-sized municipality | The most convincing demo and the largest `no-real-people` surface. `haven` ships 75 MB; a corpus this size invites the same |
 
+✅ **SIGNED B by [andres], 2026-08-26.** Open since 2026-08-21; closed the day the corpus was
+about to be authored, which is the deadline the decision itself named. **The binding numbers are
+therefore:** ≥26 Documents · ≥3 rows in every other bundle · ≥3 distinct `procedure_type` values ·
+≥1 counterparty holding two contracts. Roughly 50-60 nodes. These are **task criteria now, not
+guidance**: T-1004's pagination assertion and T-1005's non-degeneracy assertion both fail if the
+corpus is smaller, so the size is enforced by the gate rather than remembered.
+
+⚠️ **The rider was answered differently from how it was asked.** The fictional municipality's name
+was offered as *"you choose"* or *"I propose and you veto"*; [andres] answered **"propose it and
+try to verify it yourself too"** — so the naming AND the proof that it is not a real Spanish
+municipality are both [ejecutor]'s, and the verification is part of the deliverable rather than an
+assurance. It is recorded as a separate row's criterion, not as prose here.
+
 ★ **B.** It is the only option whose size is derived from a measurement — `items_per_page: 25` in
 `config/views.view.agora_base_library.yml` — rather than chosen, and it is the smallest corpus in
 which the accessibility gate can test what it claims to test.
 
-**Rider needed either way:** the fictional municipality's **name**. Everything downstream — the org
+✅ **RIDER CLOSED 2026-08-26: the municipality is `Fuentelclaro`, and the proof is a measurement.**
+[andres] answered *"propose it and try to verify it yourself too"*, so the verification is part of
+the deliverable rather than an assurance. What was actually run:
+
+- **The INE's own register.** `https://www.ine.es/daco/daco42/codmun/diccionario25.xlsx`, downloaded
+  and parsed — **8,656 entries checked**, accent-normalised. `Fuentelclaro` is **not among them**.
+  The nearest entry sharing its stem is <!-- cspell:disable -->**`Fuentelcésped`**<!-- cspell:enable --> (Burgos), which is a different word.
+- **The naming pattern is real even though the name is not**, which is the property that makes it
+  usable: <!-- cspell:disable -->`Fuentelviejo` (Guadalajara), `Fuentelisendo` (Burgos),
+  `Fuentelcésped` (Burgos), `Fuentelarreina` (Madrid)<!-- cspell:enable --> are all real. It **reads** as a Spanish municipality without
+  **impersonating** one — the standard non-negotiable rule 3 and `no-real-people` are both
+  protecting.
+- **No organisation to impersonate.** <!-- cspell:disable -->`fuentelclaro.es`, `fuentelclaro.com` and
+  `ayuntamientofuentelclaro.es`<!-- cspell:enable --> all return **NXDOMAIN**, so the demo's email domains and URLs
+  collide with nothing that exists today.
+- **Rejected candidates and why**, because a shortlist nobody sees is a claim:
+  <!-- cspell:disable -->`Sotomonte de la Vega` is absent from the register but sits one word from
+  the real **`Soto de la Vega`** (León) — close enough to be misread as it; `Ribalta de Segura` is
+  clean as a toponym but `Ribalta` is a Spanish painter's surname; `Torrealba de Duero` and
+  `Montebranco`<!-- cspell:enable --> are clean and are held as fallbacks.
+
+⚠️ **What this does NOT prove, stated rather than implied.** The INE dictionary lists
+**municipalities**, not <!-- cspell:disable -->*pedanías*, *entidades locales menores*<!-- cspell:enable --> or hamlets, so a locality of this
+name could exist below the level the register covers; a web search found none, which is weaker
+evidence than the register and is labelled as such. And absence from DNS proves nobody has
+registered those domains **today**, not that no organisation of the name exists anywhere.
+
+⚠️ **Consequence for `no-real-people`.** T-905's row says its 12-term deny list is *"a floor"* and
+that T-1001 must add *"the real office-holders of whatever real municipality the demo models"*.
+Because `Fuentelclaro` is fictional it models none, so **there are no office-holders to add and the
+floor stands as the whole list** — recorded here so that the row's instruction is answered rather
+than quietly skipped.
+
+**Rider as originally written:** the fictional municipality's **name**. Everything downstream — the org
 chart, the domain in email addresses, the deny-list `no-real-people` is built from — depends on it,
 and it must be a name that is *provably* not a real Spanish municipality.
 

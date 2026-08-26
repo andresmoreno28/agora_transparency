@@ -256,3 +256,9 @@ xpacket               # <?xpacket begin ...?>, the XMP packet's own processing i
 fourcc                # RIFF's four-character chunk identifier, walked to find WebP's EXIF chunk
 IEND                  # the terminating chunk of a PNG datastream, where the PNG walk stops
 exiftool              # the external EXIF reader T-906 REFUSES to adopt; named to say why not
+
+# ---------------------------------------------------------------------------------------------
+# Added 2026-08-26 with D-010's rider. These two recur throughout unit 003 and are not one-off
+# quotations, so they are declared here rather than fenced with cspell:disable.
+Fuentelclaro          # the demo's FICTIONAL municipality, verified absent from the INE register
+NXDOMAIN              # the DNS answer proving no organisation of that name is registered today
