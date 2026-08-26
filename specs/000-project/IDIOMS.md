@@ -998,3 +998,26 @@
   a **denominator that moves between two runs of the same command**, and the honest response is to
   find out what changed rather than to re-run until the numbers agree. Recorded 2026-08-26 by the
   coordinator, about the coordinator.
+
+- I-097 · **A file copy and the cache rebuild that reveals it must be two commands, and the first
+  citation of this idiom predated its existence.** Falsifying the `file-link.html.twig` override,
+  the template was moved aside and the cache rebuilt **in the same command**; the rebuild had not
+  taken effect when the page was fetched, the duplicate did not reappear, and a correct fix was
+  deleted as dead code on that evidence. Re-measured with the `mv` and the `drush cr` separated,
+  the duplicate was plainly there — **5 → 10 → 5** occurrences across remove and restore. The same
+  trap then recurred in reverse hours later: blocks placed and page fetched before the rebuild
+  landed produced "component exists, does not render". Rule: **mutate, then rebuild, then measure —
+  three steps, three commands**, and treat any dirty case that seems to disprove a fix as a
+  measurement to check before it is a verdict. ⚠️ This number was cited in two dispatch briefs
+  before this entry existed; a citation is not a record, and `cited-tasks-exist` would have caught
+  exactly this had idioms been in its scope. Recorded 2026-08-27.
+
+- I-098 · **A preview shown mid-round exhibits a state no one considers finished, and the viewer
+  cannot tell.** [andres] was given the live preview URL while a two-repository design round was in
+  flight: the template had already landed list markup for register cards whose CSS the theme was
+  still writing, and a rig rebuild had silently dropped the theme's optional blocks (I-086's bite,
+  again). He saw a home page with no masthead, no footer, and a raw field list — and reasonably
+  asked what had broken. Nothing had; he was looking between two agents' half-finished halves.
+  Rule: **when work spans repositories, the preview is part of the round** — either freeze it at the
+  last coherent state or say plainly that it is mid-surgery. A stakeholder debugging an
+  intermediate state costs more trust than the intermediate state saved time. Recorded 2026-08-27.
