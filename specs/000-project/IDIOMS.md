@@ -709,3 +709,43 @@
   Rule: **prefer the mechanism that refuses early and says why.** The two failures cost minutes and
   an afternoon respectively, and the difference was entirely in how each one reported.
   Recorded 2026-08-26.
+
+- I-074 · **A recipe's module install skips config ENTITIES, so a recipe cannot ship a language in
+  its own `config/` directory.** Measured at T-902 on Drupal 11.4.5:
+  `ConfigInstaller::createConfiguration()` line 409 reads `if ($this->isSyncing()) { continue; }`,
+  and `RecipeRunner::installModules()` sets the installer syncing — so installing `language` leaves
+  the site with `language.mappings`, `language.negotiation` and `language.types` and **zero
+  `language.entity.*`**, not even `und`. `ConfigurableLanguage::postSave()` then calls
+  `updateLockedLanguageWeights()`, which loads `und`, gets NULL, and dies. Simple config installs;
+  config entities do not. **The shape that works** is `config: import:` listing the locked languages
+  **first and explicitly** (`'*'` fails) plus the new language created by a **config action**,
+  because actions run after `installRecipeConfig` while the recipe's own `config/` is written before
+  the imports. **Zero recipes anywhere on the rig install `language`** — core's or contrib's — so
+  there was no precedent to copy and none to warn us. Recorded 2026-08-26.
+
+- I-075 · **`drush recipe` rolls back on any throwable, so the post-mortem state actively
+  contradicts the stack trace.** `RecipeCommand.php:132` takes a checkpoint and restores it when the
+  apply throws. After the language fatal above, `core.extension` showed `language` **not installed**
+  — while the trace clearly named the *config* step, which only runs after the module is in. Several
+  passes were spent reconciling two true observations of different moments. Rule: **when a recipe
+  apply fails, read the trace and ignore the config state afterwards** — the rollback has already
+  removed the evidence, and the tidiness is the problem. Recorded 2026-08-26.
+
+- I-076 · **A fresh database is not a fresh site: `site:install` wipes the database and not
+  `public://`.** T-903's clean case asserts that a binary shipped in `content/file/` lands on disk
+  after apply. Rerun on a dropped database, the *previous* run's binary is still sitting in
+  `sites/default/files`, so the assertion passes on residue and proves nothing. The probe deletes
+  the file and **prints its absence** before each apply. Rule: **name every store the test depends
+  on and reset each one** — for Drupal that is at least the database, the public files directory and
+  the cache. Recorded 2026-08-26.
+
+- I-077 · **Two silent failures in the same importer, and only one of them has a log line to grep
+  for.** Measured side by side at T-902/T-903. A `file` entity whose binary is missing produces
+  exactly one **severity-4** watchdog row — one in sixty-four — and a green install. A translation
+  for a language the site has not configured produces **nothing at all**: fifteen rows, every one severity 6
+  *"module installed"*, zero mentioning language, translation or langcode, zero at severity ≤ 4.
+  The importer has a warning path and chose not to use it for translations. Rule: **before relying
+  on "we would see it in the log", grep the log for the failure you are worried about, on a run
+  where you caused it.** For the translation case there is no line to find, which is why the guard
+  has to be an assertion about the installed site — count the entities that have the translation —
+  rather than an inspection of the shipped files. Recorded 2026-08-26.

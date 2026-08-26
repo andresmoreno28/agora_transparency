@@ -96,6 +96,54 @@ retarget_if_head_moved() {
 # somebody eventually lowers instead.
 FLOOR=7
 
+# THE FLOOR WAS NEVER ENOUGH, AND AN AUDIT SAID SO ON 2026-08-26.
+#
+# Until today this script checked the job COUNT and never the job NAMES. A vanished
+# `nightwatch` leaves eight jobs, clears FLOOR=7, and the script printed GREEN - over a
+# pipeline that had stopped running the accessibility gate. That is precisely the mistake
+# CLAUDE.md's paired job tables were shaped to prevent, and I-061 states it in as many
+# words: "a floor catches a pipeline that materialised almost nothing; only an observed job
+# LIST catches a single missing job." The tool that reads the gate did not implement the
+# idiom the same author had written down hours earlier.
+#
+# So the names are declared, per project, and compared in BOTH directions:
+#   MISSING  a declared job absent from the pipeline  -> NOT GREEN, named
+#   NEW      a job present and not declared           -> NOT GREEN, named
+#
+# The second direction matters as much as the first. A new job is a change to the gate, and
+# a gate that grows silently is one nobody decided to grow. The remedy in either direction
+# is to OBSERVE the new list, update CLAUDE.md's table in the commit that changes it, and
+# update these lines with it - never to delete a name to get back to green.
+#
+# The two sets are DIFFERENT and that is the point (I-061): both projects run nine blocking
+# jobs and three of the nine differ. A shared floor of nine would be satisfied by two
+# different lists.
+EXPECTED_agora_transparency='Drupal CMS
+agora-invariants
+composer
+composer-lint
+cspell
+eslint
+phpcs
+phpstan
+phpunit'
+
+EXPECTED_agora_theme='agora-invariants
+composer
+composer-lint
+cspell
+eslint
+nightwatch
+phpcs
+phpstan
+stylelint'
+
+case "$PROJECT" in
+  *agora_theme*)        EXPECTED="$EXPECTED_agora_theme" ;;
+  *agora_transparency*) EXPECTED="$EXPECTED_agora_transparency" ;;
+  *) EXPECTED='' ;;
+esac
+
 attempt=0
 while : ; do
   attempt=$((attempt + 1))
@@ -147,10 +195,15 @@ except Exception:
       exit 1 ;;
   esac
 
-  curl -sS "$API/$PROJECT/pipelines/$PID/jobs?per_page=100" 2>/dev/null | python3 -c "
-import json, sys
+  # The env var goes on the python3 side of the pipe, NOT the curl side. Setting it on curl
+  # was the first attempt and it exported the list into the process that does not read it -
+  # so python3 saw an empty EXPECTED_LIST and printed "NO DECLARED JOB LIST", which is the
+  # honest degenerate message doing its job: the check announced that it was not checking.
+  curl -sS "$API/$PROJECT/pipelines/$PID/jobs?per_page=100" 2>/dev/null | EXPECTED_LIST="$EXPECTED" python3 -c "
+import json, os, sys
 jobs = json.load(sys.stdin)
 floor = $FLOOR
+expected = set(n for n in os.environ.get('EXPECTED_LIST','').split(chr(10)) if n)
 if not jobs:
     # 'jobs: 0' is a failure, not 'nothing to report' - D-023(5) says so in as many words.
     print('  jobs: 0 - that is a FAILURE, not an empty result')
@@ -167,14 +220,37 @@ print('  jobs: %d' % len(jobs))
 if len(jobs) < floor:
     print('  BELOW THE FLOOR: %d jobs, floor is %d' % (len(jobs), floor))
     bad += 1
+if expected:
+    got = set(j['name'] for j in jobs)
+    for name in sorted(expected - got):
+        print('  MISSING JOB: %s is declared and did not run - the count alone would not notice' % name)
+        bad += 1
+    for name in sorted(got - expected):
+        print('  UNDECLARED JOB: %s ran and is not declared - a gate that grows silently is one nobody decided to grow' % name)
+        bad += 1
+    print('  declared: %d - matched: %d' % (len(expected), len(expected & got)))
+else:
+    print('  NO DECLARED JOB LIST for this project - the count is the only check, which I-061 says is not enough')
 sys.exit(1 if bad else 0)
 "
   rc=$?
   echo "  pipeline $PID: $STATUS"
+
+  # THE LAST RE-READ, and it closes the window the earlier fix left open. HEAD was re-read on
+  # every poll, but not once more between the API answering and the verdict printing - so a
+  # push landing inside that window produced a verdict about a sha that had stopped being HEAD.
+  # One poll's latency rather than 30 seconds, but not zero, and this script's own header says
+  # its whole value is that the verdict names the commit it is about. So: re-read, and NAME THE
+  # SHA in the verdict line, which until today it did not do.
+  VERDICT_SHA="$SHORT"
+  if retarget_if_head_moved; then
+    echo "watch-gate: NOT MEASURED - HEAD moved to $SHORT while the verdict for $VERDICT_SHA was being read"
+    exit 1
+  fi
   if [ "$rc" -eq 0 ]; then
-    echo "watch-gate: GREEN - every job success, every job blocking"
+    echo "watch-gate: GREEN for $VERDICT_SHA - every declared job ran, every job success, every job blocking"
   else
-    echo "watch-gate: NOT GREEN - and the pipeline's own status field is not the evidence either way"
+    echo "watch-gate: NOT GREEN for $VERDICT_SHA - and the pipeline's own status field is not the evidence either way"
   fi
   exit "$rc"
 done

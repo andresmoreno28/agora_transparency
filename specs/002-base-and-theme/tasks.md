@@ -807,10 +807,10 @@ none of which needed the theme repository to exist:
 | Existing task | Carried as | State |
 |---|---|---|
 | T-106 (theme approach, deferred unit 001) | T-704 | ✅ **CLOSED 2026-08-25 by T-704** · recorded in the **only** blockers table this repository has, `specs/001-foundation/tasks.md` §“Active blockers”, as an append-only amendment (rule 8) citing `9dc5722`. Bookkeeping, not engineering: D-014=B answered the question on 2026-08-21 |
-| T-402 (route assertions, deferred unit 001) | T-801 | owned, wave 8 |
-| T-208 (gate container, redefined by D-019) | T-802 | owned, wave 8 |
+| T-402 (route assertions, deferred unit 001) | T-801 | ✅ **CLOSED 2026-08-25 by T-801**, signed. Marked here 2026-08-26 at T-806's audit, which found this table reporting three closed items as open — a debt register that is behind the task list is worse than none, because T-807's report is built on it |
+| T-208 (gate container, redefined by D-019) | T-802 | ✅ **CLOSED 2026-08-25 by T-802**, signed. Marked 2026-08-26 at T-806's audit |
 | T-206(b) (axe + visual regression) | T-509/T-611 (axe) + T-804 (visual) | **split** — axe is wave 5/6 and blocking; visual is wave 8 and informative |
-| T-317 (toolchain floor; macOS NOT CERTIFIED) | T-803 | owned, wave 8 |
+| T-317 (toolchain floor; macOS NOT CERTIFIED) | T-803 | ✅ **CLOSED 2026-08-25 by T-803**, signed. Marked 2026-08-26 at T-806's audit. ⚠️ The *floor* is measured and the macOS row of it is still **NOT CERTIFIED** — closing the task did not certify the host |
 | Wave-1 rider (`blank` + `extra` adjusted check) | T-703 | ✅ **CLOSED 2026-08-25 by T-703** · the adjusted check (`gate-a-wave1.sh`) was **already** discharged by `9dc5722`; T-703 verified that and added the coverage that never existed — `no-boilerplate`’s deny list **8 → 9**, watched failing at `9dc5722~1` with **6 findings, exit 1**. `blank` measured and **rejected** as over-matching (4 hits at HEAD, 0 true positives) |
 | `page.front` declared `/home` vs landed `/page/1` | T-605 | owned, wave 6 |
 | Rendering a Dataset's CSV distribution as an accessible `<table>` (D-026 calls that table the source of truth the charts read) | **unit 003** | owned, ruled 2026-08-25 |

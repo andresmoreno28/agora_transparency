@@ -293,8 +293,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. **Read `9`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
-  repository's **183** tracked files, `bash tests/bin/spellcheck` opens **178** and finds 0 issues
-  (re-measured 2026-08-26 at T-805; the previous pair, 87 and 82, was 96 files behind the tree — the
+  repository's **186** tracked files, `bash tests/bin/spellcheck` opens **181** and finds 0 issues
+  (re-measured 2026-08-26 at T-806's audit; it read 183/178 for the few hours between the unit-003
+  scaffolding commit, which added three files, and this one — the previous pair, 87 and 82, was 96
+  files behind the tree — the
   config export landed in between, and a denominator that stale is the reason this line is
   re-measured rather than carried forward);
   the other five (`.eslintrc.json`, `.gitignore`, `LICENSE.txt`, `composer.json`, `screenshot.webp`)
@@ -346,7 +348,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   Repository"*). With no demo content until unit 003, the only pages a screenshot could capture are
   four synthetic fixtures. **Prerequisite: [andres] creates the mirror.**
 - axe (a11y) with no violations on the demo pages. **Running in the theme, not here**, as the
-  blocking `nightwatch` job — 4 pages, 89 rules per page, 0 violations; see the theme's table.
+  blocking `nightwatch` job — **5** pages, 89 rules per page, 0 violations; see the theme's table.
+  ⚠️ This line said **4** until 2026-08-26: the same gate block carried the figure twice and only
+  one copy was refreshed when the Views-table coverage landed. A number written down twice is a
+  number that goes stale in one place first.
   ⚠️ *"on the demo pages"* is still aspirational: there are no demo pages until unit 003, so what
   it scans today is fixtures.
 - `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches.

@@ -118,6 +118,24 @@ are YES. Any NO sends it to a named later unit with a one-line reason. There is 
 3. Is it required for **unit 003 or 004 to start**, as opposed to merely useful to them?
 4. Can it be finished **inside the current wave** without opening a new D-NNN?
 
+⚠️ **AMENDED 2026-08-26 (T-806's audit). The budget is 38, not 34, and this paragraph and the
+four other places below still say 34.** D-026 raised it to **38**; D-031 then signed the unit
+running at **40 against 38, headroom −2**. The plan was amended once, for the `T-834` correction
+below, and never for the budget — so the unit's own **exit criterion** at §"Gate A(8)" reads
+*"reported against the 34 budget"*, a number superseded twice. **Read 38 everywhere in this
+subsection, and read the count as a command:**
+
+```
+grep -c '^| T-[5-8][0-9][0-9] ' specs/002-base-and-theme/tasks.md
+40
+```
+
+**40 rows against 38. Headroom −2**, reported against 38 rather than re-based to 40, per D-031.
+The original text is not edited (rule 8); it is superseded here. ⚠️ And the shape of this defect is
+**D-031's own failure mode, alive in the file D-031's method fix names**: *"every count in
+`tasks.md` and `plan.md` is now a quoted command with its output, never a number in prose."* Five
+numbers in prose, none of them re-derived, and the audit is what found them.
+
 **(b) The budget, and it is a number.** Unit 002 closes at **34 tasks, T-501 … T-834**.
   ⚠️ **Corrected 2026-08-24: there is no T-834.** The unit's last row is **T-806**.
 Crossing 34 is not forbidden — it is *escalated*: it costs a rider signed by [andres]
