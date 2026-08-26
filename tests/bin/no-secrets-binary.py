@@ -26,6 +26,16 @@
 #                                  string occurs in ordinary compressed data
 #                                  often enough to be useless as a substring.
 #   PNG chunk eXIf                 same, walked rather than searched.
+#   c2pa / jumb / jumd             C2PA Content Credentials, added by D-039. A
+#                                  C2PA manifest is a JUMBF box, and it carries
+#                                  the generating model, a creation timestamp and
+#                                  sometimes an account identifier - the same
+#                                  class of personal data EXIF carries, in a
+#                                  container this sweep was blind to. It is
+#                                  declared BEFORE the first generated image is
+#                                  packaged rather than after, because a
+#                                  denominator that quietly stops covering the
+#                                  thing it exists to cover is I-045's shape.
 #
 # THE LIMIT, STATED: absence of these markers is not proof that a file carries
 # no metadata. A private maker-note in an unrecognised container, or a format
@@ -47,6 +57,15 @@ SUBSTRING_MARKERS = [
     ("XMP", b"http://ns.adobe.com/xap/1.0/", "XMP packet namespace URI"),
     ("XMP", b"<x:xmpmeta", "XMP packet wrapper element"),
     ("XMP", b"<?xpacket begin", "XMP packet processing instruction"),
+    # C2PA (D-039). `jumb`/`jumd` are the ISO BMFF box types a C2PA manifest is
+    # wrapped in; `c2pa` is the manifest store's own label. All three are looked
+    # for as raw substrings rather than by walking the box tree, which is the
+    # weaker method and is stated as such: a four-byte type can occur inside
+    # compressed data, so a hit here is a REASON TO LOOK, and the finding names
+    # its byte offset so it can be checked by hand.
+    ("C2PA", b"c2pa", "C2PA manifest store label"),
+    ("C2PA", b"jumbf", "JUMBF superbox label"),
+    ("C2PA", b"urn:uuid:c2pa", "C2PA manifest URN"),
 ]
 
 MARKER_NAMES = [
@@ -57,6 +76,9 @@ MARKER_NAMES = [
     "RIFF/WebP chunk EXIF (chunk list walked)",
     "RIFF/WebP chunk 'XMP ' (chunk list walked)",
     "PNG chunk eXIf (chunk list walked)",
+    "c2pa (C2PA manifest store label)",
+    "jumbf (JUMBF superbox label)",
+    "urn:uuid:c2pa (C2PA manifest URN)",
 ]
 
 
@@ -142,6 +164,7 @@ def main():
     opened = 0
     with_exif = 0
     with_xmp = 0
+    with_c2pa = 0
 
     for label, data in files:
         opened += 1
@@ -167,21 +190,37 @@ def main():
             with_exif += 1
         if any(k == "XMP" for k, _, _ in hits):
             with_xmp += 1
+        if any(k == "C2PA" for k, _, _ in hits):
+            with_c2pa += 1
 
         for kind, human, off in hits:
+            # The reason is marker-aware. A C2PA hit reported as "EXIF and XMP
+            # carry GPS coordinates" sends whoever reads it looking for the
+            # wrong thing in the wrong tool, and a finding that misdescribes
+            # itself is a finding that gets dismissed.
+            if kind == "C2PA":
+                why = (
+                    "C2PA Content Credentials record the generating model, a creation "
+                    "timestamp and sometimes an account identifier"
+                )
+            else:
+                why = (
+                    "EXIF and XMP carry GPS coordinates, camera serial numbers and "
+                    "author names"
+                )
             emit(
                 "FINDING",
                 label,
                 off,
-                "binary metadata: %s marker [%s] at byte offset %d (0x%x) - EXIF and XMP carry GPS "
-                "coordinates, camera serial numbers and author names, and no-secrets' grep -I guard "
-                "cannot see any of it. Strip the metadata; the file stays, the marker goes"
-                % (kind, human, off, off),
+                "binary metadata: %s marker [%s] at byte offset %d (0x%x) - %s, and no-secrets' "
+                "grep -I guard cannot see any of it. Strip the metadata; the file stays, the "
+                "marker goes" % (kind, human, off, off, why),
             )
 
     emit("COUNT", "opened", opened)
     emit("COUNT", "with_exif", with_exif)
     emit("COUNT", "with_xmp", with_xmp)
+    emit("COUNT", "with_c2pa", with_c2pa)
 
     sys.stdout.write("\n".join(out) + "\n")
     return 0

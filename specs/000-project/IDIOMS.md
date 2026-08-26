@@ -1021,3 +1021,24 @@
   Rule: **when work spans repositories, the preview is part of the round** — either freeze it at the
   last coherent state or say plainly that it is mid-surgery. A stakeholder debugging an
   intermediate state costs more trust than the intermediate state saved time. Recorded 2026-08-27.
+
+- I-099 · **Drupal.org's AI policy is real, adopted, and narrower than everyone assumes — it covers
+  code and text, not media.** The page at `/docs/develop/issues/issue-procedures-and-etiquette/
+  policy-on-the-use-of-ai-when-contributing-to-drupal` (updated 2026-06-10) is **adopted**, not a
+  proposal, and it mandates a disclosure format for AI-assisted contributions. A separate governance
+  issue proposing broader guidelines is still **Needs work**. Both halves are easy to get backwards:
+  assuming there is no policy at all, or assuming the code policy governs images. ⚠️ And the
+  marketplace criteria are **more permissive than this project assumed** — they ask that bundled
+  content and images be **listed in a licence manifest**, explicitly contemplating non-GPL assets,
+  rather than demanding GPL purity. Both published site templates ship images (**24** and **14**)
+  and declare **none**. Recorded 2026-08-27 with D-039.
+
+- I-100 · **A READ-ONLY agent left artefacts in the working copy, and a `git add -A` would have
+  committed them.** An audit dispatched with *"Write nothing to disk. Report back."* returned an
+  excellent report and also left `openai-tou.html` and a `prec/` directory in the repository root -
+  research downloads, not findings. They were caught only because `spellcheck` jumped from 0 issues
+  to **468 in 2 files** and the flagged words - a search-engine crawler's name and an opaque identifier - were words no one on the
+  turn had written. ⚠️ Two lessons, and the second is the sharper one: a read-only instruction is
+  not a mechanism, and **an unexplained jump in a linter's denominator is the cheapest detector of
+  a dirty tree there is** - the count moved before anything else did. Commit named paths, never
+  `-A`, while any agent is live in the same checkout (see [[I-096]]). Recorded 2026-08-27.

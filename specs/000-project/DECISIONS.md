@@ -1817,3 +1817,58 @@ The tasks.md amendment is later and names its evidence, so it governs — but th
 was never amended, so a reader arriving at unit 006 will find visual regression waiting for them
 there too. Neither is edited here (rule 8); both are recorded so the next reader is not the one who
 discovers them.
+
+---
+
+### D-039 · Does the template ship generated imagery, and under which licence row?
+
+**SIGNED = A by [andres], 2026-08-27.**
+
+*Context in one line:* three consecutive reviews of the front page ended in the same sentence —
+*"it still does not land as a site's HOME... I still find it dull"* (translated from [andres]'s
+own words, per rule 6) — and the question that followed
+it is the one this project exists to answer: **would anyone pick this off the marketplace?** The
+honest answer was no, and the diagnosis was structural rather than aesthetic: the front page is
+navigation, not content, and **the package contains no image at all**. `ls config | grep -c image`
+returns **0**; T-1007 signed that absence deliberately, which is why adding a field is a decision
+and not a task.
+
+*Measured at source on 2026-08-27, so the options are not argued from assumption:*
+
+- **Drupal.org has an adopted AI policy** (last updated 2026-06-10) covering **code and text**, with
+  a mandatory disclosure format. It says **nothing about images or media**. "No policy found" is a
+  finding; it is not a permission, and it is not a prohibition either.
+- **The marketplace criteria ask for a manifest, not GPL purity**: *"components like default content
+  and images may carry a proprietary licence"*, provided they are listed. This is more permissive
+  than this project had been assuming.
+- **OpenAI assigns output ownership "if any"** — the hedge is theirs — and forbids representing
+  output as human-generated when it is not.
+- **The USCO holds prompt-only output uncopyrightable** (2025-01-29). So a GPL grant over it is a
+  **no-op — and a no-op breaks nothing**: redistributing a work in which nobody holds rights is
+  more clearly permissible than redistributing a CC-BY photograph. The licence question resolves
+  in our favour; the risk that survives is **provenance honesty**, not GPL compatibility.
+- **The competition ships images and declares none.** `haven` ships **24**, `byte` ships **14**,
+  mostly Unsplash-named, and **neither declares the provenance of a single one**. Five of `byte`'s
+  were downloaded and their bytes scanned for C2PA, XMP and generator strings: no AI marker found,
+  so no claim is made that either ships generated imagery.
+
+| | Option | Real cost |
+|---|---|---|
+| **A ★ SIGNED** | **Add an image field, ship generated imagery, declare every file as `CC0-1.0` with an explicit dedication** — author column reading *"generated with OpenAI &lt;model&gt;; no human authorship claimed"*, source column carrying tool, model and date. | Truthful in every column, and it **does not touch the `media-licence` allow-list**, whose FORBIDDEN clause exists precisely to stop a red row being fixed by widening the list. ⚠️ Costs: a reopened content-model decision, new axe surface on every page an image reaches, and **extending `no-secrets` to C2PA/JUMBF as a prerequisite rather than a follow-up** — ChatGPT images carry Content Credentials, and level 3 sweeps EXIF and XMP only, so the first shipped image would arrive carrying metadata nothing counted (I-045's shape). |
+| B | Ship nothing; close with zero images | Costs nothing and reopens nothing. ⚠️ **Rejected, and against the auditor's own recommendation.** Its argument was that the product does not need imagery and that 203 KiB against `haven`'s 75 MB is a selling point. Nobody chooses a site template by its download size, and shipping zero images against competitors carrying 24 is a differentiator pointing the wrong way. The auditor optimised for auditability; the marketplace decision optimises for being chosen. **The advantage was never having no images — it is being the only one that declares where they came from.** |
+| C | Own-work geometric SVG only | Zero licence question, zero C2PA, nothing reopened. ⚠️ Kept as the fallback if the falsification below fails, and used **alongside** A regardless: the portico grammar is the theme's, and illustration is not a substitute for the thing a citizen recognises as a page. |
+
+⚠️ **Two constraints ride with the signature and neither is negotiable.**
+
+1. **`screenshot.webp` (T-1106) is never generated.** Its criterion requires a rendered demo page
+   carrying real content. A generated screenshot would misrepresent the product to a reviewer,
+   which is a worse failure than any licence question in this record.
+2. **`own work` is the one row generated imagery may not carry.** It is false under the USCO
+   position and arguably breaches OpenAI's own terms. `CC0-1.0` plus dedication is the route that
+   is truthful in both directions: where rights exist the dedication grants them, where none exist
+   the effect is identical.
+
+⚠️ **Open falsification, owed before the first image is packaged:** press reporting from 2024
+describes generated output carrying a **visible "CR" symbol**. If current output still does, option
+A dies on aesthetics before any of this matters, and C becomes the answer. One throwaway image
+settles it; it has not been done at the time of signing.
