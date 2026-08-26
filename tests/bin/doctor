@@ -832,6 +832,78 @@ if [ -n "$GATE_DIGEST" ]; then
   note "run the gate in it with: tests/bin/gate-in-container"
 fi
 
+# ============================================== 6. Checkouts, clones and rigs --
+# ADDED 2026-08-26, and it exists because CLAUDE.md:161-162 said this script
+# "prints both real paths when you need them, and its output beats this file" -
+# and it printed ONE path. Two separate readers found the same divergence on the
+# same day. An instruction to trust doctor over the file is only sound while
+# doctor actually answers the question, so it answers it here.
+#
+# THE REASON THIS IS NOT COSMETIC. On 2026-08-26 a rebuild found that
+# ~/agora-smoke/source - a FULL CLONE of the site template - still carried a
+# remote named `origin` with a LIVE PUSH URL, while CLAUDE.md stated that both
+# WSL clones had been renamed and had their push disabled on 2026-08-24. It was
+# true of one of them. In that rig a bare `git push` would have SUCCEEDED against
+# the canonical repository - which is the exact accident the deliberate absence of
+# an `origin` remote in the real working copy exists to prevent.
+#
+# So this group does not ask a file what the state is. It walks the disk, finds
+# every git checkout that could be mistaken for a working copy, and prints for
+# each one whether its push URL is live. Nothing here is a gate: it is a
+# diagnostic, and its whole value is that it is MEASURED at the moment it is read.
+group '6. Checkouts, clones and rigs (measured now, not read from a file)'
+
+# The two real working copies. The theme is a SIBLING of the template, never a
+# subdirectory: RequirementsTest requires zero *.info.yml files in the packaged
+# site template, and a theme checkout nested anywhere under it is one `git add -A`
+# away from making that permanently false.
+note "template working copy: $REPO_ROOT"
+DOCTOR_THEME_DIR=$(cd "$REPO_ROOT/../agora-theme" 2>/dev/null && { pwd -W 2>/dev/null || pwd; })
+if [ -n "${DOCTOR_THEME_DIR:-}" ] && [ -d "$DOCTOR_THEME_DIR/.git" ]; then
+  note "theme working copy:    $DOCTOR_THEME_DIR"
+else
+  note 'theme working copy:    NOT FOUND beside the template - expected a sibling named agora-theme'
+fi
+
+for _d in "$REPO_ROOT" "${DOCTOR_THEME_DIR:-}"; do
+  [ -n "$_d" ] && [ -d "$_d/.git" ] || continue
+  _push=$(git -C "$_d" remote -v 2>/dev/null | awk '$3=="(push)"{printf "%s=%s ", $1, $2}')
+  [ -z "$_push" ] && _push='<none>'
+  note "  remotes (push):      $_push"
+  if git -C "$_d" remote 2>/dev/null | grep -qx origin; then
+    note '  WARNING: a remote named `origin` exists here. The working copies deliberately have none,'
+    note '           so that a bare `git push` fails loudly instead of reaching a remote by accident.'
+  fi
+done
+
+# Every WSL rig, and whether it hides a clone. A rig is disposable; a clone
+# inside a rig is the thing that looks like a working copy and is not one.
+DOCTOR_WSL=$(command -v wsl.exe 2>/dev/null || command -v wsl 2>/dev/null)
+if [ -n "${DOCTOR_WSL:-}" ]; then
+  DOCTOR_RIGS=$(wsl.exe -e bash -lc 'for d in ~/agora-*; do [ -d "$d" ] || continue; if [ -d "$d/source/.git" ]; then p=$(git -C "$d/source" remote -v 2>/dev/null | awk "\$3==\"(push)\"{printf \"%s=%s \", \$1, \$2}"); [ -z "$p" ] && p="<none>"; echo "$d|CLONE|$p"; else echo "$d|rig only|-"; fi; done' 2>/dev/null | tr -d '\r')
+  if [ -n "$DOCTOR_RIGS" ]; then
+    RIG_TOTAL=0; RIG_CLONES=0; RIG_LIVE=0
+    printf '%s\n' "$DOCTOR_RIGS" | while IFS='|' read -r _p _k _r; do
+      [ -n "$_p" ] || continue
+      note "$(printf '%-28s %-9s %s' "$_p" "$_k" "$_r")"
+    done
+    RIG_TOTAL=$(printf '%s\n' "$DOCTOR_RIGS" | grep -c .)
+    RIG_CLONES=$(printf '%s\n' "$DOCTOR_RIGS" | grep -c '|CLONE|')
+    RIG_LIVE=$(printf '%s\n' "$DOCTOR_RIGS" | grep -c '|CLONE|.*=https')
+    note "rigs: $RIG_TOTAL - of which hold a full clone: $RIG_CLONES - clones whose push URL is LIVE: $RIG_LIVE"
+    if [ "${RIG_LIVE:-0}" -gt 0 ]; then
+      note 'WARNING: a clone inside a throwaway rig can push to the canonical repository.'
+      note '         Disable it:  git -C <rig>/source remote set-url --push <name> DISABLED-throwaway-rig'
+      note '         `git pull` keeps working, which is all a rig ever needs.'
+    fi
+    note 'None of these is ever edited or committed from. They are rebuilt, never treated as a checkout.'
+  else
+    note 'no ~/agora-* rigs found in the WSL distro (or the query failed)'
+  fi
+else
+  note 'wsl.exe not on PATH - rig inventory not taken (this is a Windows-only concern)'
+fi
+
 # ----------------------------------------------------------------- summary --
 TOOLS_UNUSABLE=$((TOOLS_MISSING + TOOLS_BROKEN))
 

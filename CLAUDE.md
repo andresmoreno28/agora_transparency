@@ -167,6 +167,34 @@ mechanical, not visual — the two names differ by a hyphen and a word, which is
 `tests/bin/identity-strings` runs inside `agora-invariants` in **both** repositories and fires when
 a tree is not the repository it claims to be.
 
+⚠️ **AMENDED 2026-08-26. Every count in the block below is now wrong, and one of its claims was
+found FALSE by measurement — which is the whole reason `tests/bin/doctor` now answers this
+question instead of a file.** Nothing below is edited (rule 8); it is superseded here.
+
+**What was found, and it was a near-miss rather than a tidiness problem.** The block says both WSL
+clones *"are now renamed to `drupalcode` with their push URL disabled"*. That was true of one of
+them. **`~/agora-smoke/source` still carried a remote NAMED `origin` with a live push URL**, so a
+bare `git push` there would have **succeeded** against the canonical repository — the exact
+accident the deliberate absence of an `origin` remote in the real working copy exists to prevent.
+Renamed, push disabled, and falsified: `git push` there now exits **128** while `git fetch` still
+works.
+
+**And the count moved in the safe direction, which is not the same as being right.** T-901 rebuilt
+`~/agora-cms` from zero and the rebuild carries no `source/` directory, so the machine holds
+**two** clones of the template — this working copy and `~/agora-smoke/source` — not three. There
+are, however, **four** WSL rigs, and two of them are named nowhere in this file: `~/agora-export`,
+which reaches the template through a **symlinked path repository into this working copy** and is
+where unit 002's modelling actually happened, and `~/agora-theme-rig`.
+
+⚠️ **THIS PARAGRAPH WILL GO STALE TOO. Do not read it; run the tool.**
+**`bash tests/bin/doctor` group 6** walks the disk, prints both working copies and every
+`~/agora-*` rig, says which rigs hold a full clone, and **warns when a clone's push URL is live** —
+measured at the moment you read it, which a file cannot be. It was added on 2026-08-26 precisely
+because CLAUDE.md:161-162 claimed doctor *"prints both real paths"* when it printed one, and two
+separate readers found that same divergence the same day. The instruction *"its output beats this
+file"* is only sound while doctor answers the question; now it does. The live-push warning was
+falsified in both directions before it was trusted.
+
 🔴 **THERE ARE THREE CLONES OF THE TEMPLATE ON THIS MACHINE, NOT ONE. Added 2026-08-24;
 the third was unnamed until today.** Both WSL rigs hold a `source/` directory that is a **full
 clone**: `~/agora-smoke/source` **and `~/agora-cms/source`**. The second is the more dangerous of
