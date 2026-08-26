@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Minutes of the ordinary council meeting of 23 February 2023, PDF, 1,826 bytes'
       entity: d56a0e12-0695-5f0e-8c8f-18e52ad3d41f

@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'By-law on the use of municipal sports facilities, PDF, 1,817 bytes'
       entity: 5022f749-0d84-5cca-bfc1-aacb46d7f351

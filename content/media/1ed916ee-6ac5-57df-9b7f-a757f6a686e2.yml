@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'By-law on public space and civic conduct, PDF, 1,841 bytes'
       entity: 6841ba26-2180-5758-ac11-aa7b694aa6e7

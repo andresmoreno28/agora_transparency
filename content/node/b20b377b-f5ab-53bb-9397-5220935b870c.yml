@@ -54,3 +54,9 @@ default:
     -
       value: 'Councillor for planning consent, municipal works and roads since 2023. An architect in private practice for eighteen years, with work on rural heritage restoration. She holds no planning commission in the municipality while in office.'
       format: content_format
+  created:
+    -
+      value: 1687531740
+  changed:
+    -
+      value: 1687531740

@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Municipal budget 2023, PDF, 1,789 bytes'
       entity: e49011c5-0725-5ab9-95a6-93f1960c3f12

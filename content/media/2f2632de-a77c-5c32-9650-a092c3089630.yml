@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Annual report of the municipal library 2023, PDF, 1,779 bytes'
       entity: 44cc1f7d-3f2b-564e-882f-c61ddd78ea46

@@ -48,3 +48,9 @@ default:
     -
       value: 'Municipal Treasurer, a national civil service post held by competitive examination since 2021. Responsible for the collection of municipal taxes and charges, for payments and for the treasury accounts. As a career official he holds no severance entitlement.'
       format: content_format
+  created:
+    -
+      value: 1688896380
+  changed:
+    -
+      value: 1688896380

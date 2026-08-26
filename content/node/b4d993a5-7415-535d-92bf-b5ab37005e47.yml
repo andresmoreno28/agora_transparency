@@ -51,3 +51,9 @@ default:
     -
       value: 'Emissions inventory, reduction targets and the measures adopted to reach them.'
       format: content_format
+  created:
+    -
+      value: 1679573520
+  changed:
+    -
+      value: 1679573520

@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'By-law on the municipal waste collection charge, PDF, 1,862 bytes'
       entity: d1976857-8258-5217-a04d-792fde1264b6

@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Budget execution report, fourth quarter 2024, PDF, 1,821 bytes'
       entity: 4d6b33e9-d771-5197-bc02-a35f5902af83

@@ -54,3 +54,9 @@ default:
     -
       value: 'Mayor of Fuentelclaro since the 2023 local elections, and a member of the council since 2015. Trained as an agricultural engineer and worked for fourteen years in the regional rural development agency before taking office. Holds the portfolios for general administration and institutional relations.'
       format: content_format
+  created:
+    -
+      value: 1688308980
+  changed:
+    -
+      value: 1688308980

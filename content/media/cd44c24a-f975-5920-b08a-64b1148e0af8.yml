@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Budget execution report, first quarter 2024, PDF, 1,785 bytes'
       entity: 5558017a-3e61-5f5b-82fa-60b71eebc581

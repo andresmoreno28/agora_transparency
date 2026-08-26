@@ -42,6 +42,9 @@ default:
       display: false
       description: 'Street tree inventory, CSV, 859 bytes'
       entity: 4eeb8798-0a79-5d60-879e-b6c91d135df7
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
   field_agora_base_format:
     -
       value: csv
@@ -51,10 +54,13 @@ default:
   field_agora_base_licence:
     -
       value: cc-zero-1.0
-  field_agora_base_financial_year:
-    -
-      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
   field_agora_base_summary:
     -
       value: 'One row per tree in the municipal inventory, with the species, the street, the year of planting and the date of the last inspection. Updated when a survey is carried out rather than on a fixed calendar.'
       format: content_format
+  created:
+    -
+      value: 1734358860
+  changed:
+    -
+      value: 1734358860

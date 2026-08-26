@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Minutes of the ordinary council meeting of 25 April 2024, PDF, 1,801 bytes'
       entity: 9aa328fd-9aed-5ac4-8c57-cfb963d25f23

@@ -275,7 +275,7 @@ display:
             field_agora_base_amount:
               sortable: true
               default_sort_order: asc
-              align: ''
+              align: views-align-right
               separator: ''
               empty_column: false
               responsive: ''
@@ -289,7 +289,7 @@ display:
             field_agora_base_bidder_count:
               sortable: true
               default_sort_order: asc
-              align: ''
+              align: views-align-right
               separator: ''
               empty_column: false
               responsive: ''
@@ -338,7 +338,7 @@ display:
             field_agora_base_tender_amount:
               sortable: true
               default_sort_order: asc
-              align: ''
+              align: views-align-right
               separator: ''
               empty_column: false
               responsive: ''

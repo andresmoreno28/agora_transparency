@@ -309,6 +309,9 @@ display:
           entity_field: type
           plugin_id: field
           label: Register
+          alter:
+            alter_text: true
+            text: "{% set register_path = {\n  'agora_base_agreement': '/agreements',\n  'agora_base_contract': '/contracts',\n  'agora_base_dataset': '/datasets',\n  'agora_base_document': '/documents',\n  'agora_base_grant': '/grants',\n  'agora_base_person': '/people',\n}[type__target_id ~ ''] %}{% if register_path %}<a href=\"{{ register_path }}\">{{ type }}</a>{% else %}{{ type }}{% endif %}"
           type: entity_reference_label
           settings:
             link: false
@@ -391,7 +394,7 @@ display:
             nid:
               sortable: false
               default_sort_order: asc
-              align: ''
+              align: views-align-right
               separator: ''
               empty_column: false
               responsive: ''

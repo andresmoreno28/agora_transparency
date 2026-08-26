@@ -54,3 +54,9 @@ default:
     -
       value: 'Deputy Mayor since 2023 and responsible for the budget, municipal taxes and procurement. A public-sector accountant by training, he worked in the finance department of a neighbouring municipality for eleven years before standing for election.'
       format: content_format
+  created:
+    -
+      value: 1688477040
+  changed:
+    -
+      value: 1688477040

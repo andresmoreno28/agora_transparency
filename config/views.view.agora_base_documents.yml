@@ -59,7 +59,11 @@ display:
           entity_type: node
           entity_field: field_agora_base_document_file
           plugin_id: field
-          label: File
+          label: Download
+          type: entity_reference_entity_view
+          settings:
+            view_mode: default
+            link: false
         field_agora_base_document_type:
           id: field_agora_base_document_type
           table: node__field_agora_base_document_type
@@ -84,6 +88,14 @@ display:
           entity_field: field_agora_base_summary
           plugin_id: field
           label: Summary
+          alter:
+            alter_text: false
+            max_length: 60
+            word_boundary: true
+            ellipsis: true
+            strip_tags: true
+            trim: true
+            html: false
       pager:
         type: full
         options:

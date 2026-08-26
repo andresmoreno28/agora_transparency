@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Municipal budget 2024, PDF, 1,789 bytes'
       entity: 6c9b715c-8558-5f6e-b513-653016e8bb3c

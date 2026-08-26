@@ -51,3 +51,9 @@ default:
     -
       value: 'Approved minutes, including the approval of the plan for equality between women and men.'
       format: content_format
+  created:
+    -
+      value: 1721574960
+  changed:
+    -
+      value: 1721574960

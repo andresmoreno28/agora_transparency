@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Budget execution report, second quarter 2024, PDF, 1,786 bytes'
       entity: 4982293d-4b19-5c2c-9948-7828ed288653

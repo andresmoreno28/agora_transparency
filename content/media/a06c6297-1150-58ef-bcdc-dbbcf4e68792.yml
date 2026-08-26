@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Report on the state of municipal roads and pavements, PDF, 1,845 bytes'
       entity: 4c021ea5-2b1c-5a48-bf75-31a73e55b98a

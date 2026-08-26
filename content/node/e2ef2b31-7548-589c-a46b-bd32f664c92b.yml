@@ -58,3 +58,9 @@ default:
     -
       value: 'Execution of the 2024 budget by chapter: initial credit, final credit, obligations recognised, payments made and the rate of execution. This table is the machine-readable source for the budget figures published elsewhere on this site.'
       format: content_format
+  created:
+    -
+      value: 1739283120
+  changed:
+    -
+      value: 1739283120

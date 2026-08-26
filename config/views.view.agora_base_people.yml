@@ -96,6 +96,14 @@ display:
           entity_field: field_agora_base_summary
           plugin_id: field
           label: 'Profile and career'
+          alter:
+            alter_text: false
+            max_length: 60
+            word_boundary: true
+            ellipsis: true
+            strip_tags: true
+            trim: true
+            html: false
       pager:
         type: full
         options:
@@ -225,14 +233,14 @@ display:
             field_agora_base_remuneration:
               sortable: true
               default_sort_order: asc
-              align: ''
+              align: views-align-right
               separator: ''
               empty_column: false
               responsive: ''
             field_agora_base_severance:
               sortable: true
               default_sort_order: asc
-              align: ''
+              align: views-align-right
               separator: ''
               empty_column: false
               responsive: ''

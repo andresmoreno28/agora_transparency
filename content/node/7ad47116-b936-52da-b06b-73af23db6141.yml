@@ -51,3 +51,9 @@ default:
     -
       value: 'Composition, powers and meeting arrangements of the citizen participation council.'
       format: content_format
+  created:
+    -
+      value: 1726398000
+  changed:
+    -
+      value: 1726398000

@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Municipal budget 2022, PDF, 1,789 bytes'
       entity: 5c5e51d9-5a76-5bbd-8e2f-73b1488f6412

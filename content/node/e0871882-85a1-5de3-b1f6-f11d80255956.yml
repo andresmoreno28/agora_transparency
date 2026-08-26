@@ -48,3 +48,9 @@ default:
     -
       value: 'Municipal Secretary, a national civil service post held by competitive examination since 2019. Responsible for legal advice to the council, for the keeping of its records and for certifying its decisions. As a career official she holds no severance entitlement.'
       format: content_format
+  created:
+    -
+      value: 1687943400
+  changed:
+    -
+      value: 1687943400

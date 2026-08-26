@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Climate and energy action plan 2023-2030, PDF, 1,784 bytes'
       entity: 43c2e17d-7935-5633-8c7e-17aac5c0d985

@@ -54,3 +54,9 @@ default:
     -
       value: 'Councillor for waste collection, parks, water supply and public lighting since 2023. An environmental technician who worked for a waste management consortium for twelve years. He holds the post on a part-time allowance.'
       format: content_format
+  created:
+    -
+      value: 1690380120
+  changed:
+    -
+      value: 1690380120

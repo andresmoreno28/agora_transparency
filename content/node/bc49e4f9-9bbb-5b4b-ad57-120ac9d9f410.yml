@@ -54,3 +54,9 @@ default:
     -
       value: 'Councillor for the library, the music school and the sports facilities since 2023. A secondary school teacher of music, she directed the municipal band for six years before taking office and holds the post on a part-time allowance.'
       format: content_format
+  created:
+    -
+      value: 1687275180
+  changed:
+    -
+      value: 1739104560

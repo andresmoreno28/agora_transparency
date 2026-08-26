@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Municipal plan for equality between women and men 2024-2027, PDF, 1,822 bytes'
       entity: 07c2532d-0322-59e2-9810-102b655baba3

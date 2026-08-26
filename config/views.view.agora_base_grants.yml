@@ -232,7 +232,7 @@ display:
             field_agora_base_amount:
               sortable: true
               default_sort_order: asc
-              align: ''
+              align: views-align-right
               separator: ''
               empty_column: false
               responsive: ''

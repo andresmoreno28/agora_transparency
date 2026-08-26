@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Annual accounts 2023, PDF, 1,789 bytes'
       entity: 319217c8-e866-5c14-9ce6-feaf04bc5667

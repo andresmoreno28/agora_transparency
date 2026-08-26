@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Regulation of the citizen participation council, PDF, 1,795 bytes'
       entity: 2f01810b-c9f9-541d-9bdb-c051e9e6135c

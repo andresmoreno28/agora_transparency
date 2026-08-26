@@ -317,6 +317,37 @@ config:
     # portal publishes its own records, not the Drupal event calendar.
     canvas.component.block.events_block:
       disable: []
+    # -------------------------------------------------------------------------
+    # EVERY PUBLISHED FILE GETS A DESCRIPTION BOX, and it is the accessible name
+    # of the download link rather than a caption beside it.
+    #
+    # Core's `GenericFileFormatter` passes the file item's `description` to
+    # `file_link`, which uses it as the ANCHOR'S OWN TEXT when it is set and
+    # falls back to the bare filename when it is not. So the description is what
+    # a screen reader announces for the link — `Annual accounts 2022, PDF, 1,789
+    # bytes` instead of `accounts-2022.pdf` — and the size stops living in a
+    # sibling `<span>` that is read as separate content.
+    #
+    # This is the SAME KEY T-1104 turned on for the dataset distribution field,
+    # applied to the other file surface this template publishes. The difference
+    # is whose config it is: the distribution field is this package's own, and
+    # `field_media_document` belongs to core's `media` module, so it is reached
+    # by an action instead of by shipping the object.
+    #
+    # ⚠️ THE RENDER ALREADY WORKS WITHOUT THIS LINE — the formatter reads the
+    # item's description whatever the setting says. What the setting buys is the
+    # ABILITY TO EDIT ONE: without it the demo would show descriptions that the
+    # upload form gives a site owner no way to write. A template that ships a
+    # state its own UI cannot reproduce teaches the wrong thing.
+    #
+    # `setSettings` merges (`$settings + $this->settings`), so the extensions,
+    # the directory and the size cap the media module set are all preserved.
+    # No `?` prefix: `drupal_cms_media` is in `recipes:` above, so the field
+    # exists by the time actions run — and this file's own policy is that a `?`
+    # nobody needs is a permanent blind spot.
+    field.field.media.document.field_media_document:
+      setSettings:
+        description_field: true
     # -- area: publishing -------------------------------------------------------
     # (empty in v1; filled by unit 004)
     # -- area: foi --------------------------------------------------------------

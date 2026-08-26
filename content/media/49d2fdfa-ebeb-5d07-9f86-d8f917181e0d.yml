@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Budget execution report, third quarter 2024, PDF, 1,820 bytes'
       entity: 606bbc4c-8690-5ee5-92eb-d49d47ff85d6

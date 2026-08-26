@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Annual report on the home help service 2023, PDF, 1,778 bytes'
       entity: 6ac63c8f-7ef8-56cd-b09b-53aa634ad610

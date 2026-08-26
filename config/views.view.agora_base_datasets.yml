@@ -104,6 +104,14 @@ display:
           entity_field: field_agora_base_summary
           plugin_id: field
           label: Description
+          alter:
+            alter_text: false
+            max_length: 60
+            word_boundary: true
+            ellipsis: true
+            strip_tags: true
+            trim: true
+            html: false
       pager:
         type: full
         options:

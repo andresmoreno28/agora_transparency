@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Annual accounts 2022, PDF, 1,789 bytes'
       entity: a7800e95-5e41-5a97-bf45-ff8781403e50

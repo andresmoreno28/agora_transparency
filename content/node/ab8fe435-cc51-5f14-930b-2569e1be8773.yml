@@ -54,3 +54,9 @@ default:
     -
       value: 'Councillor for home help, dependency support and housing assistance since 2023, and a councillor in the previous term. A social worker by profession, he co-ordinated the shared social services team of the district for nine years.'
       format: content_format
+  created:
+    -
+      value: 1689430140
+  changed:
+    -
+      value: 1753199940

@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Public notice of the register of interests of elected members, PDF, 1,820 bytes'
       entity: 08fff079-f9c1-5b0f-9eca-e0aba637711c

@@ -58,3 +58,9 @@ default:
     -
       value: 'One row per contract awarded in 2024, with the subject, the procedure, the tender amount, the award amount, the number of bidders and the awardee.'
       format: content_format
+  created:
+    -
+      value: 1743785820
+  changed:
+    -
+      value: 1764408600

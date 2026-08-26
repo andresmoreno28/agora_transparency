@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Minutes of the ordinary council meeting of 27 June 2024, PDF, 1,817 bytes'
       entity: 3dbbdba9-8e17-50ab-bb41-c7aa9d51002e

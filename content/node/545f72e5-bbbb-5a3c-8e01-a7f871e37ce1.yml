@@ -58,3 +58,9 @@ default:
     -
       value: 'Execution of the 2023 budget by chapter, in the same columns as the 2024 table, so that the two financial years can be compared without transformation.'
       format: content_format
+  created:
+    -
+      value: 1706204040
+  changed:
+    -
+      value: 1709308860

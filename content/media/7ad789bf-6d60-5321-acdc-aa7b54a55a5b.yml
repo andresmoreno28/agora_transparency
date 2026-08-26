@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: ''
+      description: 'Municipal plan against loneliness in older age, PDF, 1,841 bytes'
       entity: 8c29e9d8-25eb-5a17-ae86-4f49af3551ca

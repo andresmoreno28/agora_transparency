@@ -51,3 +51,9 @@ default:
     -
       value: 'The general account for the 2023 financial year, as approved by the council after the reporting period.'
       format: content_format
+  created:
+    -
+      value: 1715099580
+  changed:
+    -
+      value: 1715099580

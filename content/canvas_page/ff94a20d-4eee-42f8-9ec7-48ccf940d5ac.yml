@@ -15,7 +15,7 @@ default:
       target_id: 1
   title:
     -
-      value: Home
+      value: 'Transparency portal'
   description:
     -
       value: 'What the council publishes, and a search box to find it.'
