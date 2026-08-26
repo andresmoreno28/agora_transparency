@@ -93,6 +93,14 @@ display:
           entity_field: field_agora_base_modifications
           plugin_id: field
           label: Modifications
+          alter:
+            alter_text: false
+            max_length: 60
+            word_boundary: true
+            ellipsis: true
+            strip_tags: true
+            trim: true
+            html: false
         field_agora_base_period:
           id: field_agora_base_period
           table: node__field_agora_base_period
@@ -125,6 +133,14 @@ display:
           entity_field: field_agora_base_subject
           plugin_id: field
           label: Subject
+          alter:
+            alter_text: false
+            max_length: 60
+            word_boundary: true
+            ellipsis: true
+            strip_tags: true
+            trim: true
+            html: false
           click_sort_column: value
         field_agora_base_tender_amount:
           id: field_agora_base_tender_amount

@@ -95,6 +95,14 @@ display:
           entity_field: field_agora_base_subject
           plugin_id: field
           label: Purpose
+          alter:
+            alter_text: false
+            max_length: 60
+            word_boundary: true
+            ellipsis: true
+            strip_tags: true
+            trim: true
+            html: false
           click_sort_column: value
       pager:
         type: full
