@@ -239,6 +239,7 @@ display:
           empty_table: false
           caption: 'One row per published record, of any type.'
           description: ''
+          class: ''
       row:
         type: fields
         options:
@@ -374,45 +375,29 @@ display:
           group: 1
           exposed: false
       style:
-        type: table
+        type: default
         options:
           grouping: {  }
           row_class: ''
           default_row_class: true
-          columns:
-            type: type
-            nid: nid
-          default: '-1'
-          info:
-            type:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            nid:
-              sortable: false
-              default_sort_order: asc
-              align: views-align-right
-              separator: ''
-              empty_column: false
-              responsive: ''
-          sticky: false
-          summary: ''
-          order: asc
-          empty_table: false
-          caption: 'One row per register, with the number of records published in it.'
-          description: ''
-          class: ''
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
       defaults:
+        css_class: false
         pager: false
         use_more: false
         group_by: false
         style: false
+        row: false
         fields: false
         sorts: false
         filters: false
+      css_class: agora-register-cards
       group_by: true
       display_description: 'How many records the portal publishes in each register, as placed on the home page.'
       use_more: false
