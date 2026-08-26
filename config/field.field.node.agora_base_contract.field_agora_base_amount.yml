@@ -9,7 +9,7 @@ field_name: field_agora_base_amount
 entity_type: node
 bundle: agora_base_contract
 label: 'Award amount'
-description: 'The amount the contract was finally awarded for, known in Spanish law as the importe de adjudicación.'
+description: 'The amount the contract was finally awarded for, known in Spanish law as the <span lang="es">importe de adjudicación</span>.'
 required: false
 translatable: true
 default_value: {  }

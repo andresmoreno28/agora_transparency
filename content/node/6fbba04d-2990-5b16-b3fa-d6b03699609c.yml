@@ -40,7 +40,7 @@ default:
   field_agora_base_distribution:
     -
       display: false
-      description: ''
+      description: 'Street tree inventory, CSV, 859 bytes'
       entity: 4eeb8798-0a79-5d60-879e-b6c91d135df7
   field_agora_base_format:
     -

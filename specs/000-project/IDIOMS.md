@@ -936,3 +936,65 @@
   now mechanical — `tests/bin/config-inventory` checks for exactly one trailing newline, in **both**
   directions, falsified both ways — because `phpcs` cannot run on this host and had turned the gate
   red three times in one day over something no local tool could see. Recorded 2026-08-26.
+
+- I-093 · **A public file's `Content-Type` is the host web server's answer, not Drupal's — and
+  `Content-Disposition` is nobody's.** T-1104's signed criterion asked each open-data distribution's
+  response to carry a correct `Content-Type` **and** `Content-Disposition`. Measured on the wire: the
+  five CSVs return `application/octet-stream` with **no** `Content-Disposition`, while a PDF from the
+  same field, the same directory and the same install returns `application/pdf`. **Nothing about the
+  template differs between those two responses** — public files never reach PHP, so the header is
+  read out of the web server's own mime table. In one container: nginx's `/etc/nginx/mime.types`
+  contains **0** occurrences of `csv` and `/etc/nginx/nginx.conf:40` sets
+  `default_type application/octet-stream`; Apache, wired `TypesConfig /etc/mime.types`
+  (`/etc/apache2/mods-available/mime.conf:7`), reads a table whose line 2072 is `text/csv csv`. Same
+  site, two hosts, two headers, and the template is not a party to either. The Drupal-served route is
+  no better on the second half: `File::getDownloadHeaders()` returns exactly `Content-Type`,
+  `Content-Length` and `Cache-Control`, and `FileDownloadController` never calls
+  `setContentDisposition()` — so **no core path, public or private, on any host, emits
+  `Content-Disposition`.** Every escape route breaks a rule this project already signed:
+  `private://` needs `$settings['file_private_path']` written into `settings.php` by hand, a
+  `hook_file_download()` or a response subscriber needs code and `RequirementsTest` requires **0
+  `*.info.yml`**, and an nginx line or an `.htaccess` mime type configures a stranger's server.
+  Rule: **before a criterion names a response header, name the layer that owns it.** A criterion the
+  template cannot influence is either a finding or a green that holds on exactly one web server.
+  What the template does own was measured instead, and it is not nothing: the `file` entity's
+  `filemime`, the `type` attribute core puts on the rendered anchor, the link text, and the fact
+  that the bytes served are byte-for-byte the bytes shipped. Recorded 2026-08-26.
+
+- I-094 · **Before asking which repository owns a fix, ask whether the code you are about to change
+  is even on the page.** T-1011 was dispatched to `agora_theme` to mark three Spanish fragments
+  `lang="es"`, with a careful warning about not hard-coding another project's sentences. The
+  implementer stopped without writing code and produced a better answer: **those fragments render
+  only on admin routes, and admin routes are rendered by Gin.** Measured — three admin pages carry
+  all three fragments with `gin` assets present and `agora_theme` assets at **0**, while five
+  front-end pages carry **0 fragments** between them. A `hook_preprocess` fires only when its theme
+  is active. Rule: **a boundary argument can be sound and still be the second reason** — check first
+  that the component you are modifying participates in rendering the thing you are fixing. The fix
+  belonged where the sentence is authored, and `<span lang="es">` around the words is a mechanism
+  about language rather than about phrases: it travels with a reword instead of being orphaned by
+  one. Recorded 2026-08-26.
+
+- I-095 · **A rule that reports `inapplicable` reads exactly like a rule that passed, and naming it
+  in a gate is how the false green gets welded in.** T-1011's row asked for `valid-lang` to be
+  **named in the axe rules-run list** reporting 0 violations. It cannot be: `valid-lang`'s scope is
+  elements carrying `lang` **other than `<html>`**, and the theme emits **none** — on `/contracts`
+  the 29 apparent hits are `hreflang` on taxonomy links, and the real count of `lang=` attributes is
+  **1**, on `<html>`. So the rule would land in `inapplicable`, and the gate asserts
+  `bucket === 'passes'`. **Adding it would have forced that assertion to accept `inapplicable`** —
+  permanently, for every rule — which is I-045's failure mode built into the mechanism that exists
+  to prevent it. The implementer refused the criterion and said why. Rule: **a criterion that cannot
+  be honoured honestly is escalated, not approximated**, and *"the gate went green after we relaxed
+  what green means"* is the sentence this project keeps being one step away from. Recorded 2026-08-26.
+
+- I-096 · **The coordinator wrote into a checkout while an implementer was measuring it — twice in
+  one session, and both times the implementer is who noticed.** The first time, content changed under
+  a `tester` and its whole report of rig and gate numbers described a tree that no longer existed; it
+  surfaced only because `no-boilerplate` went red for an unrelated-looking reason (eight
+  `DELETED`-class findings from staged-but-uncommitted deletions). The second time, three config
+  files were rewritten **three minutes after** an implementer's own edit, and a row it was working
+  under was signed beneath it. Neither collision lost work, and that is luck rather than design.
+  Rule: **while an agent is measuring a tree, that tree is its instrument** — serialise writes
+  against it, or hand the agent a commit rather than a live working copy. ⚠️ The tell to watch for is
+  a **denominator that moves between two runs of the same command**, and the honest response is to
+  find out what changed rather than to re-run until the numbers agree. Recorded 2026-08-26 by the
+  coordinator, about the coordinator.

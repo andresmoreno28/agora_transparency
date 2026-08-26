@@ -40,7 +40,7 @@ default:
   field_agora_base_distribution:
     -
       display: false
-      description: ''
+      description: 'Public contracts awarded 2024, CSV, 692 bytes'
       entity: 49763496-7ef0-5dba-9b15-330481d8ee07
   field_agora_base_financial_year:
     -

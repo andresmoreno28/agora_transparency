@@ -40,7 +40,7 @@ default:
   field_agora_base_distribution:
     -
       display: false
-      description: ''
+      description: 'Budget execution 2023, CSV, 692 bytes'
       entity: dbafc2a2-955e-54b9-8d06-fab433c3849c
   field_agora_base_financial_year:
     -

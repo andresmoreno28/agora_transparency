@@ -40,7 +40,7 @@ default:
   field_agora_base_distribution:
     -
       display: false
-      description: ''
+      description: 'Budget execution 2024, CSV, 692 bytes'
       entity: 87d36bf0-1f2f-5c0d-b710-268c15045c7e
   field_agora_base_financial_year:
     -

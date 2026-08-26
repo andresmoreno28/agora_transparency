@@ -40,7 +40,7 @@ default:
   field_agora_base_distribution:
     -
       display: false
-      description: ''
+      description: 'Grants awarded 2024, CSV, 302 bytes'
       entity: 34a26985-1f6a-5c06-acc3-d25192efdad9
   field_agora_base_financial_year:
     -

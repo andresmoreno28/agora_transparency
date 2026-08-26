@@ -3,7 +3,7 @@ status: true
 dependencies: {  }
 name: Agreement
 type: agora_base_agreement
-description: 'An agreement signed with another public body or with a private party. It sits outside public-procurement law and is published under a regime of its own, known in Spanish law as the convenio.'
+description: 'An agreement signed with another public body or with a private party. It sits outside public-procurement law and is published under a regime of its own, known in Spanish law as the <span lang="es">convenio</span>.'
 help: null
 new_revision: true
 preview_mode: 1

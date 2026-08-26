@@ -22,5 +22,5 @@ settings:
   file_directory: 'datasets/[date:custom:Y]'
   file_extensions: 'csv json xml ods rdf'
   max_filesize: ''
-  description_field: false
+  description_field: true
 field_type: file
