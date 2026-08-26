@@ -181,6 +181,25 @@ config:
       - block.block.agora_theme_content
       - block.block.agora_theme_main_menu
       - block.block.agora_theme_messages
+      # THE FOUR BELOW ARE WHY A SITE INSTALLED FROM THIS PACKAGE HAD NO HEADER
+      # BRANDING AND NO FOOTER AT ALL, and they were added on 2026-08-27 the day
+      # theme 1.0.2 published them - not before, because a recipe importing a
+      # config entity that its resolved release does not contain fails the
+      # install outright. That ordering is the whole lesson: the theme ships the
+      # placement, the release makes it resolvable, and only then may the recipe
+      # name it.
+      #
+      # A recipe SKIPS config entities on install unless they are named here
+      # (I-086). The four above were named; these four were not, so every clean
+      # install - including the three that blanked the live preview while this
+      # was being written - produced a site with no logo, no site name in the
+      # masthead, no footer menu and no colophon. Nothing failed. The blocks
+      # were simply never placed, which is the failure mode that looks like a
+      # theme bug and is not one.
+      - block.block.agora_theme_branding
+      - block.block.agora_theme_footer_branding
+      - block.block.agora_theme_footer_menu
+      - block.block.agora_theme_powered_by
 
   actions:
     # -- area: base -------------------------------------------------------------
