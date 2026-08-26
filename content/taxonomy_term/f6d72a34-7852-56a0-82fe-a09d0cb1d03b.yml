@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: f6d72a34-7852-56a0-82fe-a09d0cb1d03b
+  bundle: agora_base_status
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: Completed
+  description:
+    -
+      value: 'Performance has ended and the case file has been closed.'
+      format: content_format
+  weight:
+    -
+      value: 2
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 7ad47116-b936-52da-b06b-73af23db6141
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    fe49402f-fd32-514e-b1f5-eefb4027433c: taxonomy_term
+    4bff0c31-db9d-5008-b06d-3c291744b8da: media
+    7351f9f8-9783-5309-be8e-b5ff13d03024: taxonomy_term
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Regulation of the citizen participation council'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /regulation-citizen-participation-council
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: fe49402f-fd32-514e-b1f5-eefb4027433c
+  field_agora_base_document_file:
+    -
+      entity: 4bff0c31-db9d-5008-b06d-3c291744b8da
+  field_agora_base_document_type:
+    -
+      entity: 7351f9f8-9783-5309-be8e-b5ff13d03024
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_summary:
+    -
+      value: 'Composition, powers and meeting arrangements of the citizen participation council.'
+      format: content_format

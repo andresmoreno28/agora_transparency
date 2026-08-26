@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 4dd131f0-6931-515f-8078-5630c7fc5a17
+  bundle: document
+  default_langcode: en
+  depends:
+    5c5e51d9-5a76-5bbd-8e2f-73b1488f6412: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Municipal budget 2022'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 5c5e51d9-5a76-5bbd-8e2f-73b1488f6412

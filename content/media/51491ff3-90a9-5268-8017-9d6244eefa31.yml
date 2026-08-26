@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 51491ff3-90a9-5268-8017-9d6244eefa31
+  bundle: document
+  default_langcode: en
+  depends:
+    627edd39-d40c-54ff-954d-822c628a8959: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Minutes of the ordinary council meeting of 28 November 2024'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 627edd39-d40c-54ff-954d-822c628a8959

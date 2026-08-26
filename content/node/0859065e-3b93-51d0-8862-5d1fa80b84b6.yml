@@ -1,0 +1,60 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 0859065e-3b93-51d0-8862-5d1fa80b84b6
+  bundle: agora_base_dataset
+  default_langcode: en
+  depends:
+    ac2ef56a-d028-5872-908a-ae08b9cbb474: taxonomy_term
+    34a26985-1f6a-5c06-acc3-d25192efdad9: file
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Register of grants awarded, 2024'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /register-grants-awarded-2024
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: ac2ef56a-d028-5872-908a-ae08b9cbb474
+  field_agora_base_distribution:
+    -
+      display: false
+      description: ''
+      entity: 34a26985-1f6a-5c06-acc3-d25192efdad9
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_format:
+    -
+      value: csv
+  field_agora_base_frequency:
+    -
+      value: annual
+  field_agora_base_licence:
+    -
+      value: cc-by-4.0
+  field_agora_base_summary:
+    -
+      value: 'One row per grant awarded in 2024, with the purpose, the beneficiary, the amount and the period the grant covers.'
+      format: content_format

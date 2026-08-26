@@ -1,0 +1,57 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: d1ba321b-2f4e-5c93-84c2-47f4ca029459
+  bundle: agora_base_agreement
+  default_langcode: en
+  depends:
+    ac2ef56a-d028-5872-908a-ae08b9cbb474: taxonomy_term
+    124ddeb1-a923-5d75-bd0a-c99c746dab1f: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Agreement with the Provincial Council on the shared social services team'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /agreement-provincial-council-shared-social-services-team
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '45000.00'
+  field_agora_base_area:
+    -
+      entity: ac2ef56a-d028-5872-908a-ae08b9cbb474
+  field_agora_base_counterparty:
+    -
+      value: 'Provincial Council'
+  field_agora_base_obligations:
+    -
+      value: '45000.00'
+  field_agora_base_period:
+    -
+      value: '2024-01-01'
+      end_value: '2026-12-31'
+  field_agora_base_status:
+    -
+      entity: 124ddeb1-a923-5d75-bd0a-c99c746dab1f
+  field_agora_base_subject:
+    -
+      value: 'Joint funding and staffing of the social services team shared with neighbouring municipalities.'

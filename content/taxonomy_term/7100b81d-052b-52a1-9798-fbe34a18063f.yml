@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: 7100b81d-052b-52a1-9798-fbe34a18063f
+  bundle: agora_base_procedure_type
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Minor contract'
+  description:
+    -
+      value: 'A low-value contract awarded directly, subject to the ceilings and the reporting duties procurement law sets for it.'
+      format: content_format
+  weight:
+    -
+      value: 3
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

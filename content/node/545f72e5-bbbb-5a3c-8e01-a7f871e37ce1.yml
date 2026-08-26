@@ -1,0 +1,60 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 545f72e5-bbbb-5a3c-8e01-a7f871e37ce1
+  bundle: agora_base_dataset
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    dbafc2a2-955e-54b9-8d06-fab433c3849c: file
+    151a22aa-dcce-5e45-ae9a-451efe4798fb: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Budget execution, financial year 2023'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /budget-execution-financial-year-2023
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_distribution:
+    -
+      display: false
+      description: ''
+      entity: dbafc2a2-955e-54b9-8d06-fab433c3849c
+  field_agora_base_financial_year:
+    -
+      entity: 151a22aa-dcce-5e45-ae9a-451efe4798fb
+  field_agora_base_format:
+    -
+      value: csv
+  field_agora_base_frequency:
+    -
+      value: quarterly
+  field_agora_base_licence:
+    -
+      value: cc-by-4.0
+  field_agora_base_summary:
+    -
+      value: 'Execution of the 2023 budget by chapter, in the same columns as the 2024 table, so that the two financial years can be compared without transformation.'
+      format: content_format

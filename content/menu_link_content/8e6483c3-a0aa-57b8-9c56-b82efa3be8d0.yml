@@ -1,0 +1,36 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: 8e6483c3-a0aa-57b8-9c56-b82efa3be8d0
+  bundle: menu_link_content
+  default_langcode: en
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: Contracts
+  menu_name:
+    -
+      value: main
+  link:
+    -
+      uri: 'internal:/contracts'
+      title: null
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: true
+  weight:
+    -
+      value: 4
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

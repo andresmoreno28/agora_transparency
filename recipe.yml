@@ -150,6 +150,38 @@ config:
   # at install time if you change this.
   strict: false
 
+  # -- the theme's own block placements, and they are NOT optional to name here --
+  #
+  # WITHOUT THESE FOUR LINES THE THEME RENDERS NO PAGE FURNITURE AT ALL: no page
+  # title, no <h1>, no primary menu, no status messages. Measured on 2026-08-26 by
+  # rendering a real installed site and counting, not by reading code.
+  #
+  # `drupal/agora_theme` ships them in its own `config/optional/`, and on a site
+  # where the theme is enabled by hand — `drush theme:enable` — Drupal creates them
+  # without being asked. **That is not the path this package takes.** A recipe
+  # installs the theme through `RecipeRunner`, which sets the config installer to
+  # SYNCING, and `ConfigInstaller::createConfiguration()` skips config ENTITIES
+  # while syncing. A `block.block.*` is an entity. So they are silently not created,
+  # the theme looks broken, and nothing fails.
+  #
+  # This is the same defect as I-074, which was found in `language.entity.*` the
+  # night before and looked like a multilingual problem. It is not: it is every
+  # config entity a recipe is expected to bring in. I-086 records the general form.
+  #
+  # Falsified before it was trusted, on a fresh database each time, on the rig:
+  #   recipe as it was  -> `block.block.agora_theme_*` rows: NONE, pages h1=0
+  #   with this block   -> all four created and named,       pages h1=1
+  #
+  # ⚠️ The names are listed ONE BY ONE on purpose. A wildcard would silently adopt
+  # whatever the theme adds next, and a placement appearing on every installed site
+  # because nobody removed it from a glob is not a decision anyone made.
+  import:
+    agora_theme:
+      - block.block.agora_theme_page_title
+      - block.block.agora_theme_content
+      - block.block.agora_theme_main_menu
+      - block.block.agora_theme_messages
+
   actions:
     # -- area: base -------------------------------------------------------------
     # THE HOME PAGE, AND WHY THIS SAYS `/home` WHILE AN INSTALLED SITE REPORTS

@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: e65eeff8-64b8-5059-9149-111dd316ee20
+  bundle: agora_base_financial_year
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: '2025'
+  description:
+    -
+      value: 'Records relating to the 2025 financial year.'
+      format: content_format
+  weight:
+    -
+      value: 3
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

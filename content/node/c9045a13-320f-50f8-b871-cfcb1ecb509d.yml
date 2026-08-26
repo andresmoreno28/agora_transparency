@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: c9045a13-320f-50f8-b871-cfcb1ecb509d
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    171cf71c-dbdf-5efb-a07a-97170fdc60f8: media
+    00980c7a-ffc1-5c8b-8b5c-953119b5f415: taxonomy_term
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Budget execution report, second quarter 2024'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /budget-execution-report-second-quarter-2024
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_document_file:
+    -
+      entity: 171cf71c-dbdf-5efb-a07a-97170fdc60f8
+  field_agora_base_document_type:
+    -
+      entity: 00980c7a-ffc1-5c8b-8b5c-953119b5f415
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_summary:
+    -
+      value: 'Execution of income and expenditure to 30 June 2024, by chapter, with the rate of execution.'
+      format: content_format

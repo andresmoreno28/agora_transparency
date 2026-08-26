@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: fe49402f-fd32-514e-b1f5-eefb4027433c
+  bundle: agora_base_area
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: "Mayor's Office"
+  description:
+    -
+      value: "The mayor's office and the general secretariat, which co-ordinate the council and keep its records."
+      format: content_format
+  weight:
+    -
+      value: 0
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

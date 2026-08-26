@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 7ca8185e-daa9-5190-b9d3-d55299325ee3
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: declaration-social.pdf
+  uri:
+    -
+      value: 'public://asset-declarations/2025/declaration-social.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 2085
+  status:
+    -
+      value: true

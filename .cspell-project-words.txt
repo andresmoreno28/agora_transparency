@@ -262,3 +262,75 @@ exiftool              # the external EXIF reader T-906 REFUSES to adopt; named t
 # quotations, so they are declared here rather than fenced with cspell:disable.
 Fuentelclaro          # the demo's FICTIONAL municipality, verified absent from the INE register
 NXDOMAIN              # the DNS answer proving no organisation of that name is registered today
+
+
+# ---------------------------------------------------------------------------------------------
+# Added 2026-08-26 by unit 003 wave 10 lane A (T-1002 - T-1008): the proper nouns of the demo
+# corpus. Every one is INVENTED for the fictional municipality of Fuentelclaro, or is a Latin
+# binomial in the street-tree dataset. None is a word of prose: they are names, and a name is not
+# a spelling error - the same ground the Proper nouns block at the top of this file stands on.
+#
+# ENTRIES ARE LOWER CASE ON PURPOSE, AND THAT IS A MEASUREMENT RATHER THAN A STYLE. Verified on
+# 2026-08-26 against tests/bin/spellcheck: adding the three entries `belloso`, `iriarte` and
+# `menchon` (accented) removed SIX reported words - `Belloso`, `belloso`, `Iriarte`, `iriarte`,
+# `Menchon` and the unaccented `menchon` that the URL alias produces. So a lower-case entry covers
+# its capitalised form, and an ACCENTED entry covers its unaccented one.
+# NOTE THE DIRECTION. It is the opposite of what the Mechanic note at the top of this file
+# records: there, an entry written WITHOUT an accent failed to cover the same word written WITH
+# one. That note stands and this one does not contradict it - accent folding works in one
+# direction only, from the accented entry outwards. So every entry below carries the accent the
+# name actually has, and the unaccented form the URL alias produces is covered for free.
+#
+# Each name appears in content/ twice over: in the entity title and, lower-cased and
+# transliterated, in the URL alias pathauto generates from it.
+
+# The eight invented people of the demo org chart. content/PEOPLE.md is the roster that says so,
+# one row each with a provenance, and tests/bin/no-real-people checks the roster against the
+# entities on every push.
+belloso
+iriarte
+cardeñosa
+rebollar
+quintana
+tomás
+aguaviva
+pinilla
+nuria
+vallejera
+sanz
+menchón
+serna
+camarena
+olalla
+otazua
+lumbreras
+
+# The invented suppliers, beneficiaries and signatory parties. Spanish company names are built
+# from ordinary Spanish nouns - a construction firm is called Construcciones something - so the
+# tokens below are parts of names, not vocabulary this project writes in prose.
+iluminaria
+serrana
+suministros
+eléctricos
+valdecerro
+construcciones
+peñalta
+aguas
+montalvés
+auditoría
+ribalada
+uniformes
+castejón
+
+# Latin binomials in content/file/street-tree-inventory.csv. A street-tree inventory is published
+# with the scientific name of each tree; these are the genus and species names of seven species
+# ordinary in Spanish municipal planting.
+celtis
+platanus
+populus
+tilia
+fraxinus
+angustifolia
+campestre
+hispanica
+platyphyllos

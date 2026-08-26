@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 2f01810b-c9f9-541d-9bdb-c051e9e6135c
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: regulation-participation.pdf
+  uri:
+    -
+      value: 'public://documents/regulation-participation.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1795
+  status:
+    -
+      value: true

@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 1cd67e95-68e6-58be-8658-97da883e7a68
+  bundle: document
+  default_langcode: en
+  depends:
+    43c2e17d-7935-5633-8c7e-17aac5c0d985: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Climate and energy action plan 2023-2030'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 43c2e17d-7935-5633-8c7e-17aac5c0d985

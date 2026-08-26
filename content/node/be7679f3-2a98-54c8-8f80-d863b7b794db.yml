@@ -1,0 +1,54 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: be7679f3-2a98-54c8-8f80-d863b7b794db
+  bundle: agora_base_grant
+  default_langcode: en
+  depends:
+    7d2f67e2-780f-567b-8c92-da389bfa3121: taxonomy_term
+    ddc786e4-0cf6-5763-b0a0-11ca4140cf97: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Grant for the annual programme of the local music school'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /grant-annual-programme-local-music-school
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '18000.00'
+  field_agora_base_area:
+    -
+      entity: 7d2f67e2-780f-567b-8c92-da389bfa3121
+  field_agora_base_counterparty:
+    -
+      value: 'Fuentelclaro Music School Association'
+  field_agora_base_period:
+    -
+      value: '2025-01-01'
+      end_value: '2025-12-31'
+  field_agora_base_status:
+    -
+      entity: ddc786e4-0cf6-5763-b0a0-11ca4140cf97
+  field_agora_base_subject:
+    -
+      value: 'Support for the teaching programme and the instrument fund of the local music school.'

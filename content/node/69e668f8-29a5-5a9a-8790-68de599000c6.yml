@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 69e668f8-29a5-5a9a-8790-68de599000c6
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    7d2f67e2-780f-567b-8c92-da389bfa3121: taxonomy_term
+    ca806361-a341-5810-b7ea-3625a077017f: media
+    7351f9f8-9783-5309-be8e-b5ff13d03024: taxonomy_term
+    d79882b6-7569-54f8-bed9-ac0060265130: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'By-law on the use of municipal sports facilities'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /law-use-municipal-sports-facilities
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: 7d2f67e2-780f-567b-8c92-da389bfa3121
+  field_agora_base_document_file:
+    -
+      entity: ca806361-a341-5810-b7ea-3625a077017f
+  field_agora_base_document_type:
+    -
+      entity: 7351f9f8-9783-5309-be8e-b5ff13d03024
+  field_agora_base_financial_year:
+    -
+      entity: d79882b6-7569-54f8-bed9-ac0060265130
+  field_agora_base_summary:
+    -
+      value: 'Conditions of use, booking arrangements and charges for the municipal sports facilities.'
+      format: content_format

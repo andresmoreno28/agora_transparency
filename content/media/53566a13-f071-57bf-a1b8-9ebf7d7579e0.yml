@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 53566a13-f071-57bf-a1b8-9ebf7d7579e0
+  bundle: document
+  default_langcode: en
+  depends:
+    d1976857-8258-5217-a04d-792fde1264b6: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'By-law on the municipal waste collection charge'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: d1976857-8258-5217-a04d-792fde1264b6

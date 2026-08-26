@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 49d2fdfa-ebeb-5d07-9f86-d8f917181e0d
+  bundle: document
+  default_langcode: en
+  depends:
+    606bbc4c-8690-5ee5-92eb-d49d47ff85d6: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Budget execution report, third quarter 2024'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 606bbc4c-8690-5ee5-92eb-d49d47ff85d6

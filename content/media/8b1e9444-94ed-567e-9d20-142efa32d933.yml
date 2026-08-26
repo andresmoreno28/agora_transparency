@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 8b1e9444-94ed-567e-9d20-142efa32d933
+  bundle: document
+  default_langcode: en
+  depends:
+    e49011c5-0725-5ab9-95a6-93f1960c3f12: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Municipal budget 2023'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: e49011c5-0725-5ab9-95a6-93f1960c3f12

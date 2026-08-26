@@ -836,3 +836,30 @@
   live, and independent of the answer. It was owned by exactly one task row, **T-1011, which the
   chosen option would otherwise have removed**. Rule: **before deleting a row a decision makes
   unnecessary, ask what else it was the only owner of.** Recorded 2026-08-26.
+
+- I-086 · **I-074 is not about languages. A recipe skips config ENTITIES of every kind, and the
+  second victim was the theme's own block placements.** `1.0.1` shipped four
+  `config/optional/block.block.agora_theme_*` files. On a site installed **the way Ágora actually
+  installs** — by recipe — **none of the four is created**: the files sit in the installed theme and
+  the `block_content` table has no row for them, so every page renders with **no page title, no
+  `<h1>`, no menu and no status messages**, which is precisely the defect T-1009 was written to fix.
+  Root cause is I-074 in a new costume: `RecipeRunner` sets the config installer **syncing**, and
+  `ConfigInstaller::createConfiguration()` skips config entities while syncing. Proven by remedy
+  rather than by reading: calling `installOptionalConfig()` by hand took the site from **21 blocks to
+  25**, naming all four, and the rendered pages went from `h1=0` and 1.6 KB to `h1=1` and 3.9 KB.
+  Rule: **whenever a recipe is supposed to bring in configuration, ask whether that configuration is
+  simple config or an ENTITY — and if it is an entity, assume it was skipped until you have seen it
+  in the database.** Recorded 2026-08-26.
+
+- I-087 · **A verification that exercises a code path the product does not use is not a
+  verification, and it can be greener than the real one.** T-1009's implementer proved the block
+  placements install by running `drush theme:enable` on a block-less site, watched them appear, and
+  proved the negative too by moving the file to `config/install` and catching
+  `UnmetDependenciesException` by name. **All of that was true and none of it was about Ágora**,
+  which installs the theme through a recipe — a different code path with the opposite behaviour. The
+  work was careful; it was careful about the wrong door. Rule: **name the path the PRODUCT takes
+  before choosing the path the test takes**, and when they differ, that difference is the finding.
+  ⚠️ This is the sharper twin of I-070: there, a step flagged *"reasoned, not run"* told us where the
+  red would be. Here **nothing was flagged**, because the implementer did not know there were two
+  doors — and the only thing that found it was **rendering a real page and counting the `<h1>`
+  elements**, which nothing in either repository's gate does. Recorded 2026-08-26.

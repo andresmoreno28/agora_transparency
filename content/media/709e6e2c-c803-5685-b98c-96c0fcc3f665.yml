@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 709e6e2c-c803-5685-b98c-96c0fcc3f665
+  bundle: document
+  default_langcode: en
+  depends:
+    6c9b715c-8558-5f6e-b513-653016e8bb3c: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Municipal budget 2024'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 6c9b715c-8558-5f6e-b513-653016e8bb3c

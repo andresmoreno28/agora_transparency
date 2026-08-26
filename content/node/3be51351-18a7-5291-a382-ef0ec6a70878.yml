@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 3be51351-18a7-5291-a382-ef0ec6a70878
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    f594c56e-48af-545b-afc2-0ce69c4c12e7: taxonomy_term
+    a06c6297-1150-58ef-bcdc-dbbcf4e68792: media
+    00980c7a-ffc1-5c8b-8b5c-953119b5f415: taxonomy_term
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Report on the state of municipal roads and pavements'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /report-state-municipal-roads-and-pavements
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: f594c56e-48af-545b-afc2-0ce69c4c12e7
+  field_agora_base_document_file:
+    -
+      entity: a06c6297-1150-58ef-bcdc-dbbcf4e68792
+  field_agora_base_document_type:
+    -
+      entity: 00980c7a-ffc1-5c8b-8b5c-953119b5f415
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_summary:
+    -
+      value: 'Condition survey of the municipal road network and the pavements, with the priorities it proposes.'
+      format: content_format

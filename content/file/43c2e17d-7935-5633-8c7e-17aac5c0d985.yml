@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 43c2e17d-7935-5633-8c7e-17aac5c0d985
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: plan-climate.pdf
+  uri:
+    -
+      value: 'public://documents/plan-climate.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1784
+  status:
+    -
+      value: true

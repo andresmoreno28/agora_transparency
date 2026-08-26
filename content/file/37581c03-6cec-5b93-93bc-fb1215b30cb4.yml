@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 37581c03-6cec-5b93-93bc-fb1215b30cb4
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: declaration-mayor.pdf
+  uri:
+    -
+      value: 'public://asset-declarations/2025/declaration-mayor.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 2059
+  status:
+    -
+      value: true

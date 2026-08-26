@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: ff06c447-cf1c-5d35-b510-5bba2b699c1f
+  bundle: document
+  default_langcode: en
+  depends:
+    f6f070e7-e821-5109-b9e2-8236e7d5403b: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'By-law on the tax on construction and works'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: f6f070e7-e821-5109-b9e2-8236e7d5403b

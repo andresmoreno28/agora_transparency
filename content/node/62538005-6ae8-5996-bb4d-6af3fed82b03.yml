@@ -1,0 +1,56 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 62538005-6ae8-5996-bb4d-6af3fed82b03
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    80bb1073-9e51-502e-8cd5-a1789c14ea4a: taxonomy_term
+    a33ad178-9649-5db1-acc1-00a1a52684ed: file
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Álvaro Menchón Serna'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /alvaro-menchon-serna
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: 80bb1073-9e51-502e-8cd5-a1789c14ea4a
+  field_agora_base_declaration:
+    -
+      display: false
+      description: ''
+      entity: a33ad178-9649-5db1-acc1-00a1a52684ed
+  field_agora_base_position:
+    -
+      value: 'Councillor for Environment and Public Space'
+  field_agora_base_remuneration:
+    -
+      value: '21300.00'
+  field_agora_base_severance:
+    -
+      value: '5325.00'
+  field_agora_base_summary:
+    -
+      value: 'Councillor for waste collection, parks, water supply and public lighting since 2023. An environmental technician who worked for a waste management consortium for twelve years. He holds the post on a part-time allowance.'
+      format: content_format

@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 4bff0c31-db9d-5008-b06d-3c291744b8da
+  bundle: document
+  default_langcode: en
+  depends:
+    2f01810b-c9f9-541d-9bdb-c051e9e6135c: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Regulation of the citizen participation council'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 2f01810b-c9f9-541d-9bdb-c051e9e6135c

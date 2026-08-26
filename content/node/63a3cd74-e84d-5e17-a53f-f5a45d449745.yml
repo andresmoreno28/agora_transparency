@@ -1,0 +1,60 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 63a3cd74-e84d-5e17-a53f-f5a45d449745
+  bundle: agora_base_dataset
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    49763496-7ef0-5dba-9b15-330481d8ee07: file
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Register of public contracts awarded, 2024'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /register-public-contracts-awarded-2024
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_distribution:
+    -
+      display: false
+      description: ''
+      entity: 49763496-7ef0-5dba-9b15-330481d8ee07
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_format:
+    -
+      value: csv
+  field_agora_base_frequency:
+    -
+      value: annual
+  field_agora_base_licence:
+    -
+      value: cc-by-4.0
+  field_agora_base_summary:
+    -
+      value: 'One row per contract awarded in 2024, with the subject, the procedure, the tender amount, the award amount, the number of bidders and the awardee.'
+      format: content_format

@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: d0cb7d31-1e3c-51e0-b068-a6afce948876
+  bundle: document
+  default_langcode: en
+  depends:
+    319217c8-e866-5c14-9ce6-feaf04bc5667: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Annual accounts 2023'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 319217c8-e866-5c14-9ce6-feaf04bc5667

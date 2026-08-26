@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 347359f3-a655-569d-8e8c-d23a23d52822
+  bundle: document
+  default_langcode: en
+  depends:
+    a7800e95-5e41-5a97-bf45-ff8781403e50: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Annual accounts 2022'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: a7800e95-5e41-5a97-bf45-ff8781403e50

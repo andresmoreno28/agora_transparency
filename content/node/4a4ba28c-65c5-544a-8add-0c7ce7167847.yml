@@ -1,0 +1,54 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 4a4ba28c-65c5-544a-8add-0c7ce7167847
+  bundle: agora_base_grant
+  default_langcode: en
+  depends:
+    ac2ef56a-d028-5872-908a-ae08b9cbb474: taxonomy_term
+    f6d72a34-7852-56a0-82fe-a09d0cb1d03b: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Emergency housing assistance for households at risk of exclusion'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /emergency-housing-assistance-households-risk-exclusion
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '24000.00'
+  field_agora_base_area:
+    -
+      entity: ac2ef56a-d028-5872-908a-ae08b9cbb474
+  field_agora_base_counterparty:
+    -
+      value: 'Fuentelclaro Social Support Foundation'
+  field_agora_base_period:
+    -
+      value: '2024-01-01'
+      end_value: '2024-12-31'
+  field_agora_base_status:
+    -
+      entity: f6d72a34-7852-56a0-82fe-a09d0cb1d03b
+  field_agora_base_subject:
+    -
+      value: 'Assistance with rent and utility arrears for households referred by the social services team.'

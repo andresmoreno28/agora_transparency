@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 44cc1f7d-3f2b-564e-882f-c61ddd78ea46
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: report-library.pdf
+  uri:
+    -
+      value: 'public://documents/report-library.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1779
+  status:
+    -
+      value: true

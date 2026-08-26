@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 1c95fc2d-4641-52ba-aa2f-62b819ec5353
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    7d2f67e2-780f-567b-8c92-da389bfa3121: taxonomy_term
+    2f2632de-a77c-5c32-9650-a092c3089630: media
+    00980c7a-ffc1-5c8b-8b5c-953119b5f415: taxonomy_term
+    151a22aa-dcce-5e45-ae9a-451efe4798fb: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Annual report of the municipal library 2023'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /annual-report-municipal-library-2023
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: 7d2f67e2-780f-567b-8c92-da389bfa3121
+  field_agora_base_document_file:
+    -
+      entity: 2f2632de-a77c-5c32-9650-a092c3089630
+  field_agora_base_document_type:
+    -
+      entity: 00980c7a-ffc1-5c8b-8b5c-953119b5f415
+  field_agora_base_financial_year:
+    -
+      entity: 151a22aa-dcce-5e45-ae9a-451efe4798fb
+  field_agora_base_summary:
+    -
+      value: 'Loans, visits, activities and opening hours of the municipal library in 2023.'
+      format: content_format

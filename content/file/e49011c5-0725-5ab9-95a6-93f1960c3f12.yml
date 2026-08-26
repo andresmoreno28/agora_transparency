@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: e49011c5-0725-5ab9-95a6-93f1960c3f12
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: budget-2023.pdf
+  uri:
+    -
+      value: 'public://documents/budget-2023.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1789
+  status:
+    -
+      value: true

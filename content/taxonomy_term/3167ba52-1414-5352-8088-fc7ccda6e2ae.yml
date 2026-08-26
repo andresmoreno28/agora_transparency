@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: 3167ba52-1414-5352-8088-fc7ccda6e2ae
+  bundle: agora_base_document_type
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: Budget
+  description:
+    -
+      value: 'The approved budget for a financial year, with its appendices.'
+      format: content_format
+  weight:
+    -
+      value: 3
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

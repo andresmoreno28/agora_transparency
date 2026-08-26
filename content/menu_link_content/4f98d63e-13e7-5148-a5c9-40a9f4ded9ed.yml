@@ -1,0 +1,36 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: 4f98d63e-13e7-5148-a5c9-40a9f4ded9ed
+  bundle: menu_link_content
+  default_langcode: en
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: Grants
+  menu_name:
+    -
+      value: main
+  link:
+    -
+      uri: 'internal:/grants'
+      title: null
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: true
+  weight:
+    -
+      value: 6
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

@@ -1,0 +1,56 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: f5384909-2d71-5435-8857-32226b04184b
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    fe49402f-fd32-514e-b1f5-eefb4027433c: taxonomy_term
+    37581c03-6cec-5b93-93bc-fb1215b30cb4: file
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Marta Belloso Iriarte'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /marta-belloso-iriarte
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: fe49402f-fd32-514e-b1f5-eefb4027433c
+  field_agora_base_declaration:
+    -
+      display: false
+      description: ''
+      entity: 37581c03-6cec-5b93-93bc-fb1215b30cb4
+  field_agora_base_position:
+    -
+      value: Mayor
+  field_agora_base_remuneration:
+    -
+      value: '48500.00'
+  field_agora_base_severance:
+    -
+      value: '12125.00'
+  field_agora_base_summary:
+    -
+      value: 'Mayor of Fuentelclaro since the 2023 local elections, and a member of the council since 2015. Trained as an agricultural engineer and worked for fourteen years in the regional rural development agency before taking office. Holds the portfolios for general administration and institutional relations.'
+      format: content_format

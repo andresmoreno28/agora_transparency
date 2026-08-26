@@ -1,0 +1,56 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: bc49e4f9-9bbb-5b4b-ad57-120ac9d9f410
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    7d2f67e2-780f-567b-8c92-da389bfa3121: taxonomy_term
+    54c17258-9efe-5c77-91f0-3f946edc1282: file
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Nuria Vallejera Sanz'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /nuria-vallejera-sanz
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: 7d2f67e2-780f-567b-8c92-da389bfa3121
+  field_agora_base_declaration:
+    -
+      display: false
+      description: ''
+      entity: 54c17258-9efe-5c77-91f0-3f946edc1282
+  field_agora_base_position:
+    -
+      value: 'Councillor for Culture, Education and Sport'
+  field_agora_base_remuneration:
+    -
+      value: '21300.00'
+  field_agora_base_severance:
+    -
+      value: '5325.00'
+  field_agora_base_summary:
+    -
+      value: 'Councillor for the library, the music school and the sports facilities since 2023. A secondary school teacher of music, she directed the municipal band for six years before taking office and holds the post on a part-time allowance.'
+      format: content_format

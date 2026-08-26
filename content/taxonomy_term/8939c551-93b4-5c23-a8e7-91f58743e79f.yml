@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: 8939c551-93b4-5c23-a8e7-91f58743e79f
+  bundle: agora_base_document_type
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Council meeting minutes'
+  description:
+    -
+      value: 'The approved minutes of ordinary and extraordinary meetings of the full council.'
+      format: content_format
+  weight:
+    -
+      value: 1
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

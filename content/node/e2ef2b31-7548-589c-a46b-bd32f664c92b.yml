@@ -1,0 +1,60 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: e2ef2b31-7548-589c-a46b-bd32f664c92b
+  bundle: agora_base_dataset
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    87d36bf0-1f2f-5c0d-b710-268c15045c7e: file
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Budget execution, financial year 2024'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /budget-execution-financial-year-2024
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_distribution:
+    -
+      display: false
+      description: ''
+      entity: 87d36bf0-1f2f-5c0d-b710-268c15045c7e
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_format:
+    -
+      value: csv
+  field_agora_base_frequency:
+    -
+      value: quarterly
+  field_agora_base_licence:
+    -
+      value: cc-by-4.0
+  field_agora_base_summary:
+    -
+      value: 'Execution of the 2024 budget by chapter: initial credit, final credit, obligations recognised, payments made and the rate of execution. This table is the machine-readable source for the budget figures published elsewhere on this site.'
+      format: content_format

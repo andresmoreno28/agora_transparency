@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: 11191e53-6d2d-54d6-9679-cb187d184ba2
+  bundle: agora_base_procedure_type
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Open procedure'
+  description:
+    -
+      value: 'Any interested undertaking may submit a tender, and the contract notice is advertised in full.'
+      format: content_format
+  weight:
+    -
+      value: 0
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

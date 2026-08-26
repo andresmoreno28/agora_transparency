@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: b96d25bc-277e-5d26-baf2-b911e7667c85
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: plan-urban.pdf
+  uri:
+    -
+      value: 'public://documents/plan-urban.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1855
+  status:
+    -
+      value: true

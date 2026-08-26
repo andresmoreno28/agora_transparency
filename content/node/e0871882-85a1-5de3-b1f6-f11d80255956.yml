@@ -1,0 +1,50 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: e0871882-85a1-5de3-b1f6-f11d80255956
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    fe49402f-fd32-514e-b1f5-eefb4027433c: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Rosa Camarena Olalla'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /rosa-camarena-olalla
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: fe49402f-fd32-514e-b1f5-eefb4027433c
+  field_agora_base_position:
+    -
+      value: 'Municipal Secretary'
+  field_agora_base_remuneration:
+    -
+      value: '44900.00'
+  field_agora_base_severance:
+    -
+      value: '0.00'
+  field_agora_base_summary:
+    -
+      value: 'Municipal Secretary, a national civil service post held by competitive examination since 2019. Responsible for legal advice to the council, for the keeping of its records and for certifying its decisions. As a career official she holds no severance entitlement.'
+      format: content_format

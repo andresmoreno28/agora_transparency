@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: ef023e5e-8c7a-5de5-b3e9-d77ad387695c
+  bundle: document
+  default_langcode: en
+  depends:
+    d56a0e12-0695-5f0e-8c8f-18e52ad3d41f: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Minutes of the ordinary council meeting of 23 February 2023'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: d56a0e12-0695-5f0e-8c8f-18e52ad3d41f

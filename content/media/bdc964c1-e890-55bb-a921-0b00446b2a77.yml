@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: bdc964c1-e890-55bb-a921-0b00446b2a77
+  bundle: document
+  default_langcode: en
+  depends:
+    b96d25bc-277e-5d26-baf2-b911e7667c85: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Municipal urban development plan, consolidated text'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: b96d25bc-277e-5d26-baf2-b911e7667c85

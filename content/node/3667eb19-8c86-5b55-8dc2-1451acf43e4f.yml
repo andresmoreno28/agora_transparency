@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 3667eb19-8c86-5b55-8dc2-1451acf43e4f
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    4dd131f0-6931-515f-8078-5630c7fc5a17: media
+    3167ba52-1414-5352-8088-fc7ccda6e2ae: taxonomy_term
+    d79882b6-7569-54f8-bed9-ac0060265130: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Municipal budget 2022'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /municipal-budget-2022
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_document_file:
+    -
+      entity: 4dd131f0-6931-515f-8078-5630c7fc5a17
+  field_agora_base_document_type:
+    -
+      entity: 3167ba52-1414-5352-8088-fc7ccda6e2ae
+  field_agora_base_financial_year:
+    -
+      entity: d79882b6-7569-54f8-bed9-ac0060265130
+  field_agora_base_summary:
+    -
+      value: 'The budget approved by the council for the 2022 financial year, with the schedule of posts and the appendices.'
+      format: content_format

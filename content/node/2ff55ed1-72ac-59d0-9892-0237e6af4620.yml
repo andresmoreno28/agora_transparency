@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 2ff55ed1-72ac-59d0-9892-0237e6af4620
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    fe49402f-fd32-514e-b1f5-eefb4027433c: taxonomy_term
+    8b52f051-c5d9-5489-82ce-008dbebaa6f6: media
+    91a72184-1842-5471-b16d-e73dffecdd01: taxonomy_term
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Public notice of the register of interests of elected members'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /public-notice-register-interests-elected-members
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: fe49402f-fd32-514e-b1f5-eefb4027433c
+  field_agora_base_document_file:
+    -
+      entity: 8b52f051-c5d9-5489-82ce-008dbebaa6f6
+  field_agora_base_document_type:
+    -
+      entity: 91a72184-1842-5471-b16d-e73dffecdd01
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_summary:
+    -
+      value: 'Notice of the entries made in the register of interests and of where it may be consulted.'
+      format: content_format

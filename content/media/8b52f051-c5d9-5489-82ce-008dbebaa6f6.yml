@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 8b52f051-c5d9-5489-82ce-008dbebaa6f6
+  bundle: document
+  default_langcode: en
+  depends:
+    08fff079-f9c1-5b0f-9eca-e0aba637711c: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Public notice of the register of interests of elected members'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 08fff079-f9c1-5b0f-9eca-e0aba637711c

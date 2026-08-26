@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 7ad789bf-6d60-5321-acdc-aa7b54a55a5b
+  bundle: document
+  default_langcode: en
+  depends:
+    8c29e9d8-25eb-5a17-ae86-4f49af3551ca: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Municipal plan against loneliness in older age'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 8c29e9d8-25eb-5a17-ae86-4f49af3551ca

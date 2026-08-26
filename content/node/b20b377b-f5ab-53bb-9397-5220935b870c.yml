@@ -1,0 +1,56 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: b20b377b-f5ab-53bb-9397-5220935b870c
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    f594c56e-48af-545b-afc2-0ce69c4c12e7: taxonomy_term
+    e02588e5-c81c-52d8-96dc-a7a9d9b1e203: file
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Elena Rebollar Quintana'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /elena-rebollar-quintana
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: f594c56e-48af-545b-afc2-0ce69c4c12e7
+  field_agora_base_declaration:
+    -
+      display: false
+      description: ''
+      entity: e02588e5-c81c-52d8-96dc-a7a9d9b1e203
+  field_agora_base_position:
+    -
+      value: 'Councillor for Urban Planning and Works'
+  field_agora_base_remuneration:
+    -
+      value: '28400.00'
+  field_agora_base_severance:
+    -
+      value: '7100.00'
+  field_agora_base_summary:
+    -
+      value: 'Councillor for planning consent, municipal works and roads since 2023. An architect in private practice for eighteen years, with work on rural heritage restoration. She holds no planning commission in the municipality while in office.'
+      format: content_format

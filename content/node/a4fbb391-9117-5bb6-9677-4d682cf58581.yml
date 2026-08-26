@@ -1,0 +1,68 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: a4fbb391-9117-5bb6-9677-4d682cf58581
+  bundle: agora_base_contract
+  default_langcode: en
+  depends:
+    80bb1073-9e51-502e-8cd5-a1789c14ea4a: taxonomy_term
+    11191e53-6d2d-54d6-9679-cb187d184ba2: taxonomy_term
+    124ddeb1-a923-5d75-bd0a-c99c746dab1f: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Street lighting maintenance service 2024-2026'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /street-lighting-maintenance-service-2024-2026
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '187450.00'
+  field_agora_base_area:
+    -
+      entity: 80bb1073-9e51-502e-8cd5-a1789c14ea4a
+  field_agora_base_bidder_count:
+    -
+      value: 5
+  field_agora_base_counterparty:
+    -
+      value: 'Iluminaria Serrana S.L.'
+  field_agora_base_modifications:
+    -
+      value: 'Extended by three months in November 2025 to cover the replacement of the lamps on the northern approach road, at no increase in the unit prices.'
+      format: content_format
+  field_agora_base_period:
+    -
+      value: '2024-03-01'
+      end_value: '2026-02-28'
+  field_agora_base_procedure_type:
+    -
+      entity: 11191e53-6d2d-54d6-9679-cb187d184ba2
+  field_agora_base_status:
+    -
+      entity: 124ddeb1-a923-5d75-bd0a-c99c746dab1f
+  field_agora_base_subject:
+    -
+      value: 'Maintenance, repair and lamp replacement for the municipal street lighting network.'
+  field_agora_base_tender_amount:
+    -
+      value: '210000.00'

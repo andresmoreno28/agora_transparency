@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: d4bba543-be4d-57e9-b165-06669a16b7df
+  bundle: document
+  default_langcode: en
+  depends:
+    36cdeb0c-2312-5302-97c4-3597f40e51b2: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Minutes of the extraordinary council meeting of 12 September 2024'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 36cdeb0c-2312-5302-97c4-3597f40e51b2

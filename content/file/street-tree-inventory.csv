@@ -1,0 +1,13 @@
+reference,species,location,year_planted,last_inspected,condition
+FCL-0001,Platanus x hispanica,Avenue of the Station,1978,2025-03-11,good
+FCL-0002,Platanus x hispanica,Avenue of the Station,1978,2025-03-11,good
+FCL-0003,Celtis australis,Old Quarter walkway,1994,2025-03-12,good
+FCL-0004,Celtis australis,Old Quarter walkway,1994,2025-03-12,fair
+FCL-0005,Tilia platyphyllos,Municipal park,2001,2025-03-14,good
+FCL-0006,Tilia platyphyllos,Municipal park,2001,2025-03-14,good
+FCL-0007,Quercus ilex,Municipal park,1962,2025-03-14,fair
+FCL-0008,Fraxinus angustifolia,Riverside path,2010,2025-03-18,good
+FCL-0009,Fraxinus angustifolia,Riverside path,2010,2025-03-18,good
+FCL-0010,Populus alba,Riverside path,1988,2025-03-18,poor
+FCL-0011,Acer campestre,Sports ground surround,2016,2025-03-20,good
+FCL-0012,Acer campestre,Sports ground surround,2016,2025-03-20,good

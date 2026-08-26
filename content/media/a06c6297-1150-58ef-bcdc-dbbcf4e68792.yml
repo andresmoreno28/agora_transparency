@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: a06c6297-1150-58ef-bcdc-dbbcf4e68792
+  bundle: document
+  default_langcode: en
+  depends:
+    4c021ea5-2b1c-5a48-bf75-31a73e55b98a: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Report on the state of municipal roads and pavements'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 4c021ea5-2b1c-5a48-bf75-31a73e55b98a

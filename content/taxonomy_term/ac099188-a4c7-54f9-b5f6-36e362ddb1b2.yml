@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: ac099188-a4c7-54f9-b5f6-36e362ddb1b2
+  bundle: agora_base_status
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Terminated early'
+  description:
+    -
+      value: 'The case file was brought to an end before its stated term.'
+      format: content_format
+  weight:
+    -
+      value: 3
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

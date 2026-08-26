@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: a17bff4f-1243-5598-97eb-0529a225eb82
+  bundle: agora_base_status
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Under review'
+  description:
+    -
+      value: 'The case file is being reviewed and its figures may still change.'
+      format: content_format
+  weight:
+    -
+      value: 4
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

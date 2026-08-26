@@ -1,0 +1,56 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: b1ec169b-50c2-5766-b48d-d2bed219660c
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    1303ba70-7644-566e-8f6a-531e3ae9f9b4: file
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Ignacio Cardeñosa Vela'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /ignacio-cardenosa-vela
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_declaration:
+    -
+      display: false
+      description: ''
+      entity: 1303ba70-7644-566e-8f6a-531e3ae9f9b4
+  field_agora_base_position:
+    -
+      value: 'Deputy Mayor and Councillor for Finance and Budget'
+  field_agora_base_remuneration:
+    -
+      value: '36200.00'
+  field_agora_base_severance:
+    -
+      value: '9050.00'
+  field_agora_base_summary:
+    -
+      value: 'Deputy Mayor since 2023 and responsible for the budget, municipal taxes and procurement. A public-sector accountant by training, he worked in the finance department of a neighbouring municipality for eleven years before standing for election.'
+      format: content_format

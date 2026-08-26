@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 0f0bc1e2-7c15-55fa-98dd-ac783425290a
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    80bb1073-9e51-502e-8cd5-a1789c14ea4a: taxonomy_term
+    1ed916ee-6ac5-57df-9b7f-a757f6a686e2: media
+    7351f9f8-9783-5309-be8e-b5ff13d03024: taxonomy_term
+    d79882b6-7569-54f8-bed9-ac0060265130: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'By-law on public space and civic conduct'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /law-public-space-and-civic-conduct
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: 80bb1073-9e51-502e-8cd5-a1789c14ea4a
+  field_agora_base_document_file:
+    -
+      entity: 1ed916ee-6ac5-57df-9b7f-a757f6a686e2
+  field_agora_base_document_type:
+    -
+      entity: 7351f9f8-9783-5309-be8e-b5ff13d03024
+  field_agora_base_financial_year:
+    -
+      entity: d79882b6-7569-54f8-bed9-ac0060265130
+  field_agora_base_summary:
+    -
+      value: 'Rules on the use of streets, squares and parks, and the penalties that apply to breaches of them.'
+      format: content_format

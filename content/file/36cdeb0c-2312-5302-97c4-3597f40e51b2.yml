@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 36cdeb0c-2312-5302-97c4-3597f40e51b2
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: minutes-2024-09.pdf
+  uri:
+    -
+      value: 'public://documents/minutes-2024-09.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1882
+  status:
+    -
+      value: true

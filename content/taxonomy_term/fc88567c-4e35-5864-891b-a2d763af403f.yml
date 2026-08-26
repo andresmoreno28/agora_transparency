@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: fc88567c-4e35-5864-891b-a2d763af403f
+  bundle: agora_base_procedure_type
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Negotiated procedure without publication'
+  description:
+    -
+      value: 'Award after negotiation with one or more undertakings and without a prior contract notice, permitted only in the cases procurement law lists.'
+      format: content_format
+  weight:
+    -
+      value: 2
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

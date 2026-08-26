@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: a649b65a-92a1-51f1-adb8-44a459c5dbe4
+  bundle: document
+  default_langcode: en
+  depends:
+    3d21918b-b7b6-5834-a4b8-634c012dd9d5: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Minutes of the ordinary council meeting of 28 February 2024'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 3d21918b-b7b6-5834-a4b8-634c012dd9d5

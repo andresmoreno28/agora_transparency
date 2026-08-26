@@ -1,0 +1,50 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 9c789aaf-d44d-5e71-86d0-572267c0242c
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Javier Otazua Lumbreras'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /javier-otazua-lumbreras
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_position:
+    -
+      value: 'Municipal Treasurer'
+  field_agora_base_remuneration:
+    -
+      value: '42700.00'
+  field_agora_base_severance:
+    -
+      value: '0.00'
+  field_agora_base_summary:
+    -
+      value: 'Municipal Treasurer, a national civil service post held by competitive examination since 2021. Responsible for the collection of municipal taxes and charges, for payments and for the treasury accounts. As a career official he holds no severance entitlement.'
+      format: content_format

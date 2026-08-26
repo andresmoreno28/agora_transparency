@@ -1,0 +1,36 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: 52426ab8-8ccf-5a0c-8a45-04761f0cedb5
+  bundle: menu_link_content
+  default_langcode: en
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: People
+  menu_name:
+    -
+      value: main
+  link:
+    -
+      uri: 'internal:/people'
+      title: null
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: true
+  weight:
+    -
+      value: 7
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

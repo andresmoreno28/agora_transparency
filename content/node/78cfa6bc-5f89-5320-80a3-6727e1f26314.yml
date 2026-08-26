@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 78cfa6bc-5f89-5320-80a3-6727e1f26314
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    347359f3-a655-569d-8e8c-d23a23d52822: media
+    bcf533ff-96d7-585b-82cd-e690f63b86eb: taxonomy_term
+    d79882b6-7569-54f8-bed9-ac0060265130: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Annual accounts 2022'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /annual-accounts-2022
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_document_file:
+    -
+      entity: 347359f3-a655-569d-8e8c-d23a23d52822
+  field_agora_base_document_type:
+    -
+      entity: bcf533ff-96d7-585b-82cd-e690f63b86eb
+  field_agora_base_financial_year:
+    -
+      entity: d79882b6-7569-54f8-bed9-ac0060265130
+  field_agora_base_summary:
+    -
+      value: 'The general account for the 2022 financial year, as approved by the council after the reporting period.'
+      format: content_format

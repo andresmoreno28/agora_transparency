@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 4eeb8798-0a79-5d60-879e-b6c91d135df7
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: street-tree-inventory.csv
+  uri:
+    -
+      value: 'public://datasets/2025/street-tree-inventory.csv'
+  filemime:
+    -
+      value: text/csv
+  filesize:
+    -
+      value: 859
+  status:
+    -
+      value: true

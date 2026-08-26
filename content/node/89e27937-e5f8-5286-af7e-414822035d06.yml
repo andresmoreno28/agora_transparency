@@ -1,0 +1,54 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 89e27937-e5f8-5286-af7e-414822035d06
+  bundle: agora_base_grant
+  default_langcode: en
+  depends:
+    f594c56e-48af-545b-afc2-0ce69c4c12e7: taxonomy_term
+    124ddeb1-a923-5d75-bd0a-c99c746dab1f: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Grant for the restoration of the fountain in the old quarter'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /grant-restoration-fountain-old-quarter
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '7200.00'
+  field_agora_base_area:
+    -
+      entity: f594c56e-48af-545b-afc2-0ce69c4c12e7
+  field_agora_base_counterparty:
+    -
+      value: 'Fuentelclaro Heritage Association'
+  field_agora_base_period:
+    -
+      value: '2025-03-01'
+      end_value: '2025-11-30'
+  field_agora_base_status:
+    -
+      entity: 124ddeb1-a923-5d75-bd0a-c99c746dab1f
+  field_agora_base_subject:
+    -
+      value: 'Restoration of the eighteenth-century fountain and of the wall behind it.'

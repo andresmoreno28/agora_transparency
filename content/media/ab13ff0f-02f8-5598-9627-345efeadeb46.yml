@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: ab13ff0f-02f8-5598-9627-345efeadeb46
+  bundle: document
+  default_langcode: en
+  depends:
+    6ac63c8f-7ef8-56cd-b09b-53aa634ad610: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Annual report on the home help service 2023'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 6ac63c8f-7ef8-56cd-b09b-53aa634ad610

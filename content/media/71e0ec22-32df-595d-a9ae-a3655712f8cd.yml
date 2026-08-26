@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 71e0ec22-32df-595d-a9ae-a3655712f8cd
+  bundle: document
+  default_langcode: en
+  depends:
+    9aa328fd-9aed-5ac4-8c57-cfb963d25f23: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Minutes of the ordinary council meeting of 25 April 2024'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 9aa328fd-9aed-5ac4-8c57-cfb963d25f23

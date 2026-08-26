@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: d56a0e12-0695-5f0e-8c8f-18e52ad3d41f
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: minutes-2023-02.pdf
+  uri:
+    -
+      value: 'public://documents/minutes-2023-02.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1826
+  status:
+    -
+      value: true

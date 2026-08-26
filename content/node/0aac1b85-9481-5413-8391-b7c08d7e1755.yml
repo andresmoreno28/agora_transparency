@@ -1,0 +1,57 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 0aac1b85-9481-5413-8391-b7c08d7e1755
+  bundle: agora_base_agreement
+  default_langcode: en
+  depends:
+    ac2ef56a-d028-5872-908a-ae08b9cbb474: taxonomy_term
+    124ddeb1-a923-5d75-bd0a-c99c746dab1f: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Agreement with the regional health service on the municipal health centre'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /agreement-regional-health-service-municipal-health-centre
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '0.00'
+  field_agora_base_area:
+    -
+      entity: ac2ef56a-d028-5872-908a-ae08b9cbb474
+  field_agora_base_counterparty:
+    -
+      value: 'Regional Health Service'
+  field_agora_base_obligations:
+    -
+      value: '12000.00'
+  field_agora_base_period:
+    -
+      value: '2023-09-01'
+      end_value: '2027-08-31'
+  field_agora_base_status:
+    -
+      entity: 124ddeb1-a923-5d75-bd0a-c99c746dab1f
+  field_agora_base_subject:
+    -
+      value: 'Use and upkeep of the municipal health centre building by the regional health service.'

@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 07c2532d-0322-59e2-9810-102b655baba3
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: plan-equality.pdf
+  uri:
+    -
+      value: 'public://documents/plan-equality.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1822
+  status:
+    -
+      value: true

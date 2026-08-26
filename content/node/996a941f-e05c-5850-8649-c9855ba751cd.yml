@@ -1,0 +1,68 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 996a941f-e05c-5850-8649-c9855ba751cd
+  bundle: agora_base_contract
+  default_langcode: en
+  depends:
+    f594c56e-48af-545b-afc2-0ce69c4c12e7: taxonomy_term
+    87dc2fbd-3dc1-5603-8783-9ae721c91126: taxonomy_term
+    ddc786e4-0cf6-5763-b0a0-11ca4140cf97: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Resurfacing of the Camino Viejo access road'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /resurfacing-camino-viejo-access-road
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '57900.00'
+  field_agora_base_area:
+    -
+      entity: f594c56e-48af-545b-afc2-0ce69c4c12e7
+  field_agora_base_bidder_count:
+    -
+      value: 4
+  field_agora_base_counterparty:
+    -
+      value: 'Construcciones Peñalta S.L.'
+  field_agora_base_modifications:
+    -
+      value: None.
+      format: content_format
+  field_agora_base_period:
+    -
+      value: '2025-04-01'
+      end_value: '2025-09-30'
+  field_agora_base_procedure_type:
+    -
+      entity: 87dc2fbd-3dc1-5603-8783-9ae721c91126
+  field_agora_base_status:
+    -
+      entity: ddc786e4-0cf6-5763-b0a0-11ca4140cf97
+  field_agora_base_subject:
+    -
+      value: 'Resurfacing of 1.8 kilometres of the eastern access road, including drainage and signage.'
+  field_agora_base_tender_amount:
+    -
+      value: '61500.00'

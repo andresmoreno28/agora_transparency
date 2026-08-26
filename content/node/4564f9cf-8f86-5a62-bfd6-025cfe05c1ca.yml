@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 4564f9cf-8f86-5a62-bfd6-025cfe05c1ca
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    fe49402f-fd32-514e-b1f5-eefb4027433c: taxonomy_term
+    ef023e5e-8c7a-5de5-b3e9-d77ad387695c: media
+    8939c551-93b4-5c23-a8e7-91f58743e79f: taxonomy_term
+    151a22aa-dcce-5e45-ae9a-451efe4798fb: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Minutes of the ordinary council meeting of 23 February 2023'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /minutes-ordinary-council-meeting-23-february-2023
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: fe49402f-fd32-514e-b1f5-eefb4027433c
+  field_agora_base_document_file:
+    -
+      entity: ef023e5e-8c7a-5de5-b3e9-d77ad387695c
+  field_agora_base_document_type:
+    -
+      entity: 8939c551-93b4-5c23-a8e7-91f58743e79f
+  field_agora_base_financial_year:
+    -
+      entity: 151a22aa-dcce-5e45-ae9a-451efe4798fb
+  field_agora_base_summary:
+    -
+      value: 'Approved minutes, including the award of the refurbishment of the municipal library roof.'
+      format: content_format

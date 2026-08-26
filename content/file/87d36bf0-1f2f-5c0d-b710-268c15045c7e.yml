@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 87d36bf0-1f2f-5c0d-b710-268c15045c7e
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: budget-execution-2024.csv
+  uri:
+    -
+      value: 'public://datasets/2025/budget-execution-2024.csv'
+  filemime:
+    -
+      value: text/csv
+  filesize:
+    -
+      value: 692
+  status:
+    -
+      value: true

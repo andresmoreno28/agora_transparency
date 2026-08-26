@@ -1,0 +1,10 @@
+chapter,description,initial_credit_eur,final_credit_eur,obligations_recognised_eur,payments_made_eur,execution_rate_pct
+1,Staff costs,1420000.00,1438500.00,1401220.45,1389004.10,97.41
+2,Goods and services,1185000.00,1241300.00,1198744.12,1152380.66,96.57
+3,Financial expenses,18500.00,18500.00,16902.31,16902.31,91.36
+4,Current transfers,204000.00,219400.00,211870.00,198450.00,96.57
+5,Contingency fund,60000.00,12300.00,0.00,0.00,0.00
+6,Real investment,742000.00,864900.00,701338.74,612905.20,81.09
+7,Capital transfers,96000.00,96000.00,88200.00,88200.00,91.88
+8,Financial assets,12000.00,12000.00,9400.00,9400.00,78.33
+9,Financial liabilities,168000.00,168000.00,168000.00,168000.00,100.00

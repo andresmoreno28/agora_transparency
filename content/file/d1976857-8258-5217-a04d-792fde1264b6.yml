@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: d1976857-8258-5217-a04d-792fde1264b6
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: bylaw-waste.pdf
+  uri:
+    -
+      value: 'public://documents/bylaw-waste.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1862
+  status:
+    -
+      value: true

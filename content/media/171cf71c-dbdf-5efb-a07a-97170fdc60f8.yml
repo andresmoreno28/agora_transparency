@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 171cf71c-dbdf-5efb-a07a-97170fdc60f8
+  bundle: document
+  default_langcode: en
+  depends:
+    4982293d-4b19-5c2c-9948-7828ed288653: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'Budget execution report, second quarter 2024'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 4982293d-4b19-5c2c-9948-7828ed288653

@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: 5c611666-e576-5536-ae63-e0a567bae1be
+  bundle: agora_base_document_type
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Plan or strategy'
+  description:
+    -
+      value: 'Plans and strategies approved by the council, with the period they cover.'
+      format: content_format
+  weight:
+    -
+      value: 5
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

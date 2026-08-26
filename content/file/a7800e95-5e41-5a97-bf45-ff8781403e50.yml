@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: a7800e95-5e41-5a97-bf45-ff8781403e50
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: accounts-2022.pdf
+  uri:
+    -
+      value: 'public://documents/accounts-2022.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1789
+  status:
+    -
+      value: true

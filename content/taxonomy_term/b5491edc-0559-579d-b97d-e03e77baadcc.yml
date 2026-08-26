@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: b5491edc-0559-579d-b97d-e03e77baadcc
+  bundle: agora_base_procedure_type
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Restricted procedure'
+  description:
+    -
+      value: 'Only undertakings invited by the contracting authority after a selection stage may submit a tender.'
+      format: content_format
+  weight:
+    -
+      value: 4
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: fe0ab3f1-63ff-5614-b1b7-5d7b7db73a6c
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    f594c56e-48af-545b-afc2-0ce69c4c12e7: taxonomy_term
+    bdc964c1-e890-55bb-a921-0b00446b2a77: media
+    5c611666-e576-5536-ae63-e0a567bae1be: taxonomy_term
+    d79882b6-7569-54f8-bed9-ac0060265130: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Municipal urban development plan, consolidated text'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /municipal-urban-development-plan-consolidated-text
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: f594c56e-48af-545b-afc2-0ce69c4c12e7
+  field_agora_base_document_file:
+    -
+      entity: bdc964c1-e890-55bb-a921-0b00446b2a77
+  field_agora_base_document_type:
+    -
+      entity: 5c611666-e576-5536-ae63-e0a567bae1be
+  field_agora_base_financial_year:
+    -
+      entity: d79882b6-7569-54f8-bed9-ac0060265130
+  field_agora_base_summary:
+    -
+      value: 'The consolidated text of the municipal urban development plan, with the amendments approved to date.'
+      format: content_format

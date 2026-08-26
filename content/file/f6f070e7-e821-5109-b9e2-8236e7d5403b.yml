@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: f6f070e7-e821-5109-b9e2-8236e7d5403b
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: bylaw-works-tax.pdf
+  uri:
+    -
+      value: 'public://documents/bylaw-works-tax.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1838
+  status:
+    -
+      value: true

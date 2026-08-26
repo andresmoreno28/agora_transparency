@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 69f3d70d-2d0c-582a-981b-1b17cfe4fa94
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    fe49402f-fd32-514e-b1f5-eefb4027433c: taxonomy_term
+    a649b65a-92a1-51f1-adb8-44a459c5dbe4: media
+    8939c551-93b4-5c23-a8e7-91f58743e79f: taxonomy_term
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Minutes of the ordinary council meeting of 28 February 2024'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /minutes-ordinary-council-meeting-28-february-2024
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: fe49402f-fd32-514e-b1f5-eefb4027433c
+  field_agora_base_document_file:
+    -
+      entity: a649b65a-92a1-51f1-adb8-44a459c5dbe4
+  field_agora_base_document_type:
+    -
+      entity: 8939c551-93b4-5c23-a8e7-91f58743e79f
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_summary:
+    -
+      value: 'Approved minutes, including the award of the street lighting maintenance contract.'
+      format: content_format

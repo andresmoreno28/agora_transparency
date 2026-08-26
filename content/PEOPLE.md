@@ -41,7 +41,27 @@ risk.
 
 ## The roster
 
-Empty until wave 10 (`T-1003`) authors the org chart. The table below is the shape those rows take.
+Eight people, the whole of the org chart the demo publishes. Every name is
+invented: a given name and two surnames that are ordinary in Spain were combined
+by hand into a person who does not exist, for a municipality — `Fuentelclaro` —
+that does not exist either, and whose absence from the INE register of the
+8,656 Spanish municipalities is recorded in `specs/000-project/DECISIONS.md`
+under D-010.
+
+Because the municipality is fictional it models no real town hall, so there is
+no real org chart this one could have been copied from. That is the reason the
+deny-list in `tests/bin/no-real-people.py` stays at the twelve nationally
+prominent names it already carried: D-010's rider records the same conclusion,
+so that the instruction on T-905 to add local office-holders is answered rather
+than quietly skipped.
 
 | name | position | status | provenance |
 |---|---|---|---|
+| Marta Belloso Iriarte | Mayor | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |
+| Ignacio Cardeñosa Vela | Deputy Mayor and Councillor for Finance and Budget | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |
+| Elena Rebollar Quintana | Councillor for Urban Planning and Works | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |
+| Tomás Aguaviva Pinilla | Councillor for Social Services | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |
+| Nuria Vallejera Sanz | Councillor for Culture, Education and Sport | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |
+| Álvaro Menchón Serna | Councillor for Environment and Public Space | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |
+| Rosa Camarena Olalla | Municipal Secretary | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |
+| Javier Otazua Lumbreras | Municipal Treasurer | fictional | invented for this demo; given name and two surnames combined by hand, no real office-holder of any municipality |

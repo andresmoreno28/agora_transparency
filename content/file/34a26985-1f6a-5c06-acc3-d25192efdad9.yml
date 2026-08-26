@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 34a26985-1f6a-5c06-acc3-d25192efdad9
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: grants-awarded-2024.csv
+  uri:
+    -
+      value: 'public://datasets/2025/grants-awarded-2024.csv'
+  filemime:
+    -
+      value: text/csv
+  filesize:
+    -
+      value: 302
+  status:
+    -
+      value: true

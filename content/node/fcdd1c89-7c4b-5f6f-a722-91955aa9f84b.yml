@@ -1,0 +1,57 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: fcdd1c89-7c4b-5f6f-a722-91955aa9f84b
+  bundle: agora_base_agreement
+  default_langcode: en
+  depends:
+    fe49402f-fd32-514e-b1f5-eefb4027433c: taxonomy_term
+    124ddeb1-a923-5d75-bd0a-c99c746dab1f: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Agreement with the regional university on student work placements'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /agreement-regional-university-student-work-placements
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '0.00'
+  field_agora_base_area:
+    -
+      entity: fe49402f-fd32-514e-b1f5-eefb4027433c
+  field_agora_base_counterparty:
+    -
+      value: 'Regional Public University'
+  field_agora_base_obligations:
+    -
+      value: '0.00'
+  field_agora_base_period:
+    -
+      value: '2025-02-01'
+      end_value: '2028-01-31'
+  field_agora_base_status:
+    -
+      entity: 124ddeb1-a923-5d75-bd0a-c99c746dab1f
+  field_agora_base_subject:
+    -
+      value: 'Placement of university students in municipal departments, with no cost to either party.'

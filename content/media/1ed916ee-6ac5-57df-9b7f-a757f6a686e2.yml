@@ -1,0 +1,30 @@
+_meta:
+  version: '1.0'
+  entity_type: media
+  uuid: 1ed916ee-6ac5-57df-9b7f-a757f6a686e2
+  bundle: document
+  default_langcode: en
+  depends:
+    6841ba26-2180-5758-ac11-aa7b694aa6e7: file
+default:
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  name:
+    -
+      value: 'By-law on public space and civic conduct'
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null
+  field_media_document:
+    -
+      display: false
+      description: ''
+      entity: 6841ba26-2180-5758-ac11-aa7b694aa6e7

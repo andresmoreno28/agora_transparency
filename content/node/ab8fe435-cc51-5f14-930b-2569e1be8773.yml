@@ -1,0 +1,56 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: ab8fe435-cc51-5f14-930b-2569e1be8773
+  bundle: agora_base_person
+  default_langcode: en
+  depends:
+    ac2ef56a-d028-5872-908a-ae08b9cbb474: taxonomy_term
+    7ca8185e-daa9-5190-b9d3-d55299325ee3: file
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Tomás Aguaviva Pinilla'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /tomas-aguaviva-pinilla
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: ac2ef56a-d028-5872-908a-ae08b9cbb474
+  field_agora_base_declaration:
+    -
+      display: false
+      description: ''
+      entity: 7ca8185e-daa9-5190-b9d3-d55299325ee3
+  field_agora_base_position:
+    -
+      value: 'Councillor for Social Services'
+  field_agora_base_remuneration:
+    -
+      value: '28400.00'
+  field_agora_base_severance:
+    -
+      value: '7100.00'
+  field_agora_base_summary:
+    -
+      value: 'Councillor for home help, dependency support and housing assistance since 2023, and a councillor in the previous term. A social worker by profession, he co-ordinated the shared social services team of the district for nine years.'
+      format: content_format

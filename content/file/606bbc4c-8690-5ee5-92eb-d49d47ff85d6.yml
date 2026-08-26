@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 606bbc4c-8690-5ee5-92eb-d49d47ff85d6
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: exec-2024-q3.pdf
+  uri:
+    -
+      value: 'public://documents/exec-2024-q3.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1820
+  status:
+    -
+      value: true

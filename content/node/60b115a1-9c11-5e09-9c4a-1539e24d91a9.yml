@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 60b115a1-9c11-5e09-9c4a-1539e24d91a9
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    80bb1073-9e51-502e-8cd5-a1789c14ea4a: taxonomy_term
+    53566a13-f071-57bf-a1b8-9ebf7d7579e0: media
+    7351f9f8-9783-5309-be8e-b5ff13d03024: taxonomy_term
+    151a22aa-dcce-5e45-ae9a-451efe4798fb: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'By-law on the municipal waste collection charge'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /law-municipal-waste-collection-charge
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: 80bb1073-9e51-502e-8cd5-a1789c14ea4a
+  field_agora_base_document_file:
+    -
+      entity: 53566a13-f071-57bf-a1b8-9ebf7d7579e0
+  field_agora_base_document_type:
+    -
+      entity: 7351f9f8-9783-5309-be8e-b5ff13d03024
+  field_agora_base_financial_year:
+    -
+      entity: 151a22aa-dcce-5e45-ae9a-451efe4798fb
+  field_agora_base_summary:
+    -
+      value: 'The charge for household and commercial waste collection, its bands and the reductions that apply to it.'
+      format: content_format

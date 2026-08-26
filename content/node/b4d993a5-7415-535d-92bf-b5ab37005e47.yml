@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: b4d993a5-7415-535d-92bf-b5ab37005e47
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    80bb1073-9e51-502e-8cd5-a1789c14ea4a: taxonomy_term
+    1cd67e95-68e6-58be-8658-97da883e7a68: media
+    5c611666-e576-5536-ae63-e0a567bae1be: taxonomy_term
+    151a22aa-dcce-5e45-ae9a-451efe4798fb: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Climate and energy action plan 2023-2030'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /climate-and-energy-action-plan-2023-2030
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: 80bb1073-9e51-502e-8cd5-a1789c14ea4a
+  field_agora_base_document_file:
+    -
+      entity: 1cd67e95-68e6-58be-8658-97da883e7a68
+  field_agora_base_document_type:
+    -
+      entity: 5c611666-e576-5536-ae63-e0a567bae1be
+  field_agora_base_financial_year:
+    -
+      entity: 151a22aa-dcce-5e45-ae9a-451efe4798fb
+  field_agora_base_summary:
+    -
+      value: 'Emissions inventory, reduction targets and the measures adopted to reach them.'
+      format: content_format

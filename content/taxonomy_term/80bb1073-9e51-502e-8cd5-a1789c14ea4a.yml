@@ -1,0 +1,27 @@
+_meta:
+  version: '1.0'
+  entity_type: taxonomy_term
+  uuid: 80bb1073-9e51-502e-8cd5-a1789c14ea4a
+  bundle: agora_base_area
+  default_langcode: en
+default:
+  status:
+    -
+      value: true
+  name:
+    -
+      value: 'Environment and Public Space'
+  description:
+    -
+      value: 'Waste collection, street cleaning, parks and trees, water supply and public lighting.'
+      format: content_format
+  weight:
+    -
+      value: 5
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      langcode: en
+      alias: null

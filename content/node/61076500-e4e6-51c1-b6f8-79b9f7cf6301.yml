@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 61076500-e4e6-51c1-b6f8-79b9f7cf6301
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    ac2ef56a-d028-5872-908a-ae08b9cbb474: taxonomy_term
+    ab13ff0f-02f8-5598-9627-345efeadeb46: media
+    00980c7a-ffc1-5c8b-8b5c-953119b5f415: taxonomy_term
+    151a22aa-dcce-5e45-ae9a-451efe4798fb: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Annual report on the home help service 2023'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /annual-report-home-help-service-2023
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: ac2ef56a-d028-5872-908a-ae08b9cbb474
+  field_agora_base_document_file:
+    -
+      entity: ab13ff0f-02f8-5598-9627-345efeadeb46
+  field_agora_base_document_type:
+    -
+      entity: 00980c7a-ffc1-5c8b-8b5c-953119b5f415
+  field_agora_base_financial_year:
+    -
+      entity: 151a22aa-dcce-5e45-ae9a-451efe4798fb
+  field_agora_base_summary:
+    -
+      value: 'Users, hours delivered, waiting times and cost per hour of the home help service in 2023.'
+      format: content_format

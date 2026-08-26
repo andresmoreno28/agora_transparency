@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 5022f749-0d84-5cca-bfc1-aacb46d7f351
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: bylaw-sport.pdf
+  uri:
+    -
+      value: 'public://documents/bylaw-sport.pdf'
+  filemime:
+    -
+      value: application/pdf
+  filesize:
+    -
+      value: 1817
+  status:
+    -
+      value: true

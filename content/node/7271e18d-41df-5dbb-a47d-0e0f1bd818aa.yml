@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 7271e18d-41df-5dbb-a47d-0e0f1bd818aa
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    cae7bbda-24bb-5f4b-85f5-126434474d7b: taxonomy_term
+    d0cb7d31-1e3c-51e0-b068-a6afce948876: media
+    bcf533ff-96d7-585b-82cd-e690f63b86eb: taxonomy_term
+    151a22aa-dcce-5e45-ae9a-451efe4798fb: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Annual accounts 2023'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /annual-accounts-2023
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: cae7bbda-24bb-5f4b-85f5-126434474d7b
+  field_agora_base_document_file:
+    -
+      entity: d0cb7d31-1e3c-51e0-b068-a6afce948876
+  field_agora_base_document_type:
+    -
+      entity: bcf533ff-96d7-585b-82cd-e690f63b86eb
+  field_agora_base_financial_year:
+    -
+      entity: 151a22aa-dcce-5e45-ae9a-451efe4798fb
+  field_agora_base_summary:
+    -
+      value: 'The general account for the 2023 financial year, as approved by the council after the reporting period.'
+      format: content_format

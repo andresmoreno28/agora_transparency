@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: 49763496-7ef0-5dba-9b15-330481d8ee07
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: contracts-awarded-2024.csv
+  uri:
+    -
+      value: 'public://datasets/2025/contracts-awarded-2024.csv'
+  filemime:
+    -
+      value: text/csv
+  filesize:
+    -
+      value: 692
+  status:
+    -
+      value: true

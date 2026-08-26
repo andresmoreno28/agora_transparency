@@ -1,0 +1,53 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 47893407-bc95-5f5f-8c5f-9212d0ec06fe
+  bundle: agora_base_document
+  default_langcode: en
+  depends:
+    ac2ef56a-d028-5872-908a-ae08b9cbb474: taxonomy_term
+    f8758417-4e42-50cb-9035-eb414822d3f6: media
+    5c611666-e576-5536-ae63-e0a567bae1be: taxonomy_term
+    91b6d8f9-fc89-5f5a-8d43-2807e9200a8d: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Municipal plan for equality between women and men 2024-2027'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /municipal-plan-equality-between-women-and-men-2024-2027
+      langcode: en
+  field_agora_base_area:
+    -
+      entity: ac2ef56a-d028-5872-908a-ae08b9cbb474
+  field_agora_base_document_file:
+    -
+      entity: f8758417-4e42-50cb-9035-eb414822d3f6
+  field_agora_base_document_type:
+    -
+      entity: 5c611666-e576-5536-ae63-e0a567bae1be
+  field_agora_base_financial_year:
+    -
+      entity: 91b6d8f9-fc89-5f5a-8d43-2807e9200a8d
+  field_agora_base_summary:
+    -
+      value: 'Objectives, measures and indicators for equality between women and men in the municipality.'
+      format: content_format

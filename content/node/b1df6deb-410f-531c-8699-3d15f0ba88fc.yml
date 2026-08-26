@@ -1,0 +1,68 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: b1df6deb-410f-531c-8699-3d15f0ba88fc
+  bundle: agora_base_contract
+  default_langcode: en
+  depends:
+    26cdaaf6-93a6-5020-a99d-68a8ca64fc10: taxonomy_term
+    7100b81d-052b-52a1-9798-fbe34a18063f: taxonomy_term
+    f6d72a34-7852-56a0-82fe-a09d0cb1d03b: taxonomy_term
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Supply of uniforms and protective equipment for the municipal police'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  path:
+    -
+      alias: /supply-uniforms-and-protective-equipment-municipal-police
+      langcode: en
+  field_agora_base_amount:
+    -
+      value: '11900.00'
+  field_agora_base_area:
+    -
+      entity: 26cdaaf6-93a6-5020-a99d-68a8ca64fc10
+  field_agora_base_bidder_count:
+    -
+      value: 1
+  field_agora_base_counterparty:
+    -
+      value: 'Uniformes Castejón S.L.'
+  field_agora_base_modifications:
+    -
+      value: None.
+      format: content_format
+  field_agora_base_period:
+    -
+      value: '2024-10-01'
+      end_value: '2024-12-15'
+  field_agora_base_procedure_type:
+    -
+      entity: 7100b81d-052b-52a1-9798-fbe34a18063f
+  field_agora_base_status:
+    -
+      entity: f6d72a34-7852-56a0-82fe-a09d0cb1d03b
+  field_agora_base_subject:
+    -
+      value: 'Supply of uniforms, high-visibility clothing and personal protective equipment.'
+  field_agora_base_tender_amount:
+    -
+      value: '11900.00'
