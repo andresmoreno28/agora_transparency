@@ -1748,6 +1748,41 @@ truth; rule 2 forbids any contrib module without its `DECISIONS.md` line.
 project's own: *"when in doubt, solve it with what Drupal CMS already ships"* (rule 2), and the
 table is not a fallback — D-026 already made it the primary artefact.
 
+### D-038 · How does a Dataset's CSV distribution become an accessible `<table>`, and in which repository?
+
+*Context in one line:* **D-026 made the machine-readable table the source of truth** — budget is not a
+node type, the Dataset **is** the budget execution table — and unit 002 recorded *"rendering a
+Dataset's CSV distribution as an accessible `<table>`"* as owed debt. T-1006 authored the datasets
+and their CSVs, all five of which download and parse; **the rendering half was not attempted**,
+because **no core formatter parses a CSV into a table** and choosing what does is an architectural
+call, not a task-row detail.
+
+⚠️ **The disk contradicts itself about who owns it**, which is why this is a decision rather than a
+ruling: `specs/003-demo-content/plan.md` §3 lists the debt under **"Theme repository"**, while
+`tasks.md`'s T-1006 and the carried-debt table put it in **wave 10 lane A**, the template. Neither
+was written knowing there was a mechanism question underneath.
+
+*Measured, so the options are not argued from taste:* the display uses the `file_default` formatter,
+which renders a download link. The five shipped CSVs are **small** — 5 to 12 data rows, 5 to 8
+columns, 302 to 859 bytes — but nothing in the model bounds that, and a Dataset is exactly the field
+a municipality will one day point at a 40 MB municipal register export.
+
+| | Option | Real cost |
+|---|---|---|
+| **A ★** | **A preprocess hook in `agora_theme` reads the file and hands Twig a rows/header array; a template renders it with the theme's existing accessible-table markup.** | Rendering is the theme's job, the accessible-table markup already exists and is already gated, and it needs **no new dependency** — rule 2's "solve it with what Drupal CMS already ships" applied literally. ⚠️ Costs a **file-size ceiling and a column ceiling in code**, because an unbounded parse at render time is a memory fault waiting for its first real dataset, and both numbers must be printed rather than assumed. Also puts PHP in a theme, which this project has so far avoided. |
+| B | A contrib module that provides a CSV formatter | Someone else maintains the parsing, the ceilings and the escaping. ⚠️ It is a **dependency on the flagship free template for one field**, it needs its own `DECISIONS.md` line under rule 2, its security coverage must be checked, and it joins unit 006's SBOM sweep. The 2026-08-20 SBOM research names no such module as stable-with-coverage, so this option starts with a search, not a package. |
+| C | Ship the table **as content** — a second field on the Dataset holding the rendered table — and keep the CSV purely as a download | No parsing at render time at all, so no ceiling and no new code. ⚠️ **It contradicts D-026 head-on**: the CSV stops being the source of truth and becomes a copy that can silently disagree with the table beside it. That is the exact failure D-026 chose the machine-readable table to avoid. |
+| D | Defer the rendering to **unit 006**, ship the download now | Honest and cheap today. ⚠️ It leaves the unit's own headline — *the accessible table is the deliverable* — false for two more units, and unit 006 is already carrying the SBOM sweep, the WCAG attestation and the keyboard walkthrough. |
+
+★ **A**, with the two ceilings stated in the code and printed by a test rather than trusted: it is the
+only option that keeps D-026's holding intact, adds no dependency, and reuses markup that is already
+under an accessibility gate. **But B is a legitimate answer** if [andres] would rather not have PHP
+in the theme at all — that is a maintenance preference, and it is his to hold.
+
+⚠️ **Whichever is signed, the ownership contradiction is settled by the same signature**: A and C are
+theme and template respectively; B is a template dependency; D moves the whole question. `plan.md`
+§3 and the carried-debt table are then amended, not edited, to agree with it.
+
 ### Rider requested · The accessibility statement's unit
 
 Not a decision, a **contradiction between two on-disk documents** that needs one word.
