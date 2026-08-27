@@ -2147,3 +2147,33 @@ is not a deadline to hit; it is the earliest possible day. ⚠️ It is the same
 `sbom-check` exemption for `agora_theme` expires **by failing** — so the invariant will go red on
 2026-09-03 and that red is the reminder. It is not to be silenced; it is to be answered by opting
 in or by a dated, signed extension.
+
+---
+
+### D-044 · The task budget counts; it does not gate
+
+**SIGNED by [andres], 2026-08-27:** *"do not let the task maximum stop you if something has to go
+in out of necessity"* (translated, per rule 6).
+
+*Context in one line:* D-031 set a per-unit task ceiling and made crossing it cost a signed rider
+naming what it displaces. Three times in two days the ceiling produced a **pause for a signature on
+work that was plainly necessary** — the PostgreSQL fix, the invariant that catches it, the media
+generator — and each pause cost more than the accounting was worth.
+
+**The ruling: the count is an instrument, not a gate.** Necessary work goes in and the row is
+appended; the ceiling is not a reason to stop, to ask, or to defer. ⚠️ **What does NOT change is
+the accounting**, and that is the whole point of writing this down rather than deleting the
+budget: I-105 stands. When the reserve is drawn on for something outside its named list, or when
+the ceiling is crossed, **the budget line says so in the same commit**, with what remains and what
+is still owed against it.
+
+So the discipline moves from *"ask before exceeding"* to *"exceed when necessary and state it"*.
+The failure this prevents is unchanged — discovering an overrun at closure, when the only options
+left are a rider signed under pressure or a quiet trim.
+
+⚠️ **"Necessary" is not "useful".** This is not a licence to grow scope: it covers work without
+which something already signed is broken, false, or impossible to ship. Work that is merely good remains
+a proposal with options and a recommendation, the same as before. **D-031's rider is not abolished
+— it stops being a precondition and becomes a record.**
+
+This amends **D-031**'s mechanism (rule 8: amended, not edited) and leaves its reason intact.
