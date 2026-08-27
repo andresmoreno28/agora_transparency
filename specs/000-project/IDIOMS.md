@@ -1105,3 +1105,21 @@
   the corpus was generated, and its uniformity across every row is what tells a reader the content
   is synthetic. **On a template whose product is a screenshot on a marketplace, a rendering review
   is not polish — it is a category of testing with no automated substitute.** Recorded 2026-08-27.
+
+- I-107 · **The preview died a minute after every command, so my measurement and [andres]'s browser
+  disagreed by a minute and both were right.** After a power cut, `https://agora-smoke.ddev.site`
+  answered `200` to a check run immediately after any `wsl.exe` command and
+  `ERR_CONNECTION_REFUSED` to a browser a minute later. **`wsl.exe --list --running` reported no
+  running distributions** while `docker ps -a` showed every container exited inside the same
+  minute: running any command booted the distro, the containers came up, and WSL2 shut the virtual
+  machine down again when it went idle, taking Docker with it.
+  ⚠️ **Two of my three diagnoses were wrong and the wrong ones were the confident ones.** I blamed a
+  missing Windows `hosts` entry (there is none and none is needed — falsified), then wrote a
+  `.wslconfig` with `vmIdleTimeout=-1` and declared it fixed **without waiting**; the next poll died
+  at **20 seconds**, faster than before. What actually holds it is a long-running process inside the
+  distro. ⚠️ And the container that matters exits **255** while the database exits **0** — a clean
+  stop, not a crash, which is the tell that something is stopping them rather than something
+  failing. **I read the container logs third, after two guesses; they were the first thing to read.**
+  Rule: **an uptime claim needs a poll longer than the failure interval.** A single `curl` proves the
+  service answered once, which is not what "it is up" means to the person reloading a browser.
+  Recorded 2026-08-27.

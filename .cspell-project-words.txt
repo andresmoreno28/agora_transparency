@@ -343,3 +343,4 @@ jumd
 superbox
 Wealdhurst
 pycache
+wslconfig
