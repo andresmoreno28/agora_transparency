@@ -1091,3 +1091,17 @@
   under pressure or a quiet trim. Rule: when the reserve is drawn on for something outside its named
   list, **say so in the budget line in the same commit**, with what remains and what is still owed
   against it. Recorded 2026-08-27.
+
+- I-106 · **Three presentation defects were found by opening pages in a browser, with every gate
+  green over all three.** On 2026-08-27, with the site template at ten blocking jobs and the theme
+  at nine, `/people` rendered a mayor's salary as `48500.00` — no thousands separator — `/contracts`
+  printed `- 12:00` after **every** date in a contract period, and the same table clipped its last
+  column at 1440px. Nothing was broken; nothing was red; the corpus was correct and the tests
+  asserted what they were written to assert.
+  ⚠️ **The point is not that the gates are weak. It is that a gate measures what it was asked to
+  measure, and nobody had asked *"does this read like a real portal?"*** — a question with no
+  denominator, which is exactly why it cannot be a gate and why it has to be a person with a
+  browser. The `12:00` is the sharpest of the three: it is not wrong data, it is an artefact of how
+  the corpus was generated, and its uniformity across every row is what tells a reader the content
+  is synthetic. **On a template whose product is a screenshot on a marketplace, a rendering review
+  is not polish — it is a category of testing with no automated substitute.** Recorded 2026-08-27.
