@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_document
+  module:
+    - node
+id: agora_documents
+label: Documents
+type: 'canonical_entities:node'
+pattern: '/documents/[node:title]'
+selection_criteria:
+  1eae46d6-db91-4a56-9c65-c5e21ab895b3:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      agora_base_document: agora_base_document
+selection_logic: and
+weight: -5
+relationships: {  }

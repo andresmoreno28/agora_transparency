@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_dataset
+  module:
+    - node
+id: agora_datasets
+label: Datasets
+type: 'canonical_entities:node'
+pattern: '/datasets/[node:title]'
+selection_criteria:
+  aed9118f-193b-4ce1-8d75-d62ecee6b666:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      agora_base_dataset: agora_base_dataset
+selection_logic: and
+weight: -5
+relationships: {  }

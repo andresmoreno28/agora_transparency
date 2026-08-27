@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_agreement
+  module:
+    - node
+id: agora_agreements
+label: Agreements
+type: 'canonical_entities:node'
+pattern: '/agreements/[node:title]'
+selection_criteria:
+  759b001c-833c-42b9-9914-7a2f0b4bedb0:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      agora_base_agreement: agora_base_agreement
+selection_logic: and
+weight: -5
+relationships: {  }

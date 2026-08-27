@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_contract
+  module:
+    - node
+id: agora_contracts
+label: Contracts
+type: 'canonical_entities:node'
+pattern: '/contracts/[node:title]'
+selection_criteria:
+  fe1b17e8-bb57-4146-ac9e-93c8d6233350:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      agora_base_contract: agora_base_contract
+selection_logic: and
+weight: -5
+relationships: {  }

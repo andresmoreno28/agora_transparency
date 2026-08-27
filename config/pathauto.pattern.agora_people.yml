@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_person
+  module:
+    - node
+id: agora_people
+label: People
+type: 'canonical_entities:node'
+pattern: '/people/[node:title]'
+selection_criteria:
+  1bfbeea0-09a9-4b73-a150-8ef75220e835:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      agora_base_person: agora_base_person
+selection_logic: and
+weight: -5
+relationships: {  }

@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.agora_base_grant
+  module:
+    - node
+id: agora_grants
+label: Grants
+type: 'canonical_entities:node'
+pattern: '/grants/[node:title]'
+selection_criteria:
+  ce3cfdac-7241-467e-a2eb-d5a688b016ac:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      agora_base_grant: agora_base_grant
+selection_logic: and
+weight: -5
+relationships: {  }
