@@ -342,3 +342,4 @@ jumb
 jumd
 superbox
 Wealdhurst
+pycache

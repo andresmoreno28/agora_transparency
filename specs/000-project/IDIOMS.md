@@ -1042,3 +1042,52 @@
   not a mechanism, and **an unexplained jump in a linter's denominator is the cheapest detector of
   a dirty tree there is** - the count moved before anything else did. Commit named paths, never
   `-A`, while any agent is live in the same checkout (see [[I-096]]). Recorded 2026-08-27.
+
+- I-101 · **A green is a statement about the environments it ran in, not only about the set it
+  opened.** Nine jobs, all `success`, all blocking, 1951 assertions — over shipped SQL that summed a
+  `varchar` column. PostgreSQL refuses it outright; **MariaDB answers `0` with a per-row
+  `Warning 1292` and SQLite answers `0.0` in silence**, so the product was broken on every database
+  Drupal supports and only one of them said so. The assertions passed because nothing read that
+  column. ⚠️ **The pipeline ran MySQL and SQLite because those are the DEFAULTS, not because anyone
+  chose them** — which is the whole idiom: [[I-045]] says quote result and scope together, and this
+  extends scope to include *where the code ran*. The tenth job exists so the question is asked by a
+  machine. Recorded 2026-08-27 with D-040(2).
+
+- I-102 · **A success criterion can be satisfied by the thing it was written to exclude.** The
+  criterion written for the PostgreSQL job was *"a job whose log contains `SIMPLETEST_DB=pgsql://`"*.
+  That string sits inside a `- |` literal block which GitLab echoes **unexpanded into every
+  phpunit-family job's trace**, so the existing MySQL job already contained it — a `phpunit-pgsql`
+  that silently ran MySQL would have passed the check written to prove it did not. The fix is not a
+  better grep: **the job now prints the variable it was given and exits 1 if it is wrong**, so the
+  evidence comes from the job's own environment rather than from a log line about all four
+  databases. Rule: **when a criterion greps a log, ask what else in the repository emits that
+  string.** Recorded 2026-08-27.
+
+- I-103 · **A rewrite that removes a field removes everything hanging off it, including markup in
+  another repository.** D-040 removed three aggregated Views fields; one of them carried the field
+  rewrite that emitted `<span class="agora-bar">`. The theme kept computing six correct
+  percentages, on all six rows, for a span that no longer existed — **0 spans on the page.** ⚠️ And
+  the theme's own guard could not see it: that guard fires when the amount is missing from
+  `$view->result`, and the surviving sort keeps it there. **The chart stopped being a chart in
+  silence.** Two rules: a guard tests the condition it was written for, never the condition you
+  care about, so **say which**; and a claim about the other repository needs a measurement taken
+  **in** that repository — D-014 split them on purpose and a sentence reaching across the split
+  without measuring is how ["the bars stay truthful"] got written into a signed record while being
+  false. Recorded 2026-08-27.
+
+- I-104 · **An ignore rule verified against a path that does not exist proves nothing.** Adding
+  `__pycache__/` to `.gitignore` and then running `git status` to see it absent is a vacuous check:
+  the directory was absent anyway. The falsification is to **create the artefact first** — compile
+  a real `.pyc` — and only then confirm git cannot see it. ⚠️ The same shape covers a deny list
+  nobody has triggered, an exclusion nobody has exercised and a guard nobody has failed: **a rule
+  first observed passing has not been observed at all.** Recorded 2026-08-27, and it is
+  [[I-045]]'s denominator argument applied to a rule instead of a scan.
+
+- I-105 · **Spending a reserve silently is how a budget stops being one.** Unit 003's four reserve
+  rows were allocated by name to four foreseen risks. Three were spent on **D-040, which did not
+  exist when the budget was written** — legitimately, but the spend leaves **one row against two
+  still-open named risks**, which is a foreseeable overrun. ⚠️ The failure mode is not overspending;
+  it is **discovering the overspend at closure**, when the only options left are a rider signed
+  under pressure or a quiet trim. Rule: when the reserve is drawn on for something outside its named
+  list, **say so in the budget line in the same commit**, with what remains and what is still owed
+  against it. Recorded 2026-08-27.
