@@ -57,9 +57,9 @@ default:
       uuid: 06111743-9017-5795-9fa0-b18fa2d0bb61
       component_id: block.views_block.agora_base_publications-block_6
       inputs:
-        label: 'Explore by service area'
+        label: 'Every record, by service area'
         label_display: visible
-        views_label: 'Explore by service area'
+        views_label: 'Every record, by service area'
         items_per_page: null
     -
       uuid: e48c0964-2421-5e6a-931e-f51ef3bfd9fb
