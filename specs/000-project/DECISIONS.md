@@ -1872,3 +1872,71 @@ and not a task.
 describes generated output carrying a **visible "CR" symbol**. If current output still does, option
 A dies on aesthetics before any of this matters, and C becomes the answer. One throwaway image
 settles it; it has not been done at the time of signing.
+
+---
+
+### D-040 · Two front-page blocks hard-error on PostgreSQL. What ships?
+
+**SIGNED = A by [andres], 2026-08-27.** *(Config-safe now; the euro total reopened as its own
+investigation rather than abandoned.)*
+
+*Context in one line:* the key-figures and spend-by-area blocks aggregate `SUM()` over a Field API
+field, and **Views drags that field table's `langcode` and `bundle` columns into the same
+aggregate**. Both are `varchar`.
+
+*Confirmed by reading core in the rig and by executing the generated SQL against three databases —
+not cited, measured:*
+
+| database | `SUM(varchar)` |
+|---|---|
+| PostgreSQL 16.15 | **`ERROR: function sum(character varying) does not exist`** |
+| MariaDB | `0`, with `Warning 1292 Truncated incorrect DOUBLE value: 'en'` per row |
+| SQLite | `0.0`, silently |
+
+⚠️ **Read the MariaDB and SQLite rows again: the SQL this package ships is wrong on EVERY database,
+not only on the one that complains.** PostgreSQL is the only one honest enough to refuse. That is
+the more disturbing half of this record and it is why D-040(2) exists.
+
+The cause is core, open since 2018 and unfixed in 11.4.5: [#2975149] names our exact line
+(*"`FieldPluginBase::addAdditionalFields` applies that grouping to each additional field"*) and
+[#3018025] is our exact symptom, **Major**, Active. Patching is closed by non-negotiable rule 1.
+
+*Four config workarounds were probed; three died measured.* The survivor is the useful finding:
+**keeping the SUM as a SORT emits a correct, PostgreSQL-safe `SUM()`** — `GroupByNumeric::query()`
+never calls `addAdditionalFields()`. The database computes the true total. What Views cannot do is
+**print** it, because its text tokens come from field handlers, not from raw result columns.
+
+| | Option | Real cost |
+|---|---|---|
+| **A ★ SIGNED** | **Config-only fix now: the aggregated SUM *fields* go, the SUM *sort* stays — so rows remain ordered by real spend and the bars stay truthful — and the euro total is reopened as its own investigation rather than written off.** | Nothing broken ships, today, with no dependency and no cross-repository coupling. ⚠️ It temporarily costs the single most meaningful line a transparency portal can print. **That is why the second half of the signature is not decoration**: the auditor recommended stopping at the config fix, and stopping there would replace *"€592,470 awarded in total"* with *"largest single award"* and turn the chart from money into a count of files — gutting the feature whose absence caused three consecutive reviews to end in *"it still does not land as a HOME"*. |
+| B | Theme prints the sort's SUM from `hook_views_pre_render()` | Verified reachable (`ViewExecutable.php:1586`, *"Let the themes play too"*), restores the real total at O(1). ⚠️ It depends on a **sort's side-effect** and an undocumented column alias - the exact cleverness a future maintainer breaks - and it puts template config in dependency on theme PHP, which D-014 split apart on purpose. **Not rejected: deferred into the investigation, where `entityQueryAggregate` is to be probed FIRST as the documented-API route.** |
+| C | Theme sums a non-aggregated `$view->result` in PHP | Honest, no internals. ⚠️ Requires loading **every** row: fine at 56 demo nodes, unbounded at a real municipality's 50,000 contracts. A site template must not ship a front page that degrades with the site's success. |
+| D | Add `views_aggregator` to the SBOM | Measured stable, security-covered, and named by core's own issue. ⚠️ **Not measured that it avoids the SQL**, and it is a *table style plugin*: its markup is not core's, so `views-view-table.html.twig` - the override a whole wave and 39 assertions were spent on - would not apply to it. A dependency, new axe surface and a lost accessibility asset, for one figure. |
+| E | Bake the figures in as static content | ⚠️ A transparency portal whose "total awarded" does not move when a record is added is worse than no number at all. |
+| F | Revert both blocks | Genuinely zero risk, and genuinely on the table. ⚠️ Reopens the unanswered marketplace question. |
+| G | Patch core | **Closed** by rule 1. Named to close it. |
+
+---
+
+### D-040(2) · Gate A was green on SQL that is wrong on every database
+
+**SIGNED = "PostgreSQL in CI, now" by [andres], 2026-08-27.**
+
+Nine jobs, all `success`, all blocking, 1951 assertions — while the shipped query summed a text
+column on every database Drupal supports. **The assertions passed because nothing read that
+column.** This is I-007 and I-045's shape at its purest: a green is a statement about the set it
+opened, and no set anyone opened contained PostgreSQL.
+
+⚠️ **`jobs >= 9` all-success was satisfied while the product was broken on a supported database.**
+The gate definition in D-023(5) is not weakened by this and does not need amending — it was never
+a claim that the job list is *sufficient*, only that the status field is *insufficient*. What this
+record adds is the corollary: **a job list is only as good as the environments it runs in**, and
+this one ran MySQL and SQLite because those are the defaults, not because anyone chose them.
+
+The fix is a PostgreSQL `phpunit` variant. Upstream already supports it — `POSTGRESQL: 'pgsql'`
+in `include.drupalci.hidden-variables.yml`, consumed at `include.drupalci.main.yml:289` — so it is
+reachable **without redefining an upstream job**. ⚠️ If it turns out it cannot be, that is a new
+decision and not a task: stop and escalate rather than weaken a gate to fit.
+
+Deferring to unit 006 was the alternative and was declined: it would have left the false green
+standing for two more units, and an intention without an owner and a date is not a plan.

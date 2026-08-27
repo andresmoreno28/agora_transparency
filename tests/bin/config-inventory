@@ -463,7 +463,7 @@ fi
 # positive. Informational here; ContentModelTest is what fails on a fourth.
 NON_ASCII=$(LC_ALL=C grep -rlE "$(printf '[\200-\377]')" "$CONFIG_DIR" 2>/dev/null \
   | wc -l | tr -d '[:space:]')
-printf 'objects carrying a byte above 0x7F: %s (D-033 permits the accented legal citations only)\n' \
+printf 'objects carrying a byte above 0x7F: %s (D-033 covers three legal citations; a currency symbol is not one)\n' \
   "${NON_ASCII:-0}"
 
 # T-321(b): defaulted because zero means FAIL here - the safe direction of
