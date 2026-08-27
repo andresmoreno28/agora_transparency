@@ -2,7 +2,7 @@
 #
 # gate-a-wave3.sh - Agora - Unit 001, wave 3 gate A verification.
 #
-# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the THIRTEEN
+# Wave 3 counterpart of tests/bin/gate-a-wave1.sh (T-308). Runs the FOURTEEN
 # invariants that exist on disk today - the tasks.md "Gate A wave 3" block
 # still loops over only four (no-unstable-deps no-patches no-secrets
 # sbom-check); no-code-in-template, no-ci-allow-dev, no-boilerplate,
@@ -29,6 +29,17 @@
 #          deny-list term count, for the reason G7 already gives about
 #          no-boilerplate: a degenerate list of zero terms prints
 #          "0 findings" and passes by construction (I-028).            40 -> 43
+#
+# UNIT 003, D-040 (2026-08-27) takes it from 43 to 46, and from THIRTEEN
+# invariants to FOURTEEN:
+#   D-040  G14 no-varchar-aggregate, 3 checks - exit, views scanned, and
+#          DISPLAYS scanned. The third is not decoration and is not the same
+#          question as the second: a parser that broke would still report 8
+#          views (the file count is the shell's, not the parser's) while
+#          reporting 0 displays, and "8 views, 0 findings" is exactly the
+#          shape of green this whole check exists to refuse. The deny-list's
+#          own length is asserted as a FATAL inside the invariant rather than
+#          as a fourth check here, so the count moves by 3 and not by 4.  43 -> 46
 #
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
@@ -488,6 +499,37 @@ else
   check 'no-real-people present'           "$(trunc "$INV" 24)" 'present'
   check_positive 'no-real-people (scanned)' ''
   check_positive 'no-real-people (deny terms)' ''
+fi
+
+# ---------------------------------------------- G14 - no-varchar-aggregate (D-040) --
+group 'G14 - no-varchar-aggregate'
+INV=tests/bin/no-varchar-aggregate
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary lines: "scanned: N view(s)" and, beside it,
+  # "displays: N scanned, M aggregating" and "field entries inspected: N".
+  #
+  # TWO denominators are checked, not one, and the second is the load-bearing
+  # one. The view count is the SHELL's - `find` produced it - so it stays 8
+  # even if the parser inside the invariant fell over and inspected nothing.
+  # The display count is the PARSER's: it can only be positive if the files
+  # were actually opened and walked. "8 views scanned, 0 findings" from a
+  # parser that read nothing is the precise failure this invariant was written
+  # to make impossible, so the gate refuses to accept it here either (I-045).
+  #
+  # Neither is pinned to a number. Unit 004 onwards legitimately adds views and
+  # displays, and a pinned count would have to be relaxed the first time a
+  # register is added - which is how a gate turns into a formality.
+  CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  DISPLAY_CNT=$(extract_count "$INV_OUT" 'displays:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scope|scanned|displays|field entries|deny-list|sorts with|findings):' | tr '\n' ' ')"
+  check 'no-varchar-aggregate (exit)'      "$INV_RC" '0'
+  check_positive 'no-varchar-aggregate (views scanned)' "$CNT"
+  check_positive 'no-varchar-aggregate (displays scanned)' "$DISPLAY_CNT"
+else
+  check 'no-varchar-aggregate present'     "$(trunc "$INV" 24)" 'present'
+  check_positive 'no-varchar-aggregate (views scanned)' ''
+  check_positive 'no-varchar-aggregate (displays scanned)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

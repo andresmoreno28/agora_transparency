@@ -203,3 +203,105 @@ agora-invariants:
         exit 1
       fi
       echo "agora-invariants: both runners exited 0."
+
+
+################
+# Ágora-local job, D-040(2). A PostgreSQL variant of the upstream `phpunit`
+# job. This is the SECOND and last job defined by hand in this file.
+#
+# WHY IT EXISTS. On 2026-08-27 this project's gate was green - nine jobs, all
+# `success`, all blocking, 1951 assertions - while the front page's shipped
+# query summed a text column. PostgreSQL refuses that outright; MariaDB
+# returns 0 with a warning; SQLite returns 0.0 in silence. The assertions
+# passed because nothing read the column, and no environment anyone opened was
+# strict enough to complain. D-040(2) records the corollary: a job list is only
+# as good as the environments it runs in, and this one ran MySQL because that
+# is the upstream default, not because anyone chose it.
+#
+# NO UPSTREAM JOB IS REDEFINED, COPIED OR OVERRIDDEN. The `include:` block at
+# the top of this file stays byte-identical to upstream, and `phpunit` itself
+# is untouched - it still runs MySQL, so this ADDS a database rather than
+# swapping one. The key below is disjoint from all 42 non-hidden job keys the
+# included files define, re-parsed at source on 2026-08-27 the same way the
+# agora-invariants comment above did it.
+#
+# THE MECHANISM IS UPSTREAM'S OWN, read at source on 2026-08-27 over
+# https://git.drupalcode.org/project/gitlab_templates/-/raw/main/includes/
+# rather than inferred from the names of the variables:
+#   hidden-variables.yml:122   POSTGRESQL: 'pgsql'
+#   hidden-variables.yml:190   CORE_PGSQL_MIN: '16' - the minimum PostgreSQL
+#                              modern Drupal supports, and the version D-040
+#                              actually measured the failure on (16.15)
+#   variables.yml:43-50        _TARGET_DB_TYPE defaults to
+#                              $MYSQL_PERCONA_MARIADB ('mysql') and
+#                              _TARGET_DB_VERSION to $CORE_MYSQL_TEST_DEFAULT;
+#                              both are documented there as overridable
+#   main.yml:289               [[ $_TARGET_DB_TYPE == "pgsql" ]] && export
+#                              SIMPLETEST_DB=pgsql://...@database/...
+#   main.yml:12                the database service image is
+#                              $_CONFIG_DOCKERHUB_ROOT/$_TARGET_DB_TYPE-$_TARGET_DB_VERSION:$_TARGET_DB_IMAGE_TAG
+#   main.yml:37-52             POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD
+#                              and POSTGRES_TAG are already set for every
+#                              testing job, so nothing about the service needs
+#                              declaring here
+# The image those two variables resolve to is
+# .../drupalci-environments/pgsql-16:production, and db/pgsql-16 was confirmed
+# to exist in project/drupalci_environments by listing that repository through
+# the API - not assumed from the version number.
+#
+# WHY IT EXTENDS `.phpunit-base` AND NOT `phpunit`. Two reasons, and the second
+# is mechanical rather than aesthetic. First, `phpunit:` is itself nothing but
+# `extends: .phpunit-base` (main.yml:1696-1697), so this inherits precisely
+# what the MySQL job inherits: the same three rules, the same `needs`, the same
+# script and the same artifacts. Second, the literal line `extends: phpunit`
+# would read to tests/bin/no-blind-phpunit as a bare phpunit command carrying
+# no --fail-on-empty-test-suite, because its pattern matches the word followed
+# by whitespace or end of line. That would be a false finding and a real red
+# gate. The job's NAME dodges the same trap for the same reason: it is spelled
+# with a hyphen instead of upstream's ` (variant)` style, so the word is never
+# followed by a space.
+#
+# INHERITED AND DELIBERATELY NOT RESTATED: the three rules on `.phpunit-base`
+# (main.yml:1671-1673) are the opt-in-current gate, the SKIP_PHPUNIT escape and
+# the tests-exist check, whose terminal state is `when: on_success` with no
+# failure tolerance declared anywhere in the chain. So this job is blocking,
+# and it is blocking because upstream's own phpunit job is - not because a
+# line here says so, which is a line somebody could later delete.
+#
+# --fail-on-empty-test-suite reaches this job through the global
+# _PHPUNIT_EXTRA set at the top of this file. It is one variable read by the
+# one shared script both jobs run, so the guard cannot be armed in one and
+# missing in the other.
+################
+phpunit-pgsql:
+  extends: .phpunit-base
+  variables:
+    _TARGET_DB_TYPE: $POSTGRESQL
+    _TARGET_DB_VERSION: $CORE_PGSQL_MIN
+  # THE GUARD BELOW IS NOT DECORATION, and it is the falsifiability of this
+  # whole change. A job named for PostgreSQL that quietly ran on MySQL - a
+  # variable-precedence surprise, a typo, an upstream rename - would pass, and
+  # the gate would then carry a job whose name is a claim nothing ever checks.
+  # That is D-040(2)'s own failure shape wearing a new label. So the job states
+  # the environment it is about and refuses to run in the wrong one, BEFORE
+  # spending the test stage in it: a green is a statement about the set it
+  # opened, and the log has to name that set (I-007, I-045).
+  #
+  # This is the only place the resolved value is printed. main.yml:289 is
+  # echoed verbatim into the trace of EVERY phpunit-family job, unexpanded, so
+  # the string "SIMPLETEST_DB=pgsql://" appearing in a log proves nothing on
+  # its own. `_TARGET_DB_TYPE=pgsql` read out of this job's own environment
+  # does, and so does the runner's own "Starting service" line naming
+  # pgsql-16:production.
+  #
+  # Nothing upstream defines before_script - checked across all three included
+  # files on 2026-08-27 - so this clobbers no inherited step.
+  before_script:
+    - echo "database under test - _TARGET_DB_TYPE=$_TARGET_DB_TYPE - _TARGET_DB_VERSION=$_TARGET_DB_VERSION"
+    - echo "service image - $_CONFIG_DOCKERHUB_ROOT/$_TARGET_DB_TYPE-$_TARGET_DB_VERSION:$_TARGET_DB_IMAGE_TAG"
+    - |
+      if [ "$_TARGET_DB_TYPE" != "pgsql" ]; then
+        echo "FATAL: this job is named for PostgreSQL and _TARGET_DB_TYPE is '$_TARGET_DB_TYPE'."
+        echo "Refusing to report a green PostgreSQL run that did not use PostgreSQL (D-040(2))."
+        exit 1
+      fi

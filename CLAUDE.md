@@ -262,8 +262,23 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `phpcs` | validate | success | false |
   | `phpstan` | validate | success | false |
   | `phpunit` | test | success | false |
+  | `phpunit-pgsql` | test | *not yet observed* | false |
 
-  **Nine jobs · all blocking · zero named exceptions.** This single table replaces the pair that
+  ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
+  row is the only one in this file that is a PREDICTION rather than an observation, which is why it
+  says so in its own status cell.** `phpunit-pgsql` was added under D-040(2) and has not run at the
+  time of writing; **the commit that first observes it green replaces that cell with the pipeline id
+  and the read status, or the job comes out.** A predicted row left standing is how a table stops
+  being a measurement.
+
+  ⚠️ **Why a tenth job exists at all, in one sentence, because it is the most useful thing on this
+  page:** the nine-job list was green while the package shipped SQL that summed a text column on
+  **every** database Drupal supports — PostgreSQL refusing it, MariaDB answering `0` with a warning,
+  SQLite answering `0.0` in silence — and the 1951 assertions passed because nothing read that
+  column. **A job list is only as good as the environments it runs in**, and this one ran MySQL and
+  SQLite because those are the defaults, not because anyone chose them. See D-040(2).
+
+  This single table replaces the pair that
   stood here until 2026-08-26 — eight rows read from `934387` plus a ninth appended from `934533`,
   which was two observations of one list, split by the commit that produced each and increasingly
   hard to read as one thing. Nothing about the list changed in the merge; it is the same nine jobs,
@@ -360,11 +375,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   The exception list in `.gitlab-ci.yml` is **empty** as of 2026-08-23 (T-226). A `success` pipeline
   containing a failed permissive job is a **failed** gate (I-043).
 
-  **The floor is now `jobs >= 9`** (Amendment to D-020, 2026-08-24, T-511). D-023(5) is quoted above
+  ~~**The floor is now `jobs >= 9`**~~ **`jobs >= 10` as of 2026-08-27 (D-040(2)).** (Amendment to D-020, 2026-08-24, T-511.) D-023(5) is quoted above
   verbatim and its other three conditions are untouched; only the minimum count moves, and it moves
   because the job list moves. ⚠️ The quoted `jobs >= 7` is D-023(5) as first written, when seven
   jobs were observed; the amendment states the floor as rising *"from `jobs >= 8` to `jobs >= 9`"*,
-  which matches the eight-job table above rather than the quote. **Read `9`.**
+  which matches the eight-job table above rather than the quote. ~~**Read `9`.**~~ **Read `10`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.** Of the
   repository's **386** tracked files, `bash tests/bin/spellcheck` opens **347** and finds 0 issues
@@ -405,9 +420,21 @@ moving the working copy a session is running in, on the day wave 5 starts.
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (61 checks · 0 failures) and `gate-a-wave3.sh` (**43** checks · 0 failures), **13** invariants in total —
+  (61 checks · 0 failures) and `gate-a-wave3.sh` (**46** checks · 0 failures), **14** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
-  ⚠️ **They moved again on 2026-08-26 — from 37 · 11 to 43 · 13** — and the arithmetic is stated
+  ⚠️ **They moved again on 2026-08-27 — from 43 · 13 to 46 · 14** — and this line is edited in the
+  same commit as the runner, because a number written in two places goes stale in one first.
+  The fourteenth invariant is `no-varchar-aggregate` (D-040) and it adds G14's three checks: exit,
+  **views scanned**, and **displays scanned**. The last two are not one question asked twice. The
+  view count comes from `find`, so it reads 8 even if the parser inside the invariant read nothing;
+  the display count comes from the parser, so it can only be positive if the files were opened and
+  walked. *"8 views scanned, 0 findings"* from a parser that never ran is the exact shape of green
+  this invariant exists to refuse, so the gate refuses it too.
+  ⚠️ **It was seen RED before it was seen green, on 3 entries** — the two SUM fields on `block_4`
+  and the one on `block_3` — and the fix took it to 0 findings over the same 8 views, 21 displays
+  and 3 aggregating displays, with the field entries inspected falling 10 → 7. An invariant first
+  seen green is a claim, not a measurement.
+  ⚠️ **They moved on 2026-08-26 — from 37 · 11 to 43 · 13** — and the arithmetic is stated
   rather than left to be inferred: T-906 adds one check to G3 (`no-secrets (binaries opened)`),
   T-904 adds G12 with two, T-905 adds G13 with three (exit, scanned, **deny terms** — a deny-list
   whose length is not printed is a deny-list somebody can shorten). The two new invariants are

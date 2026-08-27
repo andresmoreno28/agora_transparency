@@ -410,6 +410,280 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags: {  }
+  block_3:
+    id: block_3
+    display_title: 'Key figures block'
+    display_plugin: block
+    position: 4
+    display_options:
+      fields:
+        nid:
+          id: nid
+          table: node_field_data
+          field: nid
+          group_type: count
+          entity_type: node
+          entity_field: nid
+          plugin_id: field
+          label: 'Contracts and grants'
+          separator: ''
+          set_precision: false
+          precision: 0
+          decimal: .
+          format_plural: false
+          prefix: ''
+          suffix: ''
+        field_agora_base_area:
+          id: field_agora_base_area
+          table: node__field_agora_base_area
+          field: field_agora_base_area
+          group_type: count_distinct
+          entity_type: node
+          entity_field: field_agora_base_area
+          plugin_id: field
+          label: 'Service areas'
+          separator: ''
+          set_precision: false
+          precision: 0
+          decimal: .
+          format_plural: false
+          prefix: ''
+          suffix: ''
+        changed:
+          id: changed
+          table: node_field_data
+          field: changed
+          group_type: max
+          entity_type: node
+          entity_field: changed
+          plugin_id: field
+          label: 'Last updated'
+          alter:
+            alter_text: true
+            text: "{{ changed|format_date('custom', 'j F Y') }}"
+          separator: ''
+          set_precision: false
+          precision: 0
+          decimal: .
+          format_plural: false
+          prefix: ''
+          suffix: ''
+      pager:
+        type: none
+        options:
+          offset: 0
+      sorts: {  }
+      filters:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          group_type: group
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          operator: in
+          value:
+            agora_base_contract: agora_base_contract
+            agora_base_grant: agora_base_grant
+          group: 1
+          exposed: false
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          group_type: group
+          entity_type: node
+          entity_field: status
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+      style:
+        type: default
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      defaults:
+        css_class: false
+        pager: false
+        use_more: false
+        group_by: false
+        style: false
+        row: false
+        fields: false
+        sorts: false
+        filters: false
+      css_class: agora-key-figures
+      group_by: true
+      display_description: 'The headline figures for contracts and grants, as placed on the home page. The euro total is absent by decision, not by oversight (D-040).'
+      use_more: false
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - 'user.node_grants:view'
+        - user.permissions
+      tags: {  }
+  block_4:
+    id: block_4
+    display_title: 'Spend by area block'
+    display_plugin: block
+    position: 5
+    display_options:
+      fields:
+        field_agora_base_area:
+          id: field_agora_base_area
+          table: node__field_agora_base_area
+          field: field_agora_base_area
+          group_type: group
+          entity_type: node
+          entity_field: field_agora_base_area
+          plugin_id: field
+          label: 'Service area'
+          type: entity_reference_label
+          settings:
+            link: false
+        nid:
+          id: nid
+          table: node_field_data
+          field: nid
+          group_type: count
+          entity_type: node
+          entity_field: nid
+          plugin_id: field
+          label: Awards
+          separator: ''
+          set_precision: false
+          precision: 0
+          decimal: .
+          format_plural: false
+          prefix: ''
+          suffix: ''
+      pager:
+        type: none
+        options:
+          offset: 0
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          plugin_id: text_custom
+          empty: true
+          content: 'No contracts or grants have been published yet.'
+          tokenize: false
+      sorts:
+        field_agora_base_amount:
+          id: field_agora_base_amount
+          table: node__field_agora_base_amount
+          field: field_agora_base_amount_value
+          group_type: sum
+          plugin_id: groupby_numeric
+          order: DESC
+      filters:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          group_type: group
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          operator: in
+          value:
+            agora_base_contract: agora_base_contract
+            agora_base_grant: agora_base_grant
+          group: 1
+          exposed: false
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          group_type: group
+          entity_type: node
+          entity_field: status
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+      style:
+        type: table
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+          columns:
+            field_agora_base_area: field_agora_base_area
+            nid: nid
+          default: '-1'
+          info:
+            field_agora_base_area:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            nid:
+              sortable: false
+              default_sort_order: asc
+              align: views-align-right
+              separator: ''
+              empty_column: false
+              responsive: ''
+          sticky: false
+          summary: ''
+          order: asc
+          empty_table: false
+          caption: 'Contracts and grants by service area, ordered by the total amount awarded, largest first.'
+          description: ''
+          class: ''
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      defaults:
+        empty: false
+        css_class: false
+        pager: false
+        use_more: false
+        group_by: false
+        style: false
+        row: false
+        fields: false
+        sorts: false
+        filters: false
+      css_class: agora-spend-bars
+      group_by: true
+      display_description: 'Contracts and grants by service area, as placed on the home page. Ordered by SUM(amount) through a sort, which is the only aggregate this display can safely carry (D-040).'
+      use_more: false
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.node.field_agora_base_area'
   page_1:
     id: page_1
     display_title: Page

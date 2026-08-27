@@ -21,6 +21,22 @@ default:
       value: 'What the council publishes, and a search box to find it.'
   components:
     -
+      uuid: 74089f8a-9f56-54cb-8157-c2eb7402d058
+      component_id: block.views_block.agora_base_publications-block_3
+      inputs:
+        label: 'Contracts and grants awarded'
+        label_display: visible
+        views_label: 'Contracts and grants awarded'
+        items_per_page: null
+    -
+      uuid: abfc264c-ffd3-59ea-af13-a770fcc47b7d
+      component_id: block.views_block.agora_base_publications-block_4
+      inputs:
+        label: 'Contracts and grants by service area'
+        label_display: visible
+        views_label: 'Contracts and grants by service area'
+        items_per_page: null
+    -
       uuid: e48c0964-2421-5e6a-931e-f51ef3bfd9fb
       component_id: block.views_block.agora_base_publications-block_1
       inputs:

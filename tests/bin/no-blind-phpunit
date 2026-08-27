@@ -111,6 +111,32 @@ grep_failed() { # <rc> <pattern> <subject>
 # word - preceded by start-of-line or whitespace, followed by whitespace or
 # end-of-line. The "followed by" half is what excludes the YAML job key
 # `phpunit:`, where the very next character is a colon.
+#
+# ⚠️ A SHARP EDGE, DOCUMENTED RATHER THAN FILED DOWN (2026-08-27, D-040(2)).
+# This pattern cannot tell a COMMAND from a REFERENCE to a job, so two lines
+# that are perfectly correct CI are reported as unguarded invocations:
+#
+#     extends: phpunit          # a reference to the upstream job
+#   phpunit (PostgreSQL):       # a job NAME in upstream's own variant style
+#
+# In the first, `phpunit` is preceded by a space and followed by end-of-line;
+# in the second it is followed by a space. Both satisfy the ERE. This cost an
+# implementer an hour before it was understood, so it is written here instead
+# of being rediscovered in a pipeline.
+#
+# THE WORKAROUND, and it is not a compromise: write `extends: .phpunit-base`
+# and name the variant job `phpunit-pgsql`. `.phpunit-base` is what upstream's
+# own `phpunit:` job extends, so the inheritance is byte-for-byte the same
+# thing; the hyphenated job name is only a name.
+#
+# WHY THE PATTERN IS NOT LOOSENED TO EXCLUDE `extends:`. The guard exists
+# because a suite that executed 0 tests passed as green TWICE (I-007, I-032),
+# and every character removed from it is a character a real unguarded
+# invocation could hide behind - `extends: phpunit --do-not-...` is not a
+# line anyone would write, but the exclusion would also swallow shapes nobody
+# has thought of yet. A false positive here costs an hour and is loud; a false
+# negative costs a release and is silent. The asymmetry decides it. A
+# documented sharp edge beats a loosened guard.
 CMD_PATTERN='(^|[[:space:]])(\$COMPOSER_BIN_DIR/|vendor/bin/|bin/)?phpunit([[:space:]]|$)'
 # `_PHPUNIT_EXTRA` as a YAML mapping entry or shell assignment.
 EXTRA_PATTERN='_PHPUNIT_EXTRA[[:space:]]*[:=]'

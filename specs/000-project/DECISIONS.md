@@ -1940,3 +1940,126 @@ decision and not a task: stop and escalate rather than weaken a gate to fit.
 
 Deferring to unit 006 was the alternative and was declined: it would have left the false green
 standing for two more units, and an intention without an owner and a date is not a plan.
+
+---
+
+### D-040(A) · AMENDMENT, 2026-08-27 — "the bars stay truthful" was false
+
+D-040(A) as first written says the SUM sort's survival means *"the row order, and therefore the
+bars, remain truthful."* **The second half is wrong, and it was wrong when I wrote it.**
+
+The `<span class="agora-bar">` the theme paints into is emitted by the **rewrite on
+`field_agora_base_amount_1`** — one of the three entries the fix removes. Measured on the rig after
+the fix, against the real released theme `1.0.2`: `--agora-bar` is set on all **6** rows and
+`class="agora-bar"` appears **0** times. The order is truthful; there is nothing left to draw.
+
+⚠️ **And the theme's own guard could not see it.** It fires when the amount is missing from
+`$view->result` — and the sort keeps it there, so the theme computed six correct percentages for a
+span that no longer exists. **The chart stopped being a chart silently**, which is the failure the
+theme's own header says it refuses to rely on a CSS fallback for. One diagnostic was captured
+during a `block_4` render and it was an unrelated Symfony deprecation.
+
+The record is amended rather than edited (rule 8) because the error is instructive: **a claim about
+a second repository was made from inside the first, without measuring there.** D-014 split these
+two on purpose, and a sentence that reaches across the split needs a measurement on the far side.
+
+*What ships in the meantime, and it is honest rather than good:* the spend table renders **Service
+area · Awards**, ordered by real total spend, with the ordering stated in the caption and the
+heading renamed to *Contracts and grants by service area* — because *"Awarded spend by service
+area"* over a table containing no spend is what a marketplace reviewer flags. The euro total's slot
+in the key-figures block is **left empty rather than filled**: three figures, not four, and no
+substitute figure that could become permanent by inertia.
+
+**MEASURED ON POSTGRESQL 16.15, 2026-08-27, closing D-040's open investigation.** Three shapes
+were executed against a throwaway `postgres:16-alpine` — not read, executed, because reading SQL
+and calling it safe is the mistake D-040(2) exists to record:
+
+| shape | result |
+|---|---|
+| the `entityQueryAggregate` route (documented API) | **592470.00** |
+| the Views aggregation D-040 removed | `ERROR: function sum(character varying) does not exist` |
+| the `GroupByNumeric` sort D-040 kept | runs, orders correctly |
+
+**All three hypotheses confirmed.** The euro total is recoverable on PostgreSQL by a documented
+API, the removal was necessary, and the sort that was kept is safe. What remains open is not
+whether it *can* come back but **where the code lives**: the package may ship none, so it would be
+theme PHP, and the theme has no `phpunit` job. That is the decision, and it is narrower than it
+was this morning.
+
+---
+
+### D-041 · Does the demo municipality stay Spanish, or become British? **OPEN**
+
+⚠️ **This recommendation contradicts a choice [andres] has already voiced.** He chose *"a fictional
+anglophone council"*, I proposed **Wealdhurst District Council**, verified it fictional (zero exact
+and zero near matches across 28,421 UK place names) and told him the rewrite was authorised. **The
+evidence below arrived after that exchange.** It is put in front of him for the same reason D-035
+was: a measurement overturned a preference, and the measurement wins or it does not, but it gets
+read first.
+
+*Context in one line:* the corpus is **coherently Spanish in substance and English in language**.
+The question is whether to change the substance to match the language, or to state the frame so
+that the English-language reading stops being the wrong one.
+
+**Measured, at source:**
+
+- **The Local Government Transparency Code 2015 does not map onto D-026.** Applying **D-026's own
+  rule** — a category earns a bundle when the law names three or more non-prose fields — to the
+  Code's categories: **2 of 6 map cleanly** (`Grant`, `Document`), **2 map partially with the wrong
+  fields** (`Contract` has 5 fields wrong for the UK and lacks 5 the Code mandates; `Person`
+  publishes exact remuneration and severance for named elected members, which **no UK council
+  does** — the Code requires GBP 5,000 brackets and names individuals only above GBP 150,000), and
+  **1 has no counterpart at all** (`Agreement`: England folds agreements into the contract
+  register).
+- ⚠️ **The single most recognisable UK artefact is absent from our model.** *Expenditure over GBP
+  500* **is** what "local government transparency" means to a British reader. Ágora has no bundle
+  for it.
+- ⚠️ **Removing `Agreement` inverts D-026's central refutation.** D-026 rejected a single financial
+  record type *"on Spanish administrative law, not on taste"* — a statutory exclusion and a national
+  subsidy register. **Neither exists in England**, so under the Code, D-026's own rule yields the
+  option D-026 refuted. That is the model's spine, not a trim.
+- ⚠️ **"District Council" names a body type English law is abolishing.** The English Devolution and
+  Community Empowerment Act 2026 received Royal Assent on 2026-04-29; vesting day for the
+  replacement unitary authorities is **2028-04-01**. The fictionality proof is sound and irrelevant
+  to this.
+- ⚠️ **The product's own scope statement only holds in Spain.** `CLAUDE.md` says Ágora is for
+  *"small municipalities"*. In England the corresponding body is a **town or parish council**, which
+  publishes under a much lighter regime and would have **no contract register, no senior salaries,
+  no grants register**. The body that publishes Ágora's six registers is a principal authority,
+  which is not small. **There is no English body that is both small and publishes what Ágora
+  models.** In Spain there is: every municipality, however small, is bound by the same statute.
+
+| | Option | Real cost |
+|---|---|---|
+| **A ★** | **Keep the Spanish municipality. State the frame on the served site** — one sentence on the home page and a paragraph in `README.md`: a fictional **Spanish** municipality, published in English per D-035, six registers derived from the Spanish transparency statute. | **About 2 task rows**, fits the unit's remaining reserve. D-010's rider, D-026, D-033 and D-035 all untouched. **Zero gate movement.** The precedent is already on disk and is the strongest available: D-033 records that **the French State Design System ships English config and delivers French as a translation.** ⚠️ It does not make the content *feel* British — it is not meant to. **The real defect is that the demo is coherent and nobody is told, and the fix for a legibility defect is legibility, not relocation.** |
+| B | Rename to a UK council, keep the Spanish-derived model | ⚠️ **The only option that makes the incoherence WORSE, and that is why it is named rather than quietly dropped.** Today the name and the substance agree and only the language differs; after B they disagree — a British-named council publishing nine Spanish budget chapters, a municipal police force and a social services department a district council cannot lawfully have — **with a British label now vouching for it.** About 10 rows across two repositories. |
+| C | Rename **and** re-derive the model against the Code | Honest and defensible, and the only version that produces a credible UK portal. ⚠️ **Reopens D-026**, which all of unit 002 and the whole of unit 003's corpus were built on. It is a **unit, not a wave**, and it needs a dated research file first. Also needs a body type that survives 2028. |
+| D | A jurisdiction-free fiction ("Wealdhurst Council", no country) | Cheap in rows and **worse than A** on the only axis that matters: it leaves the Spanish-derived categories with no jurisdiction to attribute them to, so they become **unexplainable** rather than merely unexplained. |
+
+★ **A.** It is the only option in which the content model's legal derivation, the research file that
+supports it, the product's own scope statement and the shipped corpus are **all true at the same
+time** — and the only one whose cost fits the unit's remaining budget.
+
+**The argument against A, at full strength, because it is real:** a reviewer who does not open
+`DECISIONS.md` sees an English-language site publishing Spanish legal instruments and reads it as
+sloppy rather than deliberate. That is exactly the defect option A exists to fix, and it is why A
+costs two rows rather than zero.
+
+⚠️ **Two riders if B or C is signed instead**, both blocking, neither optional:
+
+1. **`no-real-people` becomes structurally dead code.** Five of its seven detection shapes are
+   Spain-specific; under a UK corpus they match nothing while the script keeps printing *"7 shapes"*
+   and exiting 0. **That is a silenced invariant by omission — the automatic-🔴 species — and it
+   would pass the gate.** It must be rewritten in the **same commit** as the corpus, never after.
+   ⚠️ And verification gets *weaker* as risk rises: an invented Spanish full name carries two
+   surnames and is very unlikely to collide with a real person, which is what made D-010's rider
+   provable against a national name dictionary. A plausible British name has thousands of real
+   bearers, several of them serving councillors, **and there is no single machine-readable national
+   register of UK councillors to check eight invented names against.**
+2. **The unit is at 30 of 34 rows with all four reserve rows already allocated by name.** About 10
+   rows does not fit; a budget rider naming what it displaces is required.
+
+**D-035 needs no amendment under any option** — it has no jurisdiction and does not acquire one.
+**D-033 is untouched under A**, and **amended, never superseded**, under B or C. ⚠️ Recorded in
+fairness to B and C: under a UK frame D-033's exception list would go to **zero**, and the Spanish
+language spans would leave `config/` entirely. That is the one genuine technical gain of renaming.

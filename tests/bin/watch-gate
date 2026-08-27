@@ -126,7 +126,8 @@ cspell
 eslint
 phpcs
 phpstan
-phpunit'
+phpunit
+phpunit-pgsql'
 
 EXPECTED_agora_theme='agora-invariants
 composer
