@@ -33,3 +33,12 @@ Thumbs.db
 
 # tests/bin/spellcheck caches the upstream cspell inputs here.
 .cspell-cache/
+
+# Python bytecode. tests/bin/ runs .py helpers from shell invariants, and CPython
+# writes __pycache__/ beside them on every run. Never committed so far - checked,
+# not assumed - and that is luck rather than design: this package is a Drupal site
+# template, RequirementsTest inspects what it ships, and compiled bytecode in a
+# reviewed package is junk with no defence. One git add -A after running a gate is
+# all it would take.
+__pycache__/
+*.py[cod]
