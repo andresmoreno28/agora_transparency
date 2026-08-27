@@ -262,14 +262,28 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `phpcs` | validate | success | false |
   | `phpstan` | validate | success | false |
   | `phpunit` | test | success | false |
-  | `phpunit-pgsql` | test | *not yet observed* | false |
+  | `phpunit-pgsql` | test | success | false |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
   row is the only one in this file that is a PREDICTION rather than an observation, which is why it
-  says so in its own status cell.** `phpunit-pgsql` was added under D-040(2) and has not run at the
-  time of writing; **the commit that first observes it green replaces that cell with the pipeline id
-  and the read status, or the job comes out.** A predicted row left standing is how a table stops
-  being a measurement.
+  says so in its own status cell.** `phpunit-pgsql` was added under D-040(2), and it is now
+  **observed**: pipeline **`937841`**, ref `1.x`, commit **`47b2a99`**, job `11799334`, read from
+  the API with the maintainer's token because **the `/trace` endpoint returns `401` to anonymous
+  requests** — a limitation worth knowing before someone plans a verification around reading a log.
+
+  ⚠️ **What the trace prints is the whole argument of D-040(2), on two consecutive lines:**
+
+  ```
+  database under test - _TARGET_DB_TYPE=$_TARGET_DB_TYPE - _TARGET_DB_VERSION=$_TARGET_DB_VERSION
+  database under test - _TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16
+  ```
+
+  The first is the **unexpanded literal** that every phpunit-family job echoes — the string a
+  log-grep criterion would have matched in the MySQL job, passing a PostgreSQL job that never
+  touched PostgreSQL (I-102). The second is the real value, and the job **exits 1** if it is not
+  `pgsql`. Service image `pgsql-16:production`; result `OK (16 tests, 1955 assertions)` — **the
+  same 16 and the same 1955 as the MySQL job**, which is the point: the suite is now known to hold
+  on both, rather than assumed to.
 
   ⚠️ **Why a tenth job exists at all, in one sentence, because it is the most useful thing on this
   page:** the nine-job list was green while the package shipped SQL that summed a text column on
