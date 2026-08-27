@@ -59,6 +59,12 @@ display:
           plugin_id: field
           label: 'Award amount'
           click_sort_column: value
+          type: number_decimal
+          settings:
+            thousand_separator: ','
+            decimal_separator: .
+            scale: 2
+            prefix_suffix: true
         field_agora_base_area:
           id: field_agora_base_area
           table: node__field_agora_base_area
@@ -109,6 +115,10 @@ display:
           entity_field: field_agora_base_period
           plugin_id: field
           label: Duration
+          type: daterange_default
+          settings:
+            format_type: agora_date
+            separator: to
         field_agora_base_procedure_type:
           id: field_agora_base_procedure_type
           table: node__field_agora_base_procedure_type
@@ -151,6 +161,12 @@ display:
           plugin_id: field
           label: 'Tender amount'
           click_sort_column: value
+          type: number_decimal
+          settings:
+            thousand_separator: ','
+            decimal_separator: .
+            scale: 2
+            prefix_suffix: true
       pager:
         type: full
         options:

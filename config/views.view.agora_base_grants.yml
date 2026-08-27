@@ -54,6 +54,12 @@ display:
           plugin_id: field
           label: Amount
           click_sort_column: value
+          type: number_decimal
+          settings:
+            thousand_separator: ','
+            decimal_separator: .
+            scale: 2
+            prefix_suffix: true
         field_agora_base_area:
           id: field_agora_base_area
           table: node__field_agora_base_area
@@ -79,6 +85,10 @@ display:
           entity_field: field_agora_base_period
           plugin_id: field
           label: Period
+          type: daterange_default
+          settings:
+            format_type: agora_date
+            separator: to
         field_agora_base_status:
           id: field_agora_base_status
           table: node__field_agora_base_status

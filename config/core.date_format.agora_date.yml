@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora_date
+label: 'Date without time'
+locked: false
+pattern: 'j M Y'

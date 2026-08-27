@@ -10,6 +10,7 @@ dependencies:
     - field.field.node.agora_base_grant.field_agora_base_subject
     - node.type.agora_base_grant
   module:
+    - datetime_range
     - user
 id: node.agora_base_grant.default
 targetEntityType: node
@@ -19,7 +20,11 @@ content:
   field_agora_base_amount:
     type: number_decimal
     label: above
-    settings: {  }
+    settings:
+      thousand_separator: ','
+      decimal_separator: .
+      scale: 2
+      prefix_suffix: true
     third_party_settings: {  }
     weight: 2
     region: content
@@ -40,7 +45,11 @@ content:
   field_agora_base_period:
     type: daterange_default
     label: above
-    settings: {  }
+    settings:
+      timezone_override: ''
+      format_type: agora_date
+      from_to: both
+      separator: to
     third_party_settings: {  }
     weight: 3
     region: content
