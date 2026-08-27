@@ -119,6 +119,18 @@ install:
   # unit 004's row, not this one.
   # Core, so it adds nothing to `composer.json` and needs no SBOM line.
   - content_moderation
+  # Core module. `content/menu_link_content/` ships the six quick-access links
+  # the home page places as cards, and `config/system.menu.agora-base-quick-
+  # access.yml` is the menu they hang in. Without the module the entity type
+  # does not exist, the six content files import nothing, and the home page's
+  # first section is silently empty - the same shape of failure I-086 records
+  # for config entities. Like `views` and `content_moderation` above it is
+  # ALREADY provided by the declared chain (`drupal_cms_admin_ui` and
+  # `drupal_cms_seo_basic` both pull it in), so this line changes nothing
+  # today; it is here because a transitive guarantee is a guarantee about
+  # somebody else's recipe.
+  # Core, so it adds nothing to `composer.json` and needs no SBOM line.
+  - menu_link_content
   # By default, Drupal installs Stark as the default theme. It must be listed here, at
   # least initially, to prevent bugs if it's not present. You can remove it later if you
   # want to; just uninstall it before exporting the site as a recipe.
@@ -343,6 +355,33 @@ config:
     # portal publishes its own records, not the Drupal event calendar.
     canvas.component.block.events_block:
       disable: []
+    # -------------------------------------------------------------------------
+    # THE ONE COMPONENT THIS TEMPLATE ENABLES RATHER THAN DISABLES, and it is
+    # here because Canvas creates it in the OPPOSITE state to the others.
+    #
+    # Canvas mints a component for every menu the site gains, and it mints menu
+    # components with `status: false` while it mints view-block components with
+    # `status: true`. Measured on a clean install, not assumed: after applying
+    # this recipe, `canvas.component.block.system_menu_block.agora-base-quick-
+    # access` read back `status: false` while the six `views_block` components
+    # beside it read `status: true`.
+    #
+    # ⚠️ SHIPPING THE FILE WITH `status: true` IS NOT ENOUGH, which is the part
+    # worth writing down. `config.strict` above is `false`, so config that
+    # already exists WINS and ours is skipped - and Canvas creates this one the
+    # moment `system.menu.agora-base-quick-access` is saved, which is inside
+    # the same config import. The shipped file is therefore a statement of
+    # intent that may never be applied; this action is what actually applies
+    # it. Both are kept: the file so the object is complete if it is created
+    # from it, the action so the state is right when it is not.
+    #
+    # WHAT BEING DISABLED WOULD COST. A disabled component still renders where
+    # a page already references it, so the home page would look correct - and
+    # the component would be missing from the Canvas palette, so a site owner
+    # could never place the quick-access cards on a second page. That is a
+    # failure nothing on the home page can show.
+    canvas.component.block.system_menu_block.agora-base-quick-access:
+      enable: []
     # -------------------------------------------------------------------------
     # EVERY PUBLISHED FILE GETS A DESCRIPTION BOX, and it is the accessible name
     # of the download link rather than a caption beside it.

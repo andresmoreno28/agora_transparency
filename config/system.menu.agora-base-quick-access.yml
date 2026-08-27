@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora-base-quick-access
+label: 'Quick access'
+description: 'Six shortcuts to the subjects visitors ask for most, placed as cards on the home page.'
+locked: false

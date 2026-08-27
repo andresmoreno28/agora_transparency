@@ -1,0 +1,25 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - views.view.agora_base_publications
+  module:
+    - views
+active_version: 8940e3c28bc0d782
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:agora_base_publications-block_5'
+        label: 'All publications: Recent activity block'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: 'All publications: Recent activity block'
+id: block.views_block.agora_base_publications-block_5
+provider: views
+source: block
+source_local_id: 'views_block:agora_base_publications-block_5'

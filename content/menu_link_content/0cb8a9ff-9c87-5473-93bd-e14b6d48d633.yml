@@ -1,0 +1,36 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: 0cb8a9ff-9c87-5473-93bd-e14b6d48d633
+  bundle: menu_link_content
+  default_langcode: en
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: 'Open data'
+  menu_name:
+    -
+      value: agora-base-quick-access
+  link:
+    -
+      uri: 'internal:/datasets'
+      title: ''
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: false
+  weight:
+    -
+      value: 5
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

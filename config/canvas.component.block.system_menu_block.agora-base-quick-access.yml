@@ -1,0 +1,26 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - system.menu.agora-base-quick-access
+  module:
+    - system
+active_version: 8ccda4c9a4f8e192
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'system_menu_block:agora-base-quick-access'
+        label: 'Quick access'
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+label: 'Quick access'
+id: block.system_menu_block.agora-base-quick-access
+provider: system
+source: block
+source_local_id: 'system_menu_block:agora-base-quick-access'

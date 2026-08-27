@@ -695,6 +695,290 @@ display:
         - user.permissions
       tags:
         - 'config:field.storage.node.field_agora_base_area'
+  block_5:
+    id: block_5
+    display_title: 'Recent activity block'
+    display_plugin: block
+    position: 6
+    display_options:
+      fields:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          entity_type: node
+          entity_field: type
+          plugin_id: field
+          label: ''
+          element_label_colon: false
+          type: entity_reference_label
+          settings:
+            link: false
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          entity_type: node
+          entity_field: title
+          plugin_id: field
+          label: ''
+          element_label_colon: false
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+        created:
+          id: created
+          table: node_field_data
+          field: created
+          entity_type: node
+          entity_field: created
+          plugin_id: field
+          label: Published
+          element_label_colon: false
+          type: timestamp
+          settings:
+            date_format: agora_date
+            custom_date_format: ''
+            timezone: ''
+      pager:
+        type: some
+        options:
+          offset: 0
+          items_per_page: 3
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          plugin_id: text_custom
+          empty: true
+          content: 'Nothing has been published yet.'
+          tokenize: false
+      sorts:
+        created:
+          id: created
+          table: node_field_data
+          field: created
+          entity_type: node
+          entity_field: created
+          plugin_id: date
+          order: DESC
+          granularity: second
+      filters:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          group_type: group
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          operator: in
+          value:
+            agora_base_document: agora_base_document
+            agora_base_person: agora_base_person
+            agora_base_contract: agora_base_contract
+            agora_base_agreement: agora_base_agreement
+            agora_base_grant: agora_base_grant
+            agora_base_dataset: agora_base_dataset
+          group: 1
+          exposed: false
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          group_type: group
+          entity_type: node
+          entity_field: status
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+      style:
+        type: default
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      defaults:
+        empty: false
+        css_class: false
+        pager: false
+        use_more: false
+        use_more_always: false
+        use_more_text: false
+        link_display: false
+        style: false
+        row: false
+        fields: false
+        sorts: false
+        filters: false
+      css_class: agora-recent-activity
+      display_description: 'The three most recently published records, of any type, as placed on the home page.'
+      use_more: true
+      use_more_always: true
+      use_more_text: 'See all published records'
+      link_display: page_1
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - 'user.node_grants:view'
+        - user.permissions
+      tags: {  }
+  block_6:
+    id: block_6
+    display_title: 'Service areas block'
+    display_plugin: block
+    position: 7
+    display_options:
+      fields:
+        field_agora_base_area:
+          id: field_agora_base_area
+          table: node__field_agora_base_area
+          field: field_agora_base_area
+          group_type: group
+          entity_type: node
+          entity_field: field_agora_base_area
+          plugin_id: field
+          label: ''
+          alter:
+            make_link: true
+            path: 'publications?area={{ field_agora_base_area__target_id }}'
+          element_label_colon: false
+          type: entity_reference_label
+          settings:
+            link: false
+        nid:
+          id: nid
+          table: node_field_data
+          field: nid
+          group_type: count
+          entity_type: node
+          entity_field: nid
+          plugin_id: field
+          label: 'Records published'
+          element_label_colon: false
+          separator: ''
+          set_precision: false
+          precision: 0
+          decimal: .
+          format_plural: false
+          prefix: ''
+          suffix: ''
+      pager:
+        type: some
+        options:
+          offset: 0
+          items_per_page: 6
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          plugin_id: text_custom
+          empty: true
+          content: 'No records have been published yet.'
+          tokenize: false
+      sorts:
+        nid:
+          id: nid
+          table: node_field_data
+          field: nid
+          group_type: count
+          entity_type: node
+          entity_field: nid
+          plugin_id: standard
+          order: DESC
+      filters:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          group_type: group
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          operator: in
+          value:
+            agora_base_document: agora_base_document
+            agora_base_person: agora_base_person
+            agora_base_contract: agora_base_contract
+            agora_base_agreement: agora_base_agreement
+            agora_base_grant: agora_base_grant
+            agora_base_dataset: agora_base_dataset
+          group: 1
+          exposed: false
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          group_type: group
+          entity_type: node
+          entity_field: status
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+      style:
+        type: default
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      defaults:
+        empty: false
+        css_class: false
+        pager: false
+        use_more: false
+        use_more_always: false
+        use_more_text: false
+        link_display: false
+        group_by: false
+        style: false
+        row: false
+        fields: false
+        sorts: false
+        filters: false
+      css_class: agora-area-cards
+      group_by: true
+      display_description: 'How many records each service area has published, largest first, as placed on the home page.'
+      use_more: true
+      use_more_always: true
+      use_more_text: 'Browse every record by service area'
+      link_display: page_1
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.node.field_agora_base_area'
   page_1:
     id: page_1
     display_title: Page

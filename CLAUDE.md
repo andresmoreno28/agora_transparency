@@ -434,9 +434,17 @@ moving the working copy a session is running in, on the day wave 5 starts.
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (61 checks · 0 failures) and `gate-a-wave3.sh` (**46** checks · 0 failures), **14** invariants in total —
+  (61 checks · 0 failures) and `gate-a-wave3.sh` (**48** checks · 0 failures), **15** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
-  ⚠️ **They moved again on 2026-08-27 — from 43 · 13 to 46 · 14** — and this line is edited in the
+  ⚠️ **They moved twice on 2026-08-27 — 43 · 13 to 46 · 14, then to 48 · 15** — and the second
+  move is the interesting one: G15 runs `generate-demo-media.py`, the script D-042 wrote so the
+  media manifest's 39 provenance rows could cite something that exists. **A generator nobody runs
+  is a claim nobody can check**, which is the same defect one layer up from the one D-042 fixed.
+  Its two checks are exit status and **files reproduced**, and the second is load-bearing: a broken
+  enumerator prints "0 differing" exactly as a clean tree does (I-028). Falsified both ways — one
+  byte appended to a shipped PDF gives exit 1, restored gives exit 0.
+
+  ⚠️ **They moved earlier the same day — from 43 · 13 to 46 · 14** — and this line is edited in the
   same commit as the runner, because a number written in two places goes stale in one first.
   The fourteenth invariant is `no-varchar-aggregate` (D-040) and it adds G14's three checks: exit,
   **views scanned**, and **displays scanned**. The last two are not one question asked twice. The
