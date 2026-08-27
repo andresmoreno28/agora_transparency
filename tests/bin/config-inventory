@@ -322,8 +322,17 @@ for v in "$CONFIG_DIR"/views.view.agora_base_*.yml; do
 done
 
 # The front page, whose route marker is theme-level only: `content/` ships one
-# deliberately blank landing page, so there is no Ágora-specific TEXT on it to
-# assert. Stated rather than padded into the table above.
+# landing page whose own fields carry no body text - a Canvas page's only
+# renderable field is its component tree - so the page ITSELF still gives this
+# script nothing to key a marker on. Stated rather than padded into the table
+# above.
+#
+# ⚠️ AMENDED 2026-08-27 (D-041). The comment used to say "there is no
+# Ágora-specific TEXT on it to assert", and that stopped being true the moment
+# the frame sentence landed: `/` now serves one, from the header area of
+# `agora_base_publications` block_2. The marker below is still theme-level,
+# because this script reads `config/` and cannot see a rendered page - but the
+# sentence it prints must not claim a blankness the site no longer has.
 FRONT=$(tr -d '\r' < "$RECIPE_FILE" 2>/dev/null | awk '
   /^        page\.front: / { sub(/^        page\.front: /, ""); print; exit }
 ')
@@ -331,7 +340,7 @@ FRONT=${FRONT#\'}
 FRONT=${FRONT%\'}
 if [ -n "$FRONT" ]; then
   ROUTES=$((ROUTES + 1))
-  printf '  %-15s marker: theme only (main.agora-page__main) - the landing page is blank by design\n' "$FRONT"
+  printf '  %-15s marker: theme only (main.agora-page__main) - the Canvas page carries no body field of its own; the D-041 frame sentence it serves comes from a view header\n' "$FRONT"
 else
   finding "$RECIPE_FILE" "0" "no page.front declared; the front page is not a route this template owns"
 fi

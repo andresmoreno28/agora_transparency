@@ -18,8 +18,9 @@ that installs Drupal with the template applied.
   consent, anti-spam, authentication tweaks and HTML email.
 * Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
   this template requires at `^1.0` — and makes it the site's default theme.
-* Sets an empty Canvas landing page as the home page.
-* Nothing else. There is no transparency-specific functionality in it yet.
+* Sets a Canvas landing page as the home page, carrying four blocks from the template's own views.
+* Ships the demonstration corpus described in the next section: six registers of invented records
+  for a fictional Spanish municipality, with 34 generated PDFs and 5 CSV distributions.
 
 **What does not exist yet**, and is therefore not offered by this template — this is the plan, not a
 feature list:
@@ -27,11 +28,28 @@ feature list:
 | Planned | Where it is going |
 |---|---|
 | Content model: documents, officials, contracts, budget lines, public calls | unit 002 |
-| Bilingual (ES/EN) demo content and the real screenshot | unit 003 |
+| Demo content — English only, see below — and the real screenshot | unit 003 |
 | Editorial workflow and freedom-of-information requests | unit 004 |
 | AI assistant with citations, and configuration auditing | unit 005 |
 
 The full intended scope is written down in `specs/000-project/plan.md` in this repository.
+
+## The demo content is a fictional Spanish municipality, published in English
+
+This is stated here, and in one sentence on the home page, because the demonstration corpus is
+coherent and nothing on the site said so: a reviewer who reads an English-language portal publishing
+Spanish legal instruments would reasonably read it as carelessness rather than as a choice. It is a
+choice. The corpus belongs to **Fuentelclaro**, a **fictional Spanish municipality** whose name was
+checked against Spain's official register of municipalities and found not to exist; every person,
+figure, contract and document in it is invented. Its six registers — documents, people, contracts,
+agreements, grants and datasets — are derived from **Spanish transparency law**, which is why the
+demo publishes nine budget chapters, a by-law on the tax on construction and works, an equality plan
+and declarations of assets for elected members: those are the categories a Spanish municipality is
+required to publish, not a selection made for effect. The corpus is nonetheless in **English**, and
+that is deliberate too — a site template is structurally invisible to Drupal's interface-translation
+system, so its shipped strings are English and Spanish is a **post-install** path through the
+`language` and `config_translation` modules. The reasoning behind each half is recorded as D-026,
+D-035 and D-041 in `specs/000-project/DECISIONS.md` in this repository.
 
 ## Accessibility
 
@@ -224,7 +242,10 @@ pages.
 
 * **`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
   installed site.
-* **No demo content**, beyond the empty home page.
+* **The demo corpus is a fictional Spanish municipality published in English**, which is a
+  deliberate frame rather than a gap — see
+  ["The demo content is a fictional Spanish municipality, published in English"](#the-demo-content-is-a-fictional-spanish-municipality-published-in-english)
+  above. It is listed here because it is the thing a reviewer is most likely to misread.
 
 ## Toolchain floor
 

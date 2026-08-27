@@ -32,6 +32,8 @@
 #
 # UNIT 003, D-040 (2026-08-27) takes it from 43 to 46, and from THIRTEEN
 # invariants to FOURTEEN:
+#   D-042  G15 generate-demo-media, 2 checks - exit and files reproduced. A
+#          generator nobody runs is a provenance claim nobody can check.
 #   D-040  G14 no-varchar-aggregate, 3 checks - exit, views scanned, and
 #          DISPLAYS scanned. The third is not decoration and is not the same
 #          question as the second: a parser that broke would still report 8
@@ -530,6 +532,33 @@ else
   check 'no-varchar-aggregate present'     "$(trunc "$INV" 24)" 'present'
   check_positive 'no-varchar-aggregate (views scanned)' ''
   check_positive 'no-varchar-aggregate (displays scanned)' ''
+fi
+
+# --------------------------------------------- G15 - generate-demo-media (D-042) --
+# D-042 gave MEDIA-LICENCES.md's 39 provenance rows a script they can cite. This
+# group is what stops that citation going stale: a generator nobody runs is a
+# claim nobody can check, which is the exact defect D-042 was signed to fix. The
+# script re-derives every shipped binary from the content and compares bytes.
+#
+# ⚠️ TWO checks, and the second is the load-bearing one. The exit status alone
+# would pass on a run that compared nothing - if the enumerator broke, or the
+# content directory moved, "0 differing" and "0 files" print the same verdict
+# (I-028). So the FILE COUNT is asserted positive and printed beside it.
+#
+# Not pinned to 39. Unit 004 onwards legitimately adds media, and a pinned count
+# is one somebody relaxes the first time it is inconvenient.
+group 'G15 - generate-demo-media'
+GEN=tests/bin/generate-demo-media.py
+if [ -r "$GEN" ] && command -v python3 >/dev/null 2>&1; then
+  GEN_OUT=$(python3 "$GEN" 2>&1); GEN_RC=$?
+  GEN_CNT=$(extract_count "$GEN_OUT" 'all[[:space:]]+[0-9]+[[:space:]]+shipped')
+  note "$(printf '%s' "$GEN_OUT" | tr '
+' ' ')"
+  check 'generate-demo-media (exit)'          "$GEN_RC" '0'
+  check_positive 'generate-demo-media (files reproduced)' "$GEN_CNT"
+else
+  check 'generate-demo-media present'         "$(trunc "$GEN" 24)" 'present'
+  check_positive 'generate-demo-media (files reproduced)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

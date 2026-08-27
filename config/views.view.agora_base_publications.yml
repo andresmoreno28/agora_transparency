@@ -397,10 +397,21 @@ display:
         fields: false
         sorts: false
         filters: false
+        header: false
       css_class: agora-register-cards
       group_by: true
       display_description: 'How many records the portal publishes in each register, as placed on the home page.'
       use_more: false
+      header:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          plugin_id: text_custom
+          empty: true
+          content: '<p>Fuentelclaro is a fictional Spanish municipality: the demonstration records below are invented, they are published in English, and the six registers follow the categories Spanish transparency law requires a municipality to publish.</p>'
+          tokenize: false
       display_extenders: {  }
     cache_metadata:
       max-age: -1
