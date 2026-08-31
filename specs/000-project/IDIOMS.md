@@ -1123,3 +1123,22 @@
   Rule: **an uptime claim needs a poll longer than the failure interval.** A single `curl` proves the
   service answered once, which is not what "it is up" means to the person reloading a browser.
   Recorded 2026-08-27.
+
+- I-108 · **A development rig inflated the project's own usage statistics on Drupal.org, and nobody
+  was looking.** `agora_theme`'s project page reported **613 sites** eight days after the project
+  was created, with no publicity of any kind. It is a rig artefact: Drupal's `update` module reports
+  installed projects to Drupal.org, `site:install` mints a **new private key every time**, and this
+  project rebuilds its rig from zero several times a day — so every clean install is counted there
+  as a **different site**.
+  ⚠️ **The proof is a version that is MISSING.** The breakdown read 1.0.0 200 · 1.0.1 186 · 1.0.2
+  124 · 1.0.3 87 · 1.0.5 16, and **1.0.4 was absent**. 1.0.4 was tagged and never released, so
+  composer could never fetch it and the rig never installed it. The list is the machine's install
+  history, and the counts fall with recency because older releases accumulated more reinstallations.
+  ⚠️ **This is not a tidiness problem.** Those figures are what the Drupal community uses to judge
+  a project, and a template whose pitch is auditability cannot inflate its own numbers, even
+  accidentally. **The fix has to survive a rebuild**: `drupal_cms_*` reinstalls the module on every
+  clean build, so uninstalling it once is undone within the hour. It belongs in the rig-restore
+  script that already runs after every install, with the reason written beside it.
+  ⚠️ **And it was found by [andres] reading the project page, not by any gate** — the same shape as
+  [[I-106]]. No check this project owns looks outward at what Drupal.org has been told about us.
+  Recorded 2026-08-31.
