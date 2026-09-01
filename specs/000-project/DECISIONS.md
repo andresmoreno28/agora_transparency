@@ -2177,3 +2177,44 @@ a proposal with options and a recommendation, the same as before. **D-031's ride
 — it stops being a precondition and becomes a record.**
 
 This amends **D-031**'s mechanism (rule 8: amended, not edited) and leaves its reason intact.
+
+
+---
+
+### D-045 · The visual-regression gate runs on drupalcode. The GitHub mirror is not a prerequisite.
+
+**Amends D-009, which chose option A on a premise it told us to verify and nobody did.**
+
+D-009 was written 2026-08-20 and its context sentence is the whole of this decision:
+
+> *"It could not be verified whether the drupalcode runners support Playwright + axe."*
+
+It then chose **A** — linters and PHPUnit on drupalcode, Playwright and axe on the mirror's GitHub
+Actions — and said, in its own recommendation: *"★ A, but **verify first**: if drupalcode supports
+Playwright, B is cleaner (a single gate). Decision reviewable in wave 2 of unit 001."*
+
+**It was never verified, and it is false.** Measured 2026-09-01 by reading the trace of the theme's
+`nightwatch` job on pipeline `943665` with the maintainer's token: the job runs with
+`CHROMEDRIVER_AUTOSTART=true` and chromedriver. **The drupalcode runner already drives a real
+headless Chrome** — that is how axe analyses rendered pages, and it has been doing so on every push
+since the axe gate existed. The capability D-009 could not confirm has been demonstrated by a
+blocking job in our own pipeline for weeks.
+
+⚠️ **The cost of not checking was not a wrong CI file. It was a blocker assigned to the human.**
+T-804 was deferred out of unit 002 and T-1202 out of unit 003, both with *"prerequisite: [andres]
+creates the GitHub mirror"* — a task he did not need to do, holding up the only automated check
+that looks at what the theme actually renders. In the meantime every visual defect was found by
+him, by eye. Three were fixed on 2026-09-01 alone.
+
+**Ruling: B.** Playwright functional and visual regression run on drupalcode, alongside the nine
+jobs already there. One gate, one place, and a reviewer on Drupal.org can re-run it.
+
+**The mirror is not abolished** — D-016 keeps it as a read-only mirror and D-020 keeps the GitHub
+install smoke as an informative second opinion. What is abolished is the mirror being a
+**prerequisite** for anything.
+
+⚠️ **The lesson is the generalisable part and it is not about CI.** A decision that says *"verify
+first"* and is then acted on without verifying is worse than one that never mentioned verification:
+it reads, to everyone downstream, as though the check was done. Six task rows cited D-009(d) as
+settled fact. **A recommendation carrying an unmet precondition must not be quoted without the
+precondition** (see I-045, the same defect in the shape of a denominator).
