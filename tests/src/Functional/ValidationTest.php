@@ -1005,6 +1005,8 @@ class ValidationTest extends BrowserTestBase {
 
     $named = 0;
     $wildcards = 0;
+    $disabled = 0;
+    $enabled = 0;
     foreach ($actions as $name => $action) {
       // ⚠️ THE `?` IS STRIPPED BEFORE THE FILTER, NOT AFTER, AND THAT ORDERING
       // IS THE WHOLE POINT. A recipe key carrying the prefix reads
@@ -1032,16 +1034,44 @@ class ValidationTest extends BrowserTestBase {
         continue;
       }
 
+      // ⚠️ THE ACTION'S OWN VERB DECIDES WHAT TO ASSERT, and this loop used to
+      // assume every one of them was `disable`. It was written when that was
+      // true, and it stayed true until a component had to be ENABLED: Canvas
+      // mints a menu component disabled, so the quick-access cards' component
+      // needs an `enable` action or it is missing from the palette and a site
+      // owner can never place those cards on a second page.
+      //
+      // The old assertion then failed on the recipe doing exactly what it
+      // intends, with a message accusing the action of not taking effect. The
+      // fix is NOT to exempt that component - it is to assert the intent that
+      // is written beside it. A test that checks the verb is stricter than one
+      // that assumes it: an `enable` that leaves a component disabled now fails
+      // too, and that case was previously unreachable.
+      $this->assertCount(1, $action, "$bare carries " . count($action) . ' actions, and this review reads only the first. Asserted rather than assumed: `array_key_first` would silently ignore the second.');
+      $verb = array_key_first($action);
+      $this->assertContains($verb, ['enable', 'disable'], "$bare uses `$verb`, and this review only knows how to check `enable` and `disable`. A third verb needs its own assertion rather than passing unexamined.");
+
       $config = \Drupal::config($bare);
       $this->assertFalse($config->isNew(), "$bare is named in recipe.yml without a `?`, so it must exist after the recipe is applied.");
-      $this->assertFalse($config->get('status'), "$bare must actually be disabled; naming it in the disable list and finding it enabled means the action did not take effect.");
+      if ($verb === 'disable') {
+        $this->assertFalse($config->get('status'), "$bare is named with `disable` and is enabled: the action did not take effect.");
+        $disabled++;
+      }
+      else {
+        $this->assertTrue($config->get('status'), "$bare is named with `enable` and is disabled: the action did not take effect. Canvas creates menu components disabled and `config.strict: false` means an already-created object wins, so the shipped file alone is not enough - this is the case that action exists for.");
+        $enabled++;
+      }
       $named++;
     }
 
-    // The denominator. 16 of these were `?`-prefixed before this row ran, and a
-    // count that silently fell to zero would leave every assertion above
-    // passing over nothing (I-045).
-    $this->assertSame(20, $named, 'The review covers twenty individually named Canvas components.');
+    // The denominators. 16 of these were `?`-prefixed before this row ran, and
+    // a count that silently fell to zero would leave every assertion above
+    // passing over nothing (I-045). The split is stated as well as the total,
+    // because a component quietly moving from one list to the other is exactly
+    // the change this method exists to notice.
+    $this->assertSame(21, $named, 'The review covers twenty-one individually named Canvas components.');
+    $this->assertSame(20, $disabled, 'Twenty are named with `disable`.');
+    $this->assertSame(1, $enabled, 'One is named with `enable`: the quick-access menu component, which Canvas would otherwise leave out of the palette.');
     $this->assertSame(1, $wildcards, 'Exactly one entry is a wildcard: the project browser blocks.');
   }
 
