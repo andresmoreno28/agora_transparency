@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora-base-footer-documents
+label: 'Documents and data'
+description: 'The document register and the open data register. Placed in the footer.'
+locked: false

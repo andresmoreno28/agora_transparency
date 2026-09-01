@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora-base-footer-money
+label: 'Public money'
+description: 'The three registers of money committed to a named counterparty. Placed in the footer.'
+locked: false

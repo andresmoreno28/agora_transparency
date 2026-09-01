@@ -1,0 +1,36 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: 7a1396f6-c20d-5037-b6a0-9048a3966e1e
+  bundle: menu_link_content
+  default_langcode: en
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: 'Document library'
+  menu_name:
+    -
+      value: agora-base-footer-find
+  link:
+    -
+      uri: 'internal:/library'
+      title: ''
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: false
+  weight:
+    -
+      value: 1
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

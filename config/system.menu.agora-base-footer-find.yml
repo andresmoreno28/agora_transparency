@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora-base-footer-find
+label: 'Find a record'
+description: 'The two searchable indexes: every record of any type, and the library of documents and datasets. Placed in the footer.'
+locked: false

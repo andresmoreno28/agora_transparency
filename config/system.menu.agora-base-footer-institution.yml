@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora-base-footer-institution
+label: 'The institution'
+description: 'Who holds office and what the organisation chart looks like. Placed in the footer.'
+locked: false

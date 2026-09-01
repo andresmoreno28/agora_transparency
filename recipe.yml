@@ -219,6 +219,34 @@ config:
       # empty trail and the block does not render at all - which is correct: a
       # breadcrumb reading only "Home" on the home page is noise.
       - block.block.agora_theme_breadcrumb
+  # -------------------------------------------------------------------------
+  # AND FOUR PLACEMENTS THAT ARE NOT IN THAT LIST, ON PURPOSE.
+  #
+  # `config/block.block.agora_base_footer_*.yml` place four menus into the same
+  # `footer` region as the nine above, and they are NOT named here because they
+  # do not need to be: `import:` reaches config that some OTHER extension ships
+  # in its own `config/optional`, which is the case I-086 is about. Config in
+  # THIS recipe's own `config/` directory is applied by the recipe engine
+  # directly - `system.menu.agora-base-quick-access`, the eight `views.view.*`
+  # and the two `user.role.*` are all config ENTITIES living there and all get
+  # created on a clean install. Naming them here would be naming an extension
+  # that does not ship them.
+  #
+  # WHY THEY ARE HERE AND NOT IN THE THEME, which is the load-bearing half. A
+  # block placement's only tie to a theme is its `theme:` key. Shipping them
+  # from this package means the footer's contents are a decision the SITE
+  # TEMPLATE makes - which is right, because the links point at routes this
+  # package's own views create - and it means the theme needs no release before
+  # the footer fills. The theme owns the five-column grid; this package owns
+  # what stands in the columns.
+  #
+  # THE COLUMN HEADINGS ARE `label_display: visible`, unlike every placement in
+  # the list above. Core's block--system-menu-block.html.twig renders a block
+  # label as the <h2> that names the navigation landmark, and the theme already
+  # carries a rule for it (`.agora-page__footer h2`) written, in its own words,
+  # "so that a site placing four menus in the footer gets four column headings".
+  # Hidden labels would leave four navigation landmarks in one <footer> that a
+  # screen reader could not tell apart.
 
   actions:
     # -- area: base -------------------------------------------------------------
@@ -250,6 +278,40 @@ config:
     system.site:
       simpleConfigUpdate:
         page.front: '/home'
+        # THE COLOPHON'S SECOND LINE, AND IT EXISTS BECAUSE A BLOCK ALREADY ASKED
+        # FOR IT. `block.block.agora_theme_footer_branding` - one of the nine
+        # placements imported above - ships `use_site_slogan: true`, and Drupal
+        # installs with the slogan EMPTY, so up to here the footer's first column
+        # was a site name and nothing else. The theme even styles the line
+        # (`.agora-page__footer .agora-branding__slogan { max-width: 28ch }`, a
+        # measure written for ONE line); it was styling an element that never
+        # rendered.
+        #
+        # AND IT RENDERS TWICE, WHICH IS MEASURED RATHER THAN INTENDED HERE.
+        # `block.block.agora_theme_branding` - the masthead, also in the list
+        # above - ships `use_site_slogan: true` as well, and the theme styles
+        # `.agora-branding__slogan` in both bands. So this one line appears under
+        # the site name at the TOP of every page and again in the footer. That
+        # is the theme's own design and both rules predate this action; it is
+        # written down because setting one config key changed every page rather
+        # than only the footer, and the next reader should not have to discover
+        # that by looking.
+        #
+        # WHAT IT MAY AND MAY NOT SAY. This string ships to every site installed
+        # from this template, under whatever name that site carries, so it has to
+        # be true of a council, a public body and a foundation alike and it may
+        # not make a claim any gate would have to prove. "Open government
+        # information" names what the portal holds; it is not a motto and it does
+        # not promise completeness, timeliness or compliance.
+        #
+        # ASCII ONLY, like every other string this package ships (D-033):
+        # `tests/bin/config-inventory` prints `objects carrying a byte above
+        # 0x7F: 2` and this line must not move that count.
+        #
+        # A SITE OWNER CHANGES IT IN ONE FIELD, at /admin/config/system/site-
+        # information, which is the reason a slogan is the right home for the
+        # line rather than anything drawn in a template.
+        slogan: 'Open government information'
     # The default theme is Ágora's own, installed just above. Setting it here rather
     # than leaving the site on a core theme is the whole point of the swap: a
     # transparency portal whose tables and forms are the content needs the tokens,
