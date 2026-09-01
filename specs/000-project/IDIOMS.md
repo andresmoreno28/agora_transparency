@@ -1142,3 +1142,53 @@
   ⚠️ **And it was found by [andres] reading the project page, not by any gate** — the same shape as
   [[I-106]]. No check this project owns looks outward at what Drupal.org has been told about us.
   Recorded 2026-08-31.
+
+- I-109 · **An assertion that reads a set of keys but not the VERB beside each one encodes an
+  assumption, and it fails on the day the code starts working.** `ValidationTest` collected every
+  `canvas.component.*` key in the recipe's `config.actions` and asserted each ends up **disabled**.
+  Every one of them was a `disable` when it was written, so the verb was never read - and the
+  assumption became invisible, because there was nothing in the test that named it.
+  ⚠️ **The failure then accused the wrong thing.** A component that must be ENABLED (Canvas mints
+  menu components disabled, so the quick-access cards need `enable` or the component is missing
+  from the palette) produced *"naming it in the disable list and finding it enabled means the
+  action did not take effect"* - a message describing a broken recipe, on a recipe doing exactly
+  what it intends. **The message was confident and wrong, which cost the time**: the first instinct
+  is to go and look at the recipe.
+  ⚠️ **The fix was to make the assertion STRICTER, not to exempt the entry.** Reading the verb and
+  checking the state it asks for adds a case that was previously **unreachable** - an `enable` that
+  leaves a component disabled, which `config.strict: false` makes a real failure mode. The tempting
+  wrong fix, a `continue` for that one key, would have removed coverage to make the suite pass.
+  ⚠️ **And the denominator had already gone stale in the same way**: it said 20 named when the
+  recipe had 21. A count nobody re-derives is a claim, and it is the *same* defect one layer up
+  from the one it is supposed to catch (I-045). It is now asserted as a **split** - 20 `disable`,
+  1 `enable` - so a component moving quietly from one list to the other fails instead of still
+  adding up. Recorded 2026-09-01.
+
+- I-110 · **`align-items: baseline` across sizes far apart on the type scale makes the smaller one
+  look dropped - and the same rule made the banner 130px tall.** The masthead put the mark, the
+  site name (`lg`, bold) and the slogan (`sm`) on one row, aligned to a shared
+  baseline. Measured: the slogan's box sat
+  **28px below the top of the name** and read as hanging in mid-air, and side by side the block
+  came to **505px**, so region + gap + field exceeded the 1200px container and the row wrapped -
+  leaving the search stranded alone on a second line at the far left.
+  ⚠️ **The ugly banner and the tall banner were ONE defect**, and it did not look like one: the
+  wrap is a designed, documented degradation, so the tall band read as the layout working. Nothing
+  connected it to the slogan until both were measured at the same viewport.
+  ⚠️ **A comment in the same file asserted the opposite and had never been measured** - that
+  baseline alignment is *"what stops them looking dropped"*. Plausible, written from a layout that
+  no longer existed, and it stood for as long as nobody looked at the header.
+  ⚠️ **The probe lied too, and in the reassuring direction.** *"Is the search on its own line"* was
+  implemented as `search.y > region.y + 4`. Once the branding became a stack the region got taller,
+  its top stayed at 8 while the vertically-centred field sat at 21, and the probe reported **YES,
+  wrapped** about a row that had just been fixed. It compared a proxy - *is it lower* - for the
+  question actually asked. A geometry probe has to be falsified against the fixed state as well as
+  the broken one. Recorded 2026-09-01.
+
+- I-111 · **A local gate runner's green states nothing about the checks it does not run, and the
+  theme's excludes the one that failed.** `tests/bin/gate-a-theme.sh` reported **30 checks, 0
+  failures**; the push turned `cspell` red on a coined word. That is not a bug - the script says at
+  line 35 that spellcheck is a **separate pre-flight** because it needs the network for the
+  upstream dictionaries - but *"the gate runner is green"* was read as *"CI will be green"*, and
+  those are different sets. **The theme runs nine jobs and the local runner covers seven of them.**
+  The habit that survives this is the one I-045 already asks for: quote what a green covered, not
+  that it was green. Recorded 2026-09-01.
