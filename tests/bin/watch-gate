@@ -129,6 +129,11 @@ phpstan
 phpunit
 phpunit-pgsql'
 
+# `phpunit` joined the THEME's list on 2026-09-02 with its first PHP test class.
+# It is declared here rather than left to appear on its own, because that is what
+# declaring a list is for: this script printed UNDECLARED JOB on the very
+# pipeline that introduced the job. A gate that grows silently is one nobody
+# decided to grow.
 EXPECTED_agora_theme='agora-invariants
 composer
 composer-lint
@@ -137,6 +142,7 @@ eslint
 nightwatch
 phpcs
 phpstan
+phpunit
 stylelint'
 
 case "$PROJECT" in

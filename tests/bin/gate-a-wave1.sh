@@ -150,11 +150,25 @@ exists_file() { [ -f "$1" ] && printf 'present' || printf 'absent'; }
 exists_dir()  { [ -d "$1" ] && printf 'present' || printf 'absent'; }
 
 # Files in scope for filesystem scans: the packaged tree, minus VCS/build dirs.
+# `./web` IS PRUNED, AND IT WAS THE ONE EXCLUSION MISSING HERE. It is where a
+# local Drupal build goes, it is in .gitignore, and `git archive HEAD` therefore
+# never contains it - so an *.info.yml under it is not in the package and cannot
+# be. tests/bin/no-code-in-template, the AUTHORITATIVE check for that rule,
+# already documents its working-tree scope as "find, minus .git/ vendor/
+# node_modules/ web/" and has excluded it all along. This scanner did not, so
+# the two disagreed about the same question.
+#
+# FOUND BY IT FIRING, 2026-09-02: a theme checkout appeared under
+# web/themes/custom/agora_theme/ and this check reported `*.info.yml files: 2`
+# while no-code-in-template reported nothing - the package was clean in both
+# readings. Nothing is weakened by aligning them: no-code-in-template still
+# reads the PACKAGE for the same rule, the scope RequirementsTest applies.
 scan_files() {
   find . \
     -path ./.git -prune -o \
     -path ./vendor -prune -o \
     -path ./node_modules -prune -o \
+    -path ./web -prune -o \
     -type f -print 2>/dev/null
 }
 
