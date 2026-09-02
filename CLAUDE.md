@@ -304,9 +304,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `943602`, ref `1.x`, commit `c5b0f68`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/943602/jobs` on 2026-09-01 (the list is
-  unchanged since `937289`; it is the tagged commit of release 1.0.7). It is recorded in
+- **Observed inventory — the theme.** Pipeline `945339`, ref `1.x`, commit `242fd93`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/945339/jobs` on 2026-09-02. ⚠️ **The list
+  MOVED: nine jobs became TEN**, and the tenth is `phpunit`. It is recorded in
   **this** file because `agora_theme` has no `CLAUDE.md` of its own: it is a theme, and its
   repository holds code, not the process layer.
 
@@ -320,9 +320,25 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `nightwatch` | test | success | false |
   | `phpcs` | validate | success | false |
   | `phpstan` | validate | success | false |
+  | `phpunit` | test | success | false |
   | `stylelint` | validate | success | false |
 
-  ⚠️ **Nine jobs here too — and it is NOT the same nine. Reading the count and skipping the names
+  ⚠️ **`phpunit` IS NEW, 2026-09-02, AND NOBODY ADDED A JOB TO GET IT.** The upstream template
+  materialises that job only when the package contains PHP test classes, and this theme had none -
+  so for the whole of its life the pipeline was nine jobs green over 12 functions nothing executed,
+  among them the ones computing the money figure and the bar widths. Writing
+  `tests/src/Unit/ThemeHelpersTest.php` made the job appear: `OK (18 tests, 63 assertions)`.
+  **The absence of a job is not the absence of a need for one**, and nothing in a job list says
+  which jobs are missing - that is the gap this row closes and the reason it is written down here
+  rather than left to be noticed.
+
+  ⚠️ ~~**Nine jobs here too — and it is NOT the same nine.**~~ **TEN as of 2026-09-02**, and the
+  paragraph below is kept because its ARGUMENT survives the count changing: the two lists are still
+  different, and the difference is still the point. The theme runs `nightwatch` and `stylelint`
+  where the template runs `Drupal CMS` and `phpunit-pgsql`. Read the names, not the total.
+  The superseded wording follows.
+
+  **Nine jobs here too — and it is NOT the same nine. Reading the count and skipping the names
   is the mistake this pair of tables is shaped to prevent.** Three jobs differ. The theme runs
   **`nightwatch`** (the axe gate) and **`stylelint`** (it has CSS), and it runs **no `phpunit`**
   and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
