@@ -321,6 +321,22 @@ class ValidationTest extends BrowserTestBase {
   ];
 
   /**
+   * The four links the `Follow us` footer menu must carry, in menu order.
+   *
+   * Transcribed for the reason MENU_ROUTES is: derived from the shipped
+   * content, this would assert that the menu links whatever it links. Every
+   * key is a network's ROOT URL and never an account - the demo municipality
+   * is fictional and owns no account anywhere (T-1216, D-046) - and the test
+   * asserts href EQUALITY, so the demo cannot quietly acquire one.
+   */
+  private const SOCIAL_LINKS = [
+    'https://www.facebook.com/' => 'Facebook',
+    'https://x.com/' => 'X',
+    'https://www.instagram.com/' => 'Instagram',
+    'https://www.youtube.com/' => 'YouTube',
+  ];
+
+  /**
    * Tests the library, the cross-type listing, the search box and the menu.
    *
    * FOUR THINGS THAT NEED A RUNNING SITE. The kernel test reads `config/` and
@@ -574,6 +590,37 @@ class ValidationTest extends BrowserTestBase {
       $this->drupalGet(ltrim($route, '/'));
       $assert->statusCodeEquals(200);
     }
+
+    // -- The footer, on the same live site -----------------------------------
+    // Five navigation landmarks inside the theme's <footer>, each named by
+    // its visible <h2>: the four columns T-1215 ships and the social row
+    // T-1216 adds. Counted INSIDE the footer element on purpose - the page
+    // also carries the main menu and the quick-access component as <nav>,
+    // so a page-wide count of five would go green on the wrong five.
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $footer = 'footer.agora-page__footer';
+    $assert->elementsCount('css', $footer . ' nav', 5);
+
+    // The social row: exactly four links, every href EXACTLY one network's
+    // root URL and every text exactly the brand name. A `starts with
+    // https://` check alone would pass an invented account URL; equality
+    // does not, and the prefix is still asserted so the failure message
+    // names the cheaper defect first.
+    $social = $footer . ' #block-agora-base-footer-social';
+    $assert->elementExists('css', $social);
+    $assert->elementTextContains('css', $social . ' h2', 'Follow us');
+    $social_links = $this->getSession()->getPage()->findAll('css', $social . ' a');
+    $this->assertCount(count(self::SOCIAL_LINKS), $social_links, 'The social menu must carry exactly four links.');
+    $expected = self::SOCIAL_LINKS;
+    foreach ($social_links as $link) {
+      $href = (string) $link->getAttribute('href');
+      $this->assertStringStartsWith('https://', $href, 'Every social link must be absolute and HTTPS.');
+      $this->assertArrayHasKey($href, $expected, "The social menu links $href, which is not one of the four root URLs T-1216 ships - or links it twice.");
+      $this->assertSame($expected[$href], trim($link->getText()), "The social link to $href must read as the network's name.");
+      unset($expected[$href]);
+    }
+    $this->assertSame([], $expected, 'Every one of the four networks must be linked exactly once.');
   }
 
   /**
