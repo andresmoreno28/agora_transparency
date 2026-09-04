@@ -344,3 +344,6 @@ superbox
 Wealdhurst
 pycache
 wslconfig
+# D-046: the host of the Bluesky social network, `bsky.app`, one of the six hosts the theme
+# recognises for a footer brand mark. A domain, not a word.
+bsky

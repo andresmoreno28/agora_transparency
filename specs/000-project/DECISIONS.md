@@ -2218,3 +2218,60 @@ first"* and is then acted on without verifying is worse than one that never ment
 it reads, to everyone downstream, as though the check was done. Six task rows cited D-009(d) as
 settled fact. **A recommendation carrying an unmet precondition must not be quoted without the
 precondition** (see I-045, the same defect in the shape of a denominator).
+
+
+---
+
+### D-046 · The footer's social row: brand marks in the theme, root URLs in the template
+
+**PREPARED by [ejecutor] 2026-09-04 - UNSIGNED. [andres] signs; nothing below is a ruling until
+he does.** The template lane (T-1216, T-1217) and the theme lane were implemented against option A
+under the dispatch's standing delegation, and both are reversible if he rules otherwise: A ships
+six files here and one template plus icon paths there, and nothing else depends on either.
+
+*Context in one line:* [andres] asked for a footer row that shows the official marks of the social
+networks. Two questions are entangled in that request and are answered separately: **where the
+marks come from** (a licence question, because the marks are trademarks) and **what the demo
+links to** (a truthfulness question, because the demo municipality is fictional).
+
+**What was measured before writing the options.**
+- The theme already renders every footer menu through `menu--footer.html.twig`, a flat row, and
+  the four columns T-1215 ships render through it. A fifth menu costs the template two config
+  objects and four links, and costs the theme one recognition rule: link host to mark.
+- **Simple Icons** publishes the marks as SVG path data under **CC0-1.0**; the marks themselves
+  remain the networks' **trademarks**, which CC0 cannot and does not license. What a footer does
+  with them is **nominative use** - naming the network a link goes to - which is the use every
+  network's own brand guidelines describe as the permitted one. So the rendition is free and the
+  use is the one the owners ask for; what would NOT be permitted is altering the marks or implying
+  endorsement, and a footer link does neither.
+- The hosts the theme will recognise: `facebook.com`, `x.com`, `instagram.com`, `youtube.com`,
+  `linkedin.com`, `bsky.app`. The demo ships **four** of the six; LinkedIn and Bluesky are
+  recognised so a site owner who adds them gets a mark, and not shipped because four is a row and
+  six is a wall.
+- **A fictional municipality owns no account.** An invented handle such as `/fuentelclaro` is a
+  link to whoever registers that name, on every network, forever. The only href that is true
+  today and stays true is the network's **root URL**, which a site owner replaces in the menu UI.
+
+**Options.**
+
+- **A (recommended) - theme renders host to mark from Simple Icons paths; template ships the
+  `Follow us` menu with root-URL links.** The marks are inlined SVG in the theme (CC0-1.0
+  renditions, trademarks used nominatively, attribution in the theme's licence notes), each link
+  keeps its visible name as the accessible name, and the template's demo shows the row working
+  with links that lie to nobody. With a theme release that does not recognise a host, the links
+  render as text.
+- **B - theme marks only, no menu in the template.** The mechanism ships and the demo never shows
+  it. A reviewer installing the template sees no social row, and a site owner has to discover
+  that a menu named in no documentation would grow marks.
+- **C - text links, no marks.** No trademark question at all, and a footer row that reads as four
+  words where every public-sector footer a reader has seen shows four marks. Set aside on the
+  human's own request, which was the marks.
+
+**Recommendation: A.** The licence question is answered by the pairing CC0 rendition plus
+nominative use, and the truthfulness question is answered by root URLs. Both halves are already on
+disk: the template half is T-1216 and T-1217 here, the theme half is the theme lane's.
+
+**What A does NOT do, named so nobody infers it:** no brand colour is applied as the only carrier
+of meaning - the name is always present for assistive technology; no account is invented; nothing
+is fetched from any network at render time, since the marks are static paths in the theme, so the
+footer makes no third-party request and the template's privacy posture is unchanged.
