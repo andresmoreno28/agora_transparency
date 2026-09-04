@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora-base-footer-social
+label: 'Follow us'
+description: 'The official accounts on the social networks the institution publishes on. Placed in the footer.'
+locked: false

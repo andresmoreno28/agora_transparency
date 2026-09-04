@@ -220,9 +220,9 @@ config:
       # breadcrumb reading only "Home" on the home page is noise.
       - block.block.agora_theme_breadcrumb
   # -------------------------------------------------------------------------
-  # AND FOUR PLACEMENTS THAT ARE NOT IN THAT LIST, ON PURPOSE.
+  # AND FIVE PLACEMENTS THAT ARE NOT IN THAT LIST, ON PURPOSE.
   #
-  # `config/block.block.agora_base_footer_*.yml` place four menus into the same
+  # `config/block.block.agora_base_footer_*.yml` place five menus into the same
   # `footer` region as the nine above, and they are NOT named here because they
   # do not need to be: `import:` reaches config that some OTHER extension ships
   # in its own `config/optional`, which is the case I-086 is about. Config in
@@ -240,13 +240,22 @@ config:
   # the footer fills. The theme owns the five-column grid; this package owns
   # what stands in the columns.
   #
+  # THE FIFTH IS NOT A COLUMN. `agora_base_footer_social` places the `Follow us`
+  # menu at weight 5 - after the four columns at -8..-2, before the theme's
+  # `powered_by` at 10 - so it renders as a row between the columns and the
+  # colophon. Its four links (T-1216, D-046) point at the networks' ROOT URLs,
+  # never at an account: the demo municipality is fictional and owns none, and
+  # a site owner replaces the four hrefs in the menu UI. The theme draws a
+  # brand mark for a link whose host it recognises; with a theme release that
+  # does not, the links render as text, which is the honest degradation.
+  #
   # THE COLUMN HEADINGS ARE `label_display: visible`, unlike every placement in
   # the list above. Core's block--system-menu-block.html.twig renders a block
   # label as the <h2> that names the navigation landmark, and the theme already
   # carries a rule for it (`.agora-page__footer h2`) written, in its own words,
   # "so that a site placing four menus in the footer gets four column headings".
   # Hidden labels would leave four navigation landmarks in one <footer> that a
-  # screen reader could not tell apart.
+  # screen reader could not tell apart - and five, since the social row joined.
 
   actions:
     # -- area: base -------------------------------------------------------------
