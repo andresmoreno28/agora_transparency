@@ -2225,7 +2225,10 @@ precondition** (see I-045, the same defect in the shape of a denominator).
 ### D-046 · The footer's social row: brand marks in the theme, root URLs in the template
 
 **PREPARED by [ejecutor] 2026-09-04 - UNSIGNED. [andres] signs; nothing below is a ruling until
-he does.** The template lane (T-1216, T-1217) and the theme lane were implemented against option A
+he does.** Amended the same day, still unsigned, after the orquestador's read-only audit found two
+of the "what was measured" bullets false on disk; each corrected bullet says what it said before
+and what is true instead, because a record that silently improves reads as though it was right.
+ The template lane (T-1216, T-1217) and the theme lane were implemented against option A
 under the dispatch's standing delegation, and both are reversible if he rules otherwise: A ships
 six files here and one template plus icon paths there, and nothing else depends on either.
 
@@ -2235,19 +2238,48 @@ marks come from** (a licence question, because the marks are trademarks) and **w
 links to** (a truthfulness question, because the demo municipality is fictional).
 
 **What was measured before writing the options.**
-- The theme already renders every footer menu through `menu--footer.html.twig`, a flat row, and
-  the four columns T-1215 ships render through it. A fifth menu costs the template two config
-  objects and four links, and costs the theme one recognition rule: link host to mark.
+- ⚠️ **Corrected 2026-09-04 by the orquestador's read-only audit; the first wording was false on
+  disk.** It said the theme *already* rendered every footer menu through `menu--footer.html.twig`
+  and that T-1215's four columns rendered through it. **They did not.** Twig reached that template
+  by a suggestion derived from the menu's machine name, so only core's own `footer` menu landed
+  there and the four grouped menus fell through to `menu.html.twig` - measured on the rig as
+  **5 level-0 lists and 0 footer lists**, four nested navigations with level classes beside the
+  one primary navigation those classes are counted to prove. It became true only because lane A
+  shipped the rule **in this wave**, theme commit **`fddbe37`** (*"a menu block placed in the
+  footer region renders through the footer template"*): the block preprocess now decides by the
+  block's **region**, read from its own placement, never from a prefix or a machine name. A fifth
+  menu therefore costs the template two config objects and four links, and costs the theme that
+  region rule plus one recognition rule: link host to mark.
 - **Simple Icons** publishes the marks as SVG path data under **CC0-1.0**; the marks themselves
-  remain the networks' **trademarks**, which CC0 cannot and does not license. What a footer does
-  with them is **nominative use** - naming the network a link goes to - which is the use every
-  network's own brand guidelines describe as the permitted one. So the rendition is free and the
-  use is the one the owners ask for; what would NOT be permitted is altering the marks or implying
-  endorsement, and a footer link does neither.
-- The hosts the theme will recognise: `facebook.com`, `x.com`, `instagram.com`, `youtube.com`,
-  `linkedin.com`, `bsky.app`. The demo ships **four** of the six; LinkedIn and Bluesky are
-  recognised so a site owner who adds them gets a mark, and not shipped because four is a row and
-  six is a wall.
+  remain the networks' **trademarks**, which CC0 cannot and does not license (§4(a), quoted
+  below). What a footer does with them is **nominative use** - naming the network a link goes to
+  - which is the use every network's own brand guidelines describe as the permitted one. So the
+  rendition is free and the use is the one the owners ask for; what would NOT be permitted is
+  altering the marks or implying endorsement, and a footer link does neither.
+- ⚠️ **Corrected 2026-09-04, same audit: `linkedin.com` is NOT a recognised host.** The shipped
+  mapper, `_agora_theme_social_brand()` in `agora_theme.theme`, returns a brand for `facebook.com`,
+  `x.com`, `twitter.com` (as `x`), `instagram.com`, `youtube.com` and `bsky.app`, and **NULL for
+  everything else, LinkedIn included**. In the theme's own words (`README.md`, "Third-party
+  assets"): *"There is no LinkedIn mark, and the absence is a licence fact rather than an
+  omission. Simple Icons removed LinkedIn in release 14.0.0 (issue 11380), so no pinned release
+  this repository could cite carries it under terms this repository could check. A footer link to
+  `linkedin.com` renders as a text link in the same row."* The template header says the same:
+  *"NO LINKEDIN, AND IT IS NOT MISSING BY ACCIDENT."* The demo ships **four** of the five marks
+  the theme carries; Bluesky is recognised so a site owner who adds it gets a mark, and not
+  shipped because four is a row.
+- **The renditions, pinned and checked.** Simple Icons **16.29.0**, each `d` attribute the path
+  from that release's `icons/<slug>.svg` byte for byte, fetched from
+  `https://cdn.jsdelivr.net/npm/simple-icons@16.29.0/icons/` for `facebook`, `x`, `instagram`,
+  `youtube` and `bluesky`. The release's `data/simple-icons.json` was read **at that version** and
+  the per-icon `license` field is **absent for all five**, which under the project's `LICENSE.md`
+  means each rendition is CC0-1.0 and none carries a licence of its own that would override it.
+  The `<title>` and `role` the upstream files carry are dropped because the link's own text, kept
+  visually hidden inside the mark, is the accessible name.
+- **What CC0 does and does not do, in its own words.** CC0-1.0 §4(a): *"No trademark or patent
+  rights held by Affirmer are waived, abandoned, surrendered, licensed or otherwise affected by
+  this document."* So the rendition is free and the marks stay trademarks of their owners; the
+  footer uses them solely to identify the destination a link leads to, and a site that removes its
+  social links removes the marks with them.
 - **A fictional municipality owns no account.** An invented handle such as `/fuentelclaro` is a
   link to whoever registers that name, on every network, forever. The only href that is true
   today and stays true is the network's **root URL**, which a site owner replaces in the menu UI.
