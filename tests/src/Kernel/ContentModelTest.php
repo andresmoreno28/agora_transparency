@@ -1457,6 +1457,16 @@ final class ContentModelTest extends KernelTestBase {
     foreach (self::REGIME_BUNDLES as $definition) {
       $field_instances += count($definition['fields']);
     }
+    // T-1308 adds the last two terms: one non-empty prefix per money field,
+    // plus one residue check per object permitted to hold a non-ASCII byte.
+    // The second is taken from the EXPECTED list rather than from the
+    // measured one, which is what stops it agreeing with whatever the scan
+    // happened to find.
+    //
+    // It sits above the statement rather than between two of its terms
+    // because phpcs reads a `+` whose preceding token is a COMMENT as a
+    // UNARY operator, and then rejects the space after it. That is the whole
+    // of the finding that turned pipeline 949480 red.
     $expected_assertions = 4
       + (14 * count(self::REGIME_BUNDLES))
       + (8 * $field_instances)
@@ -1466,10 +1476,6 @@ final class ContentModelTest extends KernelTestBase {
       + (2 * $term_references)
       + count(self::LEGAL_CITATIONS)
       + 1
-      // T-1308: one non-empty prefix per money field, plus one residue check
-      // per object permitted to hold a non-ASCII byte. The second term is
-      // taken from the EXPECTED list rather than from the measured one, which
-      // is what stops it agreeing with whatever the scan happened to find.
       + count(self::CURRENCY_UNIT_OBJECTS)
       + count($expected_non_ascii);
     $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
