@@ -346,51 +346,61 @@ config:
       simpleConfigUpdate:
         default: 'agora_theme'
     # -------------------------------------------------------------------------
-    # THE FRONT-PAGE MASTHEAD PHOTOGRAPH, AND THE ONE ACTION THAT IS NOT HERE.
+    # THE FRONT-PAGE MASTHEAD PHOTOGRAPH. This action was written, proved and
+    # then WITHHELD on 2026-09-05. It lands on 2026-09-06, unchanged, because
+    # its one precondition stopped being a working copy and became a published
+    # release.
     #
-    # `content/file/hero-wide.webp` ships with this package (2026-09-05) and the
-    # content importer copies it to `public://hero-wide.webp` on every apply -
-    # measured on the rig: file entity created, 90,746 bytes, digest identical to
-    # the packaged copy. What is NOT here is the action that would point the
-    # theme at it:
+    # WHY THIS TEMPLATE POINTS AT A PICTURE THE THEME DOES NOT SHIP. The theme
+    # deleted `images/hero-wide.webp` from its own package and replaced the
+    # hard-coded `background-image` with `var(--agora-hero-image, none)`, so a
+    # council installing the THEME alone gets a flat navy band - deliberate,
+    # and the reason the demonstration picture has to travel with the
+    # DEMONSTRATION. `content/file/hero-wide.webp` ships here and the content
+    # importer copies it to `public://hero-wide.webp` on every apply. The
+    # action below is the only thing that joins the two: without it the file
+    # arrives on every site and nothing ever looks at it.
     #
-    #     agora_theme.settings:
-    #       simpleConfigUpdate:
-    #         hero_image_path: 'public://hero-wide.webp'
+    # WHAT MAKES IT SAFE IS `composer.json`, NOT THIS FILE, AND THE TWO MAY
+    # ONLY EVER BE REVERTED TOGETHER. `agora_theme.settings` and its schema
+    # exist in NO 1.0.x release - the newest published on that branch is
+    # 1.0.7 - and core's `SimpleConfigUpdate::apply()` throws `Config
+    # agora_theme.settings does not exist so can not be updated` on a config
+    # object that is absent. Unlike `import:`, there is NO `?` optionality for
+    # `config.actions`: `RecipeRunner::processConfiguration()` applies every
+    # entry unconditionally. So this action on a site that resolved 1.0.7 is a
+    # hard `drush recipe` failure, not a missing picture. The dependency is
+    # therefore `drupal/agora_theme: ^1.1`. Release 1.1.0 - published
+    # 2026-09-05 22:21 UTC (the `<date>` epoch in the release history, which
+    # is 00:21 on the 6th in this repository's own +0200), security-covered,
+    # `core_compatibility: ^11` - ships
+    # `config/install/agora_theme.settings.yml` and
+    # `config/schema/agora_theme.schema.yml`, read out of the tarball on
+    # ftp.drupal.org rather than trusted from the theme's working copy.
+    # ⚠️ Lower that constraint back to `^1.0` and a resolver may legitimately
+    # install 1.0.7, at which point this line breaks every clean install - the
+    # exact failure the withholding existed to prevent.
     #
-    # ⚠️ IT IS WITHHELD, NOT FORGOTTEN, AND ADDING IT TODAY BREAKS EVERY CLEAN
-    # INSTALL. `hero_image_path` and the `agora_theme.settings` object that holds
-    # it exist only in the theme's unreleased working copy; the newest published
-    # release, 1.0.8, ships neither the object nor a schema for it. Core's
-    # `SimpleConfigUpdate::apply()` throws `Config agora_theme.settings does not
-    # exist so can not be updated` on a config object that is absent - read at
-    # source in the rig, not assumed - and unlike `import:` there is NO `?`
-    # optionality for `config.actions`: `RecipeRunner::processConfiguration()`
-    # applies every action unconditionally. So this line would turn
-    # `drush recipe` into a hard failure for anyone resolving `^1.0` from
-    # packages.drupal.org.
+    # THE THROW IS A FEATURE, which is why `simpleConfigUpdate` is the right
+    # action here and a create-if-missing one would be wrong. Should the
+    # settings object ever be absent again, the apply fails loudly at that
+    # point instead of quietly serving a flat band that looks like somebody's
+    # design decision.
     #
-    # THIS IS THE SAME ORDERING RULE THE `import:` BLOCK ABOVE STATES TWICE, and
-    # it is stated a third time here because the failure mode is different and
-    # worse: an unresolvable config ENTITY fails the install loudly at apply
-    # time, and so does this - but the temptation to "just set it" is much
-    # stronger for a scalar. The theme ships the setting, the RELEASE makes it
-    # resolvable, and only then may this recipe name it.
+    # THE VALUE IS A STREAM URI, NOT A PATH. `_agora_theme_setting_url()` in
+    # the theme hands this string to `file_url_generator->generateString()`, so
+    # `public://` resolves to whatever the site's file directory really is; a
+    # hand-written `/sites/default/files/...` would be wrong on any site that
+    # moved it. It is also the exact `uri` the file entity in `content/`
+    # carries, so the two agree by construction rather than by transcription.
     #
-    # DISCHARGE, in one line: [andres] publishes an `agora_theme` release
-    # containing `config/install/agora_theme.settings.yml` and
-    # `config/schema/agora_theme.schema.yml`; the three lines above are then
-    # uncommented in the same change that reads the resolved version out of the
-    # `Drupal CMS` job log. They are already verified - a clean install on the
-    # rig with a theme carrying the setting produced
-    # `agora_theme.settings:hero_image_path: 'public://hero-wide.webp'`, the file
-    # in `public://` at HTTP 200, and the photograph rendered behind the band.
-    #
-    # ⚠️ UNTIL THAT RELEASE THE DEMONSTRATION FRONT PAGE IS NOT AFFECTED: theme
-    # 1.0.8 still hard-codes its own copy of the picture in `css/components.css`,
-    # so nothing regresses today. The window opens the moment the theme release
-    # lands and closes when these three lines do - which is why they should land
-    # together rather than in whichever order is convenient.
+    # `ValidationTest::testDemonstrationMastheadImageArrives()` asserted the
+    # WITHHOLDING until this commit and asserts the setting from it onwards.
+    # That is what made the reversal impossible to perform by accident, and it
+    # moves in the same change rather than after it.
+    agora_theme.settings:
+      simpleConfigUpdate:
+        hero_image_path: 'public://hero-wide.webp'
     # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
     # CANVAS COMPONENTS (T-604). Disabling does not delete a component; it keeps

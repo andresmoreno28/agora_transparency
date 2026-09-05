@@ -77,7 +77,7 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
-   * The demonstration masthead photograph arrives, and nothing points at it.
+   * The demonstration masthead photograph arrives, and the theme reads it.
    *
    * TWO CLAIMS THAT LOOK UNRELATED AND ARE THE SAME STATEMENT. The theme
    * stopped shipping a photograph in September 2026 - `images/hero-wide.webp`
@@ -87,20 +87,25 @@ class ValidationTest extends BrowserTestBase {
    * correct. The demonstration picture therefore has to travel with the
    * DEMONSTRATION, and this package is the demonstration.
    *
-   * ⚠️ THE SECOND CLAIM IS THE ONE TO READ, AND IT IS DELIBERATELY THE
-   * OPPOSITE OF WHAT THIS PACKAGE WANTS. `recipe.yml` does NOT set
-   * `agora_theme.settings:hero_image_path`, because `agora_theme.settings`
-   * exists in no PUBLISHED theme release - 1.0.8 ships neither the object nor
-   * its schema - and core's `SimpleConfigUpdate::apply()` throws on a config
-   * object that is absent, with no `?` optionality available for
-   * `config.actions`. Setting it today would make `drush recipe` fail for
-   * everyone resolving `^1.0` from packages.drupal.org.
+   * ⚠️ THE LAST ASSERTION WAS THE EXACT OPPOSITE UNTIL THIS COMMIT, AND THAT
+   * IS WORTH KNOWING BEFORE ANYONE TOUCHES IT. `recipe.yml` deliberately did
+   * NOT set `agora_theme.settings:hero_image_path`, because the config object
+   * holding it existed in no published theme release, and core's
+   * `SimpleConfigUpdate::apply()` throws on a config object that is absent -
+   * with no `?` optionality available for `config.actions`. This test asserted
+   * the WITHHOLDING, so that landing the action would fail here rather than on
+   * somebody's clean install. It was watched failing with the action in place.
    *
-   * So the withholding is asserted rather than merely commented. When the theme
-   * release lands and the three lines go into `recipe.yml`, THIS ASSERTION IS
-   * WHAT FAILS, in the same commit, which is the point of it: a decision not to
-   * do something is worth nothing if nothing notices when it is reversed by
-   * accident.
+   * WHAT DISCHARGED IT, AND WHICH HALF IS LOAD-BEARING. `agora_theme` 1.1.0,
+   * published 2026-09-05 22:21 UTC - 00:21 on the 6th at this repository's
+   * own +0200, which is why two dates for one release are both right - ships
+   * `config/install/agora_theme.settings.yml` and
+   * `config/schema/agora_theme.schema.yml`. `composer.json` moved from `^1.0`
+   * to `^1.1` in the same change, and THAT is the half holding this up: at
+   * `^1.0` a resolver may still legitimately install 1.0.7, which carries no
+   * settings object, and the action would throw on exactly the installs the
+   * withholding existed to protect. If this assertion is ever reverted, the
+   * constraint goes back with it or neither moves.
    */
   public function testDemonstrationMastheadImageArrives(): void {
     $this->applyRecipe(self::getRecipePath());
@@ -135,9 +140,25 @@ class ValidationTest extends BrowserTestBase {
     $this->drupalGet(\Drupal::service('file_url_generator')->generateString($uri));
     $this->assertSession()->statusCodeEquals(200);
 
-    // ⚠️ The withheld action, asserted. See the docblock.
+    // ⚠️ The formerly withheld action, now asserted PRESENT. See the docblock.
+    // Compared against $uri rather than against a literal typed here, so the
+    // setting and the file entity cannot drift apart: the entity's copy is
+    // already checked against the packaged bytes above, so pinning the setting
+    // to it chains the whole claim back to the shipped file.
     $setting = \Drupal::config('agora_theme.settings')->get('hero_image_path');
-    $this->assertContains($setting, [NULL, ''], 'recipe.yml must NOT set hero_image_path until a published agora_theme release ships agora_theme.settings and its schema; until then the action throws on a clean install. NULL is the value on a theme release with no settings object at all, the empty string the value on one that ships the default.');
+    $this->assertSame($uri, $setting, 'recipe.yml must point agora_theme.settings:hero_image_path at the demonstration photograph this package ships. A theme release without the settings object answers NULL here, and the recipe would have thrown before reaching this line.');
+
+    // The setting has to name something that is REALLY THERE, and this walks
+    // the theme's own route to it - `_agora_theme_setting_url()` hands this
+    // value to the file URL generator - rather than the route the assertions
+    // above already walked with $uri. A setting pointing at a plausible file
+    // that does not exist renders a flat band and no error, which is the
+    // failure this pair of assertions is shaped to catch.
+    $from_setting = \Drupal::service('file_system')->realpath($setting);
+    $this->assertIsString($from_setting, 'hero_image_path must resolve to a real filesystem path.');
+    $this->assertFileExists($from_setting, 'The file named by hero_image_path must exist on disk.');
+    $this->drupalGet(\Drupal::service('file_url_generator')->generateString($setting));
+    $this->assertSession()->statusCodeEquals(200);
   }
 
   /**
