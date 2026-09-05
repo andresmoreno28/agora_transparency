@@ -346,6 +346,53 @@ config:
       simpleConfigUpdate:
         default: 'agora_theme'
     # -------------------------------------------------------------------------
+    # THE FRONT-PAGE MASTHEAD PHOTOGRAPH, AND THE ONE ACTION THAT IS NOT HERE.
+    #
+    # `content/file/hero-wide.webp` ships with this package (2026-09-05) and the
+    # content importer copies it to `public://hero-wide.webp` on every apply -
+    # measured on the rig: file entity created, 90,746 bytes, digest identical to
+    # the packaged copy. What is NOT here is the action that would point the
+    # theme at it:
+    #
+    #     agora_theme.settings:
+    #       simpleConfigUpdate:
+    #         hero_image_path: 'public://hero-wide.webp'
+    #
+    # ⚠️ IT IS WITHHELD, NOT FORGOTTEN, AND ADDING IT TODAY BREAKS EVERY CLEAN
+    # INSTALL. `hero_image_path` and the `agora_theme.settings` object that holds
+    # it exist only in the theme's unreleased working copy; the newest published
+    # release, 1.0.8, ships neither the object nor a schema for it. Core's
+    # `SimpleConfigUpdate::apply()` throws `Config agora_theme.settings does not
+    # exist so can not be updated` on a config object that is absent - read at
+    # source in the rig, not assumed - and unlike `import:` there is NO `?`
+    # optionality for `config.actions`: `RecipeRunner::processConfiguration()`
+    # applies every action unconditionally. So this line would turn
+    # `drush recipe` into a hard failure for anyone resolving `^1.0` from
+    # packages.drupal.org.
+    #
+    # THIS IS THE SAME ORDERING RULE THE `import:` BLOCK ABOVE STATES TWICE, and
+    # it is stated a third time here because the failure mode is different and
+    # worse: an unresolvable config ENTITY fails the install loudly at apply
+    # time, and so does this - but the temptation to "just set it" is much
+    # stronger for a scalar. The theme ships the setting, the RELEASE makes it
+    # resolvable, and only then may this recipe name it.
+    #
+    # DISCHARGE, in one line: [andres] publishes an `agora_theme` release
+    # containing `config/install/agora_theme.settings.yml` and
+    # `config/schema/agora_theme.schema.yml`; the three lines above are then
+    # uncommented in the same change that reads the resolved version out of the
+    # `Drupal CMS` job log. They are already verified - a clean install on the
+    # rig with a theme carrying the setting produced
+    # `agora_theme.settings:hero_image_path: 'public://hero-wide.webp'`, the file
+    # in `public://` at HTTP 200, and the photograph rendered behind the band.
+    #
+    # ⚠️ UNTIL THAT RELEASE THE DEMONSTRATION FRONT PAGE IS NOT AFFECTED: theme
+    # 1.0.8 still hard-codes its own copy of the picture in `css/components.css`,
+    # so nothing regresses today. The window opens the moment the theme release
+    # lands and closes when these three lines do - which is why they should land
+    # together rather than in whichever order is convenient.
+    # -------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # CANVAS COMPONENTS (T-604). Disabling does not delete a component; it keeps
     # it out of the Canvas UI, so an editor building a page is not offered it.
     #

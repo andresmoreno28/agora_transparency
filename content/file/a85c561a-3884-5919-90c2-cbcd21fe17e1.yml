@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: file
+  uuid: a85c561a-3884-5919-90c2-cbcd21fe17e1
+  default_langcode: en
+default:
+  uid:
+    -
+      target_id: 1
+  filename:
+    -
+      value: hero-wide.webp
+  uri:
+    -
+      value: 'public://hero-wide.webp'
+  filemime:
+    -
+      value: image/webp
+  filesize:
+    -
+      value: 90746
+  status:
+    -
+      value: true

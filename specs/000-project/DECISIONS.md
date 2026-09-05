@@ -1022,6 +1022,61 @@ Facets 3.0.4, Webform 6.3.0, Charts 5.2.3 — all stable and covered (research �
   a stable release, no dev/alpha/beta/rc constraint, and this very D-NNN line. It is queried like
   any other entry and appears in the counts.
 
+- **Amendment to D-034 — the exemption is DISCHARGED and DELETED, 2026-09-05.** Nothing above is
+  edited (rule 8); this records how it ended, because how an exemption ends is the only part of it
+  that was ever in doubt. ⚠️ **This paragraph also carries the `D-034` token beside
+  `drupal/agora_theme` deliberately**, exactly as the decision above does and for the same reason:
+  `sbom-check`'s `decision_line()` requires that pairing, and after the discharge the package's
+  SBOM justification should rest on a live statement rather than only on the text of an exemption
+  that no longer exists.
+
+  **The three mandatory properties were all exercised, and the third one fired.** ⚠️ **All of it was
+  reproduced today rather than recalled from August**, against a **copy** of the invariant serving a
+  **local fixture** — a real release-history document with `covered="1"` removed and nothing else
+  changed — so each state below is something that was watched happening, not something the code was
+  read and believed about.
+  · It was seen **APPLIED**: with the clock before the expiry date and a release reporting
+    `covered="0"`, the invariant printed `agora_theme … 0 exempt`, `APPLIED: its stable release
+    reports no coverage, and that one finding was withheld`, `findings: 0`, exit **0** — so the
+    exemption really did excuse something and was not decorative.
+  · It **EXPIRED BY FAILING on 2026-09-03**, exactly as designed and with no intervention: the
+    same input on 2026-09-05 printed `0 LAPSED`, `EXPIRED on 2026-09-03: the missing coverage is a
+    FINDING again, not an exemption`, and exit **1**.
+  · **It was never silently extended, and that is a measurement rather than a recollection.**
+    `git log -S 'EXEMPT_UNTIL="' -- tests/bin/sbom-check` returns **exactly one commit**, `9dc5722`
+    (*"the atomic swap — the template ships Ágora's own theme"*), and the only value that line ever
+    held is `2026-09-03`. No commit moved it; the one repair that would have made the red go away
+    was the one repair the code named as unavailable.
+  · The clock hook could not have hidden it either, and that was **re-falsified rather than
+    recalled**: `SBOM_CHECK_TODAY=2026-09-02` on 2026-09-05 aborts with *"the clock hook moves
+    forward only, so it can never hide an expired exemption"*. Forward-only, as written.
+
+  **Coverage arrived on 2026-09-05**, when [andres] opted `agora_theme` into the security advisory
+  policy on drupal.org. `sbom-check` then printed, of its own accord and without anyone asking it
+  to, `NOT NEEDED: drupal/agora_theme reports coverage of its own, so the exemption excused
+  nothing and can be deleted` — the sentence the script was written to be able to say. It now
+  reports **10 projects queried · 10 with coverage · 0 findings**.
+
+  **What was deleted, and what deleting it costs.** The whole block: `EXEMPT_PROJECT`,
+  `EXEMPT_CLAUSE`, `EXEMPT_UNTIL`, `EXEMPT_DECISION`, the injectable clock and its
+  `SBOM_CHECK_TODAY` test hook, the four bookkeeping counters, the two `elif` branches inside the
+  coverage clause and the six summary lines. It was hard-wired to one project name, so **removing
+  it removes the ability to grant a cheap exemption, and that is intended rather than overlooked**:
+  an empty exemption list is a ready-made hole, and pricing the next exemption at one line is the
+  opposite of what a gate is for. A future exemption costs a signed decision plus re-implementing
+  the three properties — and the working implementation sits in this file's git history at the
+  commit before the deletion, so the real price is reverting a known-good block, not designing one.
+
+  ⚠️ **Falsified before it was believed, in both directions and in one run.** A hermetic copy of
+  the invariant was pointed at two local fixtures that are the same release-history document
+  differing **only** in the `<security>` element: the covered one passed, the uncovered one
+  produced `has no <security covered="1"> (covered="0"); D-004 requires security-team coverage`,
+  and the run exited **1**. Then the uncovered fixture was renamed to `agora_theme` and served
+  again: **still a finding**, which is the measurement that separates *"the exemption is gone"*
+  from *"the exemption was not reached"*. The `exclusions:` line did not disappear with the
+  exemption — it now prints `none — every drupal/* entry in require is held to every clause above`
+  on every run, for the same reason property (2) required the presence to be printed.
+
 
 - **D-033** · **The language of shipped config strings is ENGLISH, and the Spanish is a
   translation that does not live in this repository.** **DECIDED BY [andres] 2026-08-24**, in his

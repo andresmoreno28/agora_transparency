@@ -77,6 +77,70 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
+   * The demonstration masthead photograph arrives, and nothing points at it.
+   *
+   * TWO CLAIMS THAT LOOK UNRELATED AND ARE THE SAME STATEMENT. The theme
+   * stopped shipping a photograph in September 2026 - `images/hero-wide.webp`
+   * deleted, the hard-coded `background-image` replaced by
+   * `var(--agora-hero-image, none)`, and a `hero_image_path` setting added - so
+   * a council installing the theme alone gets a flat navy band, which is
+   * correct. The demonstration picture therefore has to travel with the
+   * DEMONSTRATION, and this package is the demonstration.
+   *
+   * ⚠️ THE SECOND CLAIM IS THE ONE TO READ, AND IT IS DELIBERATELY THE
+   * OPPOSITE OF WHAT THIS PACKAGE WANTS. `recipe.yml` does NOT set
+   * `agora_theme.settings:hero_image_path`, because `agora_theme.settings`
+   * exists in no PUBLISHED theme release - 1.0.8 ships neither the object nor
+   * its schema - and core's `SimpleConfigUpdate::apply()` throws on a config
+   * object that is absent, with no `?` optionality available for
+   * `config.actions`. Setting it today would make `drush recipe` fail for
+   * everyone resolving `^1.0` from packages.drupal.org.
+   *
+   * So the withholding is asserted rather than merely commented. When the theme
+   * release lands and the three lines go into `recipe.yml`, THIS ASSERTION IS
+   * WHAT FAILS, in the same commit, which is the point of it: a decision not to
+   * do something is worth nothing if nothing notices when it is reversed by
+   * accident.
+   */
+  public function testDemonstrationMastheadImageArrives(): void {
+    $this->applyRecipe(self::getRecipePath());
+
+    $uri = 'public://hero-wide.webp';
+    $files = \Drupal::entityTypeManager()
+      ->getStorage('file')
+      ->loadByProperties(['uri' => $uri]);
+    $this->assertCount(1, $files, "Exactly one file entity must live at $uri.");
+    $file = reset($files);
+    $this->assertTrue($file->isPermanent(), 'The masthead image must be a permanent file: nothing references it as an entity, so a temporary one would be swept away.');
+    $this->assertSame('image/webp', $file->getMimeType());
+
+    // The size is compared against the PACKAGED BYTES, never against a number
+    // typed here. A constant in this file would agree with itself for ever.
+    $source = self::getRecipePath() . '/content/file/hero-wide.webp';
+    $this->assertFileExists($source, 'The package must ship the file the entity names; the content importer copies it by basename.');
+    $expected = file_get_contents($source);
+    $this->assertSame(strlen($expected), (int) $file->getSize(), 'The file entity\'s filesize must match the packaged bytes.');
+
+    // And the bytes that actually landed, not merely the record of them.
+    $destination = \Drupal::service('file_system')->realpath($uri);
+    $this->assertIsString($destination);
+    $this->assertSame(
+      hash('sha256', $expected),
+      hash_file('sha256', $destination),
+      'The file copied into public:// must be byte-identical to the packaged one.'
+    );
+
+    // Reachable anonymously, because a masthead image behind a 403 is a flat
+    // band with extra steps.
+    $this->drupalGet(\Drupal::service('file_url_generator')->generateString($uri));
+    $this->assertSession()->statusCodeEquals(200);
+
+    // ⚠️ The withheld action, asserted. See the docblock.
+    $setting = \Drupal::config('agora_theme.settings')->get('hero_image_path');
+    $this->assertContains($setting, [NULL, ''], 'recipe.yml must NOT set hero_image_path until a published agora_theme release ships agora_theme.settings and its schema; until then the action throws on a clean install. NULL is the value on a theme release with no settings object at all, the empty string the value on one that ships the default.');
+  }
+
+  /**
    * The six table views (T-615), and the bundle each of them lists.
    *
    * The COLUMN COUNT is deliberately absent: it is read from the view that was

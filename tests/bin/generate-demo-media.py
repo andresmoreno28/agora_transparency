@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # generate-demo-media.py - Agora - unit 003, wave 11, task T-1101.
 #
-# Writes every non-YAML file this package ships under content/file/ - the 34
-# demonstration PDFs and the 5 CSV distributions - and is the source of truth
-# named by the `source URL` column of content/MEDIA-LICENCES.md.
+# Writes 39 of the 40 non-YAML files this package ships under content/file/ -
+# the 34 demonstration PDFs and the 5 CSV distributions - and is the source of
+# truth named by the `source URL` column of content/MEDIA-LICENCES.md for those
+# thirty-nine. The fortieth is CARRIED: verified, never written. See "THE ONE
+# FILE THIS SCRIPT DOES NOT PRODUCE" below.
 #
 # -----------------------------------------------------------------------------
 # WHY IT EXISTS (D-042, signed A by [andres] 2026-08-27)
@@ -47,6 +49,45 @@
 # the corresponding nodes; they are not, because deriving two of five would make
 # the file's provenance non-uniform for no gain, and the manifest's claim is
 # about who wrote the bytes rather than about how clever the writer was.
+#
+# -----------------------------------------------------------------------------
+# THE ONE FILE THIS SCRIPT DOES NOT PRODUCE (added 2026-09-05)
+# -----------------------------------------------------------------------------
+# content/file/hero-wide.webp is the photograph behind the demonstration front
+# page's masthead. It was generated with OpenAI `gpt-image` 2.0 on 2026-08-31,
+# carries CC0-1.0 with no human authorship claimed, and is the row D-039 signs
+# for generated imagery. This script does NOT emit its bytes. It holds its
+# SHA-256 and its byte length, and any difference is a finding.
+#
+# WHY NOT SIMPLY CARRY IT AS A LITERAL, the way the five CSVs below are carried,
+# which was the obvious alternative and is the one the dispatch offered first.
+# Because MEDIA-LICENCES.md's `source URL` column exists so the claim can be
+# re-checked by someone else, and if the bytes came out of here the row would
+# name THIS FILE as the origin of a photograph made by a different tool under a
+# different licence. D-042 was signed because a provenance claim pointed at
+# something nobody could inspect; a provenance claim naming the WRONG PRODUCER
+# is the same defect wearing better clothes. A courier must not sign as author.
+#
+# ⚠️ THE TECHNICAL OBJECTION IS NOT THE REASON, AND IT IS FALSE. The expected
+# blocker was cspell - this very file records, forty lines up, that a
+# `cspell:disable` pair does not suppress words here, so a Base64 blob looked
+# unfixable. MEASURED 2026-09-05 instead of assumed: a 200-line Base64 block in
+# a file in this directory, run through the same effective cspell config the
+# blocking job uses, reports 0 issues (long unbroken tokens are not offered as
+# words at all). The decision above stands on provenance alone, and the
+# measurement is written down so nobody re-derives a wrong reason for it.
+#
+# WHAT THE CARRY CANNOT DO, stated because it is the whole of the difference:
+# `--write` cannot RE-CREATE this file. A digest restores nothing. Delete
+# hero-wide.webp and this script reports a finding and cannot repair it, where
+# the other 39 would be rewritten from the content tree. That asymmetry is
+# printed on every run rather than left to be discovered at the worst moment.
+#
+# ADDING A SECOND CARRIED FILE IS A DECISION, NOT A LINE. The dict below is a
+# closed world of exactly one entry, and the invariant prints its length. A
+# second entry means a second provenance section in MEDIA-LICENCES.md and a
+# second row that cannot cite this script - which is the cost, and it is meant
+# to be felt.
 #
 # -----------------------------------------------------------------------------
 # PYTHON STANDARD LIBRARY ONLY. THIS IS NOT A PREFERENCE.
@@ -100,6 +141,10 @@
 #             they depend on; output under content/file/
 #   scanned:  <N> node(s), and N must be > 0 or this script exits 1
 #   targets:  <N> file(s) - 34 derived PDFs + 5 literal CSVs
+#   carried:  <N> file(s) - verified against a recorded SHA-256, never written,
+#             and N must be > 0 or this script exits 1 for the same reason the
+#             node count must: a carry that silently stopped happening prints
+#             exactly like a carry that matched (I-028)
 #   findings: <M>, each printed as  path  reason
 #   exit 0 iff M == 0
 #
@@ -107,6 +152,8 @@
 #   --check   (default) generate in memory, compare against the files on disk,
 #             report every difference and its size delta. Writes nothing.
 #   --write   generate and write. Prints which files changed and by how much.
+#             ⚠️ CARRIED FILES ARE STILL ONLY VERIFIED IN THIS MODE. --write is
+#             not a repair for them and the run says so.
 #
 # A zero-length scan, an unresolvable reference, a node whose bundle this script
 # does not know, or a PDF target with no node behind it is a FINDING, never a
@@ -135,6 +182,7 @@
 # with the words still reported from inside the disabled region - so the
 # working form is recorded here rather than the one that looks right.
 # cspell:ignore endobj startxref
+import hashlib
 import os
 import re
 import sys
@@ -546,6 +594,25 @@ FCL-0012,Acer campestre,Sports ground surround,2016,2025-03-20,good
 """,
 }
 
+# ------------------------------------------------------- the carried binary --
+# One entry, and the header above argues at length why it is verified rather
+# than emitted. Read that before adding a second: a new entry here is a new
+# provenance section in content/MEDIA-LICENCES.md and a row that cannot cite
+# this script, which is the cost and is meant to be felt.
+#
+# The byte length is held BESIDE the digest on purpose. A digest alone gives a
+# reader nothing to compare against `filesize` in content/file/<uuid>.yml or
+# against `ls -l`, and this script's own header names a stale `filesize` as the
+# one thing nothing catches. For a carried file, something now does.
+#
+# filename -> (sha256 of the exact bytes, byte length)
+CARRIED_BINARIES = {
+    'hero-wide.webp': (
+        '7eaa0b36f5ae193cc9464714597d80cd585717d3a09a0829c3c18d8d5e1ffad7',
+        90746,
+    ),
+}
+
 
 def main(argv):
     write = '--write' in argv[1:]
@@ -672,6 +739,8 @@ def main(argv):
           % (len(nodes), documents, people))
     print('targets:  %d file(s) - %d derived PDF(s) + %d literal CSV(s)'
           % (len(targets), pdfs, csvs))
+    print('carried:  %d file(s) - verified against a recorded SHA-256, never '
+          'written' % len(CARRIED_BINARIES))
     print('no declaration (not elected members, so the register excludes them): '
           '%d - %s' % (len(undeclared), ', '.join(undeclared) or 'none'))
 
@@ -681,14 +750,74 @@ def main(argv):
               '(I-028).')
         return 1
 
-    # Every media file already on disk must be a target, or this script is not
-    # the source of truth it claims to be on the manifest.
+    # Emptying the dict would take every check below to a vacuous pass while
+    # leaving `findings: 0` on the summary line - the same shape as a scan of
+    # zero files, and the reason the contract makes this an assertion.
+    if not CARRIED_BINARIES:
+        print('')
+        print('FAILURE: 0 carried binaries declared - the carry was emptied, so '
+              'nothing verifies the files it covers (I-028).')
+        return 1
+
+    # ------------------------------------------------------- carried binaries --
+    # Verified here, never produced. Three things are checked and each is a
+    # separate finding, because they fail for different reasons: the file is
+    # absent; its bytes changed; or its bytes are right and the `filesize` in
+    # its own content/file/<uuid>.yml disagrees with them. The third is the
+    # gap this script's header names as the one nothing catches - for a carried
+    # file, something now does.
+    sizes_by_filename = {}
+    for uuid in files:
+        _name = field_value(files[uuid], 'filename')
+        if _name:
+            sizes_by_filename[_name] = (uuid, field_value(files[uuid], 'filesize'))
+
+    carried_verified = 0
+    for name in sorted(CARRIED_BINARIES):
+        want_digest, want_size = CARRIED_BINARIES[name]
+        path = os.path.join(OUT_DIR, name)
+        if not os.path.exists(path):
+            findings.append(('content/file/%s' % name,
+                             'declared as a carried binary and absent from the '
+                             'tree - --write CANNOT restore it, because this '
+                             'script holds its digest and not its bytes'))
+            continue
+        with open(path, 'rb') as handle:
+            blob = handle.read()
+        got_digest = hashlib.sha256(blob).hexdigest()
+        if len(blob) != want_size or got_digest != want_digest:
+            findings.append(('content/file/%s' % name,
+                             'carried binary differs from the recorded bytes: '
+                             '%d bytes / %s on disk, %d bytes / %s recorded. '
+                             'Either restore the file or update CARRIED_BINARIES '
+                             'and the SHA-256 in content/MEDIA-LICENCES.md in the '
+                             'same change'
+                             % (len(blob), got_digest, want_size, want_digest)))
+            continue
+        entry = sizes_by_filename.get(name)
+        if entry is None:
+            findings.append(('content/file/%s' % name,
+                             'carried binary with no file entity in '
+                             'content/file/*.yml - nothing would import it'))
+            continue
+        entity_uuid, declared_size = entry
+        if declared_size != len(blob):
+            findings.append(('content/file/%s.yml' % entity_uuid,
+                             'filesize is %r and %s is %d bytes on disk'
+                             % (declared_size, name, len(blob))))
+            continue
+        carried_verified += 1
+        print('  %-32s %d bytes, sha256 %s... OK'
+              % (name, len(blob), got_digest[:16]))
+
+    # Every media file already on disk must be a target or a declared carry, or
+    # this script is not the source of truth it claims to be on the manifest.
     on_disk = sorted(
         name for name in os.listdir(OUT_DIR)
         if not name.endswith('.yml')
     )
     for name in on_disk:
-        if name not in targets:
+        if name not in targets and name not in CARRIED_BINARIES:
             findings.append(('content/file/%s' % name,
                              'shipped under content/file/ and generated by nothing '
                              'here - the manifest would name this script for a file '
@@ -721,6 +850,8 @@ def main(argv):
     print('')
     print('identical: %d   %s: %d' % (identical, 'written' if write else 'differing',
                                       changed))
+    print('carried verified: %d of %d declared'
+          % (carried_verified, len(CARRIED_BINARIES)))
     print('findings:  %d' % len(findings))
     for path, reason in findings:
         print('  %s  %s' % (path, reason))
@@ -728,6 +859,8 @@ def main(argv):
     if write:
         print('')
         print('generate-demo-media.py: wrote %d file(s).' % changed)
+        print('NOTE: %d carried file(s) were VERIFIED, not written - --write is '
+              'not a repair for them.' % len(CARRIED_BINARIES))
         if changed:
             # ASCII only on stdout. This host's console is cp1252 and a
             # non-ASCII character here raises UnicodeEncodeError, which would
@@ -742,8 +875,13 @@ def main(argv):
         print('generate-demo-media.py: %d finding(s).' % len(findings))
         return 1
     print('')
-    print('generate-demo-media.py: clean - all %d shipped file(s) reproduce '
-          'byte for byte.' % len(targets))
+    # The `all N shipped file(s)` shape is load-bearing: gate-a-wave3.sh's G15
+    # extracts N from it as the denominator it asserts positive. N is the whole
+    # shipped set - generated plus carried - and the clause after it is what
+    # keeps the sentence true now that they are not the same thing.
+    print('generate-demo-media.py: clean - all %d shipped file(s) verified: %d '
+          'reproduce byte for byte, %d carried and digest-matched.'
+          % (len(targets) + carried_verified, len(targets), carried_verified))
     return 0
 
 
