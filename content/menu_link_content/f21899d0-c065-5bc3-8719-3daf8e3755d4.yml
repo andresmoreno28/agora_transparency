@@ -1,0 +1,38 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: f21899d0-c065-5bc3-8719-3daf8e3755d4
+  bundle: menu_link_content
+  default_langcode: en
+  depends:
+    b42ea55e-e9a1-5e9f-8864-70182ba20360: node
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: 'Privacy notice'
+  menu_name:
+    -
+      value: agora-base-footer-legal
+  link:
+    -
+      target_uuid: b42ea55e-e9a1-5e9f-8864-70182ba20360
+      title: ''
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: false
+  weight:
+    -
+      value: 2
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

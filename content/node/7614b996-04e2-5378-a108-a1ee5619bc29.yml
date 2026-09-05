@@ -1,0 +1,42 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: 7614b996-04e2-5378-a108-a1ee5619bc29
+  bundle: page
+  default_langcode: en
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Legal notice'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  moderation_state:
+    -
+      value: published
+  path:
+    -
+      alias: '/legal-notice'
+      langcode: en
+  field_description:
+    -
+      value: 'Who runs this site, what it publishes, and the terms on which the information may be reused.'
+  field_content:
+    -
+      value: '<p><strong>To be completed by the body operating this site.</strong> A legal notice says who is responsible for a website and on what terms its contents may be used. The headings below are the ones a public body normally has to fill in; only the body itself can supply what they ask for.</p><h2>Who runs this site</h2><p><strong>To be completed:</strong> the full legal name of the body, its registered or principal address, the public register or tax identifier it is recorded under where one exists, and an address for formal contact.</p><h2>What this site publishes</h2><p>This site is a transparency portal. It publishes records the body is required, or has chosen, to make public: contracts awarded, grants awarded, agreements signed, budgets, accounts and plans, open datasets, and the composition and remuneration of the people who hold public office in it.</p><p>Figures and documents are published as they stood on the date each record gives. Where a record is later corrected, the corrected version replaces it and the date changes with it.</p><h2>Reuse of the information</h2><p><strong>To be completed:</strong> the terms on which the information published here may be reused, and the licence that applies to the datasets. Public sector information is reusable under different rules in different jurisdictions, so no licence is asserted here on the behalf of the body.</p><h2>The software this site runs on</h2><p>This site is built with Drupal, which is free software published under the GNU General Public License, version 2 or later. The site template and the theme that shape it are published under the same licence. Neither carries any warranty. Responsibility for the content published on this site rests with the body named above, not with the authors of the template or with the Drupal project.</p><h2>Links to other sites</h2><p>Where this site links to another organisation, the link is offered for convenience. The body running this site does not control those pages and is not responsible for their content or for their accessibility.</p><h2>Related statements</h2><p>See also the <a href="/accessibility-statement" data-entity-type="node" data-entity-uuid="542d60d9-f7b6-596c-9f15-7ee81964d139" data-entity-substitution="canonical">accessibility statement</a>, the <a href="/privacy-notice" data-entity-type="node" data-entity-uuid="b42ea55e-e9a1-5e9f-8864-70182ba20360" data-entity-substitution="canonical">privacy notice</a> and the page on <a href="/cookies" data-entity-type="node" data-entity-uuid="c3de2818-50e9-5a6d-b49b-f887d6be9921" data-entity-substitution="canonical">cookies and similar technologies</a>.</p>'
+      format: content_format

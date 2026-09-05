@@ -304,10 +304,19 @@ class ValidationTest extends BrowserTestBase {
   ];
 
   /**
-   * The eight routes the main menu must link, in menu order.
+   * The nine routes the main menu must link, in menu order.
    *
    * Transcribed rather than derived, on purpose: derived from the views, this
    * would assert that the menu links whatever it links.
+   *
+   * ⚠️ EIGHT OF THE NINE ARE VIEWS PAGE DISPLAYS; the ninth is not, and that
+   * is why it is last. `/institution` is a Canvas page, so no view can carry
+   * it and it is the one `menu_link_content` entity in `main` (T-1309). The
+   * eight above it are plugin derivatives that only exist once the menu link
+   * manager has rebuilt - which is the reason the test rebuilds before
+   * counting, and the reason a duplicate check over BOTH sources is worth
+   * running at all (T-1008 shipped 8 entities that duplicated the 8
+   * derivatives and rendered 16 links).
    */
   private const MENU_ROUTES = [
     '/publications' => 'All publications',
@@ -318,6 +327,25 @@ class ValidationTest extends BrowserTestBase {
     '/grants' => 'Grants',
     '/datasets' => 'Datasets',
     '/library' => 'Document library',
+    '/institution' => 'The institution',
+  ];
+
+  /**
+   * The four links the legal bottom bar must carry, in menu order.
+   *
+   * Transcribed for the reason MENU_ROUTES is. ⚠️ These four are the reason
+   * the row exists: T-1215 deliberately shipped NO privacy, accessibility or
+   * contact link because none of the three had a destination that answered,
+   * and `/privacy-policy` - the page `drupal_cms_privacy_basic` ships
+   * unpublished - answered 404. A link that goes nowhere is the defect that
+   * decision refused to ship, so the test asserts the destinations ANSWER
+   * rather than that the links exist (T-1311, T-1312, T-1105).
+   */
+  private const LEGAL_LINKS = [
+    '/accessibility-statement' => 'Accessibility statement',
+    '/legal-notice' => 'Legal notice',
+    '/privacy-notice' => 'Privacy notice',
+    '/cookies' => 'Cookies',
   ];
 
   /**
@@ -592,15 +620,16 @@ class ValidationTest extends BrowserTestBase {
     }
 
     // -- The footer, on the same live site -----------------------------------
-    // Five navigation landmarks inside the theme's <footer>, each named by
-    // its visible <h2>: the four columns T-1215 ships and the social row
-    // T-1216 adds. Counted INSIDE the footer element on purpose - the page
-    // also carries the main menu and the quick-access component as <nav>,
-    // so a page-wide count of five would go green on the wrong five.
+    // Six navigation landmarks inside the theme's <footer>, each named by
+    // its visible <h2>: the four columns T-1215 ships, the social row
+    // T-1216 adds and the legal bottom bar T-1311 adds. Counted INSIDE the
+    // footer element on purpose - the page also carries the main menu and the
+    // quick-access component as <nav>, so a page-wide count of six would go
+    // green on the wrong six.
     $this->drupalGet('<front>');
     $assert->statusCodeEquals(200);
     $footer = 'footer.agora-page__footer';
-    $assert->elementsCount('css', $footer . ' nav', 5);
+    $assert->elementsCount('css', $footer . ' nav', 6);
 
     // The social row: exactly four links, every href EXACTLY one network's
     // root URL and every text exactly the brand name. A `starts with
@@ -621,6 +650,56 @@ class ValidationTest extends BrowserTestBase {
       unset($expected[$href]);
     }
     $this->assertSame([], $expected, 'Every one of the four networks must be linked exactly once.');
+
+    // The legal bottom bar: four links, and - the part that matters - four
+    // destinations that ANSWER.
+    //
+    // ⚠️ THE HREFS ARE NOT ASSERTED FROM THE SHIPPED ALIAS ALONE, because the
+    // shipped alias is not what decides them. `pathauto` owns the alias of a
+    // `page` node (pattern `/[node:title]`), and the menu links are stored as
+    // entity references (`target_uuid`) precisely so that Drupal resolves the
+    // href from the node rather than from a string somebody typed. So the
+    // test reads the href the site actually emitted, asserts it is the alias
+    // this package intends, and THEN follows it. Asserting the alias without
+    // following it would pass on a link to a 404; following it without
+    // asserting the alias would pass on a link that silently moved.
+    $legal = $footer . ' #block-agora-base-footer-legal';
+    $assert->elementExists('css', $legal);
+    $assert->elementTextContains('css', $legal . ' h2', 'Legal and accessibility');
+    $legal_links = $this->getSession()->getPage()->findAll('css', $legal . ' a');
+    $this->assertCount(count(self::LEGAL_LINKS), $legal_links, 'The legal bar must carry exactly four links.');
+    $found = [];
+    foreach ($legal_links as $link) {
+      $href = (string) $link->getAttribute('href');
+      $path = '/' . ltrim(substr($href, strlen($base_path)), '/');
+      $this->assertArrayHasKey($path, self::LEGAL_LINKS, "The legal bar links $href, which is not one of the four destinations T-1311 ships - or links it twice.");
+      $this->assertSame(self::LEGAL_LINKS[$path], trim($link->getText()), "The legal link to $path must read as the name of the statement it opens.");
+      $found[$path] = TRUE;
+    }
+    $this->assertSame(array_keys(self::LEGAL_LINKS), array_keys($found), 'Every one of the four legal destinations must be linked exactly once.');
+
+    // And every one of them answers. This is the criterion the row exists for:
+    // four dead links is the defect T-1215 refused to ship, at four times the
+    // size.
+    foreach (array_keys(self::LEGAL_LINKS) as $route) {
+      $this->drupalGet(ltrim($route, '/'));
+      $assert->statusCodeEquals(200);
+      // A page that answers 200 with no heading is a page that answers about
+      // nothing (I-062, in prose form): the statement has to BE there.
+      $assert->elementsCount('css', 'h1', 1);
+      $assert->elementTextContains('css', 'h1', self::LEGAL_LINKS[$route]);
+    }
+
+    // ⚠️ THE UPSTREAM PRIVACY STUB IS ASSERTED STILL ABSENT, not merely left
+    // alone. `drupal_cms_privacy_basic` ships node 1, `Privacy policy`,
+    // UNPUBLISHED, its body reading "This content needs to be edited before
+    // publishing"; `RecipeRunner` imports content with `Existing::Skip` and
+    // that recipe runs first, so nothing this package ships can amend it.
+    // Publishing it would ship a page that says it needs to be edited. If it
+    // ever starts answering 200, somebody has published that text on every
+    // installed site and this test is where it shows up.
+    $this->drupalGet('privacy-policy');
+    $assert->statusCodeEquals(404);
   }
 
   /**

@@ -347,3 +347,11 @@ wslconfig
 # D-046: the host of the Bluesky social network, `bsky.app`, one of the six hosts the theme
 # recognises for a footer brand mark. A domain, not a word.
 bsky
+# T-1312: `klaro`, the consent-management module drupal.org/project/klaro, installed by
+# `drupal_cms_privacy_basic` and named in a recipe action that repoints its cookie banner
+# away from the 404 it shipped with. A project name, not a word.
+klaro
+# T-1312: `linkit`, the module drupal.org/project/linkit, installed by
+# `drupal_cms_content_type_base`. Its text filter is what resolves the legal pages'
+# cross-links from an entity uuid to a real alias. A project name, not a word.
+linkit

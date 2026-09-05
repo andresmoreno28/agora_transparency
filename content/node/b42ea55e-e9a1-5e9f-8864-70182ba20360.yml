@@ -1,0 +1,42 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: b42ea55e-e9a1-5e9f-8864-70182ba20360
+  bundle: page
+  default_langcode: en
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Privacy notice'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  moderation_state:
+    -
+      value: published
+  path:
+    -
+      alias: '/privacy-notice'
+      langcode: en
+  field_description:
+    -
+      value: 'What personal data this site handles, why it handles it, and what rights you have over it.'
+  field_content:
+    -
+      value: '<p><strong>To be completed by the body operating this site.</strong> A privacy notice has to name the organisation that decides how personal data is used, and only that organisation can do so. The rest of this page describes what the site itself does, which is the part the template can state accurately.</p><h2>Who is responsible</h2><p><strong>To be completed:</strong> the name and address of the body acting as data controller, and the contact details of its data protection officer where it has one.</p><h2>What is collected when you read this site</h2><p>Reading the public pages of this site does not require an account, and no account is offered to the public.</p><ul><li><strong>Server records.</strong> The web server records each request: the network address it came from, the page asked for, the time, and the description the browser gives of itself. These records exist to keep the service running and secure.</li><li><strong>A record of your consent choice.</strong> If this site asks which non-essential services may run, your answer is stored in your own browser so that you are not asked again. See the page on <a href="/cookies" data-entity-type="node" data-entity-uuid="c3de2818-50e9-5a6d-b49b-f887d6be9921" data-entity-substitution="canonical">cookies and similar technologies</a>.</li><li><strong>A session cookie, for signed-in staff only.</strong> Editors and administrators who sign in are given a session cookie so the site can recognise them from one page to the next. Members of the public are never given one.</li></ul><p><strong>To be completed:</strong> how long server records are kept, and whether any analytics, mapping, font or video service is used on this site. Every such service sees the network address of the people who visit, and each one must be named here with its purpose and its provider.</p><h2>What this site does not do</h2><p>As shipped, this template contains no advertising, no tracking for advertising purposes, and no transfer of visitor data to third parties. A body that adds any of those must say so in the section above.</p><h2>Personal data published on this site</h2><p>A transparency portal publishes personal data on purpose: the names, posts and remuneration of the people who hold public office in the body, and the names of parties to contracts, grants and agreements. That is what the portal is for.</p><p><strong>To be completed:</strong> the lawful basis on which the body publishes it, the rules that require or permit publication, and how long each record stays online before it is archived or removed.</p><h2>Your rights</h2><p><strong>To be completed:</strong> the rights a person has over their personal data in your jurisdiction, how to exercise them, how quickly the body answers, and how to complain to the supervisory authority if the answer does not come. These rights and their time limits differ between jurisdictions, so none is stated here on the behalf of the body.</p><h2>Related statements</h2><p>See also the <a href="/accessibility-statement" data-entity-type="node" data-entity-uuid="542d60d9-f7b6-596c-9f15-7ee81964d139" data-entity-substitution="canonical">accessibility statement</a> and the <a href="/legal-notice" data-entity-type="node" data-entity-uuid="7614b996-04e2-5378-a108-a1ee5619bc29" data-entity-substitution="canonical">legal notice</a>.</p>'
+      format: content_format

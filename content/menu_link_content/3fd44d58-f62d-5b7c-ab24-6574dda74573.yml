@@ -1,0 +1,38 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: 3fd44d58-f62d-5b7c-ab24-6574dda74573
+  bundle: menu_link_content
+  default_langcode: en
+  depends:
+    c3de2818-50e9-5a6d-b49b-f887d6be9921: node
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: 'Cookies'
+  menu_name:
+    -
+      value: agora-base-footer-legal
+  link:
+    -
+      target_uuid: c3de2818-50e9-5a6d-b49b-f887d6be9921
+      title: ''
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: false
+  weight:
+    -
+      value: 3
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

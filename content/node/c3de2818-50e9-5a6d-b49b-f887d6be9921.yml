@@ -1,0 +1,42 @@
+_meta:
+  version: '1.0'
+  entity_type: node
+  uuid: c3de2818-50e9-5a6d-b49b-f887d6be9921
+  bundle: page
+  default_langcode: en
+default:
+  revision_uid:
+    -
+      target_id: 1
+  status:
+    -
+      value: true
+  uid:
+    -
+      target_id: 1
+  title:
+    -
+      value: 'Cookies'
+  promote:
+    -
+      value: false
+  sticky:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true
+  moderation_state:
+    -
+      value: published
+  path:
+    -
+      alias: '/cookies'
+      langcode: en
+  field_description:
+    -
+      value: 'What this site stores in your browser, why, and how to change your choice.'
+  field_content:
+    -
+      value: '<p>A cookie is a small piece of text that a website asks your browser to keep and to send back on your next visit. Similar results can be achieved with other kinds of browser storage, and this page covers those too.</p><h2>What this site stores</h2><ul><li><strong>Your consent choice.</strong> When you answer the banner that asks which non-essential services may run, the answer is kept in your browser so that you are not asked again on every page. Clearing it makes the banner appear again.</li><li><strong>A session cookie, only if you sign in.</strong> Members of the public do not sign in and are not given one. It is issued to editors and administrators so that the site can recognise them from one page to the next, and it is discarded when they sign out.</li></ul><p>Reading the public pages of this site does not require you to accept anything. The records this portal publishes are readable with every non-essential service refused.</p><h2>Changing your choice</h2><p>You can change your answer at any time, either through the consent settings this site offers or by clearing the stored data for this site in your browser. Clearing it removes only the record of the choice; it does not remove anything you have read.</p><h2>Services added by the body</h2><p><strong>To be completed by the body operating this site.</strong> If an analytics service, an embedded map, a video player or a font service has been added, each of those may store data of its own. List them here with the purpose, the provider and how long the data is kept.</p><h2>Related statements</h2><p>See also the <a href="/privacy-notice" data-entity-type="node" data-entity-uuid="b42ea55e-e9a1-5e9f-8864-70182ba20360" data-entity-substitution="canonical">privacy notice</a> and the <a href="/legal-notice" data-entity-type="node" data-entity-uuid="7614b996-04e2-5378-a108-a1ee5619bc29" data-entity-substitution="canonical">legal notice</a>.</p>'
+      format: content_format

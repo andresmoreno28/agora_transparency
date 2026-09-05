@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: agora-base-footer-legal
+label: 'Legal and accessibility'
+description: 'The statements a public body is required to publish about the site itself: how accessible it is, who runs it, how it handles personal data and what it stores in the browser. Placed in the footer, below the columns.'
+locked: false

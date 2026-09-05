@@ -131,6 +131,24 @@ display:
             multiple: false
             reduce: true
           is_grouped: false
+        type_1:
+          id: type_1
+          table: node_field_data
+          field: type
+          group_type: group
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          operator: in
+          value:
+            agora_base_document: agora_base_document
+            agora_base_person: agora_base_person
+            agora_base_contract: agora_base_contract
+            agora_base_agreement: agora_base_agreement
+            agora_base_grant: agora_base_grant
+            agora_base_dataset: agora_base_dataset
+          group: 1
+          exposed: false
         status:
           id: status
           table: node_field_data

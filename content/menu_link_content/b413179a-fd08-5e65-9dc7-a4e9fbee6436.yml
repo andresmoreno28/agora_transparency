@@ -1,0 +1,38 @@
+_meta:
+  version: '1.0'
+  entity_type: menu_link_content
+  uuid: b413179a-fd08-5e65-9dc7-a4e9fbee6436
+  bundle: menu_link_content
+  default_langcode: en
+  depends:
+    542d60d9-f7b6-596c-9f15-7ee81964d139: node
+default:
+  enabled:
+    -
+      value: true
+  title:
+    -
+      value: 'Accessibility statement'
+  menu_name:
+    -
+      value: agora-base-footer-legal
+  link:
+    -
+      target_uuid: 542d60d9-f7b6-596c-9f15-7ee81964d139
+      title: ''
+      options: {  }
+  external:
+    -
+      value: false
+  rediscover:
+    -
+      value: false
+  weight:
+    -
+      value: 0
+  expanded:
+    -
+      value: false
+  revision_translation_affected:
+    -
+      value: true

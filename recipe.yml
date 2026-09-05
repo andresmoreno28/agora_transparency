@@ -220,9 +220,9 @@ config:
       # breadcrumb reading only "Home" on the home page is noise.
       - block.block.agora_theme_breadcrumb
   # -------------------------------------------------------------------------
-  # AND FIVE PLACEMENTS THAT ARE NOT IN THAT LIST, ON PURPOSE.
+  # AND SIX PLACEMENTS THAT ARE NOT IN THAT LIST, ON PURPOSE.
   #
-  # `config/block.block.agora_base_footer_*.yml` place five menus into the same
+  # `config/block.block.agora_base_footer_*.yml` place six menus into the same
   # `footer` region as the nine above, and they are NOT named here because they
   # do not need to be: `import:` reaches config that some OTHER extension ships
   # in its own `config/optional`, which is the case I-086 is about. Config in
@@ -249,6 +249,22 @@ config:
   # brand mark for a link whose host it recognises; with a theme release that
   # does not, the links render as text, which is the honest degradation.
   #
+  # NOR IS THE SIXTH. `agora_base_footer_legal` places the `Legal and
+  # accessibility` menu at weight 6 - after the social row at 5, still before
+  # the theme's `powered_by` at 10 - so the page ends with the four statements a
+  # public body publishes ABOUT THE SITE, then the colophon. Its four links
+  # (T-1311, T-1312, T-1105) are the accessibility statement, the legal notice,
+  # the privacy notice and the page on cookies.
+  #
+  # ⚠️ THEY LINK BY ENTITY UUID, NOT BY ALIAS, and that is the whole reason this
+  # row can promise what T-1215 refused to. `pathauto` owns the alias of a
+  # `page` node (pattern `/[node:title]`), so an alias written into a menu link
+  # is a guess about what pathauto will generate; `target_uuid` is resolved by
+  # Drupal into whatever the alias actually is. T-1215 shipped NO privacy,
+  # accessibility or contact link precisely because a link that goes nowhere is
+  # worse than an absent one, and four dead links would be that defect at four
+  # times the size.
+  #
   # THE COLUMN HEADINGS ARE `label_display: visible`, unlike every placement in
   # the list above. Core's block--system-menu-block.html.twig renders a block
   # label as the <h2> that names the navigation landmark, and the theme already
@@ -256,6 +272,7 @@ config:
   # "so that a site placing four menus in the footer gets four column headings".
   # Hidden labels would leave four navigation landmarks in one <footer> that a
   # screen reader could not tell apart - and five, since the social row joined.
+  # Six, since the legal row joined it.
 
   actions:
     # -- area: base -------------------------------------------------------------
@@ -484,6 +501,35 @@ config:
     field.field.media.document.field_media_document:
       setSettings:
         description_field: true
+    # -------------------------------------------------------------------------
+    # THE COOKIE BANNER'S OWN PRIVACY LINK, WHICH POINTED AT A 404 ON EVERY
+    # INSTALL OF THIS TEMPLATE UNTIL THIS LINE EXISTED. Measured on the rig, not
+    # inferred: `drupal_cms_privacy_basic` - applied above, in `recipes:` -
+    # installs `klaro` and sets `klaro.texts` `consentModal.privacyPolicy.url`
+    # to `internal:/privacy-policy`. That alias belongs to the node the SAME
+    # recipe ships, node 1, `Privacy policy`, which it ships UNPUBLISHED with a
+    # body reading "This content needs to be edited before publishing". So
+    # `/privacy-policy` answers 404 to an anonymous request, and the consent
+    # modal - the one dialogue every first-time visitor is shown - offered a
+    # link to it.
+    #
+    # ⚠️ THE UPSTREAM NODE IS LEFT EXACTLY AS IT IS, and it is not amendable
+    # from here even if that were wanted: `RecipeRunner` imports content with
+    # `Existing::Skip`, and `drupal_cms_privacy_basic` runs BEFORE this recipe's
+    # own content, so a file of ours carrying that node's uuid would be skipped
+    # in silence. Publishing it was the other option and it is worse: it would
+    # ship a page whose text says it needs to be edited before publishing.
+    #
+    # So the banner is pointed at the privacy notice this package DOES publish
+    # (T-1312). A site owner who prefers to write their own may repoint this in
+    # the Klaro settings UI, and may delete the unpublished upstream stub.
+    #
+    # No `?` prefix: `drupal_cms_privacy_basic` is in `recipes:` above, so
+    # `klaro.texts` exists by the time actions run - and this file's own policy
+    # is that a `?` nobody needs is a permanent blind spot.
+    klaro.texts:
+      simpleConfigUpdate:
+        consentModal.privacyPolicy.url: 'internal:/privacy-notice'
     # -- area: publishing -------------------------------------------------------
     # (empty in v1; filled by unit 004)
     # -- area: foi --------------------------------------------------------------
