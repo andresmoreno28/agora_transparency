@@ -1757,6 +1757,72 @@ table is not a fallback — D-026 already made it the primary artefact.
 
 #### D-037, second text · The chart ships, drawn by the theme
 
+**SIGNED = B by [andres], 2026-09-05.** He signed it by pointing at the approved mockup and saying
+the chart was missing — <!-- cspell:disable -->*"La gráfica no está por ningún lado… esa no la
+veo"*<!-- cspell:enable --> ("the chart is nowhere to be found… that one I do not see" —
+translated, per rule 6) — which is the same instruction he had already given in different words on
+2026-09-04, quoted in full below: <!-- cspell:disable -->*"a mí esa gráfica es de lo que más me
+gusta… yo no la deshecharía"*<!-- cspell:enable -->. Two askings, four days apart, and the second
+one arrived as a defect report about a page that did not have it yet. **A ruled *no* the signer
+keeps asking for is not a saving**, which is what the second text said and is now settled.
+
+⚠️ **AMENDED IN THE SAME BREATH AS IT IS SIGNED: the shipped shape is B-ii, not the B-i this record
+recommends.** The sub-question below reads *"B-i ★ — the chart is its own Canvas component"*; what
+shipped, at theme commit `bf46da9`, is a **trend line inside the first key-figure tile**, drawn
+under the total it is a picture of. The recommendation is not deleted (rule 8) and it was not found
+wrong — it was outranked by cost, and the cost is worth stating because it is the whole difference:
+
+- **B-i costs the template a change; B-ii costs it nothing.** B-i needs one new Views display and
+  one new component entry on the front page — a `canvas_page` edit in `agora_transparency` — so it
+  is a **two-repository** change, and by this record's own legend that makes its evidence a
+  rendered page on a rig rather than two job lists. B-ii ships **entirely inside `agora_theme`**,
+  because it hangs off a block the front page already places. One repository, one pipeline, one
+  commit.
+- **What B-ii does not buy** is named rather than quietly dropped: the band-parity correction stays
+  unmade and the two-column rhythm is still one pair short. That is design debt this signature
+  leaves standing, not a defect it hides.
+- **Nothing else about B moves.** It is still an inline SVG the theme draws, still
+  `aria-hidden="true"`, still with the month-by-month figures beside it in the DOM, still no
+  dependency and no JavaScript, and **D-026 still makes the table the primary artefact**.
+
+**What shipped, measured — every figure below read off `bf46da9` in the theme checkout, not
+carried from the design round.**
+
+- **Eleven awards across a 24-month window, non-zero in 8 of them**, and the eight months are
+  asserted individually against the table printed further down this record —
+  `ThemeHelpersTest.php:655-664` pins `2023-05 … 2025-04` with both the awarded and the cumulative
+  figure for each.
+- **The rendered series ends on `€592,470.00` — the identical string the tile prints above it.**
+  Identical rather than merely equal: the series' cumulative values go through
+  `_agora_theme_format_amount()` with the same configured prefix and suffix the tile uses
+  (`agora_theme.theme:1602-1606`), so the two cannot drift apart into a page disagreeing with
+  itself. The unit in front of it is D-047's, signed the same day.
+- **Window 24 months, row ceiling 750 rows — both PRINTED by the suite, not left in a comment.**
+  `testBothCeilingsArePrinted()` writes `agora_theme award trend: window 24 months, row ceiling 750
+  rows` to STDERR and then pins both values with assertions that carry their reason, plus a third
+  asserting the ceiling stays above **731** — the most distinct award dates two consecutive years
+  can hold. A constant nobody prints is a constant nobody can check (I-045).
+- **The theme's PHPUnit job went from 50 tests / 145 assertions to 78 tests / 418 assertions.**
+
+🔴 **The falsification is worth more than the rest of this entry, and it is the reason the suite is
+shaped the way it is.** *A fabricated series built from constants still passes the "ends on the
+correct total" test.* It has to: the function carries in everything outside the window as the
+line's starting height, so the last point equals the grand total **by construction**, for any
+corpus whatever — which is exactly what `bf46da9`'s own commit subject says out loud, *"ending on
+that figure by construction"*. So the endpoint test proves the chart does not contradict the figure
+above it, and proves **nothing at all** about whether the shape between the ends is this
+municipality's real award history. **Authenticity is carried by the month-by-month assertion, and
+by that alone.** Delete those eight rows and every remaining test stays green over a straight line
+drawn from nothing.
+
+⚠️ **Provenance limit on the two counts above, stated because this project treats an unstated scope
+as a defect.** 78 / 418 was measured locally at `bf46da9`; the theme's newest **pushed** commit was
+`0bf84e3` (pipeline `948043`) when this was written, so the `phpunit` job has not yet seen it, and
+the theme's HEAD has already moved past `bf46da9`. It is a dated measurement of one commit, which
+is all it claims to be.
+
+**The original preparation note follows, unedited.**
+
 **PREPARED by [ejecutor] 2026-09-05 — UNSIGNED. [andres] signs; nothing below is a ruling until
 he does.** Nothing has been implemented against it: **T-1305** is written and blocked on this
 record. Note what it would do to the task list — T-1305 **discharges T-1103**, whose success
@@ -2438,6 +2504,61 @@ footer makes no third-party request and the template's privacy posture is unchan
 
 ### D-047 · The currency unit: shown, euro in the demo, configurable per installation
 
+**SIGNED = E by [andres], 2026-09-05.** The ruling is his own direction, in his own words:
+<!-- cspell:disable -->*"habría que hacer que se pueda adaptar a cualquier entorno, que se pueda
+configurar la moneda. Para la demo se puede poner euros como ejemplo, pero debe ser
+configurable."*<!-- cspell:enable --> ("it should be able to adapt to any environment — the
+currency should be configurable. For the demo, euros can go in as an example, but it must be
+configurable." — translated, per rule 6.) **Both halves shipped**: the register half at
+`agora_transparency` commit `da42f60`, the theme half at `agora_theme` commit `de0fc18`.
+
+✅ **THE ACCEPTANCE CRITERION WAS MET, AND IT IS RECORDED HERE AS EVIDENCE RATHER THAN AS A
+CLAIM.** This record demanded a *rendered comparison on the rig* — the front page and a register
+table printing **the same string for the same number** — precisely because a commit cannot span two
+repositories and two green pipelines would each have seen only their own side. The comparison:
+
+> **`€11,900.00`, printed by both paths for the same money** — on the front page by the theme, out
+> of a `SUM()` over an entity aggregate query, and on `/contracts` by Views reading the field
+> instance.
+
+That is the whole of what E promised. One number, two entirely different code paths, one string.
+Move one half without the other and those two surfaces disagree about the same public money on the
+same site, which is the failure this criterion was written to be able to see.
+
+**Three further properties of the shipped mechanism, recorded because each answers a question the
+options table could not.**
+
+- **The unit is the one EVERY summed bundle agrees on.** The front-page figures are a sum *across
+  bundles*, so there is no single field instance to read. A bundle without the field is skipped —
+  it contributes nothing to the sum, so it has no unit to disagree with. **Instances that disagree
+  yield no unit at all, plus a logged warning** naming the view, the display and each instance's
+  setting. A total wearing one of two labels would be a wrong statement where a missing one was
+  available.
+- **Seven field instances carry `prefix: €`, and they are the seven money ones.** Verified on disk:
+  `agreement.field_agora_base_amount`, `agreement.field_agora_base_obligations`,
+  `contract.field_agora_base_amount`, `contract.field_agora_base_tender_amount`,
+  `grant.field_agora_base_amount`, `person.field_agora_base_remuneration`,
+  `person.field_agora_base_severance` — each `field_type: decimal`. A site owner in another
+  jurisdiction edits those seven in the field UI and every register follows, with no code at all.
+- ⚠️ **Places carrying the same keys that deliberately did NOT receive a unit, named because
+  *"every field with a prefix key"* is exactly the bulk edit this change must not be.** On disk
+  there are **two**: `contract.field_agora_base_bidder_count`, an `integer` labelled *"Number of
+  bidders"* and the only field instance left with `prefix: ''`; and the `nid` field under
+  `group_type: count` at `views.view.agora_base_publications:349`, labelled *"Records published"*,
+  the only `prefix_suffix: true` in that view. **Neither is money.** `da42f60`'s commit message
+  says *"three places"* and enumerates these two; the third is not identifiable on disk, and the
+  discrepancy is recorded rather than reconciled away.
+
+**Two consequences that are settled by this signature and should not be reopened by inference:**
+the guard test at `tests/src/Unit/ThemeHelpersTest.php` is **rewritten and stronger, not relaxed**
+— over the same nine amounts it now asserts the formatter emits no unit **of its own** and that a
+configured one comes through exactly, so it fails both on a hard-coded symbol and on configuration
+ignored; and **the six shipped declaration PDFs keep saying `EUR`**, because regenerating six
+byte-reproduced binaries to harmonise punctuation would move G15's manifest for no gain. That
+question stays open rather than being settled in passing, exactly as this record said it would.
+
+**The original preparation note follows, unedited.**
+
 **PREPARED by [ejecutor] 2026-09-05 — UNSIGNED. [andres] signs; nothing below is a ruling until
 he does.** ⚠️ **The recommendation is [andres]'s own direction of 2026-09-04 and it is none of the
 four options this record was drafted with.** The four are kept below unedited, because the fifth
@@ -2574,6 +2695,37 @@ leaves open rather than settling in passing.
 
 ### D-048 · The hero mark as a watermark, and the invariant it would silence
 
+**SIGNED = A by [andres], 2026-09-05.** He was asked plainly — watermark with the colour measured,
+or leave the mark as it is — and answered <!-- cspell:disable -->*"Sí, con el color
+medido"*<!-- cspell:enable --> ("yes, with the measured colour" — translated, per rule 6). So the
+watermark **is** wanted, and it arrives by option A rather than by `opacity`.
+
+**What A obliges, in one paragraph, because the obligation IS the decision.** The colour the mark
+resolves to once it is drawn at the intended strength over the band is **computed and declared as
+its own token, with its own `@pair` at the non-text threshold**, and the mark is set to that flat
+value. **`opacity` appears in no rule.** The measurement is taken over the band's photograph, per
+pixel, the same way the two existing values were — the band is not a flat colour, and a ratio taken
+against the flat surface would be the wrong number for exactly the reason it was the wrong number
+last time (`css/tokens.css:194-203`: the toned photograph pushed the measured bars to **1.40:1**
+against a token that clears the threshold by four hundredths on paper).
+
+🔴 **The reason for A over `opacity` is the whole point of the option, and it is recorded here so it
+survives whoever next thinks `opacity: 0.15` is the obvious one-line answer.** `tests/bin/
+contrast-check` computes WCAG relative luminance from the **hex token literals** it parses out of
+`css/tokens.css`. It has no renderer and no notion of a composite. Apply CSS `opacity` to the mark
+and the script stays **green over two declarations that have stopped describing what is painted** —
+`--agora-color-mark` and `--agora-color-text-inverse-muted`, both of which were chosen by per-pixel
+measurement over that photograph. That is not a red turning green; it is a **check quietly ceasing
+to be about anything**, arriving through a mechanism nobody edited. A red is a fact and can be
+acted on. This would be a green nobody could act on.
+
+⚠️ **And the honest note from the record below stands, unweakened by the signature:** the hero mark
+is `aria-hidden="true"` with no `<title>`, so WCAG requires none of this. What `opacity` would
+break is **this project's own declaration** that every colour combination it renders has been
+checked — which, in a template whose pitch is auditability, is the worse of the two failures.
+
+**The original preparation note follows, unedited.**
+
 **PREPARED by [ejecutor] 2026-09-05 — UNSIGNED. [andres] signs; nothing below is a ruling until
 he does.** He floated it as a possibility rather than a request — <!-- cspell:disable -->*"lo del
 logo grande no sé... quizá se podría mirar de meterlo con poca opacidad en plan marca de agua? Es
@@ -2634,3 +2786,143 @@ checked. That is a different failure from a WCAG failure, and in a template whos
 auditability it is arguably the worse of the two: an accessibility claim that quietly stops being
 true is exactly what a marketplace reviewer is entitled to disbelieve everything else on the
 strength of.
+
+
+---
+
+### D-049 · Canvas component sources: the eight Views blocks stay, and the gap is a presentation layer
+
+**SIGNED by [andres], 2026-09-05**, on the ruling below and on its schedule:
+<!-- cspell:disable -->*"Sí, al cerrar esta ronda"*<!-- cspell:enable --> ("yes, on closing this
+round" — translated, per rule 6), answering whether to build the minimal layout kit and when.
+
+*Context in one line:* every component instance Ágora places on a Canvas page is a **block**, both
+published site templates place almost nothing but **SDC**, and the question that had never been
+asked on evidence is whether that difference is a defect, a style, or two different things being
+confused for one.
+
+**It is two different things, and separating them is the whole value of this record.** The blocks
+are **correct** and stay. What is missing is a **presentation layer**, and that is a real gap with
+a real cost, measured below.
+
+**What was measured. Every figure was re-derived on 2026-09-05 from the packages themselves, not
+quoted from a summary.**
+
+- **Canvas 1.10.1 supports exactly three component sources: `sdc`, `block`, `js`** — its own
+  `docs/components.md`, sections 3.1, 3.2 and 3.3, read from the module installed on the rig.
+  🔴 **And on the question that decides this record, the documentation is unambiguous and says the
+  opposite of the folklore:**
+
+  | source | implicit inputs | `docs/components.md` |
+  |---|---|---|
+  | `SDC` | **NO** | *"`SDC` `component`s DO NOT accept implicit inputs."* (§3.1.1) |
+  | `Block` | **YES** | *"`Block` `component`s DO accept implicit inputs, in two ways even: 1. Logic in the block plugin can fetch data — through database queries, HTTP requests, anything."* (§3.2.1) |
+  | `JS` | **NO** | *"`JS` `component`s DO NOT accept implicit inputs."* (§3.3.1) |
+
+  **The block plugin is the only source that can run a query.** That is the load-bearing fact of
+  this decision, and it is the reverse of *"block is the legacy path"*.
+
+- **The published site templates agree, and their block instances are where their queries are.**
+  Counted by walking every `content/canvas_page/*.yml` in each package at tag `1.0.3`:
+
+  | | pages | instances | `sdc` | `block` |
+  |---|---:|---:|---:|---:|
+  | `haven` 1.0.3 | 7 | 145 | 141 | **4** |
+  | `byte` 1.0.3 | 8 | 149 | 145 | **4** |
+  | **Ágora** | 2 | 8 | **0** | **8** |
+
+  ⚠️ **What those 4 + 4 block instances are, corrected against the claim this record was drafted
+  with.** The draft said *"every one of them is a Views block"*. That is true of `haven` — all four
+  are `views_block` (`blog-latest`, `blog-all`, `projects-all`, `projects-featured`). It is **false
+  of `byte`**, whose four are `views_block.blog-latest`, `views_block.blog-all`,
+  **`system_menu_block.social`** and **`webform_block`**. So **six of the eight** are Views blocks.
+  ⚠️ **The argument survives the correction and is arguably strengthened by it**: a menu block
+  builds its links from the menu tree and a webform block renders a form — both are *"logic in the
+  block plugin fetching data"*, which is §3.2.1's sentence exactly. **All eight block instances
+  across both published templates are query- or service-backed; not one is static markup.** The
+  claim to carry forward is that shape, not the word *"Views"*.
+
+- **The criteria are silent, and the silence is deliberate rather than accidental.** The RFC *"The
+  architecture and philosophy of site templates"* declares that it uses RFC 2119 keywords, and it
+  is full of MUSTs — **14 of them** across the document. Its section on this exact question,
+  *"Site templates care about looks"*, contains **5 MAY, 0 MUST and 0 SHOULD**: they *MAY*
+  integrate heavily with Canvas, they *MAY* depend on a theme as a design system, they *MAY* ship
+  custom components, they *MAY* ship content templates, and *"In short, site templates MAY use any
+  tool, framework, design system, theme, or module they wish in order to define their look."*
+  ⚠️ **The count is 5, not 4** — four bullets plus the summary sentence; the bullet count and the
+  keyword count are different numbers, and this record uses the keyword one.
+  And the starter kit's `GET-STARTED.md` lists **seven** ironclad rules — `type: Site`, composer
+  `type: drupal-recipe`, no patching, no dependence on an install profile, no `drupal_cms_` name
+  prefix, no pinned versions, legal right to all content — of which **none** mentions Canvas,
+  components or page composition.
+
+**Ruling, part one: the eight Views blocks stay, permanently and on the record.** They are the only
+source that can carry a query, and **every number on that front page is a real number with a real
+query behind it**. Rewriting them as SDC would mean either inventing static values for figures this
+portal exists to publish truthfully, or reaching for `js` — which §3.3.1 rules out for the same
+reason. This is not a concession to be revisited when somebody notices `0 sdc` next to `141 sdc`;
+it is the correct use of the mechanism.
+
+**Ruling, part two: option B, a minimal layout kit, scheduled as wave 14.** The gap the block/SDC
+count is really pointing at is not the blocks — it is that a site owner can **rearrange** eight
+things and **cannot add a heading or a paragraph**.
+
+- `haven_theme` **1.0.1** exposes **25** SDC components; `byte_theme` **1.0.3** exposes **24**
+  (counted as directories under `components/` at each released tag). ⚠️ **24, not 25** — the pair
+  is not symmetric, and the draft rounded them together.
+- **Ágora exposes 0**, and `recipe.yml` **disables the only two SDC components in reach** —
+  `canvas.component.sdc.navigation.title` and `canvas.component.sdc.navigation.message`, both
+  administrative toolbar chrome from core's `navigation` module, and both disabled for good
+  reasons this record does not disturb.
+- **The costing number, and it is the reason B is affordable at all: four generic components are
+  the majority of everything both published templates place.** `section`, `group`, `heading` and
+  `text` account for **83 of haven's 145 instances (57.2%)** and **83 of byte's 149 (55.7%)** —
+  the same 83 twice, by coincidence. **Four components, not twenty-five**, buy more than half of
+  what a published site template's page composition actually consists of.
+
+**Option D is refused on the record rather than left unconsidered, because it is the obvious
+shortcut and it needs a reason, not a silence.** Regenerating the theme from `mercury` — the
+starter kit both published themes were generated from, named in their own `.info.yml`
+(`generator: "mercury:1.0.0-rc1"` for haven, `"mercury:1.0.0-beta1"` for byte) — would supply all
+25 SDC components free and give exact parity with the marketplace's existing pair. It is refused
+because of what it costs, and the costs are specific: `mercury` and both derived themes build their
+CSS with **Tailwind v4** (`"tailwindcss": "^4.1.18"`), a build system and an authoring model this
+theme does not use; and regenerating would discard the **per-pixel measured contrast tokens**,
+`tests/bin/contrast-check` that checks them, the **six-page axe gate**, and the visual identity
+those were built to serve.
+
+⚠️ **One line of the draft reasoning was found FALSE on disk and is corrected rather than repeated:
+Tailwind is NOT forbidden by D-003 "in as many words".** The string `tailwind` appears **nowhere**
+in `specs/` or in `CLAUDE.md`; D-003 names Composer, pnpm and DDEV and stops there. **The refusal
+therefore rests on the four named costs and on nothing else** — and that is a sound basis, whereas
+citing a rule that does not exist would have been the exact defect D-045 recorded: a precondition
+quoted as though it had been checked.
+
+⚠️ **`mercury` itself is NOT an SBOM objection today**, and saying so keeps the refusal honest: its
+current release is **1.0.5**, stable. The two published themes were generated from `1.0.0-rc1` and
+`1.0.0-beta1`, which were pre-stable **at that time**; that is a fact about their history, not a
+live argument against the project.
+
+🔴 **The trap that comes with this territory, recorded here because a reader arrives at it from
+this decision and from nowhere else: enabling Canvas's page regions silently destroys the theme's
+footer design.** Canvas registers a hook on the theme settings form offering a `use_canvas`
+checkbox plus per-region *"editable"* checkboxes. Run on the rig, it generates **2 regions** from
+the theme's existing block placements — header with 5 components, footer with 9 — and the front
+page still returns **200**, with its 8 `<nav>` landmarks and its four legal links intact. **But the
+theme's own footer classes fall from 54 occurrences to 0**, and the page shrinks from **55,431 to
+51,346 bytes**: the statutory bar, the column layout and the social row all lose their design.
+
+**The cause is exact, and it is the part worth keeping.** Theme commit `fddbe37` — *"a menu block
+placed in the footer region renders through the footer template"* — made the footer work by
+deciding on **the region a block is placed in**, read from its own placement
+(`_agora_theme_block_region($variables) === 'footer'`, `agora_theme.theme:366` and `:391`). **A
+Canvas page region is precisely what replaces block placements.** So the mechanism that makes the
+footer correct is the mechanism Canvas's page regions remove. **A site owner can tick that checkbox
+and lose the design, with no error of any kind.** The rig was restored and the count went back to
+54. Recorded as **I-112** as well, because the next person to meet it will be reading the theme,
+not this file.
+
+**What this decision does NOT do, named so nobody infers it:** it does not add a dependency; it
+does not make Ágora's front page an SDC page — the eight blocks are staying; it does not commit to
+25 components, or to 5, or to any number beyond wave 14's four; and it does not reopen D-014,
+D-003, or the disabling of the two `navigation` SDC components in `recipe.yml`.

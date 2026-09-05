@@ -39,8 +39,23 @@ noise), publishable (everything meets the marketplace terms from day 1).
 ## Non-negotiable rules (repeated in every dispatch; always in force)
 
 1. **Stable releases only.** No dev/alpha/beta/rc dependency. No `patches` in composer.json,
-   no exotic pins. (Literal marketplace requirement.) Midgard is OUT (it is in alpha);
+   no exotic pins. ~~(Literal marketplace requirement.)~~ Midgard is OUT (it is in alpha);
    Config Guardian is IN (stable, with security coverage).
+   ⚠️ **The struck parenthetical is AMENDED 2026-09-05. THE RULE IS NOT WEAKENED — only its
+   provenance is corrected, and the correction makes the rule *ours* instead of somebody else's.**
+   *"Literal marketplace requirement"* does not survive checking, and it was checked three ways:
+   the starter kit's `GET-STARTED.md` lists **seven** ironclad rules and **none is about release
+   stability** — it forbids **patching** and **pinning** by name, which is where the rest of this
+   line genuinely comes from, and stops there; the RFC *"The architecture and philosophy of site
+   templates"* contains **14 MUSTs** and the words `alpha`, `beta` and `stable` **zero times each**;
+   and, decisively, **`haven` 1.0.3 — a published site template on the marketplace — ships
+   `"drupal/webform": "^6.3.0-beta8"` in its `require`.** A requirement that a published package
+   violates is not a requirement. **So the rule stands on its own merits**: being stricter than the
+   ecosystem is a deliberate property of this product (D-004, and the SBOM discipline in rule 2
+   below), and it is easier to defend as a choice we made than as a rule nobody wrote. ⚠️ **The
+   practical consequence is the reason to bother:** *"the marketplace requires it"* would have lost
+   an argument the first time anyone opened haven's `composer.json`, and every rule sharing the
+   sentence would have lost credibility with it.
 2. **Minimal and justified SBOM:** every contrib module added needs a line in
    `specs/000-project/DECISIONS.md` (what it brings, security coverage status). When in doubt,
    solve it with what Drupal CMS already ships.

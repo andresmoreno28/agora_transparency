@@ -1192,3 +1192,21 @@
   those are different sets. **The theme runs nine jobs and the local runner covers seven of them.**
   The habit that survives this is the one I-045 already asks for: quote what a green covered, not
   that it was green. Recorded 2026-09-01.
+
+- I-112 · **A feature can delete a design by replacing the mechanism the design reads from, and
+  every check stays green.** Canvas offers a `use_canvas` checkbox plus per-region *"editable"*
+  checkboxes on the theme settings form. Ticked on the rig, it generated **2 page regions** from
+  the theme's block placements - header with 5 components, footer with 9 - and the front page still
+  answered **200**, with its **8 `<nav>` landmarks** and its four legal links intact. **The theme's
+  own footer classes went from 54 occurrences to 0** and the page shrank from **55,431 to 51,346
+  bytes**: the statutory bar, the column layout and the social row all lost their design, with no
+  error, no warning and no failing assertion anywhere. The cause is exact and it is the memorable
+  part: commit `fddbe37` made the footer correct by deciding on **the region a block is placed in**
+  (`_agora_theme_block_region($variables) === 'footer'`), and **a Canvas page region is precisely
+  what replaces block placements** - so the mechanism that makes the footer right is the mechanism
+  the feature removes. ⚠️ **The generalisable shape is not about Canvas.** Any presentation that
+  derives itself from *where* something is placed is one configuration switch away from silence
+  when a feature changes what placement means, and **status codes, landmark counts and link counts
+  all survive it** - which is why none of them noticed. What noticed was counting a class the
+  theme itself owns. Recorded 2026-09-05 with D-049; the rig was restored and the count went back
+  to 54.
