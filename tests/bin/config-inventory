@@ -465,14 +465,19 @@ else
   finding "$RECIPE" "0" "not readable; the optional-key audit has an empty scope"
 fi
 
-# The three legal citations D-033 permits are the only shipped strings that may
-# carry a byte above 0x7F, and only two of them are accented. Printed with the
-# same byte RANGE the audit uses - never a `[^\x00-\x7F]` bracket class, which
-# GNU grep does not read the way it looks and which returns a permanent false
-# positive. Informational here; ContentModelTest is what fails on a fourth.
+# TWO decisions now put a byte above 0x7F into a shipped string, and the count
+# is only legible with both named. D-033 permits three legal citations, of
+# which only two are accented; D-047 puts a currency unit on seven money field
+# instances, one of which is also a citation. 2 + 7 - 1 = 8, and an object
+# outside that arithmetic is undeclared. Printed with the same byte RANGE the
+# audit uses - never a `[^\x00-\x7F]` bracket class, which GNU grep does not
+# read the way it looks and which returns a permanent false positive.
+# Informational here; ContentModelTest is what fails on a ninth, and it fails
+# on an unjustified byte inside a permitted object too, which this count
+# cannot see.
 NON_ASCII=$(LC_ALL=C grep -rlE "$(printf '[\200-\377]')" "$CONFIG_DIR" 2>/dev/null \
   | wc -l | tr -d '[:space:]')
-printf 'objects carrying a byte above 0x7F: %s (D-033 signs 3 citations, only 2 of them accented; anything else is undeclared)\n' \
+printf 'objects carrying a byte above 0x7F: %s (D-033 signs 3 citations, only 2 of them accented; D-047 adds 7 currency units, 1 of them on a citation; 2 + 7 - 1 = 8, anything else is undeclared)\n' \
   "${NON_ASCII:-0}"
 
 # T-321(b): defaulted because zero means FAIL here - the safe direction of

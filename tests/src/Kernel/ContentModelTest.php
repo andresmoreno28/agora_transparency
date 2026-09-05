@@ -498,6 +498,33 @@ final class ContentModelTest extends KernelTestBase {
   ];
 
   /**
+   * The seven money field instances that carry a currency unit (D-047).
+   *
+   * A SECOND REASON FOR A NON-ASCII BYTE, KEPT APART FROM D-033'S RATHER THAN
+   * MERGED INTO IT. The two objects above carry an accented Spanish legal term
+   * in a description; these seven carry a currency unit in `settings.prefix`.
+   * One widened list would let either kind of drift arrive wearing the other's
+   * justification - a fourth Spanish term would pass as long as the total came
+   * out right - so the two are bounded separately and each still has to be
+   * argued on its own.
+   *
+   * `field_agora_base_bidder_count` is deliberately absent: it carries the
+   * same `prefix`/`suffix` keys, it is an integer, and it counts bidders. It
+   * is the row a bulk edit over "every field instance with a prefix key" would
+   * sweep up, and `ValidationTest::testMoneyFieldsShowTheirConfiguredUnit()`
+   * is where that is asserted from both directions.
+   */
+  private const CURRENCY_UNIT_OBJECTS = [
+    'field.field.node.agora_base_agreement.field_agora_base_amount',
+    'field.field.node.agora_base_agreement.field_agora_base_obligations',
+    'field.field.node.agora_base_contract.field_agora_base_amount',
+    'field.field.node.agora_base_contract.field_agora_base_tender_amount',
+    'field.field.node.agora_base_grant.field_agora_base_amount',
+    'field.field.node.agora_base_person.field_agora_base_remuneration',
+    'field.field.node.agora_base_person.field_agora_base_severance',
+  ];
+
+  /**
    * The two bundles T-612 ships, with every field attached to each.
    *
    * The field list is asserted as a SET, both directions, against what
@@ -1382,6 +1409,15 @@ final class ContentModelTest extends KernelTestBase {
     // not read the way it looks. Before T-613, config/ contained zero such
     // bytes; after it, exactly two objects do, and a fourth Spanish term
     // cannot arrive without failing here.
+    //
+    // T-1308 ADDS SEVEN MORE OBJECTS AND A SECOND, STRICTER HALF. D-047 puts a
+    // currency unit on the seven money field instances, and a currency symbol
+    // is a non-ASCII byte with a different justification from an accented
+    // legal term. Merging the two into one longer list would have weakened the
+    // bound to a head count, so the list is widened by a NAMED second constant
+    // and then the residue check below closes the gap the list alone leaves:
+    // it is no longer enough for an object to be on a permitted list, every
+    // non-ASCII byte in it has to belong to a string this test can name.
     $non_ascii = [];
     foreach ($storage->listAll() as $object) {
       $raw = file_get_contents($path . '/config/' . $object . '.yml');
@@ -1390,10 +1426,27 @@ final class ContentModelTest extends KernelTestBase {
       }
     }
     sort($non_ascii);
-    $expected_non_ascii = self::NON_ASCII_OBJECTS;
+    $expected_non_ascii = array_values(array_unique(array_merge(self::NON_ASCII_OBJECTS, self::CURRENCY_UNIT_OBJECTS)));
     sort($expected_non_ascii);
-    $this->assertSame($expected_non_ascii, $non_ascii, 'Only the accented legal citations D-033 permits may put a non-ASCII byte into config/; a fourth Spanish term is a D-033 amendment, not an implementer\'s call.');
+    $this->assertSame($expected_non_ascii, $non_ascii, 'Only the accented legal citations D-033 permits and the currency units D-047 configures may put a non-ASCII byte into config/; a fourth Spanish term is a D-033 amendment, not an implementer\'s call.');
     $assertions++;
+
+    // Every one of those bytes, accounted for by a string this test can name.
+    // The seven units are read from the objects themselves rather than typed,
+    // so an installation that changed its currency in the field UI - which is
+    // the whole point of D-047 - still satisfies this without editing a test.
+    $justified = array_values(self::LEGAL_CITATIONS);
+    foreach (self::CURRENCY_UNIT_OBJECTS as $object) {
+      $prefix = $storage->read($object)['settings']['prefix'];
+      $this->assertNotSame('', $prefix, "$object must carry the currency unit D-047 puts on the seven money fields; without it a register renders an amount that does not say what it is in.");
+      $assertions++;
+      $justified[] = $prefix;
+    }
+    foreach ($non_ascii as $object) {
+      $residue = str_replace($justified, '', (string) file_get_contents($path . '/config/' . $object . '.yml'));
+      $this->assertSame(0, preg_match('/[\x80-\xFF]/', $residue), "$object carries a non-ASCII byte belonging to neither a legal citation D-033 permits nor a currency unit D-047 configures.");
+      $assertions++;
+    }
 
     // -- The assertion count, asserted rather than printed -------------------
     // Same mechanic and same reason as the two methods above: PHPUnit turns
@@ -1412,7 +1465,13 @@ final class ContentModelTest extends KernelTestBase {
       + (4 * $money_fields)
       + (2 * $term_references)
       + count(self::LEGAL_CITATIONS)
-      + 1;
+      + 1
+      // T-1308: one non-empty prefix per money field, plus one residue check
+      // per object permitted to hold a non-ASCII byte. The second term is
+      // taken from the EXPECTED list rather than from the measured one, which
+      // is what stops it agreeing with whatever the scan happened to find.
+      + count(self::CURRENCY_UNIT_OBJECTS)
+      + count($expected_non_ascii);
     $this->assertSame($expected_assertions, $assertions, 'Every assertion loop in this test must have run to completion.');
   }
 

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Drupal\Component\Serialization\Yaml;
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Config\FileStorage;
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\canvas\Entity\ComponentTreeEntityInterface;
 use Drupal\canvas\JsonSchemaDefinitionsStreamwrapper;
@@ -270,6 +272,288 @@ class ValidationTest extends BrowserTestBase {
     $assert->statusCodeEquals(200);
     $assert->elementsCount('css', self::VIEW_CONTAINER . ' table', 1);
     $assert->pageTextNotContains($empty_text[$smallest]);
+  }
+
+  /**
+   * The seven money field instances (D-047), by bundle and by field name.
+   *
+   * TYPED ON PURPOSE, and it is the guard rather than the subject. Every other
+   * count in the method below is read from the installed site, but this list
+   * is what makes the sweep fail on the one mistake D-047 names by name: a
+   * bulk edit over "every field instance with a prefix key" would put a
+   * currency unit on `field_agora_base_bidder_count`, which is an integer
+   * labelled "Number of bidders". The site is asked which instances carry a
+   * unit and the answer is compared against this list, so BOTH directions
+   * fail - a money field that lost its unit, and a non-money field that
+   * gained one. A test that only looked for the unit could not tell those
+   * apart, and only one of them is visible in a screenshot.
+   */
+  private const MONEY_FIELDS = [
+    'agora_base_agreement' => [
+      'field_agora_base_amount',
+      'field_agora_base_obligations',
+    ],
+    'agora_base_contract' => [
+      'field_agora_base_amount',
+      'field_agora_base_tender_amount',
+    ],
+    'agora_base_grant' => [
+      'field_agora_base_amount',
+    ],
+    'agora_base_person' => [
+      'field_agora_base_remuneration',
+      'field_agora_base_severance',
+    ],
+  ];
+
+  /**
+   * The field instance that carries the same keys and must stay bare.
+   *
+   * Named here rather than left to be inferred from a missing entry above,
+   * because "it is not in the list" is a fact about the list and not an
+   * assertion about the site.
+   */
+  private const COUNT_FIELD = [
+    'agora_base_contract',
+    'field_agora_base_bidder_count',
+  ];
+
+  /**
+   * Tests that money renders with its unit and that counts render without one.
+   *
+   * T-1308, and the defect it closes is INCONSISTENCY rather than silence.
+   * Before this change one office-holder's remuneration appeared three ways in
+   * a single install: the register table rendered `21,300.00`, the shipped
+   * declaration PDF beside it read `21300.00 EUR`, and the front page printed
+   * its total bare. A transparency portal whose headline number does not say
+   * what unit it is in is ambiguous about the one thing it exists to publish.
+   *
+   * THE UNIT IS NEVER TYPED IN THIS METHOD. Every assertion reads the prefix
+   * from the field instance the site actually installed and then looks for
+   * THAT string in the markup, so what is tested is the MECHANISM D-047 chose
+   * - the unit lives in configuration, a site owner in another jurisdiction
+   * edits seven fields in the UI and the whole register set follows - rather
+   * than the euro sign this package happens to ship. Hard-code the symbol here
+   * and the test would go green on a build that had stopped reading the
+   * configuration at all, which is exactly the property that matters.
+   *
+   * THE DENOMINATORS COME FIRST, all three of them. The number of field
+   * instances inspected, the number carrying `prefix`/`suffix` keys at all,
+   * and the number carrying a NON-EMPTY prefix are each asserted before any
+   * rendering is looked at: a sweep that opened nothing reports "no findings"
+   * in exactly the same words as a clean one (I-028), and every count below
+   * would hold vacuously over a site whose fields failed to import.
+   *
+   * FOURTEEN RENDERING SITES, COUNTED ON THE RENDERED PAGES. Seven field
+   * handlers in four register views and seven formatters in four node record
+   * sheets. Counting them in the config instead would only re-read the file
+   * that was just edited; counting them in the markup is what says the
+   * `prefix_suffix: true` on each of those fourteen is actually honoured.
+   *
+   * AND THE TWO NEGATIVES, which are half the row. `bidder_count` renders on
+   * a contract record sheet as bare digits, and the record COUNTS on the front
+   * page render with no unit either. Both are things a bulk edit would break
+   * silently, and neither would be caught by any assertion about money.
+   */
+  public function testMoneyFieldsShowTheirConfiguredUnit(): void {
+    $this->applyRecipe(self::getRecipePath());
+
+    // A reader, not an editor: these figures exist to be read by the public.
+    $this->drupalLogin($this->drupalCreateUser(['access content']));
+    $assert = $this->assertSession();
+    $storage = \Drupal::entityTypeManager()->getStorage('node');
+
+    // -- The sweep, over EVERY field instance the site installed ------------
+    // Read from the site rather than from a list, so a field added to the
+    // model joins this denominator on its own instead of being missed by a
+    // test that agrees with a number typed beside it.
+    $inspected = 0;
+    $carrying = [];
+    $with_unit = [];
+    $field_manager = \Drupal::service('entity_field.manager');
+    $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo('node');
+    foreach (array_keys($bundles) as $bundle) {
+      foreach ($field_manager->getFieldDefinitions('node', $bundle) as $name => $definition) {
+        if (!$definition instanceof FieldConfig) {
+          continue;
+        }
+        $inspected++;
+        $settings = $definition->getSettings();
+        if (!array_key_exists('prefix', $settings)) {
+          continue;
+        }
+        $carrying[] = $bundle . '.' . $name;
+        if ($settings['prefix'] !== '') {
+          $with_unit[$bundle . '.' . $name] = $settings['prefix'];
+        }
+      }
+    }
+
+    $expected = [];
+    foreach (self::MONEY_FIELDS as $bundle => $names) {
+      foreach ($names as $name) {
+        $expected[] = $bundle . '.' . $name;
+      }
+    }
+    sort($expected);
+
+    // Denominators, in the order that makes each one meaningful.
+    $this->assertGreaterThan(0, $inspected, 'This site installed no configurable node fields at all, so every assertion below would hold over nothing.');
+    $this->assertGreaterThan(count($expected), count($carrying), 'More field instances must carry prefix/suffix keys than are money, or the discrimination this test exists for is untestable on this site.');
+
+    $found = array_keys($with_unit);
+    sort($found);
+    $this->assertSame($expected, $found, 'Exactly the seven money field instances of D-047 must carry a currency unit - no fewer, and no others.');
+
+    // Money is decimal and counts are integers; that is what separates the
+    // seven from the eighth, and it is a property of the model rather than of
+    // the list above.
+    foreach ($found as $id) {
+      [$bundle, $name] = explode('.', $id, 2);
+      $definition = $field_manager->getFieldDefinitions('node', $bundle)[$name];
+      $this->assertSame('decimal', $definition->getType(), "$id carries a currency unit but is not a decimal field, so something that is not money has been given one.");
+    }
+
+    // -- The eighth instance, named because it is the trap ------------------
+    [$count_bundle, $count_name] = self::COUNT_FIELD;
+    $count_id = $count_bundle . '.' . $count_name;
+    $count_definition = $field_manager->getFieldDefinitions('node', $count_bundle)[$count_name] ?? NULL;
+    $this->assertInstanceOf(FieldConfig::class, $count_definition, "$count_id must exist, or this test is protecting a field that is no longer there.");
+    $this->assertContains($count_id, $carrying, "$count_id must still carry the prefix/suffix keys, or it is no longer the field this test guards.");
+    $this->assertNotContains($count_id, $found, "$count_id is a count of bidders and must never carry a currency unit.");
+    $this->assertSame('integer', $count_definition->getType(), "$count_id must be an integer; a decimal count of bidders would make the rule above ambiguous.");
+
+    $units = array_values(array_unique(array_values($with_unit)));
+
+    // -- SEVEN RENDERING SITES: the register views --------------------------
+    $register_sites = 0;
+    foreach (self::MONEY_FIELDS as $bundle => $names) {
+      $view_id = (string) array_search($bundle, self::TABLE_VIEWS, TRUE);
+      $this->assertArrayHasKey($view_id, self::TABLE_VIEWS, "$bundle must be listed by one of the registers, or its columns render nowhere.");
+      $view = View::load($view_id);
+      $this->assertNotNull($view, "$view_id must have been imported by the recipe.");
+      $this->drupalGet($view->getDisplay('page_1')['display_options']['path']);
+      $assert->statusCodeEquals(200);
+
+      foreach ($names as $name) {
+        $unit = $with_unit[$bundle . '.' . $name];
+        $selector = self::VIEW_CONTAINER . ' table tbody td.views-field-' . Html::cleanCssIdentifier($name);
+        $cells = $this->getSession()->getPage()->findAll('css', $selector);
+        // A selector that matches nothing would let every assertion in the
+        // loop below pass without one of them running (I-045).
+        $this->assertNotEmpty($cells, "No cell on $view_id matched `$selector`, so this column is either absent or wearing a different class.");
+        foreach ($cells as $cell) {
+          $this->assertMatchesRegularExpression(
+            '/^' . preg_quote($unit, '/') . '[\d,]+\.\d{2}$/u',
+            trim($cell->getText()),
+            "Every $name cell on $view_id must render the configured unit immediately before the formatted amount.",
+          );
+        }
+        $register_sites++;
+      }
+    }
+    $this->assertSame(count($expected), $register_sites, 'Each of the seven money fields must be shown carrying its unit in its register.');
+
+    // -- SEVEN MORE: the node record sheets ---------------------------------
+    // Rendered from the SHIPPED corpus rather than from a fixture: a record
+    // sheet is the page a visitor reaches from a register row, and the demo
+    // records are what they will find on it.
+    //
+    // LOCATED BY LABEL, NOT BY CLASS, and that was learned the hard way. The
+    // obvious selector is core's `.field--name-<field>`, which this suite ran
+    // against and found ZERO of: the recipe installs `agora_theme`, whose
+    // `field.html.twig` override emits `agora-field` and drops the field-name
+    // class entirely, so a class-based check here would have been a check on
+    // which theme happens to be default. The label's parent element is the
+    // field wrapper in BOTH templates, so that is what is walked - and if the
+    // label ever matches two elements, `assertCount(1)` says so rather than
+    // silently reading the first.
+    $sheet_sites = 0;
+    foreach (self::MONEY_FIELDS as $bundle => $names) {
+      $display = EntityViewDisplay::load("node.$bundle.default");
+      $this->assertNotNull($display, "node.$bundle.default must have been imported, or these fields render through no display at all.");
+
+      foreach ($names as $name) {
+        $unit = $with_unit[$bundle . '.' . $name];
+        $component = $display->getComponent($name);
+        $this->assertNotNull($component, "$name must be a visible component of node.$bundle.default, or its record sheet shows no amount to put a unit on.");
+        $this->assertTrue((bool) $component['settings']['prefix_suffix'], "node.$bundle.default must honour prefix/suffix on $name, or the configured unit is read and thrown away.");
+
+        $nids = $storage->getQuery()
+          ->accessCheck(FALSE)
+          ->condition('type', $bundle)
+          ->condition('status', 1)
+          ->exists($name)
+          ->range(0, 1)
+          ->execute();
+        $this->assertNotEmpty($nids, "No published $bundle ships a value in $name, so its record sheet would prove nothing about the unit.");
+        $node = $storage->load(reset($nids));
+        $this->assertNotNull($node, "The $bundle the query just returned must load.");
+        $this->drupalGet($node->toUrl());
+        $assert->statusCodeEquals(200);
+
+        // The whole string, built from the value the site stores and the
+        // separators the display declares - not merely "it starts with the
+        // unit". A formatter that emitted the unit and then mangled the
+        // number would pass the weaker check.
+        $formatted = $unit . number_format(
+          (float) $node->get($name)->value,
+          (int) $component['settings']['scale'],
+          $component['settings']['decimal_separator'],
+          $component['settings']['thousand_separator'],
+        );
+        $value = $this->fieldValueOnPage((string) $field_manager->getFieldDefinitions('node', $bundle)[$name]->getLabel(), $node->label());
+        $this->assertSame($formatted, $value, "The record sheet of \"{$node->label()}\" must render $name as the configured unit followed by the formatted amount; a register that shows the unit beside a record sheet that does not is the inconsistency D-047 was opened over.");
+        $sheet_sites++;
+      }
+    }
+    $this->assertSame(count($expected), $sheet_sites, 'Each of the seven money fields must be shown carrying its unit on a record sheet.');
+
+    // -- NEGATIVE 1: a count of bidders is not money ------------------------
+    $nids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('type', $count_bundle)
+      ->condition('status', 1)
+      ->exists($count_name)
+      ->range(0, 1)
+      ->execute();
+    $this->assertNotEmpty($nids, "No published $count_bundle ships a value in $count_name, so the assertion below would hold over an unrendered field.");
+    $node = $storage->load(reset($nids));
+    $this->assertNotNull($node, "The $count_bundle the query just returned must load.");
+    $this->drupalGet($node->toUrl());
+    $assert->statusCodeEquals(200);
+    // Bare digits and NOTHING else. Asserted as a whole string rather than as
+    // "it does not contain a euro sign", because the euro sign is not the only
+    // way this could go wrong and a substring check on this page would trip
+    // over the contract's own award amount a few lines above it.
+    $bidders = $this->fieldValueOnPage((string) $count_definition->getLabel(), $node->label());
+    $this->assertMatchesRegularExpression('/^\d+$/u', $bidders, "$count_name must render as bare digits: it counts bidders, and a currency unit on it would be shipped nonsense.");
+    $this->assertSame((string) $node->get($count_name)->value, $bidders, "$count_name must render the value the site stores, so the check above cannot pass over some other number on the page.");
+
+    // -- NEGATIVE 2: the record counts on the front page --------------------
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $counts = $this->getSession()->getPage()->findAll('css', self::VIEW_CONTAINER . ' .views-field-nid');
+    $this->assertNotEmpty($counts, 'The front page must render at least one record-count field, or the assertion below holds over nothing.');
+    $inspected_counts = 0;
+    $figures = 0;
+    foreach ($counts as $figure) {
+      $text = trim($figure->getText());
+      foreach ($units as $unit) {
+        $this->assertStringNotContainsString($unit, $text, "A record count on the front page carries the currency unit `$unit`; it counts records, not money.");
+      }
+      $inspected_counts++;
+      $figures += (int) (preg_match('/\d/u', $text) === 1);
+    }
+    // Two denominators rather than one, because they answer different
+    // questions. The first says every matched element was inspected. The
+    // second says at least one of them was a FIGURE: the same class is worn by
+    // block_4's column heading, which reads "Awards" and carries no digits at
+    // all, so a per-element digit requirement would fail on a heading that is
+    // perfectly correct - while a check with no digit requirement anywhere
+    // would pass over a front page whose counts had all stopped rendering.
+    $this->assertSame(count($counts), $inspected_counts, 'Every record-count field on the front page must have been inspected.');
+    $this->assertGreaterThan(0, $figures, 'None of the front page record-count fields rendered a digit, so the unit check above ran over headings only.');
   }
 
   /**
@@ -833,6 +1117,36 @@ class ValidationTest extends BrowserTestBase {
     $assert->elementExists('css', self::VIEW_CONTAINER);
     $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text);
     $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
+  }
+
+  /**
+   * Reads one field's rendered value off the page currently loaded.
+   *
+   * ANCHORED ON THE LABEL, WHICH IS THE ONLY ANCHOR BOTH TEMPLATES SHARE.
+   * Core's `field.html.twig` writes a `field--name-<field>` class on the
+   * wrapper; `agora_theme`'s override writes `agora-field` and no field name
+   * at all. What survives both is the shape: a label element whose PARENT is
+   * the field wrapper, with the value alongside it. So the label is located by
+   * its exact text, its parent is taken, and the label is removed from that
+   * parent's text - what is left is the value, and nothing has been assumed
+   * about which theme rendered it.
+   *
+   * @param string $label
+   *   The field's configured label, as it is rendered.
+   * @param string $where
+   *   What is being read, for the failure message.
+   *
+   * @return string
+   *   The field's rendered value, with surrounding whitespace collapsed.
+   */
+  protected function fieldValueOnPage(string $label, string $where): string {
+    $this->assertStringNotContainsString('"', $label, "The label \"$label\" would need escaping in the XPath below.");
+    $wrappers = $this->getSession()->getPage()->findAll('xpath', '//*[normalize-space(text())="' . $label . '"]/..');
+    // Exactly one: zero means the field did not render, and more than one
+    // means the label is ambiguous and the first match would be a guess.
+    $this->assertCount(1, $wrappers, "\"$where\" must render exactly one field labelled \"$label\".");
+    $text = preg_replace('/\s+/u', ' ', $wrappers[0]->getText());
+    return trim(str_replace($label, '', $text));
   }
 
   /**
