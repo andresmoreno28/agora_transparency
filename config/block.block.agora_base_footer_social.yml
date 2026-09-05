@@ -10,7 +10,19 @@ dependencies:
 id: agora_base_footer_social
 theme: agora_theme
 region: footer
-weight: 5
+# WEIGHT 12, AND THE NUMBER IS LOAD-BEARING RATHER THAN ARBITRARY. The theme
+# lays this row out on the colophon's line - credit at the inline start, the
+# four marks at the inline end - and it does so only when this block is a LATER
+# SIBLING of the colophon, which sits at weight 10. The rule is written as
+# `:has(~ ...)` rather than with CSS `order` on purpose: `order` would have put
+# the marks before the statutory bar in the reading order while showing them
+# after it, sending keyboard focus down to the marks, 80px back up to the legal
+# links and down again to the credit. axe does not test focus order, so no gate
+# here would have caught it. Weighting this block after the colophon makes
+# visual order and reading order the same thing, so the layout is welded to its
+# own correctness condition: drop this below 10 and the theme falls back to the
+# row it drew before, which is a degradation rather than a break.
+weight: 12
 provider: null
 plugin: 'system_menu_block:agora-base-footer-social'
 settings:
