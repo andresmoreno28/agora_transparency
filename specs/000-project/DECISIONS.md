@@ -1734,6 +1734,13 @@ the template's existing mirror**, and the theme mirror becomes a separate, small
 
 ### D-037 · Does a chart module enter the SBOM for the budgets page?
 
+⚠️ **SUPERSEDED IN PLACE 2026-09-05, and the new recommendation is B rather than A.** D-037 was
+never signed, so its second text sits directly below the first instead of in a record of its own —
+and **nothing here is deleted**. The argument for A is the cleanest short statement of this
+project's default (rule 2: solve it with what Drupal CMS already ships), and a record that
+silently improves reads as though it was right the first time. Read the original, then read
+*D-037, second text* below it. **Both are PREPARED and UNSIGNED**; [andres] signs.
+
 *Context in one line:* the ROADMAP asks for *"lightweight visualization + accessible table as the
 source of truth (avoid heavy chart modules)"*; D-026 already ruled the table **is** the source of
 truth; rule 2 forbids any contrib module without its `DECISIONS.md` line.
@@ -1747,6 +1754,124 @@ truth; rule 2 forbids any contrib module without its `DECISIONS.md` line.
 ★ **A for v1**, with B as a unit-006 improvement if the screenshot needs it. The reasoning is the
 project's own: *"when in doubt, solve it with what Drupal CMS already ships"* (rule 2), and the
 table is not a fallback — D-026 already made it the primary artefact.
+
+#### D-037, second text · The chart ships, drawn by the theme
+
+**PREPARED by [ejecutor] 2026-09-05 — UNSIGNED. [andres] signs; nothing below is a ruling until
+he does.** Nothing has been implemented against it: **T-1305** is written and blocked on this
+record. Note what it would do to the task list — T-1305 **discharges T-1103**, whose success
+criterion is already this chart's acceptance criterion verbatim, so this text closes signed scope
+rather than adding any.
+
+*Why the recommendation moved, and it was not a new measurement:* [andres] asked for the chart in
+plain words on 2026-09-04 — <!-- cspell:disable -->*"pues a mí esa gráfica es de lo que más me
+gusta, aunque sea solo visualmente. Obviamente no saldrá esa curva ascendente, probablemente sea
+más una linea con ciertas 'ondulaciones' pero se ve bastante bonita, yo no la deshecharía."*<!-- cspell:enable -->
+("that chart is one of the things I like most, even if only visually. Obviously that rising curve
+will not come out; probably more of a line with certain undulations, but it looks quite good — I
+would not throw it away." — translated, per rule 6.) A ruled *no* that the person who signs it
+does not want is not a saving.
+
+**What was measured before writing the options.** Every figure below was computed from
+`content/node/*.yml` in this working copy on 2026-09-05, not taken from the design round.
+
+- **The series is eleven awards, and they are all of them.** 7 `agora_base_contract` + 4
+  `agora_base_grant`, summing to exactly **592,470.00** — the same total the front page already
+  prints. Earliest period start `2023-05-15`, latest `2025-04-01`.
+- **Non-zero in 8 months out of 24**, and the eight are not evenly spread:
+
+  | month | awarded | cumulative |
+  |---|---:|---:|
+  | 2023-05 | 88,320.00 | 88,320.00 |
+  | 2024-01 | 172,400.00 | 260,720.00 |
+  | 2024-03 | 187,450.00 | 448,170.00 |
+  | 2024-08 | 34,800.00 | 482,970.00 |
+  | 2024-10 | 11,900.00 | 494,870.00 |
+  | 2025-01 | 32,500.00 | 527,370.00 |
+  | 2025-03 | 7,200.00 | 534,570.00 |
+  | 2025-04 | 57,900.00 | 592,470.00 |
+
+  ⚠️ **He predicted undulations; the data gives a staircase — so the honest chart and the shape he
+  had already rejected by eye agree with each other.** Sixteen of the twenty-four months are flat,
+  and two of them, 2024-01 and 2024-03, carry **359,850.00 between them, which is 60.7% of the
+  whole series**. Cumulatively that is a step function with two large risers, not the smooth
+  twelve-point ascent a mockup draws. This is the strongest argument available for shipping it:
+  the chart will look like a small municipality's real award history, because it is one.
+- 🔴 **THERE IS NO AWARD-DATE FIELD, and the row has to be written around that.**
+  `field.storage.node.field_agora_base_period` is the **only** `daterange` or `datetime` field
+  storage in the entire package — measured across every `config/field.storage.node.*.yml` — and it
+  holds the **performance period**, not the date of award. The month must therefore be derived
+  from the period start or from `created`, and **which basis is used must be stated on the page,
+  never chosen silently**: a chart of money over time whose time axis is undefined is a chart
+  making a claim nobody can check.
+  ⚠️ **The two candidate bases disagree on exactly one award of eleven.** The earliest award's
+  period starts `2023-05-15` while its node's `created` falls in **2023-06**; the other ten agree
+  to the month. So the choice moves one award across a month boundary and a quarter boundary and
+  changes nothing else. **Recommended: the period start**, because it is a value a reader can see
+  on the record page, whereas `created` is a fact about the CMS — on a real installation it is the
+  day somebody typed the record in, which is not a fact about public money at all.
+- **A Views display that sums the amount is not on the table, and refusing it is not taste.**
+  Summing `field_agora_base_amount` under a `group_by` display is the **exact SQL D-040 removed**,
+  and `tests/bin/no-varchar-aggregate` exists to refuse it — it reports **8 views, 23 displays, 4
+  aggregating, 9 field entries, 0 findings** as of today. That shape was wrong on **every**
+  database Drupal supports: PostgreSQL errored, MariaDB answered `0` with a truncation warning,
+  and SQLite answered `0.0` in silence. The option is closed by a signed decision and by a gate.
+- **The mechanism that replaces it is already shipped and already gated.**
+  `_agora_theme_award_totals()` at `agora_theme.theme:622` runs a `getAggregateQuery()` with
+  `accessCheck(TRUE)`, aggregates `field_agora_base_amount` with `SUM`, returns the rows, the
+  column alias and the list cache tags, and **catches the exception** — raising a warning and
+  rendering the block without its money rather than taking the page down. The chart needs one more call of
+  that same shape, not a new mechanism, and it inherits failure behaviour somebody already thought
+  about.
+- **The entity query cannot group by month, and the honest consequence carries a cost.**
+  `groupBy()` groups by a column's raw value, not by a truncated month, so the query returns **one
+  row per distinct award date** and the theme buckets them in PHP. Eleven rows here; at a real
+  municipality with twenty years of contracts it is unbounded — **the same objection that closed
+  D-040's option C**. So the query carries a **window** (trailing 24 months from the newest award)
+  **and a row ceiling**, both written as named constants in the code and **printed by a test**, on
+  D-038 option A's standard.
+  ⚠️ **The demo corpus exercises neither of them, and a test written only against the demo would
+  hide that.** The oldest award, `2023-05`, is *exactly* the twenty-fourth month back from the
+  newest, `2025-04`: all eleven fall inside the window and none is ever discarded. A test run
+  against `content/` alone therefore proves the window **exists** and proves nothing about what it
+  **does** — the shape of I-062, a green over a result nothing filled. The window and the ceiling
+  each need a fixture that crosses them, or the two printed numbers are decoration.
+
+**Options.**
+
+- **B (recommended) — an inline SVG drawn by the theme, `aria-hidden="true"`, with an adjacent
+  accessible table as its equivalent.** Zero SBOM growth. The drawing carries nothing a reader can
+  get only from it: the table beside it holds the same eight months and the same cumulative
+  column, so the chart is decoration over data already published in a form a screen reader walks.
+  The cost is real theme work and a real accessibility surface — which is what D-037's first text
+  said about B, and is still true.
+- **A — no chart; the table is the deliverable.** The first text's recommendation, kept above in
+  full and not weakened here. Nothing in its reasoning was found wrong; it was outranked by the
+  person who signs it.
+- **C — `drupal/charts ^5.2`.** Rejected on **cost, not on taste**: a JS charting dependency on
+  the flagship **free** template, for one component on one page, whose library licence enters the
+  manifest and whose components enter unit 006's SBOM sweep. The 2026-08-20 research records it as
+  stable with security coverage, so this is a real choice being declined rather than a constraint
+  — and declining it is the judgement rule 2 already makes.
+
+**Recommendation: B**, with the period start as the month basis and both ceilings printed.
+
+**Sub-question, and it needs its own answer because the two are not the same amount of work.**
+
+- **B-i ★ — the chart is its own Canvas component**, and becomes the partner of the spend table in
+  the second two-column pair. It costs the template one views display and one component entry on
+  the front page, it corrects the band parity the page currently gets wrong, and it completes the
+  two-column rhythm.
+- **B-ii — the chart hangs off the key-figures block.** It costs the template nothing at all, and
+  it leaves the band-parity correction unmade and the two-column look one pair short — which is
+  the thing the approved design round was about.
+
+**What B does NOT do, named so nobody infers it:** it adds no dependency and no JavaScript; it
+makes no claim the adjacent table does not already make; and it does not make the chart the source
+of truth — **D-026 made the table the primary artefact and B leaves that untouched**. The chart is
+`aria-hidden` because it is a second rendering of already-published data, not because the
+accessibility question was hard.
+
 
 ### D-038 · How does a Dataset's CSV distribution become an accessible `<table>`, and in which repository?
 
@@ -2307,3 +2432,205 @@ disk: the template half is T-1216 and T-1217 here, the theme half is the theme l
 of meaning - the name is always present for assistive technology; no account is invented; nothing
 is fetched from any network at render time, since the marks are static paths in the theme, so the
 footer makes no third-party request and the template's privacy posture is unchanged.
+
+
+---
+
+### D-047 · The currency unit: shown, euro in the demo, configurable per installation
+
+**PREPARED by [ejecutor] 2026-09-05 — UNSIGNED. [andres] signs; nothing below is a ruling until
+he does.** ⚠️ **The recommendation is [andres]'s own direction of 2026-09-04 and it is none of the
+four options this record was drafted with.** The four are kept below unedited, because the fifth
+is only legible beside them and because a record whose rejected options vanish reads as though the
+answer was obvious.
+
+*Context in one line:* the demo council is Spanish (**D-041 = A**, signed), the shipped interface
+strings are English (**D-035 = C**, signed), and the same kind of number renders `592,470.00` on
+the front page and `14,500.00` in the registers.
+
+**[andres]'s direction, 2026-09-04:** <!-- cspell:disable -->*"quizá para resolver el tema de la
+moneda de alguna forma habría que hacer que se pueda adaptar a cualquier entorno, que se pueda
+configurar la moneda. Para la demo se puede poner euros como ejemplo, pero debe ser configurable.
+De hecho me gustaría que fuese lo más configurable posible."*<!-- cspell:enable --> ("perhaps, to
+settle the currency question, it should be able to adapt to any environment — the currency should
+be configurable. For the demo, euros can go in as an example, but it must be configurable. In fact
+I would like it to be as configurable as possible." — translated, per rule 6.)
+
+**What was measured, and the first bullet falsifies the premise this record was drafted on.**
+
+- 🔴 **"There is no unit anywhere on the site" is FALSE of the package.** It is true of the HTML:
+  `grep -rc "€" config/ content/ recipe.yml` finds **zero**, and the theme's CSS, templates and
+  `.theme` file carry none either. But **six of the 34 shipped PDFs already print a currency
+  unit**, twice each — the asset declarations at `content/file/declaration-*.pdf`, reading
+  `Annual remuneration for the post: 21300.00 EUR` and `Severance entitlement on leaving office:
+  5325.00 EUR`. It is not incidental and it is not stale: `tests/bin/generate-demo-media.py:657`
+  and `:659` write those two strings, and G15 reproduces all 39 media files byte for byte, so the
+  choice is already made, already shipped and already under a gate.
+- ⚠️ **So the package is not silent about currency; it is inconsistent about it.** For the same
+  office-holder the same figure appears three ways in one install: the register table renders
+  **`21,300.00`** (`views.view.agora_base_people`, `number_decimal`, `thousand_separator: ','`,
+  `decimal_separator: .`, `scale: 2`), the shipped declaration PDF beside it reads
+  **`21300.00 EUR`**, and the front page prints its own total with no unit at all. The three
+  disagree on the thousands separator **and** on the presence of a unit **and** on the unit's
+  style. That is a stronger reason to act than ambiguity, and it is the reason this is a decision
+  rather than a preference.
+- **The registers are already per-installation configurable and need no code at all.** Views'
+  `number_decimal` formatter with `prefix_suffix: true` reads `prefix` and `suffix` from the
+  **field-instance** configuration, which a site owner edits in the field UI.
+  ⚠️ **There are SEVEN such money field instances, not four** — measured, not assumed:
+  `field.field.node.agora_base_agreement.field_agora_base_amount`,
+  `…agreement.field_agora_base_obligations`, `…contract.field_agora_base_amount`,
+  `…contract.field_agora_base_tender_amount`, `…grant.field_agora_base_amount`,
+  `…person.field_agora_base_remuneration` and `…person.field_agora_base_severance`. Each is
+  `field_type: decimal` and each carries `prefix: ''` and `suffix: ''` today. They are honoured at
+  **14 rendering sites**: 7 in four register views (`agreements` ×2, `contracts` ×2, `grants` ×1,
+  `people` ×2) and 7 in four node record-sheet displays
+  (`core.entity_view_display.node.agora_base_{agreement,contract,grant,person}.default`).
+- ⚠️ **An eighth field instance and a fifteenth rendering site carry the same keys and must NOT
+  receive a unit.** `…contract.field_agora_base_bidder_count` is `field_type: integer` — its label
+  is *"Number of bidders"* — and `views.view.agora_base_publications:331` sets
+  `prefix_suffix: true` on `nid` under `group_type: count`. Neither is money. The second is safe by
+  construction, because `nid` is a base field with no prefix setting to read; the first is exactly
+  the row that a bulk edit over *"every field instance with a prefix key"* would put a euro sign
+  on. Naming it here is cheaper than finding it in a screenshot.
+- **The two front-page figures have no field handler to read**, and the theme says so in its own
+  words at `agora_theme.theme:463`: the blocks it serves *"have no such formatter to read, because
+  since the SUM fields were removed they have no amount field at all; the number arrives from a
+  query, not from a field handler. So the theme matches the configured shape by hand."*
+- **The prohibition this decision has to satisfy is in the same comment**, in capitals:
+  *"THERE IS NO CURRENCY SYMBOL AND THERE MUST NOT BE ONE … a symbol added here would answer it by
+  accident and permanently."* It is enforced by `tests/src/Unit/ThemeHelpersTest.php:107`
+  (`testNoCurrencySymbolEverAppears`), whose pattern is deliberately total — digits, commas, one
+  point, two decimals, an optional leading minus and nothing else — over a stated denominator of
+  **nine amounts**.
+
+**Options.**
+
+| | Option | Real cost |
+|---|---|---|
+| A | `€` prefix — `€592,470.00` | Reads naturally in English. Two formatters plus the field configs. **Fails the guard test by design**, so that test is rewritten rather than relaxed |
+| B | ISO code — `EUR 592,470.00` | Unambiguous and jurisdiction-neutral; slightly bureaucratic. ⚠️ **It is also what the six shipped PDFs already do**, which the drafted options did not know |
+| C | Name the unit once in a column heading or tile label; figures stay bare | Zero repetition, and the codebase already does this — the axe fixture's caption at `agora-theme/tests/src/Nightwatch/Tests/axe.js:531` reads *"Contract awards over 15,000 euro"*. The only option that leaves `_agora_theme_format_amount()` and its guard test untouched |
+| D | Spanish convention — `592.470,00 €` | Contradicts D-035's English rendering and the separators used everywhere else in the package |
+| **E ★** | **The unit is shown; it is euro in the shipped demo; it is configurable per installation, and no symbol is ever written into theme code** | [andres]'s direction. It **subsumes A** — the demo looks like A — while answering the objection that made A hard. Costs the seven field instances one non-empty `prefix` each, and costs the theme a read of that configuration instead of a literal |
+
+**Recommendation: E**, because it is his direction and because it is the only option that shows a
+unit without deciding, for every installation of this template, which unit that is.
+
+**The mechanism, stated concretely, because "configurable" with no named mechanism is how a
+decision becomes unimplementable.**
+
+1. **The registers need no code.** Set `prefix: '€'` (with its trailing space handled the way the
+   formatter handles it) on the **seven money field instances** listed above. Every one of the 14
+   rendering sites already has `prefix_suffix: true` and starts honouring it in the same change.
+   A site owner in another jurisdiction edits those seven fields in the UI and the whole register
+   set follows. **`bidder_count` is not touched.**
+2. **The theme reads the same configuration rather than carrying a symbol of its own.**
+   `_agora_theme_format_amount()` gains the unit from the field configuration the registers
+   already use — one source of truth, edited in one place, by whoever installs the template. It
+   does not gain a constant, a Twig literal or a hard-coded `€`.
+3. **One source of truth, and it is checkable.** If the front page and a register table can ever
+   print different units for the same currency, the mechanism is wrong, and the acceptance
+   criterion below is written to catch exactly that.
+
+**Why this is the right answer and not a compromise, in one sentence that is worth keeping:**
+`agora_theme.theme:463` objects to a symbol *written into the formatter*, because that "would
+answer it by accident and permanently" — and **the objection was never to showing a currency, it
+was to fixing it in code for every installation**. Reading it from configuration answers the
+product question without answering it permanently, which is precisely what that comment asked for.
+
+**The guard test is rewritten, not relaxed, and what it asserts afterwards is stronger.** Today it
+asserts that the formatter's output contains no unit. Afterwards it asserts that the formatter
+emits **no currency symbol of its own** — that whatever unit appears came from configuration and
+that with no configured unit the output is still bare digits, separators and two decimals. That is
+a property about the *source* of the symbol rather than about its absence, and it is the property
+D-047 actually depends on. ⚠️ **Its nine-amount denominator is kept**, so the rewritten test
+cannot pass by checking fewer things than the old one.
+
+⚠️ **The two-repository constraint, stated because it changes what "done" means.** The registers'
+half lives in `agora_transparency` (seven field-instance config objects) and the theme's half
+lives in `agora_theme` (`_agora_theme_format_amount()` and its test). **A commit cannot span two
+repositories**, and two green pipelines would not prove the two halves agree — each pipeline only
+ever sees its own side. So the acceptance criterion is **a rendered comparison on the rig**: the
+front page and a register table printing the **same string for the same number**, quoted. Move one
+half without the other and the front page and the register tables disagree about the same money.
+
+**His general steer, recorded as direction and not as a ruling:**
+<!-- cspell:disable -->*"me gustaría que fuese lo más configurable posible"*<!-- cspell:enable -->
+("I would like it to be as configurable as possible"). It is not a decision and nothing is gated on
+it, but it settles close calls: **where this wave can honour it cheaply it should — a value a site
+owner would plausibly want to change belongs in configuration, not in a Twig template or a PHP
+constant.** Written here rather than as a decision of its own because it is a preference about how
+to choose, not a choice.
+
+**What E does NOT do, named so nobody infers it:** it does not add a currency module or any
+dependency; it does not introduce currency *conversion*, multi-currency display, or locale-aware
+number formatting — the separators stay exactly as D-035 leaves them; and it does not change the
+six shipped declaration PDFs, whose `EUR` wording is a separate question this record deliberately
+leaves open rather than settling in passing.
+
+
+---
+
+### D-048 · The hero mark as a watermark, and the invariant it would silence
+
+**PREPARED by [ejecutor] 2026-09-05 — UNSIGNED. [andres] signs; nothing below is a ruling until
+he does.** He floated it as a possibility rather than a request — <!-- cspell:disable -->*"lo del
+logo grande no sé... quizá se podría mirar de meterlo con poca opacidad en plan marca de agua? Es
+una posibilidad solamente."*<!-- cspell:enable --> ("about the big logo, I don't know… maybe it
+could be looked at, putting it in with low opacity like a watermark? It is only a possibility." —
+translated, per rule 6.) **T-1304** is written and blocked on this record.
+
+**Lead with the hazard, because it is the whole value of this record: CSS `opacity` is invisible
+to `tests/bin/contrast-check`.** That script computes WCAG relative luminance from the **hex token
+literals** it parses out of `css/tokens.css`; it has no renderer and no notion of a composite. Two
+of those literals were chosen by **per-pixel measurement over the band's photograph**, and the
+file says so at length:
+
+- **`--agora-color-mark` on `--agora-color-surface-inverse` at 3:1**, declared at
+  `agora-theme/css/tokens.css:185` — *"the portico on the hero band"*.
+- **The record bars are drawn in `--agora-color-text-inverse-muted`**, whose pair is declared at
+  `css/tokens.css:155` against the same inverse surface at 4.5. ⚠️ **Its predecessor,
+  `--agora-color-mark-muted`, is the pair at `:208`, and that pair is deliberately kept although
+  nothing renders it.** The file's own account, at `:194-203`: it *"clears the threshold by four
+  hundredths"* at 3.19, the toned photograph behind the mark pushed the measured bars to
+  **1.40:1**, and *"a scan of every position and three sizes of the mark inside the band found
+  nowhere they clear it."* The replacement tolerates 0.1792 against a measured worst ground of
+  0.1275.
+
+**So the failure mode is precise, and nobody would have edited anything to cause it.** Apply
+`opacity` to the mark and `contrast-check` stays **green over declarations that have stopped
+describing what is painted** — the two literals it checks would no longer be the colours on the
+screen. That is a silenced invariant arriving through a mechanism nobody touched, which is worse
+than a red: a red is a fact, and this would be a green that is no longer about anything.
+
+**Options.**
+
+- **A ★ — compute the resulting flat colour and declare it as its own token, with its own
+  `@pair`.** Work out what the mark's colour becomes once it is drawn at the intended opacity over
+  the band, declare that value as a new token, give it a `@pair` at the non-text threshold, and set
+  the mark to the flat value with **no `opacity` in the rule**. `contrast-check` then checks what
+  is actually painted, which is the property it was written to have. Cost: one token, one pair, and
+  the same per-pixel measurement over the photograph that produced the two existing values —
+  because the band is not a flat colour and a ratio taken against the flat surface would be the
+  wrong number for the same reason it was the wrong number last time.
+- **B — apply `opacity` and delete the two pairs.** It fails **assertion 5** of `contrast-check`
+  (*"every token is named by at least one `@pair` — an unpaired colour is a colour whose contrast
+  nobody checked"*), and it is the wrong direction even if it could be made to pass: it removes
+  the check rather than the risk.
+- **C — leave the mark exactly as it is.** The stated goal — that the mark must not compete with
+  the headline or the body text — is reachable by **position and size alone**, and the current
+  values are already measured against the photograph. Zero cost, zero risk, and it is a real
+  option rather than a placeholder.
+
+**Recommendation: A if the watermark is wanted; C if it is not.** The choice between them is his,
+because it is about how the band should look and nothing measurable separates them on correctness.
+
+⚠️ **The honest note, and it cuts against this record's own seriousness:** the hero mark is
+`aria-hidden="true"` with no `<title>` (`agora-theme/templates/agora-hero.html.twig:111`), so it is
+decoration and **WCAG requires none of this**. What option B would break is not a conformance
+obligation — it is **the project's own declaration** that every colour combination it renders is
+checked. That is a different failure from a WCAG failure, and in a template whose pitch is
+auditability it is arguably the worse of the two: an accessibility claim that quietly stops being
+true is exactly what a marketplace reviewer is entitled to disbelieve everything else on the
+strength of.
