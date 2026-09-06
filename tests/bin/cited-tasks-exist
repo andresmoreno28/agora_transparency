@@ -134,7 +134,36 @@ CITATION_PATTERN='T-[0-9]{3,4}'
 # definition. The set is now ✓ (done), ⏸ (deferred) and 👤 (needs [andres]'s hands), and it stays
 # LITERAL for the reason the comment above already gives - `[^|]*` would swallow carried-debt rows.
 # A fourth glyph will break this again, and that is deliberate: it fails loudly, naming the id.
-DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3,4}\*\*|\|[[:space:]]*T-[0-9]{3,4}[[:space:]]*((✓|⏸|👤)[[:space:]]*)?\|)'
+# IT DID, ON 2026-09-06, AND THE SENTENCE ABOVE IS LEFT STANDING BECAUSE IT CAME TRUE AS WRITTEN.
+# Unit 003's audit condition C2 requires every row of specs/003-demo-content/tasks.md to say, in
+# the `#` cell, whether it is done, deferred or pending. 44 rows were BARE - and bare meant
+# "pending", "done" and "nobody looked" at the same time. So the fill needs a glyph for PENDING,
+# because emptiness is the very state that condition abolishes; there is no way to satisfy it
+# without a fourth marker. ○ (U+25CB WHITE CIRCLE) is that glyph.
+#
+# ONE glyph was added, not four. Five distinct row states were measured over those 44 rows and
+# collapsed to three, because a column a reader has to decode is not better than a bare one: the
+# shades (a named half that no checkout can verify, a criterion that does not describe what
+# shipped) live in that file's prose, which can hold them, and not in a glyph, which cannot.
+#
+# WIDENING IS NOT LOOSENING, and the distinction is the whole reason this line is literal. The
+# set stays CLOSED and ENUMERATED - ✓ done, ○ pending, ⏸ deferred/blocked with an owner and a
+# named prerequisite, 👤 needs [andres]'s hands - and it stays LITERAL for the reason given two
+# paragraphs up: `[^|]*` would swallow `| T-106 (deferred unit 001) |` and turn a citation of debt
+# into a definition, masking exactly what this script hunts. A FIFTH glyph will break this again,
+# and that is still deliberate.
+#
+# Falsified in BOTH directions before it was trusted, which is the only reason it is here:
+#   - fill applied, ○ absent from the alternation -> definitions 190 -> 181, distinct defined
+#     179 -> 170, 4 dangling citations (T-1103, T-1106, T-1202, T-1206), exit 1. The DROP OF
+#     EXACTLY 9 is the load-bearing half: 9 rows carry ○, and only 4 of them happen to be
+#     cited by a decision - so the verdict understates the blindness by more than half, and
+#     reading it instead of the denominator is how a future widening goes wrong quietly;
+#   - fill applied, ○ present -> 0 findings, definitions 190, distinct defined 179, exit 0;
+#   - one row edited to a glyph OFF the set (`| T-1103 ◐ |`) -> exit 1, naming T-1103.
+# The DENOMINATOR is the half that matters: a widening that silently stopped recognising rows
+# would still print `findings: 0`, and that is how the two earlier breaks were caught (I-045).
+DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3,4}\*\*|\|[[:space:]]*T-[0-9]{3,4}[[:space:]]*((✓|○|⏸|👤)[[:space:]]*)?\|)'
 
 # ---------------------------------------------------------------- preflight --
 for tool in find grep sort wc cut mktemp; do
