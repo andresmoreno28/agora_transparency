@@ -20,6 +20,31 @@
 # with the reasoning and the I-031 asymmetry spelled out, lives in the header of
 # tests/bin/no-ci-allow-dev. Read it before adding a counter here.
 #
+# CHECK COUNT, and the line below is MACHINE-READ. tests/bin/claims-match-sources
+# compares it against the figure CLAUDE.md's Gate A block states for this runner,
+# and fails the gate when the two disagree. It is declared here, in the file it
+# describes, rather than only in CLAUDE.md, because the commit that moves a check
+# count has to walk past this line and does not have to open that file.
+#
+# It went 61 -> 64 on 2026-09-06: G9 adds three checks. It is the first group here
+# whose subject is the PROSE rather than the package - CLAUDE.md's Gate A block had
+# drifted on six separate figures at once, in a block whose own stated rule is that
+# every number in it is a dated measurement.
+#
+# ⚠️ WHAT THIS LINE DOES NOT DO, so nobody reads more into it than it carries: it
+# is a declaration, not a measurement. Nothing yet asserts that it matches the
+# total this runner actually PRINTS. Closing that needs the summary below to
+# compare N against it - one line - and it is deliberately not done in the commit
+# that introduces the reader, so that the reader is falsified against a total a
+# human read off the terminal first.
+#
+# `invariants=1` is G9 and nothing else. G0-G8 are checks written inline in this
+# file; G9 is the first group here that executes a script from tests/bin/, which
+# is what the word counts in CLAUDE.md's "N invariants in total" - a total across
+# both runners, and until today it was 0 here plus 15 in wave 3.
+#
+# GATE-CLAIM: checks=64 invariants=1
+#
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
 set -u
@@ -449,6 +474,34 @@ do
     check "packaged: $included" "$([ "${FOUND:-0}" -ge 1 ] && echo 'present' || echo 'absent')" 'present'
   fi
 done
+
+# -------------------------------------- G9 - claims-match-sources (2026-09-06) --
+# The only group here whose subject is CLAUDE.md rather than the package. It runs
+# in THIS runner and not in gate-a-wave3.sh because it needs no network, no
+# container and no database: it reads four files and exits in well under a second,
+# and wave 3 takes about 35 minutes. A guard against stale prose that is only
+# affordable half an hour at a time is a guard that gets skipped.
+group 'G9 - claims-match-sources (CLAUDE.md against this repository)'
+INV=tests/bin/claims-match-sources
+if [ -x "$INV" ]; then
+  INV_OUT=$("$INV" 2>&1); INV_RC=$?
+  CMP_N=$(printf '%s\n' "$INV_OUT" | grep -E '^comparisons: [0-9]+$' | tail -1 | grep -oE '[0-9]+')
+  UNC_N=$(printf '%s\n' "$INV_OUT" | grep -E '^NOT CHECKED - [0-9]+ ' | tail -1 | grep -oE '[0-9]+' | head -1)
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(claims extracted|comparisons|mismatches)' | tr '\n' ' ')"
+  check 'claims-match-sources (exit)'      "$INV_RC" '0'
+  # check_positive does not exist in this runner; these two reproduce it. Both
+  # denominators are asserted for the reason I-028 gives: a reader that compared
+  # nothing, and a reader whose NOT CHECKED list had been deleted, would each
+  # print "mismatches: 0" and pass by construction.
+  check 'claims-match-sources (comparisons > 0)' \
+    "$([ "${CMP_N:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'claims-match-sources (unchecked named > 0)' \
+    "$([ "${UNC_N:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+else
+  check 'claims-match-sources present'     "$(trunc "$INV" 28)" 'present'
+  check 'claims-match-sources (comparisons > 0)'     'not run' 'yes'
+  check 'claims-match-sources (unchecked named > 0)' 'not run' 'yes'
+fi
 
 # ----------------------------------------------------------------- summary ---
 printf '\n=========================================================================================================\n'

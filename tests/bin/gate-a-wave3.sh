@@ -65,6 +65,19 @@
 #   directions before it was trusted - one byte appended, the file removed, a
 #   stale filesize in its entity export, and the clean tree.       48 -> 49
 #
+# THE LINE BELOW IS MACHINE-READ, and it exists because the arithmetic above did
+# not survive being prose. tests/bin/claims-match-sources compares it against the
+# figure CLAUDE.md's Gate A block states for this runner, and against the number
+# of `group 'GN - ...'` declarations further down this file, and fails the gate
+# when any of the three disagree. CLAUDE.md said 48 on 2026-09-06 while this
+# runner printed 49 and this header said so - the two files that agreed were the
+# two nobody had to open.
+#
+# `invariants=15` is G1..G15; G0 is the preflight and is not an invariant. The
+# total CLAUDE.md quotes is across BOTH runners, so it is this 15 plus wave 1's.
+#
+# GATE-CLAIM: checks=49 invariants=15
+#
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
 # because T-601 requires the number of config objects to be STATED, and the
