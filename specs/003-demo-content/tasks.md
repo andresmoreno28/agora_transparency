@@ -373,3 +373,145 @@ for all twelve is the sixth reserve-accounting entry at the top of this file; ni
 | Menu placement to the six per-bundle routes (002 debt table, ruled to T-603) | **T-1008** | **verify first** — T-603 is signed; the row closes as verified with evidence, or closes the gap |
 | D-032 step 7's `content == 1` pre-commit check | **T-1203** | owned, wave 12 · replaced by name, never deleted |
 | D-010 (open since 2026-08-21, "postponed to unit 003") | — | **[andres] signs before wave 10 authors a node** |
+
+---
+
+## Row state, measured on disk — [ejecutor] 2026-09-06
+
+🔴 **READ THIS FIRST. The `#` column is still bare on 44 rows, and this section is NOT a substitute
+for filling it.** It is the measurement the fill needs, parked one step short of the column, because
+the fill was written, applied, and found to turn a signed invariant red. The state of every row is
+below; the column stays bare until the one-line change named further down is made by somebody whose
+scope includes `tests/`.
+
+### What was ordered, what was measured, and why the shape is not the one that was asked for
+
+The order was to make this return **0**:
+
+```
+grep -cE '^\| T-[0-9]+ \|' specs/003-demo-content/tasks.md
+```
+
+It returns **44**. Two shapes were offered: fill the `#` column, or append a reconciliation table.
+**Filling the column is the right shape and it is the only one that meets that criterion** — an
+appended table leaves all 44 rows bare — and it is not blocked by rule 8 either: measured before
+anything was written, **0 of the 44 bare rows contains `Signed` or `SIGNED` anywhere in it**, so
+there is no signed row to append around. The fill was therefore written and applied. Then it was
+measured, and the measurement is why this file is not carrying it.
+
+⚠️ **`tests/bin/cited-tasks-exist` recognises exactly three status glyphs in the `#` cell, and a
+fourth is designed to break it.** Its `DEFINITION_ANY` pattern accepts `| T-NNNN |`, `| T-NNNN ✓ |`,
+`| T-NNNN ⏸ |` and `| T-NNNN 👤 |` and nothing else — deliberately literal, because `[^|]*` would
+also swallow the carried-debt table's rows and turn citations of debt into definitions. Its header
+says what happens next, in as many words:
+
+> *"A fourth glyph will break this again, and that is deliberate: it fails loudly, naming the id."*
+
+**It did exactly that, and the numbers are the reason this is a report rather than a workaround.**
+With a five-glyph fill applied, `bash tests/bin/cited-tasks-exist` exits **1** and prints **8
+dangling citations** — T-1103, T-1106, T-1202, T-1206, T-1305 twice and T-1601 twice — with
+definitions falling **190 → 171** and distinct defined **179 → 160**, because 19 table rows stopped
+being recognised as definitions at all. Reverted, it exits **0** with `190 / 179 / 0 findings`.
+`gate-a-wave3.sh:437` asserts that exit is `0`, and CI's blocking `agora-invariants` job runs that
+runner, so **the fill takes the pipeline red**. Nothing broken moves forward.
+
+⚠️ **The fix is one literal alternation, and it belongs to whoever owns `tests/`.** In
+`tests/bin/cited-tasks-exist`, `DEFINITION_ANY`'s `((✓|⏸|👤)[[:space:]]*)?` has to learn the glyphs
+the `#` column needs, and the widening should be **literal**, for the reason its own header gives
+about `[^|]*`. That change plus the fill is a single commit; the states it needs are the table
+below, already measured.
+
+⚠️ **And the shortcut that would have bought a green was refused, on the guard's own evidence.**
+Adding `- **T-NNNN**` list items — the second definition shape the script accepts — would clear all
+8 danglers without widening the pattern, leaving the guard blind to the 19 table definitions it no
+longer recognises. That is the defect the guard exists to catch, and its header records it happening
+twice before, each time caught by watching the **denominator** move rather than the verdict. A green
+bought that way is worse than the red.
+
+### The states these 44 rows were measured into
+
+**`done`** — the config, content, code or script the row ships was found on disk today and matches
+the row · **`done, half unverified here`** — the same, but one **named** half of its criterion needs
+a rig, Docker or a maintainer's token, and the half is named · **`done, criterion diverged`** —
+shipped, and the row's own criterion does **not** describe what shipped · **`not done`** ·
+**`blocked`** — on a named decision or a named release.
+
+⚠️ **What `done` does not claim, because a state that claims too much is worse than a bare cell:**
+it does not claim that the row's rendered or rig-side numbers were re-measured. This pass re-ran no
+rig and no browser; those numbers were measured by whoever implemented the row.
+
+**Tally:** done **25** · done, half unverified here **4** · done, criterion diverged **5** ·
+not done **8** · blocked **2** — 44 rows, which is every bare row. The 20 rows already carrying `✓`
+and the one carrying `⏸` were not examined and are not restated here.
+
+| Row | State | What was opened, and where |
+|---|---|---|
+| **T-1103** | done, criterion diverged | `agora-theme/templates/agora-award-total.html.twig:79` — the `<svg … aria-hidden="true" focusable="false">` with its equivalent `<table>` at `:85`, `<caption>` at `:86` and `<th scope="col">` at `:91-92`. T-1305 discharges it and its criterion is this row's verbatim. In the published theme: the chart landed at `bf46da9` and `git merge-base --is-ancestor bf46da9 1.1.0` succeeds. ⚠️ The row asks for the statistic to be *"asserted against a count the test computes **independently**"*; see T-1305 for what the test actually compares against |
+| **T-1105** | done | `content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml` — `status: true`, `moderation_state: published`, `path.alias: '/accessibility-statement'` |
+| **T-1106** | not done | `screenshot.webp` is **6,686 bytes**, sha256 `98363dd5a77e8374d33666d2bbf905f15229a7c1aca9e82fc7c37542b3e02f1c`. The row's criterion is that the sha256 **differs from the placeholder's**; this is the placeholder, unchanged |
+| **T-1107** | not done | Nothing is served, and nothing can be from this checkout. ⚠️ **The blocker the row names is discharged**: `updates.drupal.org/release-history/agora_theme/current` lists **1.0.0, 1.0.1, 1.0.2, 1.0.3, 1.0.5, 1.0.6, 1.0.7 and 1.1.0** published, so *"`agora_theme` 1.0.1 published by [andres]"* has been true for some time. What is left is the rebuilt rig and [andres]'s eyes |
+| **T-1201** | blocked | `.gitlab-ci.yml` declares `agora-invariants` and `phpunit-pgsql` and no axe or Nightwatch job of any name. **D-036 carries no signature line** in `DECISIONS.md`: its `★ C` is a recommendation *"conditional on one measurement"*, and that measurement is nowhere on disk |
+| **T-1202** | not done | No `playwright.config.*`, no Playwright directory, no job naming it, in either repository. ⚠️ **The prerequisite the row states no longer applies**: `DECISIONS.md:2455` reads *"**Ruling: B.** Playwright functional and visual regression run on drupalcode"*. ⚠️ **But D-045 carries no `SIGNED by [andres]` line**, where D-047, D-048, D-049, D-050, D-051 and D-052 all do — so the eighth reserve entry above, which calls the risk *"ABOLISHED by D-045, signed"*, is one word ahead of the record |
+| **T-1203** | not done | Nothing in `tests/bin/` replaces D-032 step 7's `find content -type f \| wc -l` still `1`. `media-licence` counts **binaries against the manifest**, a different denominator over a different set. No sweep report exists in `specs/003-demo-content/` |
+| **T-1205** | not done | No audit artifact in `specs/003-demo-content/` — the directory holds `plan.md`, `README.md`, `research/` and `tasks.md`. An independent audit **has** run: its closure condition C2 is the order this section answers, and the conditions it returned are open items, so the row's *"No open 🔴"* is not met today |
+| **T-1206** | not done | No closure report in `specs/003-demo-content/` |
+| **T-1207** | done | `grep -c 'group_type: \(sum\|avg\|stddev_pop\)'` over `config/` prints **1**, in `views.view.agora_base_publications.yml` — the kept sort, which is what the criterion asks for |
+| **T-1208** | done | `tests/bin/no-varchar-aggregate`, 9,130 bytes, mode `100755`, registered in `gate-a-wave3.sh` |
+| **T-1209** | done | `.gitlab-ci.yml:276` — `phpunit-pgsql:` |
+| **T-1210** | done | `README.md:37` and `:42`, and `config/views.view.agora_base_publications.yml:431` — *"Fuentelclaro is a fictional Spanish municipality…"* inside `block_2`'s `header` area |
+| **T-1211** | done | `tests/bin/generate-demo-media.py`, 41,517 bytes, mode `100755`, registered in `gate-a-wave3.sh` as G15 |
+| **T-1212** | done | `config/system.menu.agora-base-quick-access.yml`; **6** files under `content/menu_link_content/` name that menu; `recipe.yml:528` carries the `canvas.component.block.system_menu_block.agora-base-quick-access` action the row says the palette needs |
+| **T-1213** | done | `config/views.view.agora_base_publications.yml` — `block_5:` at `:716` and `block_6:` at `:859` |
+| **T-1214** | done | `content/canvas_page/ff94a20d-4eee-42f8-9ec7-48ccf940d5ac.yml` carries **7** `component_id` values, in the order the row states |
+| **T-1215** | done | Four `config/system.menu.agora-base-footer-{find,money,documents,institution}.yml` with their four `config/block.block.agora_base_footer_*.yml`; **9** links name those four menus; `recipe.yml:340` sets `slogan: 'Open government information'` |
+| **T-1216** | done | `config/system.menu.agora-base-footer-social.yml`, `config/block.block.agora_base_footer_social.yml`, and **4** links naming that menu |
+| **T-1217** | done | `tests/src/Functional/ValidationTest.php:729` `SOCIAL_LINKS`; `:1000` scopes the count to `footer.agora-page__footer`; `:1012` asserts it. Unexecuted here, as the row itself says: no Drupal lives in this repository |
+| **T-1301** | done | `agora-theme/css/base.css:206` — `--agora-radius: 6px`, with the 2px argument still readable in the comment above it and the new value argued beside it. ⚠️ **Its *"10 before and 10 after"* holds at its own commit and not on today's tree**: at `0bf77d4` the count is 2 in `base.css` plus 8 in `components.css` = **10**; today it reads **13**, because rows after it added call sites. The criterion is a statement about that commit and is read against it |
+| **T-1302** | done, criterion diverged | `agora-theme/css/components.css:2834-2839`. ⚠️ **The criterion names a token and a number that are not what shipped.** The fill is `--agora-color-accent-soft` (`#d98b33`, `tokens.css:124`), **not** `--agora-color-accent` (`#c8781f`) as the row says; and the `@pair` count moved **66 → 68** across `0bf77d4`, not by the **one** new pair the row specifies. The label is `--agora-color-text`, the dark label the row asks for, and `:hover` inverts both at `:2859-2862` |
+| **T-1303** | done | `agora-theme/css/components.css:1725` — `.agora-key-figures .views-field::before`, `content: ""`, drawn entirely by `background-image`, which is the mechanism the row specifies. ⚠️ The criterion's *"the commit's file list contains **no** `.twig`"* cannot be checked as written: `0bf77d4` carries T-1301, T-1302 and T-1303 in one commit and does touch `templates/agora-hero.html.twig` — for the hero, not for the tiles |
+| **T-1304** | done | **`DECISIONS.md:2753` — `SIGNED = A by [andres], 2026-09-05`**, so the row's own `⏸ BLOCKED ON D-048 … unsigned` prose is superseded by the record. `agora-theme/css/tokens.css:138` `--agora-color-mark-watermark: #697888`, its `@pair` at `:307`, consumed at `templates/agora-hero.html.twig:157-158`. The `opacity` declarations in the hero belong to the picture layers, not to the mark's rules |
+| **T-1305** | done, criterion diverged | **`DECISIONS.md:1815` — `SIGNED = B by [andres], 2026-09-05`** on *D-037, second text*, so the row's `⏸ BLOCKED ON D-037 … unsigned` prose is superseded. Chart and adjacent table as for T-1103; the window and the ceiling are named constants — `AGORA_THEME_AWARD_WINDOW_MONTHS = 24` at `agora_theme.theme:96`, `AGORA_THEME_AWARD_ROW_CEILING = 750` at `:122` — and `_agora_theme_award_months()` at `:1642` takes both as defaults. ⚠️ **The independence the row demands is not the independence that shipped**: it asks for the series to be asserted against a computation over `content/node/*.yml`, and `tests/src/Unit/ThemeHelpersTest.php:560` asserts against a **transcribed** `DEMO_TOTAL = 592470.0` with a `demoAwards()` fixture, because the theme repository cannot see that corpus. The number agrees; the property does not |
+| **T-1306** | done | `agora_theme.theme:1157` — `_agora_theme_format_amount($amount, $prefix, $suffix)` returns `$prefix . number_format(…) . $suffix` and its body carries no symbol at all; the guard at `tests/src/Unit/ThemeHelpersTest.php:150-165` asserts the bare shape and the configured shape over a nine-amount list. In the published theme: `de0fc18` is an ancestor of `1.1.0` |
+| **T-1307** | not done | 🔴 **`PAGES` at `agora-theme/tests/src/Nightwatch/Tests/axe.js:153` holds 7 entries and NONE of them is a front-page fixture.** They are the two hand-built tables, the Views table, the prose page, the node page, `COMPONENT_KIT` and `SIGNIN`; the seventh is `COMPONENT_KIT`, which belongs to T-1405. ⚠️ **The row's numeric criterion — *"`PAGES.length` is 7"* — is literally TRUE today, for the wrong reason**, so reading the number and not the names marks this row done |
+| **T-1308** | done | **7** files under `config/field.field.node.*.yml` carry `prefix: €` and they are the seven the row enumerates; `config/field.field.node.agora_base_contract.field_agora_base_bidder_count.yml:20` carries `prefix: ''`, so the total is 7 and not 8. ⚠️ The row writes the seven as `agreement.…`, `contract.…`, `person.…` where the bundles on disk are `agora_base_agreement`, `agora_base_contract`, `agora_base_person` — shorthand, not a divergence |
+| **T-1309** | done | `content/menu_link_content/9db9faa2-fa59-5eb4-89cd-0df8476d96a9.yml` — `menu_name: main`, `title: 'The institution'`, `weight: -48`, pointing at `internal:/institution`. It is the only `menu_link_content` in `main`; the other two links to `/institution` sit in `agora-base-quick-access` and `agora-base-footer-institution` |
+| **T-1310** | not done | 🔴 **`block_6` is still on the front page.** `content/canvas_page/ff94a20d-….yml:58` — `component_id: block.views_block.agora_base_publications-block_6`, fifth of the seven components |
+| **T-1311** | done | `config/system.menu.agora-base-footer-legal.yml` and `config/block.block.agora_base_footer_legal.yml`; **4** links name that menu; `ValidationTest.php:713` `LEGAL_LINKS`, asserted at `:1039`, `:1044-1048` and `:1053-1059`, including the `/privacy-policy` still-404 assertion the row describes |
+| **T-1312** | done | `content/node/` holds **60** files, which is the 56 → 60 the row states; the aliases `/legal-notice`, `/privacy-notice` and `/cookies` are present beside T-1105's `/accessibility-statement`; the `klaro.texts` repoint is at `recipe.yml:661` |
+| **T-1313** | done | `content/file/hero-wide.webp`, **90,746 bytes** |
+| **T-1314** | done | `tests/bin/sbom-check` contains **0** occurrences of `EXEMPT_PROJECT`, `EXEMPT_UNTIL` or `SBOM_CHECK_TODAY`, and prints `exclusions: none - every drupal/* entry in require is held to every clause above` at `:553` |
+| **T-1401** | done, half unverified here | `agora-theme/components/heading/` and `components/text/`, each holding its `*.component.yml`, its `.twig` and its `.css`; the SDC count is **4** directories. ⚠️ The half this checkout cannot answer is the row's own evidence clause — *"quoted from what the palette shows"* — which needs a rig with the theme installed |
+| **T-1402** | done | `agora-theme/components/section/` and `components/group/`, and both `*.component.yml` files declare `slots:` |
+| **T-1403** | done | `agora-theme/tests/bin/component-metadata` and `component-metadata.py`, wired into `gate-a-theme.sh` as **G9**, named in that file at `:16`, `:20` and `:65`. ⚠️ It shipped as an **invariant script** where the row says *"a test"*; the substance the row asks for — walk every `*.component.yml`, print components, props and slots before the verdict — is what the script does |
+| **T-1404** | done, criterion diverged | ⚠️ **What shipped is not what the criterion describes, and the difference is argued in `recipe.yml` with the measurement beside it.** There are **no** `config/canvas.component.sdc.*` files in this package; `recipe.yml:596-603` ships four **`?`-optional `enable: []` actions** instead, and `:550-556` records why: the same names without the `?` abort the apply (*"Entity canvas.component.sdc.agora_theme.section does not exist"*), and shipping the four config objects aborts `site:install` itself. So *"the object count rises by exactly the number of files this row adds"* is satisfied by **zero files**, and *"all four read back `status: true`"* is vacuous today: **no published theme release carries `components/`** — `git ls-tree 1.1.0 -- components/` in `agora_theme` lists nothing, because `1.1.0` is `969ea60` and the components landed at `868094f`, after it. `ValidationTest.php:1657` pins the review at four so the assertion stops being vacuous by itself the day a release carries them |
+| **T-1405** | done, criterion diverged | `COMPONENT_KIT` is declared at `agora-theme/tests/src/Nightwatch/Tests/axe.js:126` and placed in `PAGES` at `:159`. ⚠️ **`PAGES.length` is 7 and the criterion is 8.** The 8 assumed T-1307's front-page fixture landed first — the row's own `Blocked by` cell says so — and it has not |
+| **T-1406** | blocked | The same release fact as T-1404: the four components exist in the theme checkout and in no published release, so no clean install can place them from the palette |
+| **T-1501** | done | `tests/bin/executable-bit`, mode `100755`; `bash tests/bin/gate-a-wave1.sh` re-run for this change prints **67 checks - 0 failures**, with `examined: 450 tracked file(s)`, `scripts: 30 with a shebang on line 1`, `findings: 0` |
+| **T-1502** | done, half unverified here | `tests/bin/preflight`, 48,569 bytes, mode `100755`. ⚠️ Its `17 checks - 0 failures over 6 job(s)` needs Docker and a rig; it was not re-run here |
+| **T-1601** | done, half unverified here | `agora-theme/templates/agora-signin.html.twig`; `_agora_theme_signin()` at `agora_theme.theme:389`; `AGORA_THEME_SIGNIN_MESSAGE_MAX = 400` at `:155`; the route back to the reset at the template's `:73`. The gate it names was read from the API today: pipeline **950641**, ref `1.x`, commit `d5a3b13` — **10 jobs, every `status` `success`, every `allow_failure` `false`**, `nightwatch` among them. ⚠️ **The two numbers the row actually asks to be quoted are not checked here**: the axe summary line and the theme's total assertion count live in the job's `/trace`, which answers `401` to an anonymous request and needs the maintainer's token |
+| **T-1602** | done, half unverified here | `_agora_theme_money_panel()` at `agora-theme/theme-settings.php:507`, with `_agora_theme_unit_fields()` at `:707` discovering by field type rather than from a list and `_agora_theme_field_edit_url()` at `:806` building each row's link; `tests/src/Functional/ThemeSettingsTest.php:852` and `:907` assert the counted sentence in two states, which is the row's *"both states are exercised"*. ⚠️ **The row's headline number — 8 rows against a site with this template applied — needs a rig**; the theme's own tests count 1 and 2 against their own fixtures |
+
+### Three findings this pass produced that are not any row's state
+
+⚠️ **1. Four rows' success criteria are transcripts of the work rather than tests of it.** Measured
+over the criterion cell of all 44 rows: the cell opens as a past-tense report **and preserves no
+original criterion** on **T-1313, T-1314, T-1501 and T-1502**. Four others open past-tense and do
+keep the original behind an *"Original criterion follows"* — T-1105, T-1309, T-1311, T-1312 — so
+those four can still falsify their own work. The first four cannot: for them, `done` above rests on
+the **artifact being on disk** — the script exists and is registered, the file is the stated size,
+the exemption's four identifiers are gone — and not on the row's criterion, because the criterion
+and the report are the same sentence.
+
+⚠️ **2. T-1307 is the case this whole condition exists for, and it would have survived a careful
+reader.** Its criterion is *"`PAGES.length` is 7"*. `PAGES.length` **is** 7. The row is **not** done,
+because the seventh entry is T-1405's component-kit fixture and not the front-page fixture the row
+is about. A criterion that counts a collection without naming what is in it passes on the wrong
+contents, and this one does.
+
+⚠️ **3. Two rows carry `BLOCKED ON … unsigned` against decisions that are signed, and one risk is
+called *"abolished by D-045, signed"* against a decision that carries no signature.** T-1304 and
+T-1305 both read `⏸ BLOCKED ON D-0xx (prepared 2026-09-05, unsigned)`; **D-048 = A** and **D-037
+second text = B** are both signed `2026-09-05` (`DECISIONS.md:2753` and `:1815`). In the other
+direction, D-045 states *"Ruling: B"* at `DECISIONS.md:2455` with **no `SIGNED by [andres]` line**,
+where six neighbouring records have one. No row and no earlier entry is edited (rule 8); both facts
+are recorded here, where the state they bear on is recorded.
