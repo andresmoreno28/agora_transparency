@@ -180,6 +180,31 @@ else would live in it, and why it is **not** being created today is D-051 — si
 2026-09-06 **for the deferral only**. The module's creation is an **open ruling**, to be taken when
 this unit opens. Nothing here schedules it, and nothing here is a signature for it.
 
+🟡 **Dated note, 2026-09-06 — a SIXTH tenant for that module, free on the day it exists, and it is
+written here so it is not findable only inside a decision record.** Recorded under **D-052**, signed
+by [andres] the same day; the section above is **not** rewritten (rule 8).
+
+`agora_theme` ships a sign-in page (T-1601) that **a stock Ágora install never reaches**.
+`gin_login` — which is not a dependency of this project and arrives inside
+`drupal_cms_admin_ui`'s `install:` list with 22 other modules — registers a theme negotiator at
+priority **1000** that hands `user.login` and four neighbouring routes to `system.theme:admin`,
+which the same recipe sets to `gin`.
+
+**The supported fix is one hook implementation and it needs a module.** `gin_login.api.php`
+documents `hook_gin_login_route_definitions_alter()`; an implementation removes `user.login` from
+the list and leaves the other four routes alone. ⚠️ **It cannot live in the theme**: the hook is
+dispatched through `ModuleHandler::alter()`, which only ever reaches module implementations, so a
+version written into `agora_theme.theme` would be **silently ignored**. And it cannot live in the
+site template, which is held to zero `*.info.yml` files.
+
+**So it is not scheduled and has no task number** — it is blocked on the same open ruling as
+everything else in D-051 §5, and it is listed here so that ruling is taken against the **whole**
+list. ⚠️ **If the module is never created, nothing is lost that exists today:** D-052 rules the
+current state acceptable, because the sign-in page is reached on every standalone install of
+`drupal/agora_theme` and is measured on every axe run. ⚠️ **Verification note for whoever builds
+it: prove it by rendering `/user/login`, never by quoting the hook's documentation.** D-052 §3
+records three of `gin_login`'s behaviours that the alter hook does **not** switch off.
+
 ---
 
 ## 006 · Hardening — full audit before publishing

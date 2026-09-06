@@ -3393,3 +3393,228 @@ any field instance — the seven still carry `prefix: €` and the euro is still
 D-047. It does **not** add a dependency, and nothing here touches the SBOM. And it does **not** make
 the read-only panel a promise of the writing one: shipping §7 leaves §5's tenant 4 exactly as
 undecided as it was before.
+
+---
+
+### D-052 · The sign-in page a stock install never sees, and the supported hook that will fix it
+
+**SIGNED by [andres], 2026-09-06** — after being shown a corrected analysis that **reversed a
+recommendation he had already approved**. His instruction on being shown the correction:
+<!-- cspell:disable -->*"lo que mejor sea, lo que me recomiendes que esté bien pensado e
+investigado"*<!-- cspell:enable --> ("whichever is best — whatever you recommend, so long as it is
+well thought through and researched" — translated, per rule 6). §6 records the withdrawn approval,
+and it is the part of this file with the longest shelf life.
+
+⚠️ **READ THE SPLIT FIRST.** The ruling has two halves, they have different standing, and only one
+of them can be acted on today.
+
+| | Status |
+|---|---|
+| **NOW — option B.** Change nothing. The sign-in page stays as it is: unreached on a stock Ágora install, reached on a standalone install of `drupal/agora_theme` | ✅ **SIGNED.** It is already the state of the tree — this decision ships **zero** lines of code |
+| **LATER — option C.** A module implements the documented `hook_gin_login_route_definitions_alter()` and removes `user.login` from the list | ✅ **SIGNED as the direction**, 🔵 **and it cannot be scheduled yet.** It needs a module, and that module is D-051's **open ruling**. Nothing here approves creating one |
+
+---
+
+#### 1 · The defect, and why it is nobody's bug
+
+`agora_theme` shipped a sign-in page — commits `c320586` (*"a sign-in page of the theme's own, and a
+panel that says where the currency lives"*) and `20056e1`, both on disk in the sibling checkout, and
+covered by T-1601. **On a stock Ágora install nobody ever sees it.** `gin_login`'s theme negotiator
+takes `user.login` and four neighbouring routes and hands them to the site's admin theme.
+
+**The page is not broken; it is not reached.** `_agora_theme_signin()` returns `NULL` off the
+`user.login` route, and the function that would build the panel — `agora_theme_preprocess_page()` —
+is a **theme** preprocess, so it runs only while `agora_theme` is the active theme. On that one
+route it is not, so the panel is never built and no markup is wrong anywhere.
+
+⚠️ **And `gin_login` is not being rude. Recording that is not politeness; it is what makes the fix
+a supported hook rather than a fight.** The negotiator does not impose Gin. It imposes
+`system.theme:admin`, **whatever that happens to be**. Its opinion is not *"this screen should look
+like Gin"* but ***"signing in is an administrative task and should look like the administration"***
+— a defensible position, and one Ágora's own configuration agrees with by omission: `recipe.yml`
+sets `system.theme` `default: agora_theme` and **never sets `admin`**, while `drupal_cms_admin_ui`
+sets `admin: gin`. The module is doing exactly what the configuration it reads tells it to.
+
+#### 2 · What was measured, at source
+
+Read on 2026-09-06 from `gin_login` **2.1.4** in the `~/agora-cms` rig, and from Drupal core in the
+same rig. ⚠️ **Two figures this record was briefed with are corrected below rather than repeated**,
+which is why every item names the file it came from.
+
+**a · The negotiator's whole decision is one config read.** `src/Theme/ThemeNegotiator.php:99`:
+
+```php
+return $this->configFactory->get('system.theme')->get('admin');
+```
+
+reached when the current route is a key of the route list, and `FALSE` otherwise. That is the entire
+mechanism.
+
+**b · Priority 1000 — and it does not win narrowly.** `gin_login.services.yml:9` tags the negotiator
+`{ name: theme_negotiator, priority: 1000 }`. In core's `core.services.yml`,
+`theme.negotiator.default` — the negotiator that would return `agora_theme` — sits at **-100**
+(line 691), and **1000 ties the highest priority core uses anywhere** (`theme.negotiator.ajax_base_page`,
+line 696). There is no priority left to outbid it with.
+
+**c · The route list is hard-coded, and it is FIVE routes, not one.**
+`src/Services/GinLoginRouteService.php:50-76`: `user.login`, `user.pass`, `user.register`,
+`user.reset.form`, `user.logout.confirm`. The service's constructor takes **one** argument — a module
+handler — and reads **no config at all**. No setting anywhere shortens this list.
+
+**d · ⚠️ `gin_login.settings` is NOT "the logo and nothing else". The brief said that; it is wrong.**
+`config/schema/gin_login.schema.yml` declares **two** mappings — `logo` **and** `brand_image`, the
+sign-in wallpaper — each with `use_default` and `path`. The claim that survives the correction is the
+one the argument actually needs: **the route list is not in that object, nor in any other.** And the
+corrected detail strengthens the case rather than weakening it, because `drupal_cms_admin_ui` already
+writes to that object — a `simpleConfigUpdate` on `gin_login.settings` setting
+`brand_image.use_default: false` and `path: public://login-wallpaper.png`. **Even the configurable
+half is already spoken for by the recipe chain.**
+
+**e · It arrives inside another recipe with 22 other modules — the brief said "roughly twenty", and
+the real number is worth having.** Counted from `recipes/drupal_cms_admin_ui/recipe.yml` on disk: the
+`install:` list holds **23** modules, one of which is `gin_login`. The recipe declares **no
+`recipes:` key**, so that list is the whole of what applying it brings. In full, because a count with
+no list is a number nobody can check:
+
+<!-- cspell:disable -->
+```
+announcements_feed · automatic_updates · coffee · contextual · dashboard · dblog ·
+drupal_cms_helper · drupical · file · gin · gin_login · gin_toolbar · menu_link_content ·
+menu_ui · navigation · navigation_extra_tools · project_browser · sam · tagify ·
+tagify_user_list · update · views_ui · view_password
+```
+<!-- cspell:enable -->
+
+⚠️ **The `cspell:disable` pair around that block is deliberate and follows the project word list's
+own stated policy**, not convenience: these are third-party machine names quoted verbatim from
+another project's file, and declaring them in `.cspell-project-words.txt` would make them
+permanently correct **everywhere in this repository, forever**. That is the same reasoning the word
+list gives for scoping [andres]'s Spanish quotations in place instead of declaring them.
+
+**f · There IS a supported extension point, documented by the module itself.**
+`GinLoginRouteService.php:78` ends the getter with
+
+```php
+$this->moduleHandler->alter('gin_login_route_definitions', $route_definitions);
+```
+
+and `gin_login.api.php` documents `hook_gin_login_route_definitions_alter(&$route_definitions)` with
+a worked example. **An implementation can `unset($route_definitions['user.login'])` and leave the
+other four routes exactly as they are** — which is the right granularity, because Ágora has a
+sign-in page and no opinion at all about the password-reset or logout-confirm screens.
+
+**g · ⚠️ A THEME cannot implement that hook, and this was verified in core rather than assumed —
+it is the whole reason option C needs a module.** `ModuleHandler::alter()` builds its callback list
+through `getCombinedListeners()`, which groups listeners **by module** (`iterateByModule()`) and
+orders them by `moduleList` weight. Theme implementations live in a **different registry** — the
+`theme_hook_list` key-value collection that only `ThemeManager::alterForTheme()` reads. Nothing
+dispatched through the module handler ever consults it. So a `hook_gin_login_route_definitions_alter()`
+written into `agora_theme.theme` would be **silently ignored**: no error, no warning, no log line,
+and a sign-in page that still does not appear.
+
+#### 3 · ⚠️ What the hook does NOT switch off — found by reading the module, not its documentation
+
+**This section exists because option C is a one-line change whose blast radius is not one line, and
+three of its edges are only visible in the source.**
+
+- **`gin_login_theme_suggestions_page_alter()` does not read the altered list.** It has its **own
+  hard-coded `switch`** on the route name (lines 254-271), so it keeps adding the
+  `page__user__login` suggestion after the alter hook has removed that route. It happens to be
+  harmless — `gin_login_theme()` builds its theme registry entries **from** the altered list, so the
+  suggestion resolves to no registered template and the active theme's `page.html.twig` renders
+  anyway. ⚠️ **But that is a coincidence of two functions disagreeing, not a designed off-switch.
+  Option C must therefore be verified by rendering the page, never by quoting `gin_login.api.php`.**
+- **`gin_login_form_alter()` matches on form ID, not on route**, so the *"Forgot your password?"* and
+  *"Create new account"* links it injects into `user_login_form` **survive** the removal. Not a
+  defect — they are useful links — but the sign-in page after option C is core's form plus
+  gin_login's two links plus Ágora's panel, and a criterion written as *"no trace of gin_login"*
+  would fail against a correct implementation.
+- **`_gin_login_gin_is_active()` gates the suggestion alter on Gin being in the admin theme's base
+  chain.** So a site that sets its **admin** theme to `agora_theme` already gets the Ágora sign-in
+  page today, through `gin_login` rather than around it — the negotiator returns `agora_theme`, the
+  suggestion is never added, and the theme's own `page.html.twig` runs. ⚠️ **This is recorded as
+  evidence that the module's logic is coherent, NOT as a fourth option:** it would render the whole
+  administration in a public-facing theme, discarding the Gin experience that `drupal_cms_admin_ui`
+  exists to provide, which is a far larger change than the one being made.
+
+#### 4 · The options, with costs that were measured rather than estimated
+
+| | Option | Cost, measured |
+|---|---|---|
+| A | Stop applying `drupal_cms_admin_ui` | 🔴 **Rejected.** §2(e): it forfeits **22 other modules** — the whole Drupal CMS administration experience, `gin`, `navigation`, `project_browser`, `dashboard`, `automatic_updates` and the rest — to change **one** route. And diverging from a Drupal CMS default is precisely what a marketplace reviewer inspects. ⚠️ **A recipe cannot uninstall a module either**, so the only way to be rid of `gin_login` is to not apply the recipe that installs it |
+| **B ★ now** | Accept it. The sign-in page serves standalone installs of `drupal/agora_theme` | ✅ **Zero.** It is today's actual state. The theme is a **published, separately installable project** (D-014, D-050), so the page is not dead code — it renders on any site running `agora_theme` without `drupal_cms_admin_ui`. The axe gate measures it on the theme's fixture site, which has no `gin_login`: `/user/login` is the **7th** and last entry in `PAGES` at `tests/src/Nightwatch/Tests/axe.js` |
+| **C ★ later** | The unit-005 module implements the documented alter hook and removes `user.login` | **One hook implementation, plus the verification §3 demands.** **Free when the module exists**, and it exists for the AI assistant (D-051 §4-5), not for this |
+
+#### 5 · Ruling
+
+**B now, C when the module lands.** The shape is D-051's exactly, and the cross-reference is the
+point of writing it down: **the module is not justified by this, and this rides along free once it
+exists.** A sign-in page is not a reason to create a public Drupal.org project — §6 of D-051 prices
+that at its own project page, its own releases, its own security-advisory coverage, its own SBOM
+line and its own CI pipeline — but it is a genuine, already-built benefit that arrives at no
+additional cost the day the module does, and a decision taken about the module without this on the
+table would be taken on an incomplete list.
+
+**Recorded as a sixth tenant against D-051 §5**, and recorded **here** rather than by editing that
+list, because D-051's deferral half is signed and rule 8 forbids editing it. **Tenant 6 · removing
+`user.login` from `gin_login`'s route list**, so the theme's sign-in page is reached on the installs
+the template actually produces.
+
+#### 6 · ⚠️ The approval that was given on a cost estimate nobody had measured
+
+**[andres] first approved option A, and he approved it on an incomplete framing of mine.** He was
+told `gin_login` could be dropped from *"the Ágora recipe chain"* — **without** its having been
+measured that it arrives inside **another recipe's** install list alongside 22 other modules, and
+**without** the alter hook having been found. He agreed, reasonably, to something described as cheap
+that is not cheap.
+
+**The approval was given and then withdrawn on measurement, by the person who gave the wrong
+framing.** That asymmetry is the reason this section is here: the correction cost one conversation,
+and it would have cost a marketplace review had it been discovered later.
+
+🔴 **This is the third time in one day that a claim about a decision was made without opening the
+thing it was about**, and the pattern is the finding rather than any of the three instances:
+
+1. **D-003 and Tailwind** — corrected in `044e6e4`.
+2. **The Gobierto stack claim** — refused by an implementer, and already recorded inside D-051 §5,
+   where the research being cited says in as many words *"do not assert either"*.
+3. **This record's own brief** — three separate figures wrong in one page: *"roughly twenty"*
+   modules (22), *"the logo and nothing else"* (two mappings), and the whole of option A's cost.
+
+Recorded as **I-115**: *a recommendation is only as good as the cost estimate under it, and a cost
+nobody measured is a guess wearing a recommendation's clothes.*
+
+#### 7 · Where the alter-hook work is recorded, and why it is NOT a task row
+
+**It must not be findable only inside a decision record**, and it is not. It is written as a **dated
+note in `specs/000-project/ROADMAP.md`'s unit 005 section**, beside the 2026-09-06 note D-051 §4 put
+there.
+
+**Why that home and not a task row, stated because the alternative was the instruction's first
+suggestion.** Three things were checked on disk before choosing:
+
+- **`specs/005-ai-and-governance/` holds a `README.md` and nothing else.** There is no `tasks.md` to
+  append to, and creating one is a **scaffolding turn** — the `orquestador`'s work, with dated
+  research and a plan in front of it — not a row appended by an implementer.
+- **Unit 003's `tasks.md` is the only open task list, and this is not unit 003's work.** Its own
+  wave 16 already refuses the neighbouring case in as many words: *"a row that starts to write field
+  configuration from the theme is out of scope until that ruling exists."* The same logic binds
+  here, and harder — this work cannot even be attempted without a module.
+- **A task row is a schedule, and there is nothing to schedule.** D-051 §8 says of itself that it
+  *"does not schedule anything: no wave, no task row, no date"*, and inventing a `T-` number for
+  work blocked on an open ruling would put a dangling commitment in a file that
+  `tests/bin/cited-tasks-exist` reads as an accountability record.
+
+**The ROADMAP note is direction, which is exactly what this is**, and it lands where unit 005's
+scaffolding turn will read it — the same instrument, in the same section, that D-051 used for the
+same reason one day earlier.
+
+#### 8 · What this decision does NOT do, named so nobody infers it
+
+It does **not** approve creating `agora_setup`, or any module — D-051's open ruling is left exactly
+as open as it was. It does **not** schedule the alter hook: §7 records direction, not a wave or a
+date. It does **not** change `recipe.yml`, `composer.json`, `config/` or the SBOM; `drupal_cms_admin_ui`
+stays in the chain and `gin_login` keeps arriving with it, on purpose. It does **not** touch
+`agora_theme`: the sign-in page and its tests ship unchanged, and T-1601's criteria are unaffected.
+It does **not** reopen D-014 or D-050. And it does **not** claim the sign-in page is unused — it is
+reached on every standalone install of the theme, and measured on every axe run.

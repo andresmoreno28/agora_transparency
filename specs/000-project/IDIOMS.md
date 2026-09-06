@@ -1254,3 +1254,25 @@
   value?** At one, a shadowing global is a legitimate override. At two or more it is a second
   source of truth, and the failure is silent, public, and about the numbers the product exists to
   publish. Recorded 2026-09-06 with D-051.
+
+- I-115 · **A recommendation is only as good as the cost estimate under it, and a cost nobody
+  measured is a guess wearing a recommendation'''s clothes.** [andres] approved dropping `gin_login`
+  from *"the Ágora recipe chain"* on a framing that had **not** been checked against disk. Measured
+  afterwards: it is not in the chain at all — it arrives inside `drupal_cms_admin_ui`'''s `install:`
+  list with **22 other modules**, so the approved change would have forfeited the entire Drupal CMS
+  administration experience to alter **one** route; and a **documented alter hook** existed the whole
+  time, which nobody had looked for. ⚠️ **The approval was withdrawn on measurement by the person who
+  gave the wrong framing**, which is the only reason it cost one conversation instead of a
+  marketplace review. **This was the THIRD instance in a single day** — D-003 and Tailwind (corrected
+  in `044e6e4`), the Gobierto stack claim (refused by an implementer, from research whose own words
+  are *"do not assert either"*), and this record'''s brief, which carried three wrong figures in one
+  page. ⚠️ **The generalisable shape is that an option table is the LEAST audited part of a decision
+  record.** Its ruling gets scrutiny, its measurements get quoted back, and the costs in the rejected
+  rows are read as background — so a wrong number there survives review and silently decides the
+  outcome, because a recommendation is chosen by comparing costs. **The test: for each row, name the
+  file the cost was read from.** A row that cannot name one is an estimate, and it must say so in the
+  cell rather than be written in the same voice as the rows that were measured. ⚠️ Corollary, and it
+  is what made this case recoverable: **the person best placed to catch a bad estimate is the one who
+  produced it**, because they know which cells they filled from memory. Re-opening your own cost table
+  before the work starts is cheaper than every other way of finding out. Recorded 2026-09-06 with
+  D-052.
