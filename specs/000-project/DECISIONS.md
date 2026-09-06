@@ -3618,3 +3618,244 @@ stays in the chain and `gin_login` keeps arriving with it, on purpose. It does *
 `agora_theme`: the sign-in page and its tests ship unchanged, and T-1601's criteria are unaffected.
 It does **not** reopen D-014 or D-050. And it does **not** claim the sign-in page is unused — it is
 reached on every standalone install of the theme, and measured on every axe run.
+
+
+---
+
+### D-053 · Where axe runs over the demo pages: a PHPUnit test in the `phpunit` job, and no new job
+
+**SIGNED by [ejecutor], 2026-09-07, under [andres]'s standing delegation** — the same delegation
+D-027 through D-030 were signed on, and for the same reason: **this is methodology, not a product
+trade-off.** It decides *where a test runs*, not what the product does. Nothing in it changes
+`recipe.yml`, `composer.json`, `config/`, `content/`, the SBOM or a single line the installer
+touches. His standing instruction, given 2026-09-06 and quoted because it is the standard this
+record is measured against: <!-- cspell:disable -->*"lo que mejor sea, lo que me recomiendes que
+esté bien pensado e investigado"*<!-- cspell:enable --> ("whichever is best — whatever you
+recommend, so long as it is well thought through and researched" — translated, per rule 6).
+
+⚠️ **This supersedes the axe half of D-036.** D-036's Playwright half was already superseded by
+D-045. **Nothing in D-036 is edited** (rule 8); it is superseded here, and its own `★ C` was
+explicitly *"conditional on one measurement"* that nobody took until now.
+
+**The ruling, in one line:** the accessibility gate over the pages this template installs is a
+**PHPUnit `FunctionalJavascript` test** at `tests/src/FunctionalJavascript/AccessibilityTest.php`,
+collected by the **existing** `phpunit` and `phpunit-pgsql` jobs. **`.gitlab-ci.yml` is not
+edited and the job list stays at ten.**
+
+**This unblocks T-1201**, which has carried `⏸` and the words *"the surface is undecided"* since
+unit 003 was scaffolded. It does not close it: the last clause of that row's own criterion is a job
+list read from the API, and no pipeline has run yet. Its glyph moves to `○`, not `✓`.
+
+---
+
+#### 1 · The measurement D-036 left open, taken — and it discharges the condition
+
+D-036 made its recommendation conditional on *"whether axe-core can be installed and run inside the
+existing `Drupal CMS` job"*. Read at source on 2026-09-07 in `gitlab_templates` on `main`, and
+confirmed a second time on this machine, the answer has three parts and only the third is the one
+D-036 expected.
+
+| what | where it was read | what it says |
+|---|---|---|
+| `_COMPOSER_YARN_INSTALL` defaults to `'1'` | `include.drupalci.variables.yml:75-77` | its own description: *"install Yarn in the `Composer` job and make `node_modules` part of the artifact for later jobs to use"* |
+| the `composer` job runs `cd $CI_PROJECT_DIR/$_WEB_ROOT/core && corepack enable && yarn install` | `include.drupalci.main.yml:707-715` | and publishes `artifacts: paths: [.]` — the whole build directory |
+| `.phpunit-base` declares `needs: [composer]` | `include.drupalci.main.yml:1709` | so the `phpunit` job already **receives** that `node_modules` |
+| `.testing-job-base` declares the chrome service | `include.drupalci.main.yml:25-27`, `1468-1474` | `selenium/standalone-chrome:127.0`, alias `selenium` |
+| `.test-variables` sets the driver arguments | `include.drupalci.main.yml:52` | `MINK_DRIVER_ARGS_WEBDRIVER_DEFAULT` pointing at `http://selenium:4444` |
+
+**So axe-core is already in this pipeline, and so is a real headless Chrome, and the job that has
+both is `phpunit` — the job that already runs this package's tests.** The measurement did not
+merely pass; it made the question smaller than D-036 imagined it.
+
+And upstream says so in one sentence, which is the strongest citation in this record because it is
+a statement of intent rather than an inference from a variable —
+`project.pages.drupalcode.org/gitlab_templates/jobs/phpunit/`, read 2026-09-07:
+
+> *"The `phpunit` jobs run the PHPUnit tests defined by your module, including Functional,
+> **FunctionalJavascript**, Kernel and Unit tests."*
+
+The same page documents the Selenium service and the W3C driver arguments as the supported way to
+run them. **This is not a clever use of a job; it is the job's documented purpose.**
+
+⚠️ **The one thing NOT verified from this checkout, named rather than glossed:**
+`SIMPLETEST_BASE_URL` is `http://localhost/$_WEB_ROOT` (`include.drupalci.main.yml:41`) and it is
+never overridden, so whether the browser inside the `selenium` container resolves it to the job
+container is GitLab Runner's networking, not something readable here. The local falsification runs
+used a container hostname instead. **If that assumption is wrong the failure is a Mink connection
+error, loud and immediate — not a false green**, which is the property that matters; and §6's
+fallback is the remedy.
+
+⚠️ **AND D-036 NAMED THE WRONG HOST, WHICH IS THE MORE USEFUL HALF OF THIS SECTION.** Its option C
+proposed running demo-page axe on the **`Drupal CMS`** job. That job cannot do it, for three
+reasons that are all in its own definition at `include.drupalci.main.yml:864-874`:
+
+1. **It declares no `needs:` at all**, so it receives no artifact from `composer` and therefore has
+   **no `node_modules` and no axe-core**.
+2. **Its docroot is somewhere else.** It sets `_CMS_ROOT: 'cms'` alongside `_WEB_ROOT: 'web'`, so
+   the site it builds lives at `$CI_PROJECT_DIR/cms/web`, not at the `$CI_PROJECT_DIR/web` every
+   other job means by "the docroot". A path written for one is wrong in the other.
+3. **It is a smoke, and it is priced like one.** CLAUDE.md's Gate A block records what it prints:
+   `OK (1 test, 1 assertion)`. The read-only audit that took this measurement timed that single
+   assertion at **219.6 s** — a figure taken from the job trace by that audit and not re-measured
+   here, and flagged as such rather than absorbed. Hanging a nine-page browser suite off it would
+   have been the most expensive of the available options as well as the only impossible one.
+
+**A recommendation naming a host nobody had opened is D-045's lesson in a second shape**, and it is
+why this record names the file and line for every claim above.
+
+---
+
+#### 2 · Option C — Nightwatch in this repository — is refuted three ways
+
+D-027 already established that Nightwatch **cannot be collected** in the template repository. That
+finding is not merely reaffirmed here; it is now shown to fail in a way that **produces a green-
+looking eleventh job**, which is worse than failing loudly.
+
+1. **The rule that creates the job and the glob that fills it are rooted in different places.**
+   `.nightwatch-tests-exist-rule` is `exists: tests/src/Nightwatch/**/*.js`
+   (`include.drupalci.main.yml:514-519`), evaluated at the **repository root**. Core's
+   `nightwatch.conf.js` globs `**/tests/**/Nightwatch/**/*.js` with
+   `cwd: path.resolve(process.cwd(), '../' + searchDirectory)`, and the job runs it from
+   `cd core` — so its `cwd` is the **docroot**.
+2. **A recipe package is not under the docroot.** `include.drupalci.main.yml:119-125`:
+   `DRUPAL_PROJECT_FOLDER=$CI_PROJECT_DIR/$DRUPAL_RECIPES_PATH/$PROJECT_NAME`, which for this
+   package is `$CI_PROJECT_DIR/recipes/agora_transparency` — a **sibling** of
+   `$CI_PROJECT_DIR/web`, invisible to that glob.
+3. **A third filter would catch it even if the first two did not.** The job runs
+   `yarn test:nightwatch --tag=$PROJECT_NAME` (`include.drupalci.main.yml:1544-1545`).
+
+**Committing the parked `axe.js` would therefore add an eleventh blocking job that collects zero
+tests.** That is I-050 exactly: a job that exists is not a job that ran.
+
+⚠️ **AND THE PARKED README RECORDS THAT MATERIALISATION AS THE WIN.**
+`Documents/projects/agora-parked/2026-09-02-axe-on-real-pages/README.md` closes with *"Committing
+`Nightwatch/Tests/axe.js` MATERIALISES a `nightwatch` job in the template's pipeline … so the job
+list moves from 10 to 11"*. The mechanism is real — it is how `agora_theme` went from nine jobs to
+ten — but in **that** repository the tests are inside the docroot and in **this** one they are not.
+Anyone resuming from that README walks into I-050 while believing they are avoiding it.
+**That file needs annotating; it is outside this repository and is deliberately not edited from
+here.** Naming it is this section's job. Fixing it is a separate, one-paragraph change in the
+directory that owns it.
+
+---
+
+#### 3 · What was built, and what it measures
+
+One file, `tests/src/FunctionalJavascript/AccessibilityTest.php`. It applies this recipe to a
+freshly installed Drupal, walks **nine pages of the installed product** and runs axe over each.
+
+Every page is **derived from the package**, never typed: the two Canvas pages come from
+`canvas_page` entities at their own aliases, the front page from `<front>`, the four register
+routes from each View's `page_1` path with its heading read from the `default` display, the node
+from the first published `agora_base_contract` at its alias, and the not-found page from a path
+that must not resolve. Renaming a register in config changes what is scanned instead of leaving the
+test asserting a string nothing produces.
+
+**Measured, on a local rig with the same Selenium image CI uses:**
+
+```
+OK (1 test, 187 assertions)      —  9 pages · 89-90 axe rules per page · 0 violations · 54 s
+OK (19 tests, 2438 assertions)   —  the whole package suite, same rig, 9 m 19 s
+```
+
+⚠️ **The second line is four assertions higher than the arithmetic predicts, and the four are not
+this file's.** CLAUDE.md:524 records the existing suite at `OK (18 tests, 2247 assertions)` (jobs
+`12014958`/`12014959`, pipeline `950203`); the same eighteen read **2251** in this rig. The gap
+predates this change. **The number to expect from the pipeline is therefore `19 tests, 2434
+assertions`**, and if the trace reads 2438 the difference belongs to the pre-existing suite. Stated
+this way rather than as one tidy number, because a prediction that hides its own uncertainty is
+worth less than no prediction at all.
+
+⚠️ **THE PAGES ARE SCANNED ANONYMOUSLY, AND THAT IS A MEASURED CHOICE THAT REVERSED THE FIRST
+DRAFT.** The suite originally logged in as a reader holding only `access content`, on the reasoning
+that it removed a dependency on how the anonymous role is configured. **The first real run refuted
+it:** that surface came back with **three `region` violations**, and none of the three was this
+template's markup — `.toolbar-title__label` and `.toolbar-badge` from the `navigation` module's top
+bar, and `.coffee-form-wrapper` from `coffee`. All three are Drupal CMS admin chrome, none is
+fixable here, and **no member of the public ever sees any of them.** A logged-in session is the
+wrong surface for this question. Scanned anonymously — the way a citizen reads these pages, and the
+way `agora_theme`'s own axe suite scans — the same nine pages report **zero** violations.
+
+**This is the first accessibility result this project has ever had about the product rather than
+about scaffolding**, and it is `specs/003-demo-content/plan.md:25-29`'s declared deliverable.
+
+---
+
+#### 4 · Falsified in four directions before it was trusted
+
+A gate first seen green is a claim, not a measurement. Each row below was **watched failing**, then
+watched passing again after the change was reverted.
+
+| what was broken | what the gate did |
+|---|---|
+| an `<img>` with no `alt` injected into the theme's `page.html.twig` | **FAIL** — `image-alt x1 @ img[src$="druplicon.png"] :: <img src="/core/misc/druplicon.png" …>` — rule, count, selector and the offending markup, all in the message |
+| `axe.min.js` moved aside | **FAIL in 3 seconds**, before the site is even installed, with the sentence naming `_COMPOSER_YARN_INSTALL` |
+| the loop made to skip one declared page | **FAIL** — `8 of 9 declared pages scanned, 89-90 axe rules run per page, 0 violations` — the message that would otherwise have read as a pass |
+| the bucket check pointed at a rule id axe never reports | **FAIL** — *"it landed in no bucket at all, which is not the same as passing"* |
+
+⚠️ **The third and fourth rows are the ones worth re-reading.** Both produce **zero violations**.
+A suite that only counted violations would have called both of them green, and that is I-045 in its
+purest form — which is why the denominator and the bucket are assertions here and not comments.
+
+Two further failures were **not** staged: the uniqueness check fired on a real duplicate
+(`<front>` and the Canvas alias behind it are the same page, correctly), and the violation check
+fired on the three real `region` findings above. **An assertion first seen failing on something
+nobody planted is the strongest evidence in this record.**
+
+---
+
+#### 5 · axe-core's provenance, and the licence rider for [andres] — UNSIGNED
+
+`axe-core` **is not named in Drupal core's `package.json`.** It arrives three hops down, read in
+`core/yarn.lock` on 2026-09-07:
+
+```
+core/package.json  devDependency  nightwatch ^3.12.3
+  └─ yarn.lock:8404   nightwatch-axe-verbose ^2.3.0   (resolved 2.3.1)
+       └─ yarn.lock:3626   axe-core ^4.9.1            (resolved 4.10.3)
+```
+
+Confirmed independently on this machine, in a rig built from `packages.drupal.org` rather than from
+the CI artifact: `web/core/node_modules/axe-core/package.json` — **6,819 bytes, `"version":
+"4.10.3"`, `"license": "MPL-2.0"`** — and `axe.min.js` at **553,446 bytes**. Both figures match the
+CI artifact byte for byte, from two machines that share no state.
+
+**Every link in that chain is somebody else's decision**, which is exactly why the test's first
+assertion proves the file is readable and fails with a sentence naming `_COMPOSER_YARN_INSTALL` if
+it is not. An absent axe must be a red with an explanation, never a scan of nothing (I-007, I-032).
+
+🔵 **THE RIDER, AND IT IS [andres]'s CALL — recorded UNSIGNED.** axe-core is **MPL-2.0** and it is
+**not shipped**: it enters no `require` in `composer.json`, no `recommended.yml` row, and no file in
+the package a user downloads. It is a test-time tool that exists only inside a CI job, on the same
+footing as PHPUnit, phpcs and Selenium. **My reading is that it needs no SBOM line and no
+licence-manifest entry**, and rule 2's *"every contrib module added needs a line"* is about things
+the SBOM ships. That reading is a recommendation, not a ruling: **[andres] decides.** If he
+disagrees, the fix is one line in `DECISIONS.md` and one in `MEDIA-LICENCES.md`'s neighbour, and
+nothing about the test changes.
+
+---
+
+#### 6 · The fallback, named now rather than discovered later
+
+The `phpunit` job gains one test and roughly a minute. Measured: **54 s** for the whole nine-page
+scan, against a job that already performs ten full site installs. There is a large margin, and this
+is not expected to be close.
+
+**If it nevertheless lengthens `phpunit` past its timeout, option B is a hand-written `phpunit-axe`
+job extending `.phpunit-base`** — the same shape as `phpunit-pgsql`, which is already the precedent
+for adding one blocking job by hand without touching upstream's `include:` block. Taking it moves
+the job list **from ten to eleven**, and **CLAUDE.md's Gate A table must be re-observed from the API
+in that same commit**, not derived. Nothing about the test file would change.
+
+---
+
+#### 7 · What this decision does NOT do
+
+It does **not** edit `.gitlab-ci.yml`, add a job, or move the job list off ten. It does **not**
+touch `recipe.yml`, `composer.json`, `config/`, `content/` or `recommended.yml`. It does **not**
+retire `agora_theme`'s `nightwatch` job: that gate keeps scanning the theme's own fixtures, which
+is the correct scope for a theme installable on its own, and the two suites now ask different
+questions of different surfaces. It does **not** edit D-036 or D-027. It does **not** add anything
+to the SBOM — §5's rider is open, not decided. And it does **not** touch the parked directory
+outside this repository; §2 names what needs annotating there and leaves the annotation to whoever
+owns that tree.
