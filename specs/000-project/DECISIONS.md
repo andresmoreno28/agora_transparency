@@ -3177,3 +3177,219 @@ rule 1 was always about dependencies rather than about us; it does not commit `a
 version number, a date or a next release; it does not delete, unpublish or renumber anything already
 released; and it does not make the Wednesday convention retroactive — it binds the next minor, not
 this one.
+
+
+---
+
+### D-051 · `agora_setup` — a third package: what would live in it, why it is justified, and why it is NOT being created today
+
+⚠️ **READ THE SPLIT BEFORE READING ANYTHING ELSE, because the two halves of this record have
+different standing and mistaking one for the other is the only way to misuse it.**
+
+| | Status |
+|---|---|
+| **The DEFERRAL** — do not create the module today; build the sign-in page and the read-only panel instead; record the module so the argument survives | ✅ **SIGNED by [andres], 2026-09-06** |
+| **The MODULE ITSELF** — whether `agora_setup` is ever created, under what name, with which of the five tenants below | 🔵 **OPEN RULING.** Taken when unit 005 opens. Nothing here is a signature for it |
+
+**Everything below the fold is the argument for a module that does not exist and has not been
+approved.** [andres] approved the *approach* — <!-- cspell:disable -->*"enfócalo como dices"*<!-- cspell:enable -->
+("frame it the way you say" — translated, per rule 6) — and the approach is: **build the sign-in
+page now, record the module, do not create it yet.** A reader who arrives here in unit 005 and finds
+five tenants, a justification and a cost table may reasonably conclude the design is settled. **It is
+not. The decision to create it has not been taken.**
+
+---
+
+#### 1 · How the question arose, which matters because it is the wrong reason
+
+He could not find where the currency is configured.
+
+**It is seven field instances across seven admin pages, for one decision** — *"this portal speaks
+euros"*. Verified on disk, and the enumeration is D-047's own, re-read rather than carried:
+`agreement.field_agora_base_amount`, `agreement.field_agora_base_obligations`,
+`contract.field_agora_base_amount`, `contract.field_agora_base_tender_amount`,
+`grant.field_agora_base_amount`, `person.field_agora_base_remuneration`,
+`person.field_agora_base_severance` — every one `field_type: decimal`, every one carrying
+`prefix: €`, spread over **four** bundles, and each with its **own** field-edit form. A council that
+changes six of the seven leaves the site contradicting itself in public, **which is the exact defect
+fixed on 2026-09-05** (D-047).
+
+⚠️ **The counts do not line up the way a reader expects, and the mismatch is the reason this is
+seven pages rather than six or eight.** There are **six** field storages behind those seven
+instances — `field_agora_base_amount` is shared by `agreement`, `contract` and `grant` — and
+**eight** instances carrying `prefix`/`suffix` keys at all, the eighth being
+`contract.field_agora_base_bidder_count`, an `integer` labelled *"Number of bidders"* whose prefix is
+correctly empty. **The currency lives on the INSTANCE, not on the storage**, so the number of places
+to visit is seven: not six (storages), and not eight (every field that could carry a unit).
+
+**His proposal:** a checkbox plus a currency selector, with the field prefixes as the fallback source
+of truth when the checkbox is off. In his words, on the alternative of documenting the prefixes and
+leaving it there: <!-- cspell:disable -->*"poner solo el prefijo lo veo algo cutre"*<!-- cspell:enable -->
+("just putting the prefix in strikes me as a bit shabby" — translated, per rule 6).
+
+**And he then asked the question that decided this record**, which is a better question than the one
+it answers: <!-- cspell:disable -->*"Si nos pusieramos a hacer el módulo de agora_setup nos tiene
+que rentar... Que no sea solo por la moneda, si se hace es para que tenga sentido."*<!-- cspell:enable -->
+("if we were to go and build the `agora_setup` module it has to pay for itself… it should not be just
+for the currency; if it is done, it is done so that it makes sense" — translated, per rule 6.)
+
+**That is the test this record applies, and the currency fails it on its own.**
+
+#### 2 · Why a theme-level override was REFUSED — and this belongs where somebody meets it before "improving" it
+
+🔴 **A theme setting that SHADOWS the field instances cannot work, and it fails silently, in public,
+about money.**
+
+- The **register tables** are rendered by **Views**, whose `number_decimal` formatter reads the
+  **field instance settings** and nothing else. Views never consults theme settings; there is no
+  mechanism by which it could.
+- The **two front-page figures** are formatted by the **theme**, and since `agora_theme` commit
+  `de0fc18` they read **the same field instance settings** — `_agora_theme_amount_unit()`, which
+  resolves the unit from the instances of the field the aggregate query actually summed.
+
+**So a theme-level currency setting would change the second surface and cannot change the first.**
+The front page would say one currency and its own register tables another, on the same site, with no
+error anywhere. **That is the contradiction D-047 fixed on 2026-09-05, re-entering by a different
+door and wearing the label of a feature.** Recorded as **I-114**, generalised past this case, because
+the next person to meet it will be reading a settings form rather than this file.
+
+**The shape that DOES work is the same checkbox with the opposite mechanism: it WRITES the seven
+field configs.** There is then still exactly one source of truth, and what the setting buys is the
+*visiting of seven admin pages* rather than the reading of a second value.
+
+⚠️ **And a writing global carries an obligation the shadowing one appeared not to: it must SHOW what
+the fields currently hold and FLAG divergence.** Someone editing a field afterwards makes the global
+stop describing reality, and a settings form that keeps displaying the last value it wrote is then
+lying about the site it configures.
+
+⚠️ **The divergence detector already exists and is deliberately silent, which is the part that would
+be missed.** `_agora_theme_agreed_unit()` already returns `NULL` when the summed instances disagree;
+the theme then prints **no unit at all** and logs a warning naming the view, the display and each
+instance's setting. That is correct and conservative — D-047 signed it in as many words: *"a total
+wearing one of two labels would be a wrong statement where a missing one was available"* — and it is
+**invisible to the person who caused it**, who is looking at an admin form, not at `dblog`. Surfacing
+that state is a screen, not a formatter change.
+
+#### 3 · The structural constraint that forces a THIRD package, rather than a second
+
+**The site template may contain ZERO code.** `RequirementsTest` requires **0 `*.info.yml` files** in
+the whole package, it is a hard marketplace requirement, and `tests/bin/no-code-in-template` enforces
+it here. **A settings form cannot live in `agora_transparency`**, and no amount of wanting it to
+changes that.
+
+**The theme can hold code, and does** — `theme-settings.php`, `agora_theme.theme`. **But a theme
+writing content-model configuration is the wrong layer**, and the failure is concrete rather than
+aesthetic: field instance settings belong to the content model, and **a site that swaps the theme
+loses the screen** while keeping every field it configured. The same is true of an AI retrieval layer
+and of a compliance dashboard: none of them stops being needed because somebody changed the
+appearance.
+
+**So: template = no code · theme = wrong layer · therefore a third package.** That is the whole of
+the structural argument, and it is why this cannot be solved by putting the form somewhere cheaper.
+
+#### 4 · What would justify it — and it is NOT the currency
+
+**Unit 005**, quoted from `specs/000-project/ROADMAP.md` verbatim:
+
+> 2. **RAG over the document corpus**: it indexes **only published documents**.
+> 3. **Mandatory citations**: every answer links to its sources; outside its sources it answers "I don't know".
+
+**That is product logic, not configuration.** Drupal CMS's AI recipe supplies the **provider
+plumbing** — which model, which key, which endpoint — and **none** of that discipline. No config
+object can decide what enters an index, and no config object can refuse to answer. Point **8** adds
+*"Key configuration via environment variable / post-installation UI"*, and the UI half of that is a
+second screen.
+
+🔴 **And here is a gap in our own plan, found today rather than in unit 005: point 1 calls that piece
+a "Recipe `agora_ai`", and a recipe cannot contain code.** Points 2 and 3 do not fit the vehicle
+point 1 names. **A dated note has been appended to the ROADMAP's unit 005 section** recording this;
+the section itself is not rewritten (rule 8), because it is direction and its real scope is fixed in
+that unit's own scaffolding turn.
+
+#### 5 · The tenants — all five, so the module is judged on what it would actually hold
+
+1. **The AI assistant's retrieval-and-citation layer** — unit 005, points 2 and 3.
+2. **The API key screen** — unit 005, point 8.
+3. **The post-install setup page** — council name, mark, currency, masthead image, contact.
+4. **The currency editor** that writes the seven field instances (§2 above).
+5. **A compliance dashboard** — which obligations are covered, which registers are empty, what has
+   not been updated in twelve months. ⚠️ **Proposed by [ejecutor], not requested by [andres]**, and
+   labelled so nobody reads it as his. It is the **auditing** half of the product's own positioning:
+   `CLAUDE.md` names *"auditing of the site's own configuration (Config Guardian) as a feature"*, and
+   the 2026-08-24 research found there is **no published Drupal content model for Spanish
+   transparency obligations** at all — *"nothing to be consistent with"*, its own words, over a
+   measured table of nine projects plus LocalGov Drupal, which models services and directories and
+   **not** contracts, convenios, subvenciones, budgets or senior-official remuneration.
+
+   ⚠️ **One claim this record was briefed with is NOT supported by that research and is corrected
+   rather than repeated: the brief said the incumbent competitor "is not Drupal".** The research
+   names **Gobierto** as the incumbent — a mid-size municipality's portal resolved to a
+   `*.gobierto.es` certificate, which is how it was identified — and then says in as many words:
+   *"Open-source status and stack are **not stated on the page** — do not assert either."* **So the
+   supportable claim is about the Drupal ecosystem modelling nothing, not about what Gobierto is
+   built on.** The argument survives the correction intact; the correction is recorded because
+   asserting a competitor's stack from a record that forbids it is exactly the defect D-045
+   named — a precondition quoted as though it had been checked.
+
+⚠️ **[andres]'s binding condition on ALL FIVE**, and it disqualifies the obvious shape:
+<!-- cspell:disable -->*"imagina que quieren cambiar alguna de esas opciones en el futuro, que puedan
+hacerlo también."*<!-- cspell:enable --> ("imagine they want to change one of those options in the
+future — they should be able to do that too" — translated, per rule 6.) **So it is a settings page
+that happens to be useful at install time. It is NEVER an install-time wizard.** A wizard that runs
+once and cannot be reopened fails this condition on the day the council changes its name.
+
+**Unit 004 does not need it, and saying so keeps the justification honest.** Editorial workflow, ECA,
+the FOI webform and the tracking panel are all configuration over existing contrib. **Two units want
+this module, not three.**
+
+#### 6 · The cost, stated plainly, because it is the whole argument for the deferral
+
+A third public project on Drupal.org means: **its own project page · its own releases · its own
+security-advisory coverage · its own line in the SBOM · its own CI pipeline.**
+
+**None of that is theoretical here — the SECOND package already produced measured costs, twice, in
+the last two days:**
+
+- **D-050**, signed 2026-09-06: publishing `agora_theme` 1.1.0 put **two download rows** on the
+  project page offering a choice that was not a choice, and nobody set the flag that caused it. That
+  is a per-project failure mode, and a third project gets its own copy of it.
+- **D-028 chose option B over option C for this exact reason, and its wording reads as though it were
+  written for today**: extracting shared scripts into a third repository is *"correct at ten
+  repositories. At two it is a third thing to release, version and gate, for four shell scripts."*
+  ⚠️ And the strain is already visible: **T-1501 ported `executable-bit` from the theme into the
+  template**, which is the **opposite** of the direction D-028's manifest models, and it opened a
+  D-028 question that is still open. **Two repositories already do not share cleanly.**
+
+**Creating a third package today to hold one checkbox, for a module two units want and neither has
+started, is paying before using. That is the deferral, and it is the whole of what was signed.**
+
+#### 7 · What ships instead, today
+
+- **The sign-in page** — theme work, in progress in `agora_theme` at the time of writing.
+- **A READ-ONLY currency panel** in the theme's settings, which shows the money fields it discovers —
+  label, bundle, current prefix and suffix — each with a direct link to its own edit form.
+
+**Two properties make the panel safe to ship from the theme, and both are the reason it is read-only
+rather than a first instalment of tenant 4:**
+
+- **It WRITES NOTHING**, so it creates no second source of truth and §2's failure mode cannot occur.
+  It answers *"where is the currency set?"* and changes nothing.
+- **It discovers fields by TYPE rather than from a hard-coded list**, so an eighth field appears in
+  it by itself. ⚠️ **The discovered set is the eight instances carrying `prefix`/`suffix`, not the
+  seven money ones** — `bidder_count` is listed with its prefix shown as *not set*, because filtering
+  it out would mean the panel deciding what counts as money, which is the judgement it exists to hand
+  back to the reader.
+
+**A read-only panel is not a smaller version of the currency editor. It is the half that can be built
+without a module**, and building it does not commit the project to building the other half.
+
+#### 8 · What this decision does NOT do, named so nobody infers it
+
+It does **not** approve the creation of `agora_setup`, fix its name, or fix its tenant list — §5 is
+an argument, not a scope. It does **not** schedule anything: no wave, no task row, no date. It does
+**not** reopen D-047, whose ruling stands and whose mechanism §2 depends on. It does **not** reopen
+D-014 (the theme as a separate project) or D-028. It does **not** change `recipe.yml`, `config/` or
+any field instance — the seven still carry `prefix: €` and the euro is still the demo's example, per
+D-047. It does **not** add a dependency, and nothing here touches the SBOM. And it does **not** make
+the read-only panel a promise of the writing one: shipping §7 leaves §5's tenant 4 exactly as
+undecided as it was before.

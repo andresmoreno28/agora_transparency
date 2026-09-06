@@ -158,6 +158,28 @@ citations are correct.
 **Risk** 🔴 · It is the unit with the largest secret-leak surface and the one that most easily breaks
 installability. Treat the keyless smoke as the main test, not as an extra.
 
+🔴 **Dated note, 2026-09-06 — point 1 names a vehicle that cannot carry points 2, 3 and 8, and this
+is a gap in our own plan rather than an objection to it.** Recorded under D-051; the section above
+is **not** rewritten (rule 8), because this document is direction and the real scope is fixed in
+unit 005's own scaffolding turn, where disk wins.
+
+Point 1 says **"Recipe `agora_ai`"**. **A recipe cannot contain code** — it is YAML applied to a
+site, and the site template that would ship it is held to **zero `*.info.yml` files** by
+`RequirementsTest`. But points 2 and 3 are not configuration:
+
+- **2 · "RAG over the document corpus: it indexes only published documents."** Deciding what enters
+  an index is a query plus a condition, and something has to run it.
+- **3 · "Mandatory citations: every answer links to its sources; outside its sources it answers
+  'I don't know'."** That is a constraint enforced at answer time. Drupal CMS's AI recipe supplies
+  the **provider plumbing** and none of this discipline; nothing in `config/` can refuse to answer.
+- **8 · "Key configuration via environment variable / post-installation UI."** The environment
+  variable half is configuration; the **UI** half is a form, and a form is a class.
+
+**So unit 005 needs a module, and it has never had one in the plan.** What that module would be, what
+else would live in it, and why it is **not** being created today is D-051 — signed by [andres] on
+2026-09-06 **for the deferral only**. The module's creation is an **open ruling**, to be taken when
+this unit opens. Nothing here schedules it, and nothing here is a signature for it.
+
 ---
 
 ## 006 · Hardening — full audit before publishing

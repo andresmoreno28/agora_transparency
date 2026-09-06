@@ -1228,3 +1228,29 @@
   months**: `supported_branches` reads `3.5.,3.6.`, its 3.6.0 was released 2025-05-21, and its
   release feed carries exactly one dev snapshot in that line (`3.x-dev`) — so both rows are tags on
   the same git branch, exactly as ours were. Recorded 2026-09-06 with D-050.
+
+- I-114 · **A global setting that SHADOWS a per-item setting can only work where one renderer reads
+  the per-item value. Where two renderers read it, the global must WRITE rather than shadow — or
+  the product contradicts itself in public.** Measured here on the currency unit. Seven `decimal`
+  field instances carry `prefix: €`, and **two independent renderers read those same instances**:
+  Views' `number_decimal` formatter draws every register table from them, and the theme's
+  `_agora_theme_amount_unit()` formats the two front-page totals from them (`agora_theme` commit
+  `de0fc18`, D-047). A theme setting offering *"the currency for this site"* would be read by the
+  second renderer and is **invisible to the first**, because Views never consults theme settings —
+  so switching it would produce a front page in one currency and its own register tables in
+  another, **on the same page load, with no error**. ⚠️ **That is not a hypothetical: it is exactly
+  the defect fixed on 2026-09-05** (`592,470.00` bare beside `14,500.00` with a symbol), re-entering
+  by a different door and wearing the label of a feature. **The shape that works is the same
+  checkbox with the opposite mechanism** — the global **writes the seven config objects**, so there
+  is still exactly one source of truth and what the setting saves is the *visiting of seven admin
+  pages*, not the reading of a second value. ⚠️ **Two corollaries, and the second is the one that
+  gets forgotten.** First: a writing global needs to **show what the items currently hold and flag
+  divergence**, because anyone editing one item afterwards makes the global stop describing
+  reality. Second: **the divergence detector may already exist and be silent.**
+  `_agora_theme_agreed_unit()` already returns `NULL` when the summed instances disagree and the
+  theme then prints **no unit at all** plus a `logger` warning — correct, conservative, and
+  invisible to the person who caused it, who is looking at an admin form rather than at
+  `dblog`. ⚠️ **The generalisable test is one question: how many code paths read the per-item
+  value?** At one, a shadowing global is a legitimate override. At two or more it is a second
+  source of truth, and the failure is silent, public, and about the numbers the product exists to
+  publish. Recorded 2026-09-06 with D-051.
