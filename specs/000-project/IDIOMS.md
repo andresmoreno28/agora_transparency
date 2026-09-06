@@ -1210,3 +1210,21 @@
   all survive it** - which is why none of them noticed. What noticed was counting a class the
   theme itself owns. Recorded 2026-09-05 with D-049; the rig was restored and the count went back
   to 54.
+
+- I-113 · **A minor tag on a `{major}.x` branch marks a SECOND branch supported, and nobody sets
+  it.** Drupal.org computes a branch from the version string alone — `project_release_get_branch()`
+  is one `preg_replace` that strips everything after the last `.`, so `1.1.0` becomes `1.1.` and
+  `1.0.7` becomes `1.0.` — and **the git branch both tags actually sit on is never consulted**. The
+  `supported` column's schema default is `1`, and the save hook's `db_merge` is keyed on
+  `(nid, branch)`, so the first release on a new branch inserts a row that is supported by default
+  while the older branch's row is never read or written. The project page then offers **two install
+  commands for the same `core_compatibility`** — and the older row's caret resolves to the newer
+  release anyway (`^1.0` is `>=1.0.0 <2.0.0`), so the choice it presents **is not a choice**.
+  ⚠️ **The same code is what makes the fix durable, and that is the half worth knowing before going
+  to look for a setting:** `supported` appears in the hook's `$fields` array only ever to be set to
+  `0`, never to `1`, so an update can lower the flag and has no path that raises it — a later
+  release on an unchecked branch refreshes its three release ids and leaves it unsupported.
+  ⚠️ **And this is not a rare state to be in.** `admin_toolbar` has shipped in it for **fifteen
+  months**: `supported_branches` reads `3.5.,3.6.`, its 3.6.0 was released 2025-05-21, and its
+  release feed carries exactly one dev snapshot in that line (`3.x-dev`) — so both rows are tags on
+  the same git branch, exactly as ours were. Recorded 2026-09-06 with D-050.

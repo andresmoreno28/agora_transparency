@@ -2981,3 +2981,199 @@ not this file.
 does not make Ágora's front page an SDC page — the eight blocks are staying; it does not commit to
 25 components, or to 5, or to any number beyond wave 14's four; and it does not reopen D-014,
 D-003, or the disabling of the two `navigation` SDC components in `recipe.yml`.
+
+
+---
+
+### D-050 · Versioning, and the branch flag a minor tag sets by itself
+
+**SIGNED by [andres], 2026-09-06**, in one line — <!-- cspell:disable -->*"firma D-050 y continua"*<!-- cspell:enable -->
+("sign D-050 and continue" — translated, per rule 6) — after a read-only audit and a conversation
+in which he reached the load-bearing conclusion of part 3 himself.
+
+*Context in one line:* publishing `agora_theme` **1.1.0** put **two download rows** on the project
+page, offering a choice between two branches that declare the **same** `core_compatibility: ^11` —
+and nobody chose the second one.
+
+**The mechanism, which is the part worth keeping.** There was no misconfigured setting to find, and
+that is the whole finding. **Verified at source on 2026-09-06** in `project/project` at its default
+branch `7.x-2.x`, read from git.drupalcode.org rather than inferred from the page:
+
+- **A branch is computed from the version string and from nothing else.**
+  `project_release_get_branch($version)` is one line — `preg_replace('#\.[^.]*$#', '.', $version)` —
+  so `1.1.0` becomes `1.1.` and `1.0.7` becomes `1.0.`. It receives no project, no node and no
+  repository: **the git branch name is never consulted, and cannot be.** Both our tags sit on `1.x`,
+  and that fact is invisible to this function.
+- **The `supported` column's schema default is `1`.** `release/project_release.install` declares
+  `project_release_supported_versions.supported` as `'type' => 'int'`, `'size' => 'tiny'`,
+  `'unsigned' => TRUE`, `'not null' => TRUE`, **`'default' => 1`**.
+- **The save hook writes that column downwards only, and for one branch only.**
+  `project_release_check_supported_versions()` builds `$fields` from three release node ids —
+  `recommended_release`, `latest_release`, `latest_security_release` — adds `'supported' => 0` in
+  exactly two exceptional cases (a branch failing the site's supportable-branch pattern, or a
+  core-compatibility term that is not recommended), and then calls
+  `db_merge('project_release_supported_versions')->key(['nid' => $pid, 'branch' => $branch])`.
+
+⚠️ **Three consequences follow, and the third is the one the ruling actually needs.**
+
+1. **The first release on a new branch INSERTS the row, so `supported` takes the schema default
+   `1`.** No code path chose it. The second download row appeared by itself — which is why hunting
+   for the setting that caused it was time spent on a thing that does not exist.
+2. The merge key is `(nid, branch)`, so **no other branch's row is read or written**. `1.0.` kept
+   whatever it already had while `1.1.` arrived beside it.
+3. **`supported` is absent from `$fields` on the ordinary path, so an UPDATE never restores it.**
+   The code can lower the flag to `0` and has no path that raises it to `1`. **Unchecking a branch
+   is therefore durable:** a later release on it refreshes that row's three release ids and leaves
+   the flag alone. That is not academic here — two tags on `1.0.` carry no published release
+   (measured below), and this is what says publishing one of them would not undo today's work.
+
+⚠️ **And the second row's own install command did not do what the row said.** Under the 1.0.7
+heading the page printed `composer require 'drupal/agora_theme:^1.0'`. Executed during the audit,
+that constraint resolves to `Locking drupal/agora_theme (1.1.0)` — and it is not an accident of the
+moment: `^1.0` means `>=1.0.0 <2.0.0`, so it can only ever prefer the newest 1.x, which lives on the
+other branch. Somebody deliberately choosing the older line got the newer release. **The choice was
+not merely unnecessary; it was not a choice.**
+
+**What was measured, and it is the heart of the record. Re-derived on 2026-09-06 from
+`updates.drupal.org/release-history/<project>/all`, not carried from the draft.**
+
+| | pre-releases before stable 1.0.0 | released tags | span, first tag → last | cadence |
+|---|---|---|---|---|
+| `byte` | **11** — 6 alpha, 3 beta, 2 rc — over **102 days** | 15 | 287 days | one per **19.1** days |
+| `haven` | **3 betas** over **10 days** | 7 | 161 days | one per **23.0** days |
+| `agora_theme` | **0 — stable on day one** | 8 | **11 days** | **one per 1.4 days** |
+
+⚠️ **The draft's figures for the other two were not like-for-like, and the reason will recur.** It
+read `byte` at 16 releases over 318 days and `haven` at 8 over 176. Both counts include the
+project's **`1.x-dev` nightly snapshot** as though it were a release, and both spans **end on that
+snapshot's date** — rebuilt continuously, and read **2026-08-31 for both projects**, which is the
+tell that it is a clock rather than an event. `agora_theme` publishes **no** `1.x-dev` at all, so
+the comparison was counting a row for two projects and not for the third. Recomputed on released
+tags only, the cadence gap is **13.5x** against `byte` and **16.3x** against `haven`.
+
+**Both published site templates spent a pre-release phase in public before promising anything. This
+project skipped it entirely and then released between thirteen and sixteen times faster than
+either.**
+
+⚠️ **`agora_theme` has TEN git tags and EIGHT published releases.** `1.0.4` (tagged 2026-08-27) and
+`1.0.8` (tagged 2026-09-04) carry no release on drupal.org. So *"the seven 1.0.x releases"* below is
+right even though the numbering runs to `1.0.7`, and a reader counting `1.0.0` through `1.0.7` would
+say eight and be wrong. The tagging rate is faster still than the table's: ten tags in the same
+11 days.
+
+**Why it happened, and this is the sentence the record exists for. Not by oversight. By a rule of
+ours.** **D-025** (2026-08-24) chose option B — *"the theme cuts a stable `1.0.0` before the
+template ever names it"* — and dismissed option A in four words: *"Violates non-negotiable rule 1."*
+Rule 1 forbids a **dev/alpha/beta/rc dependency**, so the pre-release phase `byte` and `haven` both
+used was vetoed by the same clause. **D-025's option table never lists a beta.** It was not weighed
+and rejected; it was outside the space of options.
+
+⚠️ **And rule 1's stated provenance was found false on 2026-09-05** and amended in `CLAUDE.md` in
+place: it claimed to be a *"literal marketplace requirement"*, and `haven` 1.0.3 publishes
+`"drupal/webform": "^6.3.0-beta8"` in its own `require`. **So the rule that forced a premature
+stable release is our own stricter choice, not the marketplace's** — a cost nobody priced when it
+was written. **The rule is not being weakened here** (being stricter than the ecosystem stays
+deliberate, and CLAUDE.md's amendment says why), but its consequences now sit on the record beside
+it.
+
+#### The ruling — three parts
+
+**1. Semantic versioning is the rule for both packages**, and the divergence from `haven` and `byte`
+is deliberate rather than accidental. It is recorded with the measurement that makes it a choice:
+
+- **`byte` shipped 630 changed files and a deleted test class under a patch number.** Its
+  `1.0.2 → 1.0.3` compare, read from the drupalcode API with `compare_timeout: false` so it is not
+  truncated, is 6 commits over **630** files, one of them deleting
+  `tests/src/Functional/SiteTemplateTest.php`. ⚠️ **630, not the 634 the draft carried.**
+- **`haven` ships a `feat:` commit under a patch number every single time — three patch releases,
+  three `feat:` commits**, one each in `1.0.0 → 1.0.1`, `1.0.1 → 1.0.2` and `1.0.2 → 1.0.3`. It is
+  the pattern, not an exception inside it.
+
+That is the norm this project is judged beside; we diverge knowingly. **The minor digit also earns
+its keep:** `composer.json`'s `"drupal/agora_theme": "^1.1"` is how the template says *"the release
+with the settings object"*, and `recipe.yml` spells out why it must — its `agora_theme.settings`
+config action is a hard `drush recipe` failure on any site that resolved 1.0.7, because
+`SimpleConfigUpdate::apply()` throws on an absent config object and `config.actions` has no `?`
+optionality. Under patch-only versioning that constraint would have to be a three-component one,
+which rule 1 makes awkward.
+
+**2. Unchecking the superseded branch is part of the release procedure, not a tidy-up.** A new
+minor's first tag creates a second supported branch **by itself**, so the previous one is unchecked
+in the same sitting.
+
+- The convention is Drupal.org's own, quoted verbatim from *"Managing unsupported branches /
+  releases"*: *"Releases should ideally be moved from supported to unsupported on Wednesdays to give
+  site admins time to react during the work week."* ⚠️ It is **not** in the release-creation
+  document, which is where somebody working through a release checklist would look for it. That is
+  half the reason it is written down here.
+- ⚠️ **Done for this case — and the first application already broke the convention it adopts:
+  2026-09-06 was a Sunday.** [andres] unchecked `1.0.` that day rather than waiting until the 9th,
+  because the row had already been live for a day offering an install command that resolved
+  somewhere else, and leaving it was the worse of the two. **The Wednesday rule binds from the next
+  minor onwards, when it will be foreseeable instead of discovered.**
+- **Verified in the update feed rather than on the page:** `agora_theme`'s release history now
+  carries `<supported_branches>1.1.</supported_branches>` — one branch — and the seven 1.0.x
+  releases all remain `<status>published</status>` and downloadable at their own `ftp.drupal.org`
+  URLs.
+
+**3. `agora_transparency` ships PRE-RELEASES until it is ready for the marketplace.** Its release
+history answers *"No release history was found"* today, so this choice is entirely open and costs
+nothing to make. It is [andres]'s own conclusion from the measurement above:
+<!-- cspell:disable -->*"seguramente empezaron como alpha o prealpha dev o inferior a la 1 para
+salir con la versión 1 estable cuando estuviese preparado para el marketplace."*<!-- cspell:enable -->
+("they most likely started as alpha, or pre-alpha dev, or below 1, so as to come out with a stable
+version 1 when it was ready for the marketplace" — translated, per rule 6).
+
+⚠️ **The unlock is one distinction, and missing it is what cost the theme its pre-release phase:
+rule 1 governs what this project DEPENDS ON, not what it PUBLISHES.** Publishing `1.0.0-alpha1` of
+our own package never violated it, and no invariant in `tests/bin/` looks at our own version string.
+It was never forbidden — it was never considered.
+
+**Also ruled: the theme's cadence slows.** A release happens when a site owner would gain something,
+not when our own development needs an artefact published. Today's 1.1.0 had a real reason — the
+recipe's config action needs `agora_theme.settings` to exist in a **published** release, which is
+the coupling `recipe.yml` documents at length — and that class of coupling is the exception that
+must be argued for each time, not the pattern.
+
+#### Deleting 1.0.7 — considered and rejected, with the reason
+
+[andres] asked directly whether the old release could be deleted so that only 1.1.0 remained. **It
+would not have worked, and it would have broken people.**
+
+- **The download row is per branch, not per release.** Deleting 1.0.7 promotes 1.0.6 into the same
+  row, because `recommended_release` is recomputed from whatever releases the branch still has. All
+  seven would have to go.
+- **Deletion breaks reproducible builds.** Anyone who installed one has its `ftp.drupal.org` URL in
+  `composer.lock`; removing it breaks their `composer install`, their CI and their ability to
+  rebuild an old site.
+- **Drupal.org's own documents prescribe the checkbox and never deletion.** *"Managing unsupported
+  branches / releases"* does not mention deleting a release at all. ⚠️ The release-creation document
+  **does** carry a section headed *"Deleting a tag/branch"*, and that near-miss is worth recording:
+  it is about **git refs**, and it disqualifies itself in its own first sentence — *"assuming you
+  haven't created a release with the tag"*. The one place the word appears excludes exactly this
+  case.
+
+**The checkbox achieves the whole of the intent at none of the cost.**
+
+#### One consequence still owed to users
+
+**1.1.0 removed the photographs the theme used to ship** — `images/hero-wide.webp` and
+`images/commitment-chamber-1000x750.webp`, both deleted in theme commit `5f8397b`, which turned the
+masthead picture into the `hero_image_path` setting. **The site template is unaffected:** it ships
+the demonstration image as `content/file/hero-wide.webp` and `recipe.yml` points the setting at it.
+**A standalone site updating from 1.0.x loses the picture silently, with no in-package
+replacement.** Under strict semantic versioning that argues for a major rather than a minor; it is
+recorded here rather than re-versioned, because the release is published and rule 8 is not suspended
+for tidiness.
+
+**A sentence belongs in the 1.1.0 release notes on drupal.org, which is [andres]'s form (rule 10):**
+
+> The theme no longer ships a masthead photograph. Sites updating from 1.0.x should upload their own
+> at Appearance → Ágora Transparency Theme.
+
+**What this decision does NOT do, named so nobody infers it:** it does not weaken non-negotiable
+rule 1, and it does not reopen D-004 or D-025 — both stand, and part 3 is available **because**
+rule 1 was always about dependencies rather than about us; it does not commit `agora_theme` to a
+version number, a date or a next release; it does not delete, unpublish or renumber anything already
+released; and it does not make the Wednesday convention retroactive — it binds the next minor, not
+this one.
