@@ -528,6 +528,80 @@ config:
     canvas.component.block.system_menu_block.agora-base-quick-access:
       enable: []
     # -------------------------------------------------------------------------
+    # THE THEME'S FOUR LAYOUT COMPONENTS (T-1404), AND THE FOUR `?` PREFIXES
+    # THIS FILE'S OWN POLICY PUTS ON THEM. Read the policy above before reading
+    # this as a relapse: it does not say "never a `?`", it says a `?` that is
+    # NEVER NEEDED is dropped, because it hides a skip nobody can count. These
+    # four were resolved the same way the sixteen were - against a clean install
+    # carrying this template's exact dependency closure - and the measurement
+    # came back the other way round: 0 of 4 exist. So the `?` is kept, on the
+    # same evidence that removed the other sixteen.
+    #
+    # WHY THEY ARE ABSENT, and it is a fact about release timing rather than
+    # about the components. They live in `agora_theme`, a SEPARATE Drupal.org
+    # project (D-014), and `composer.json` requires `^1.1`. The newest published
+    # release is 1.1.0, and `git ls-tree -r 1.1.0 -- components/` in that
+    # repository lists ZERO files: the components landed after it and are in no
+    # tag. Until a release carries them, `drupal/agora_theme` on a clean install
+    # provides no SDC at all and these four config objects do not exist.
+    #
+    # ⚠️ WITHOUT THE `?`, EVERY CLEAN INSTALL OF THIS TEMPLATE WOULD FAIL TODAY.
+    # Measured on a rig, not predicted. The same name WITHOUT the prefix aborts
+    # the apply: `Entity canvas.component.sdc.agora_theme.section does not
+    # exist`, thrown from `Exists.php` line 39, exit 1. And shipping the four
+    # config objects under `config/` instead fails harder and earlier - it
+    # aborts `site:install` itself with `The "agora_theme:group" plugin does not
+    # exist. Valid plugin IDs for Drupal\canvas\Plugin\ComponentPluginManager
+    # are: canvas:image, navigation:message, navigation:badge,
+    # navigation:toolbar-button, navigation:title`, exit 1. Which is why this
+    # row ships four actions and NO `config/` files, and why the object count
+    # in `tests/bin/config-inventory` stays at 130.
+    #
+    # ⚠️ AND A SHIPPED FILE WOULD WIN, which is the second reason not to ship
+    # one. `config.strict` is `false`, so an object that already exists wins -
+    # but these do not exist when the config import runs, so OURS would be the
+    # object that gets created, and Canvas would never correct it. Falsified
+    # deliberately: a file shipped with `status: false` produced a component
+    # that read back `status: false` on a clean install and stayed there. The
+    # template would become the authority on a value that belongs to the theme.
+    #
+    # WHAT THE ACTIONS BUY, given that Canvas already mints these ENABLED on a
+    # first install (`SingleDirectoryComponentDiscovery::computeInitialComponent
+    # Status()` returns TRUE for anything not `obsolete` and not `noUi`;
+    # confirmed on a clean install, all four read back `status: true` with
+    # nothing shipped). They buy the ONE case Canvas cannot recover from by
+    # itself:
+    #
+    #   Canvas DISABLES a component whose metadata stops meeting its
+    #   requirements, and it NEVER RE-ENABLES ONE. `ComponentSourceManager`
+    #   calls `$component->disable()->save()` on the way down; on the way back
+    #   up it clears the stored reason and updates the version and the label,
+    #   and it does not touch `status` - "the site owner can modify the status
+    #   of Component config entities, so it must remain unchanged".
+    #
+    # So a site that ever saw a broken component keeps it out of the palette
+    # PERMANENTLY, with the metadata now correct and nothing anywhere saying so.
+    # Reproduced end to end: one required prop's `examples` removed, `drush cr`
+    # printed `[success] Cache rebuild complete.` and exited 0 while the
+    # component flipped to `status: false`; the file restored byte-for-byte and
+    # rebuilt, it stayed `false`. An `enable` action put it back.
+    #
+    # ⚠️ AND THE `?` COSTS NOTHING AGAINST THE ALTERNATIVE, which is the test
+    # that decided this. The alternative to a `?` here is not a loud failure -
+    # it is no action at all, since a bare name cannot be shipped. A `?` hides
+    # exactly what shipping nothing hides, and repairs a case shipping nothing
+    # cannot. `ValidationTest::testCanvasComponentReview()` pins the count at
+    # four and asserts each one is enabled the moment it exists, so the day a
+    # theme release carries the components this stops being vacuous by itself.
+    ?canvas.component.sdc.agora_theme.section:
+      enable: []
+    ?canvas.component.sdc.agora_theme.group:
+      enable: []
+    ?canvas.component.sdc.agora_theme.heading:
+      enable: []
+    ?canvas.component.sdc.agora_theme.text:
+      enable: []
+    # -------------------------------------------------------------------------
     # EVERY PUBLISHED FILE GETS A DESCRIPTION BOX, and it is the accessible name
     # of the download link rather than a caption beside it.
     #

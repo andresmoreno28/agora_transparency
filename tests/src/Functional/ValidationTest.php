@@ -1519,6 +1519,18 @@ class ValidationTest extends BrowserTestBase {
    * instead of a hidden component quietly reappearing in the editor's palette
    * with nothing to announce it.
    *
+   * ⚠️ AMENDED BY T-1404, AND THE AMENDMENT NARROWS THE RULE RATHER THAN
+   * RELAXING IT. Four names now carry a `?` again - the layout components
+   * provided by `agora_theme` - and they carry one because the same
+   * measurement that removed the other sixteen came back the other way for
+   * these: the theme is a separate Drupal.org project (D-014), its newest
+   * published release contains no `components/` directory, and a bare name
+   * therefore aborts `site:install` with `Entity … does not exist`. The rule
+   * this method enforces is no longer "no name carries a `?`" but "no name
+   * carries a `?` except these four, they may only carry `enable`, and each of
+   * them must be enabled the moment it exists" - which is strictly more to
+   * check, not less.
+   *
    * The count inspected is asserted here and PRINTED by
    * `tests/bin/config-inventory`; a test cannot print (pipeline 934619).
    */
@@ -1532,6 +1544,8 @@ class ValidationTest extends BrowserTestBase {
     $wildcards = 0;
     $disabled = 0;
     $enabled = 0;
+    $optional_absent = 0;
+    $optional_present = 0;
     foreach ($actions as $name => $action) {
       // ⚠️ THE `?` IS STRIPPED BEFORE THE FILTER, NOT AFTER, AND THAT ORDERING
       // IS THE WHOLE POINT. A recipe key carrying the prefix reads
@@ -1545,11 +1559,49 @@ class ValidationTest extends BrowserTestBase {
         continue;
       }
 
-      // No name may still carry a `?`. Asserted rather than assumed: the audit
-      // that dropped them is only durable if re-adding one is a failure, and
-      // "add a `?` until it passes" is precisely the tempting wrong fix when a
-      // component goes missing.
-      $this->assertSame($bare, (string) $name, "$name must not be `?`-optional: every name here was resolved against a clean install, and a `?` that is never needed is a permanent blind spot.");
+      // ⚠️ EXACTLY ONE FAMILY OF NAMES MAY CARRY A `?`, AND IT IS NAMED HERE
+      // RATHER THAN PATTERN-MATCHED LOOSELY (T-1404). Everything else must not:
+      // the audit that dropped sixteen prefixes is only durable if re-adding
+      // one is a failure, and "add a `?` until it passes" is precisely the
+      // tempting wrong fix when a component goes missing.
+      //
+      // The exception is the four SDC components provided by `agora_theme`,
+      // which is a SEPARATE Drupal.org project on its own release cadence
+      // (D-014). The policy in recipe.yml is not "never a `?`" - it is that a
+      // `?` which is NEVER NEEDED is dropped, and these four were resolved the
+      // same way the sixteen were, against a clean install carrying this
+      // template's exact dependency closure. The measurement came back the
+      // other way: the newest published theme release carries no `components/`
+      // directory at all, so all four are absent and a bare name would abort
+      // `site:install` with `Entity … does not exist`.
+      $may_be_optional = str_starts_with($bare, 'canvas.component.sdc.agora_theme.');
+      if (!$may_be_optional) {
+        $this->assertSame($bare, (string) $name, "$name must not be `?`-optional: every name here was resolved against a clean install, and a `?` that is never needed is a permanent blind spot.");
+      }
+      else {
+        // ⚠️ THIS BRANCH IS VACUOUS TODAY AND SAYS SO, WHICH IS THE ONLY
+        // HONEST WAY TO SHIP IT (I-028, I-045). While the theme ships no
+        // components every one of these is absent, so the `assertTrue` below
+        // never runs. What stops that from being a green over nothing is the
+        // denominator: the count of names examined is pinned at four at the
+        // end of this method, and the absent/present split is asserted to sum
+        // to it. The day a theme release carries the components, `present`
+        // becomes non-zero by itself and the enabled assertion starts firing -
+        // no edit here required, which is the point.
+        $this->assertSame(['enable' => []], $action, "$bare is `?`-optional, so the only verb this review accepts on it is `enable`: an optional `disable` would be a silent skip with nothing to count.");
+        $config = \Drupal::config($bare);
+        if ($config->isNew()) {
+          $optional_absent++;
+          continue;
+        }
+        // Present. Canvas mints an SDC component ENABLED - and never
+        // re-enables one it has auto-disabled - so a component that exists and
+        // is disabled here is the permanent, silent absence from the palette
+        // that this action exists to repair.
+        $this->assertTrue($config->get('status'), "$bare exists and is disabled after the recipe was applied: the `enable` action did not take effect. Canvas never re-enables a component it auto-disabled, so this state is permanent and invisible - the component is simply missing from the palette.");
+        $optional_present++;
+        continue;
+      }
 
       if (str_contains($bare, '*')) {
         // A wildcard is resolved by the recipe engine against whatever exists,
@@ -1598,6 +1650,11 @@ class ValidationTest extends BrowserTestBase {
     $this->assertSame(20, $disabled, 'Twenty are named with `disable`.');
     $this->assertSame(1, $enabled, 'One is named with `enable`: the quick-access menu component, which Canvas would otherwise leave out of the palette.');
     $this->assertSame(1, $wildcards, 'Exactly one entry is a wildcard: the project browser blocks.');
+    // The `?`-optional denominator, pinned so the branch above cannot pass
+    // over an empty set. Four names, and every one of them accounted for as
+    // either absent or present-and-enabled - a name that vanished from
+    // recipe.yml would fail here rather than quietly stop being checked.
+    $this->assertSame(4, $optional_absent + $optional_present, 'The review covers four `?`-optional Canvas components: the theme layout kit.');
   }
 
   /**
