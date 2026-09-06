@@ -38,12 +38,17 @@
 # that introduces the reader, so that the reader is falsified against a total a
 # human read off the terminal first.
 #
-# `invariants=1` is G9 and nothing else. G0-G8 are checks written inline in this
-# file; G9 is the first group here that executes a script from tests/bin/, which
-# is what the word counts in CLAUDE.md's "N invariants in total" - a total across
-# both runners, and until today it was 0 here plus 15 in wave 3.
+# `invariants=2` is G9 and G10, and nothing else. G0-G8 are checks written inline
+# in this file; G9 was the first group here that executes a script from
+# tests/bin/, which is what the word counts in CLAUDE.md's "N invariants in
+# total" - a total across both runners, and until 2026-09-06 it was 0 here plus
+# 15 in wave 3.
 #
-# GATE-CLAIM: checks=64 invariants=1
+# G10 is executable-bit, added 2026-09-06, +3 checks and +1 invariant: 64 -> 67
+# here, and 16 -> 17 across both runners. It is the second group whose subject is
+# this repository's own tooling rather than the packaged product.
+#
+# GATE-CLAIM: checks=67 invariants=2
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -501,6 +506,49 @@ else
   check 'claims-match-sources present'     "$(trunc "$INV" 28)" 'present'
   check 'claims-match-sources (comparisons > 0)'     'not run' 'yes'
   check 'claims-match-sources (unchecked named > 0)' 'not run' 'yes'
+fi
+
+# ------------------------------------------ G10 - executable-bit (2026-09-06) --
+# The mode a shebang file is COMMITTED at, read from the git index. It is in this
+# runner rather than wave 3 because it is pure git: no network, no container, no
+# database, well under a second. See tests/bin/executable-bit for why the index
+# and never the filesystem, and for the two 100644 files it found on its first
+# run here.
+#
+# ⚠️ THIS GROUP IS THE ONE THAT MUST NOT USE `[ -x "$INV" ]`, and that is the
+# whole point of it. Every other group in both runners guards its invariant with
+# that test, which asks the FILESYSTEM: on this Windows checkout it answers TRUE
+# for a file committed 100644, and on the runner it answers FALSE. Guarding the
+# executable-bit check itself that way would mean that the one defect it exists
+# to catch - a script committed without its bit - could disable it, silently,
+# in exactly the environment where the defect is real. `[ -r ]` plus `bash` runs
+# it identically on both sides, so if this script ever loses its own bit it
+# still executes and reports ITSELF by name and mode, which is a red naming the
+# file rather than a red naming a missing check.
+group 'G10 - executable-bit (shebang files are committed 100755)'
+INV=tests/bin/executable-bit
+if [ -r "$INV" ]; then
+  INV_OUT=$(bash "$INV" 2>&1); INV_RC=$?
+  EB_EXAMINED=$(printf '%s\n' "$INV_OUT" | grep -oE '^examined: [0-9]+' | tail -1 | grep -oE '[0-9]+')
+  EB_SCRIPTS=$(printf '%s\n' "$INV_OUT" | grep -oE '^scripts:  [0-9]+' | tail -1 | grep -oE '[0-9]+')
+  note "$(printf '%s\n' "$INV_OUT" | grep -E '^(examined|scripts|findings):' | tr '\n' ' ')"
+  check 'executable-bit (exit)'                "$INV_RC" '0'
+  # Two denominators, not one question asked twice: `examined` comes from
+  # `git ls-files` and stays positive even if the shebang selector broke;
+  # `scripts` comes from the selector and can only be positive if first lines
+  # were actually read. A selector that matched nothing would otherwise print
+  # "0 findings" and pass by construction (I-028).
+  check 'executable-bit (files examined > 0)' \
+    "$([ "${EB_EXAMINED:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'executable-bit (shebang scripts > 0)' \
+    "$([ "${EB_SCRIPTS:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  if [ "$INV_RC" -ne 0 ]; then
+    printf '%s\n' "$INV_OUT" | grep -E '^  [^ ]+:[0-9<]' | sed 's/^/  /'
+  fi
+else
+  check 'executable-bit present'               "$(trunc "$INV" 28)" 'present'
+  check 'executable-bit (files examined > 0)'  'not run' 'yes'
+  check 'executable-bit (shebang scripts > 0)' 'not run' 'yes'
 fi
 
 # ----------------------------------------------------------------- summary ---

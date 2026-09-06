@@ -535,7 +535,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (64 checks · 0 failures) and `gate-a-wave3.sh` (**49** checks · 0 failures), **16** invariants in total —
+  (67 checks · 0 failures) and `gate-a-wave3.sh` (**49** checks · 0 failures), **17** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
   ⚠️ **THESE THREE NUMBERS ARE NOW MACHINE-CHECKED, AND THEY ARE THE REASON THE CHECKER EXISTS.**
   On 2026-09-06 this line read **61 · 48 · 15** while the runners printed **61 · 49** and carried
@@ -557,6 +557,23 @@ moving the working copy a session is running in, on the day wave 5 starts.
   comparisons are therefore prose against prose — better than prose against nothing, because the
   declaration lives three lines from the arithmetic that derives it, but not a measurement. Closing
   it is one line in each runner's summary and it has no owner yet.
+  ⚠️ **The seventeenth invariant is `executable-bit`, and it is the first number this file has
+  moved BECAUSE the checker above demanded it** — which is the mechanism working on its first
+  real customer rather than a claim about it. G10 in wave 1, three checks — exit, files examined,
+  shebang scripts found. **64 → 67.** It reads the mode a shebang file is **committed** at out of
+  the git index, never from the filesystem, because on this Windows checkout git does not track
+  the bit and `[ -x ]` therefore answers TRUE for a file committed `100644` — while the Linux
+  runner answers FALSE, takes the guard's else branch, and reports the invariant as missing. Both
+  runners here carry that guard, **1 use in wave 1 and 14 in wave 3**, and nothing checked it.
+  ⚠️ **It was not vacuous on its first run: 2 of the 28 shebang files were committed `100644`**
+  (`tests/bin/content-timestamps.py`, `tests/bin/generate-demo-media.py`), latent rather than
+  breaking, because G15 reaches its script through `[ -r ]` and `python3 <path>`. Fixed in the
+  same commit. The failure it prevents is measured in the sibling repository, not predicted —
+  `agora_theme` pipeline `950124` was red for a full push cycle behind a green local gate.
+  ⚠️ **G10 is the one group that deliberately does NOT use the `[ -x ]` guard**: guarding the
+  executable-bit check with the test it exists to police would let the defect disable its own
+  detector, silently, in exactly the environment where the defect is real.
+
   ⚠️ **The sixteenth invariant is the first one whose subject is this file** rather than the
   package: G9 in wave 1, three checks — exit, comparisons made, and exclusions named. **61 → 64.**
   ⚠️ **They moved twice on 2026-08-27 — 43 · 13 to 46 · 14, then to 48 · 15** — and the second

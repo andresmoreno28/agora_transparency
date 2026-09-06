@@ -1,0 +1,802 @@
+#!/usr/bin/env bash
+#
+# preflight - every lint job this repository's pipeline runs, run HERE, with the pipeline's OWN
+# configuration, before the push instead of after it.
+#
+# ---------------------------------------------------------------------------------------------
+# WHY IT EXISTS. Measurements taken in the sibling repository and in this one, all of one shape.
+#
+#   phpcs      believed impossible to run on this host, and that belief was written into
+#              CLAUDE.md as prose. It runs. In agora_theme, EIGHT real errors sat undetected on a
+#              branch and a ninth turned pipeline 949480 red. The claim was corrected on
+#              2026-09-06 and now carries the measurement beside it.
+#   stylelint  believed the same in the theme, and repeated in a dispatch. It runs. THREE real
+#              findings turned pipeline 949481 red. It is not in THIS repository's job list -
+#              this package ships no CSS - which is why it appears nowhere below.
+#   eslint     never attempted at all. It runs, and in the theme it caught two formatting errors
+#              in freshly written code before they reached CI.
+#
+# A tool nobody tried is indistinguishable from a tool that cannot run, and both of them look
+# exactly like a tool with nothing to report. This file removes the ambiguity: it either runs the
+# job, or it prints the job's name in the NOT COVERED list. There is no third state and there is
+# deliberately no silent skip.
+#
+# ---------------------------------------------------------------------------------------------
+# THE SECOND FAILURE MODE, WHICH IS SUBTLER THAN "WE DID NOT RUN IT".
+#
+# A local stylelint WAS run once in the theme. It reported 43 findings where the gate reported 3,
+# because it resolved a different configuration. The 43 were read as "pre-existing, unchanged,
+# not mine" - and that is how three real findings crossed a green local gate.
+#
+# So the rule this file is built around is not "run the linters". It is:
+#
+#     A LOCAL CHECK THAT DISAGREES WITH THE GATE IN EITHER DIRECTION IS NOT A PRE-FLIGHT.
+#     Being NOISIER is more dangerous than being quieter, because noise gets dismissed.
+#
+# ⚠️ AND THE TRAP HAS A NAME AND A NUMBER. Run from the wrong working directory, this same tree
+# reports 2993 errors under the PEAR standard instead of 0 under Drupal - phpcs reads its ruleset
+# from the working directory, so the `cd` below is load-bearing rather than tidy. That is how
+# somebody tries phpcs once, sees four figures of noise, and concludes it cannot be done here.
+# The `cd` is encoded in the runner; it is never left to the caller.
+#
+# Everything else follows the same rule. The configuration is not written here; it is FETCHED
+# from the same two places the pipeline fetches it from - the shared gitlab_templates repository
+# and this repository's own .gitlab-ci.yml - and the resolved values are printed on every run.
+# Where parity cannot be proved, the run says so in words instead of implying it.
+#
+# ---------------------------------------------------------------------------------------------
+# WHAT EACH CHECK PRINTS. A result and a DENOMINATOR, always. A green linter is a statement about
+# the set it opened, and most linters do not print that set unless asked (I-045). phpcs is asked
+# with -p, phpstan with --debug, eslint by counting its own JSON result objects, parallel-lint by
+# its own "Checked N files" line. A check whose denominator is zero FAILS here, because "0 files
+# scanned, 0 problems" and "everything is fine" are the same sentence (I-028).
+#
+# ---------------------------------------------------------------------------------------------
+# WHERE THE WORK HAPPENS, AND WHY THE COPY IS MANDATORY.
+#
+# The Windows checkout may carry CRLF. phpcs counts the CARRIAGE RETURN as a character, so
+# linting the checkout directly reports line-length violations that do not exist in the packaged
+# file. The linters therefore run against a copy with line endings normalised.
+#
+# ⚠️ THAT COPY MUST LAND OUTSIDE THE DOCROOT, and this is not hypothetical. Drupal's extension
+# discovery walks the docroot; a lint copy placed under web/ won the discovery race on this
+# machine once and produced a rig serving stale code. The copy goes to <rig>/lint-work-template/,
+# a sibling of web/, and the script refuses to run if that path ever resolves inside web/.
+#
+# ⚠️ THE DIRECTORY NAME IS DELIBERATELY NOT `lint-work`. agora_theme's preflight uses that name
+# in the SAME default rig (~/agora-smoke). Two repositories writing one path is two repositories
+# clobbering each other's tree, and the symptom would be a linter reporting confidently about the
+# other project's files. `lint-work-tools` IS shared on purpose - it holds nothing but
+# parallel-lint, installed from the same constraint by both - and that is stated rather than left
+# to look like an oversight.
+#
+# ---------------------------------------------------------------------------------------------
+# WHAT THIS IS NOT.
+#
+# It is a REPLICA of the pipeline's lint stage, not the pipeline. It pins nothing about the
+# runner's image. It cannot see the ref the pipeline resolves for the shared template repository,
+# because the job log endpoint answers 401 to an anonymous request - so the shared assets are
+# read from that repository's main branch and the run SAYS SO rather than claiming parity it has
+# not measured. The gate remains the job list read from the API; this only tells you what that
+# list is likely to say before you spend a pipeline finding out.
+#
+# It is also NOT wired into either gate runner, deliberately. It needs a running container, and
+# making the gate depend on Docker is a trade-off for the maintainer to weigh, not for this file
+# to decide. Running it is a habit; the gate is elsewhere. tests/bin/executable-bit, which this
+# script also runs, IS in the gate - as wave 1's G10 - because it needs nothing but git.
+#
+# Usage:
+#   bash tests/bin/preflight                  # every covered job
+#   bash tests/bin/preflight phpcs eslint     # a subset - the banner says SUBSET, loudly
+#   bash tests/bin/preflight --list           # the coverage split and nothing else
+#   bash tests/bin/preflight --with-wave3     # also run gate-a-wave3.sh (~35 minutes)
+#   AGORA_RIG=~/some-other-rig bash tests/bin/preflight
+#
+# Exit: 0 clean · 1 a covered job reported a finding · 2 the run could not be made faithful.
+#
+# ---------------------------------------------------------------------------------------------
+# ⚠️ `bash -n` ON THIS FILE CHECKS ONLY THE OUTER THIRD OF IT, and believing otherwise cost a rig
+# round-trip while writing it. There are THREE shell programs here: this one, the one that runs
+# on the container host, and the one that runs inside the container. The latter two live inside
+# QUOTED here-documents, so to the outer shell they are literal text rather than code - `bash -n`
+# reported OK over a middle layer that could not parse at all.
+#
+# To check a nested layer, extract that here-document body and run `bash -n` over it. The obvious
+# copy-paste command is deliberately NOT written out here: any sed range naming the heredoc
+# terminators would also match itself in this comment, which is precisely the trap that produced
+# a broken extraction the first time round.
+#
+# The failure was survivable only because the rig side refuses to report a pass it did not earn:
+# it exited 2 and this script raised "the rig side exited 2 without a reason - treat this as an
+# unfaithful run, not a pass" rather than printing a green table over jobs that never ran. That
+# refusal is the real backstop; the syntax check is only the cheaper way to reach the same
+# verdict.
+
+set -u
+
+C_OK=""; C_BAD=""; C_WARN=""; C_DIM=""; C_OFF=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_WARN=$'\033[33m'; C_DIM=$'\033[2m'; C_OFF=$'\033[0m'
+fi
+
+# `pwd -W` is what makes paths work under Git Bash: the shell reports /c/Users/... but every tool
+# this script hands a path to wants the native form. The same trick is in tests/bin/spellcheck
+# beside it, for the same reason and after the same debugging round.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && { pwd -W 2>/dev/null || pwd; })
+cd "$REPO_ROOT" || { printf 'FATAL: cannot reach the repository root\n' >&2; exit 2; }
+
+CHECKS=0
+FAILS=0
+
+fatal() { # <reason>
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1" >&2
+  printf 'This run has NO result, which is not a clean result. A pre-flight that skips a check\n' >&2
+  printf 'and exits 0 is the exact defect it was written to prevent.\n' >&2
+  exit 2
+}
+
+note()  { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+# check <label> <obtained> <expected>
+check() {
+  CHECKS=$((CHECKS + 1))
+  if [ "$2" = "$3" ]; then
+    printf '  %-46s %-24s | %-24s | %sOK%s\n' "$1" "$2" "$3" "$C_OK" "$C_OFF"
+  else
+    FAILS=$((FAILS + 1))
+    printf '  %-46s %-24s | %-24s | %sFAIL%s\n' "$1" "$2" "$3" "$C_BAD" "$C_OFF"
+  fi
+}
+
+# check_positive <label> <obtained> - a denominator of zero is a failure, never a pass.
+check_positive() {
+  CHECKS=$((CHECKS + 1))
+  case "${2:-}" in
+    ''|*[!0-9]*) FAILS=$((FAILS + 1))
+      printf '  %-46s %-24s | %-24s | %sFAIL%s\n' "$1" "${2:-<none>}" '>0' "$C_BAD" "$C_OFF" ;;
+    *) if [ "$2" -gt 0 ]; then
+         printf '  %-46s %-24s | %-24s | %sOK%s\n' "$1" "$2" '>0' "$C_OK" "$C_OFF"
+       else
+         FAILS=$((FAILS + 1))
+         printf '  %-46s %-24s | %-24s | %sFAIL%s\n' "$1" "$2" '>0' "$C_BAD" "$C_OFF"
+       fi ;;
+  esac
+}
+
+group() {
+  printf '\n%s\n' "$1"
+  printf '  %-46s %-24s | %-24s | %s\n' 'check' 'obtained' 'expected' 'verdict'
+  printf '  %s\n' '--------------------------------------------------------------------------------------------------------'
+}
+
+# ------------------------------------------------------------------- the subject repository ---
+# THE INTERLOCK IS THE MIRROR IMAGE OF THE THEME'S, and it is the reason this script cannot be
+# pointed at the wrong checkout. agora_theme's preflight demands EXACTLY ONE root *.info.yml.
+# A site template must contain ZERO - RequirementsTest enforces it, and tests/bin/no-code-in-
+# template asserts it - so that is what is asserted here, together with the recipe.yml that makes
+# this tree a recipe at all. The two repositories' names differ by a hyphen and a word, which is
+# thin; these two conditions cannot both hold in the other tree.
+[ -f "$REPO_ROOT/recipe.yml" ] || fatal 'there is no recipe.yml at the root - this is not the site template checkout, and this script must never be pointed at the theme'
+INFO_COUNT=$(ls -1 "$REPO_ROOT"/*.info.yml 2>/dev/null | grep -c . 2>/dev/null)
+[ "${INFO_COUNT:-0}" -eq 0 ] || fatal "found ${INFO_COUNT} root *.info.yml file(s). A site template must contain ZERO (RequirementsTest); a tree with one is the theme, and this script must never be pointed at it"
+
+# The package name is DERIVED from composer.json, never typed. It names the directory the linted
+# copy is staged in, and eslint resolves configuration relative to the directory ABOVE it, so a
+# wrong name is a wrong configuration rather than a cosmetic slip.
+PKG=$(sed -n 's/^[[:space:]]*"name"[[:space:]]*:[[:space:]]*"drupal\/\([a-z0-9_]*\)".*/\1/p' "$REPO_ROOT/composer.json" | head -1)
+[ -n "$PKG" ] || fatal 'could not read the package name out of composer.json - the linted copy would be staged under an invented directory name'
+
+command -v git >/dev/null 2>&1 || fatal 'git not found'
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || fatal 'not inside a git work tree'
+
+# ------------------------------------------------------------------ the pipeline's job list ---
+# NOT restated here. tests/bin/watch-gate already carries the DECLARED job list for this
+# repository, checked against the API on every pipeline it watches, and a list written down twice
+# goes stale in one place first.
+#
+# ⚠️ EVERY LIST IN THIS SCRIPT IS NEWLINE-SEPARATED, NEVER SPACE-SEPARATED, and that is forced by
+# the data rather than chosen: this pipeline has a job called `Drupal CMS`. A space-separated list
+# would split it into two job names that do not exist, the split check below would pass by
+# accident against a list of eleven, and the job would be neither covered nor named as uncovered.
+WATCH="$REPO_ROOT/tests/bin/watch-gate"
+[ -f "$WATCH" ] || fatal "tests/bin/watch-gate is missing - the declared job list lives there and this script refuses to invent one"
+JOBS_LIST=$(sed -n "/^EXPECTED_agora_transparency='/,/'\$/p" "$WATCH" \
+  | sed "s/^EXPECTED_agora_transparency='//; s/'\$//" | grep . | LC_ALL=C sort)
+JOBS_DECLARED=$(printf '%s\n' "$JOBS_LIST" | grep -c . 2>/dev/null)
+[ "${JOBS_DECLARED:-0}" -gt 0 ] || fatal 'could not read the declared job list out of tests/bin/watch-gate'
+
+# The split. Every declared job is in exactly one of these two, and that is ASSERTED below: a
+# pipeline that grows an eleventh job fails this script until somebody decides which side it is
+# on. A pre-flight that silently covers 9 of 10 is the shape that let stylelint through.
+COVERED='agora-invariants
+composer-lint
+cspell
+eslint
+phpcs
+phpstan'
+
+UNCOVERED='Drupal CMS
+composer
+phpunit
+phpunit-pgsql'
+
+# WHY EACH UNCOVERED JOB IS OUT. Printed on every run, by name, because "covered most of them"
+# is the sentence this file exists to stop anyone saying.
+why_uncovered() {
+  case "$1" in
+    'Drupal CMS')  printf '%s' 'builds a fresh drupal/cms at CMS_STABLE, installs THIS package into it through a Composer path repository and runs Drupal CMS'"'"'s own compatibility test. It is the clean-install smoke: a whole site build over the network, minutes long, and not a linter. Reproducing it means rebuilding a rig, which is what the rig is for.' ;;
+    composer)      printf '%s' 'builds the CI environment itself - it resolves core plus core-dev and installs them. Reproducing it means rebuilding the rig, not running a linter.' ;;
+    phpunit)       printf '%s' 'needs an installed site and a database, and takes minutes rather than seconds. Run it in the rig against a built site; it is not folded into a pre-flight that has to be cheap enough to actually get run.' ;;
+    phpunit-pgsql) printf '%s' 'needs all of the above PLUS a PostgreSQL 16 service. It is named separately rather than folded into phpunit on purpose: D-040(2) exists because "the suite passes" and "the suite passes on PostgreSQL" are different claims, and collapsing them here would re-make that mistake in the pre-flight.' ;;
+    *)             printf '%s' 'no reason recorded - which is itself a finding' ;;
+  esac
+}
+
+SPLIT=$(printf '%s\n%s\n' "$COVERED" "$UNCOVERED" | grep . | LC_ALL=C sort)
+if [ "$SPLIT" != "$JOBS_LIST" ]; then
+  # The colour token gets its own conversion specifier and is never glued to the word after it.
+  # A specifier followed immediately by lowercase letters reads to a spell checker as ONE token,
+  # and that is how two words that exist nowhere in the running program end up reported as
+  # unknown by the blocking job. Costs nothing; avoids a dictionary entry for a non-word.
+  printf '%s%s%s\n' "$C_BAD" 'declared by watch-gate:' "$C_OFF" >&2
+  printf '%s\n' "$JOBS_LIST" | sed 's/^/    /' >&2
+  printf '%s%s%s\n' "$C_BAD" 'split by this script:' "$C_OFF" >&2
+  printf '%s\n' "$SPLIT" | sed 's/^/    /' >&2
+  fatal 'the declared job list and this script disagree. A job this pre-flight has not decided about is a job it would silently not cover.'
+fi
+
+# A covered job whose name contains whitespace would break the rig-side loop, which does iterate
+# over words. Nothing in COVERED has a space today; this refuses to be the run that finds out the
+# hard way if one ever does.
+printf '%s\n' "$COVERED" | while IFS= read -r j; do
+  case "$j" in *[[:space:]]*) exit 9 ;; esac
+done || fatal 'a covered job name contains whitespace - the rig-side loop iterates over words and would silently mis-parse it'
+
+# ------------------------------------------------------------------------------ arguments ---
+LIST_ONLY=0
+WITH_WAVE3=0
+RIG_OVERRIDE=${AGORA_RIG:-}
+WANTED=''
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --list)       LIST_ONLY=1 ;;
+    --with-wave3) WITH_WAVE3=1 ;;
+    --rig)  shift; [ $# -gt 0 ] || fatal '--rig needs a path'; RIG_OVERRIDE=$1 ;;
+    -*)     fatal "unknown option: $1" ;;
+    *)      printf '%s\n' "$COVERED" | grep -qxF "$1" \
+              || fatal "'$1' is not a covered job. Covered: $(printf '%s' "$COVERED" | tr '\n' ' ')"
+            WANTED="$WANTED$1
+" ;;
+  esac
+  shift
+done
+SUBSET=0
+if [ -n "$WANTED" ]; then SUBSET=1; else WANTED="$COVERED"; fi
+wanted() { printf '%s\n' "$WANTED" | grep -qxF "$1"; }
+
+# --------------------------------------------------------------------------------- banner ---
+COVERED_N=$(printf '%s\n' "$COVERED" | grep -c .)
+UNCOVERED_N=$(printf '%s\n' "$UNCOVERED" | grep -c .)
+printf '=========================================================================================================\n'
+printf 'preflight - agora_transparency - the pipeline'"'"'s lint jobs, run here, before the push\n'
+printf 'repo: %s  (package: %s)\n' "$REPO_ROOT" "$PKG"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+printf '\nJOBS DECLARED BY tests/bin/watch-gate: %s\n' "$JOBS_DECLARED"
+printf '\n%sCOVERED BY THIS SCRIPT (%s):%s\n' "$C_OK" "$COVERED_N" "$C_OFF"
+printf '%s\n' "$COVERED" | sed 's/^/    /'
+printf '\n%sNOT COVERED (%s) - named every run, never silently skipped:%s\n' "$C_WARN" "$UNCOVERED_N" "$C_OFF"
+printf '%s\n' "$UNCOVERED" | while IFS= read -r j; do
+  [ -n "$j" ] || continue
+  printf '    %-16s %s\n' "$j" "$(why_uncovered "$j")" | fold -s -w 104 | sed '2,$s/^/                     /'
+done
+
+# ⚠️ THE ONE PARTIAL. `agora-invariants` runs BOTH gate runners in CI. This script runs wave 1
+# always and wave 3 only on request, because wave 3 takes about 35 minutes and a pre-flight that
+# expensive is a pre-flight nobody runs. Half a job claimed as a whole one is precisely the shape
+# that let three stylelint findings through, so the gap is printed here rather than inferred.
+if wanted agora-invariants; then
+  if [ "$WITH_WAVE3" -eq 1 ]; then
+    printf '\n%sPARTIAL: none - --with-wave3 was given, so both gate runners run.%s\n' "$C_OK" "$C_OFF"
+  else
+    printf '\n%sPARTIAL COVERAGE, stated rather than implied:%s\n' "$C_WARN" "$C_OFF"
+    printf '    agora-invariants  CI runs gate-a-wave1.sh AND gate-a-wave3.sh. This run covers\n'
+    printf '                      wave 1 only. gate-a-wave3.sh takes about 35 minutes and needs\n'
+    printf '                      the network; pass --with-wave3 to include it.\n'
+  fi
+fi
+
+if [ "$LIST_ONLY" -eq 1 ]; then
+  printf '\n(--list: the coverage split and nothing else)\n'
+  exit 0
+fi
+
+# ==============================================================================================
+# HOST SIDE - the two jobs that need no container.
+# ==============================================================================================
+
+# ------------------------------------------------------------------------- agora-invariants ---
+# TWO parts, and the first is the one that cannot be done any other way on this host: a script
+# committed without its executable bit passes every check here and fails on the runner, because
+# `[ -x ]` asks the FILESYSTEM and git is configured here not to track that bit.
+#
+# THE RULE ITSELF IS NOT WRITTEN HERE. It lives in tests/bin/executable-bit, which reads the mode
+# out of the GIT INDEX and selects files by the shebang on line 1, across the whole tracked tree
+# rather than one directory. That script is also gate-a-wave1.sh's G10, so this pre-flight and
+# the gate run the SAME implementation and cannot drift apart.
+#
+# It therefore runs TWICE when this job is selected: once here, and once inside part 2 as G10.
+# That is deliberate and costs a fraction of a second of pure git. Running it here surfaces its
+# two denominators as rows of their own, which is the discipline this whole file exists for; part
+# 2 prints only the runner's FAILING lines, and a denominator that appears solely on failure is
+# not a denominator.
+if wanted agora-invariants; then
+  group 'agora-invariants (host) - part 1: the executable bit, read from the git index'
+  EB="$REPO_ROOT/tests/bin/executable-bit"
+  [ -f "$EB" ] || fatal 'tests/bin/executable-bit is missing - the rule this half checks lives there, and this script refuses to grow a second copy of it'
+  EB_OUT=$(bash "$EB" 2>&1); EB_RC=$?
+  EB_FILES=$(printf '%s\n' "$EB_OUT" | grep -oE 'examined: [0-9]+' | tail -1 | grep -oE '[0-9]+')
+  EB_SCRIPTS=$(printf '%s\n' "$EB_OUT" | grep -oE 'scripts:  [0-9]+' | tail -1 | grep -oE '[0-9]+')
+  note "$(printf '%s\n' "$EB_OUT" | grep -E '^(examined|scripts|findings):' | tr '\n' ' ')"
+  check          'executable-bit (exit)'           "$EB_RC" '0'
+  check_positive 'executable-bit (files examined)' "$EB_FILES"
+  check_positive 'executable-bit (scripts found)'  "$EB_SCRIPTS"
+  if [ "$EB_RC" -ne 0 ]; then
+    printf '%s\n' "$EB_OUT" | grep -E '^  [^ ]+:[0-9<]' | sed 's/^/  /'
+  fi
+
+  group 'agora-invariants (host) - part 2: the gate runners themselves'
+  GATE1="$REPO_ROOT/tests/bin/gate-a-wave1.sh"
+  [ -f "$GATE1" ] || fatal 'tests/bin/gate-a-wave1.sh is missing'
+  G1_OUT=$(bash "$GATE1" 2>&1); G1_RC=$?
+  G1_CHECKS=$(printf '%s\n' "$G1_OUT" | grep -oE '[0-9]+ checks' | tail -1 | grep -oE '[0-9]+')
+  G1_FAILS=$(printf '%s\n' "$G1_OUT" | grep -oE '[0-9]+ failures' | tail -1 | grep -oE '[0-9]+')
+  note "gate-a-wave1.sh: ${G1_CHECKS:-<none>} checks, ${G1_FAILS:-<none>} failures"
+  check          'gate-a-wave1.sh (exit)'   "$G1_RC" '0'
+  check_positive 'gate-a-wave1.sh (checks)' "$G1_CHECKS"
+  if [ "$G1_RC" -ne 0 ]; then
+    printf '%s\n' "$G1_OUT" | grep -E 'FAIL|FATAL' | sed 's/^/    /'
+  fi
+
+  if [ "$WITH_WAVE3" -eq 1 ]; then
+    GATE3="$REPO_ROOT/tests/bin/gate-a-wave3.sh"
+    [ -f "$GATE3" ] || fatal 'tests/bin/gate-a-wave3.sh is missing'
+    G3_OUT=$(bash "$GATE3" 2>&1); G3_RC=$?
+    G3_CHECKS=$(printf '%s\n' "$G3_OUT" | grep -oE '[0-9]+ checks' | tail -1 | grep -oE '[0-9]+')
+    G3_FAILS=$(printf '%s\n' "$G3_OUT" | grep -oE '[0-9]+ failures' | tail -1 | grep -oE '[0-9]+')
+    note "gate-a-wave3.sh: ${G3_CHECKS:-<none>} checks, ${G3_FAILS:-<none>} failures"
+    check          'gate-a-wave3.sh (exit)'   "$G3_RC" '0'
+    check_positive 'gate-a-wave3.sh (checks)' "$G3_CHECKS"
+    if [ "$G3_RC" -ne 0 ]; then
+      printf '%s\n' "$G3_OUT" | grep -E 'FAIL|FATAL' | sed 's/^/    /'
+    fi
+  fi
+fi
+
+# ------------------------------------------------------------------------------------ cspell ---
+# DELEGATED, not reimplemented. tests/bin/spellcheck already reproduces this job faithfully and
+# already carries the parity check that matters: it reads the shared template's CORE_STABLE and
+# refuses to run against a newer dictionary branch than the one CI installs, because a newer
+# dictionary accepts words the blocking job rejects - it exits 2 with the words "this pre-flight
+# would be QUIETER THAN THE GATE". Writing a second cspell runner here would be a second
+# mechanism that can disagree with the first.
+if wanted cspell; then
+  group 'cspell (host) - delegated to tests/bin/spellcheck'
+  SPELL="$REPO_ROOT/tests/bin/spellcheck"
+  [ -f "$SPELL" ] || fatal 'tests/bin/spellcheck is missing - the cspell pre-flight lives there'
+  SPELL_OUT=$(bash "$SPELL" 2>&1); SPELL_RC=$?
+  SPELL_OFFERED=$(printf '%s\n' "$SPELL_OUT" | grep -oE 'file set: [0-9]+' | tail -1 | grep -oE '[0-9]+')
+  SPELL_FILES=$(printf '%s\n' "$SPELL_OUT" | grep -oE 'Files checked: [0-9]+' | tail -1 | grep -oE '[0-9]+')
+  printf '%s\n' "$SPELL_OUT" | grep -E '^  (parity|UNVERIFIED)' | sed 's/^ */  /'
+  note "files offered: ${SPELL_OFFERED:-<none>} · opened by cspell: ${SPELL_FILES:-<none>}"
+  check          'cspell (exit)'          "$SPELL_RC" '0'
+  check_positive 'cspell (files checked)' "$SPELL_FILES"
+  if [ "$SPELL_RC" -ne 0 ]; then
+    printf '%s\n' "$SPELL_OUT" | grep -E 'Unknown word|Issues found' | sed 's/^/    /' | head -30
+  fi
+fi
+
+# ==============================================================================================
+# RIG SIDE - the four jobs that need core's node modules and the project's PHP toolchain.
+# ==============================================================================================
+RIG_JOBS=''
+for j in composer-lint eslint phpcs phpstan; do
+  wanted "$j" && RIG_JOBS="$RIG_JOBS $j"
+done
+RIG_JOBS=${RIG_JOBS# }
+
+if [ -n "$RIG_JOBS" ]; then
+
+  # ------------------------------------------------------------------ where the tools answer ---
+  # ON A WINDOWS HOST THIS ALWAYS HOPS INTO WSL, and it does NOT ask whether a Windows-side ddev
+  # exists first. It does exist on this machine, in C:\Program Files - and taking it is a bug,
+  # not a fallback. The container engine and every rig live INSIDE WSL2; the Windows ddev
+  # resolves happily, runs against a different world, and its very first act is to look for the
+  # rig under a Windows home directory that a Linux path can never be. "A tool that resolves" and
+  # "the tool the work needs" are different claims, and the gap between them keeps costing
+  # pipelines (I-046).
+  HOP=''; WSL_EXE=''
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*)
+      WSL_EXE=$(command -v wsl.exe 2>/dev/null)
+      [ -z "$WSL_EXE" ] && WSL_EXE=$(command -v wsl 2>/dev/null)
+      [ -n "$WSL_EXE" ] || fatal 'this is a Windows host and there is no wsl.exe to reach the rig through'
+      MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$WSL_EXE" -e bash -lc 'command -v ddev >/dev/null 2>&1' \
+        || fatal 'no ddev inside WSL, which is where this machine keeps its container engine and its rigs. A ddev on the Windows PATH is not a substitute and is deliberately not used.'
+      HOP=wsl ;;
+    *)
+      command -v ddev >/dev/null 2>&1 || fatal 'ddev is not on PATH and this host is not Windows, so there is nowhere to hop to'
+      HOP=none ;;
+  esac
+
+  # The repository as the container host will see it.
+  if [ "$HOP" = wsl ]; then
+    RIG_REPO=$(MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
+      "$WSL_EXE" -e wslpath -a "$REPO_ROOT" 2>/dev/null | tr -d '\r' | tr -d '\0')
+    [ -n "$RIG_REPO" ] || RIG_REPO=$(printf '%s' "$REPO_ROOT" | sed -E 's|^([a-zA-Z]):|/mnt/\L\1|')
+  else
+    RIG_REPO="$REPO_ROOT"
+  fi
+
+  # The rig script is piped in rather than written to disk: nothing this script does leaves an
+  # artefact in the repository, so there is no cache directory to ignore and nothing downloaded
+  # can ever be committed by accident.
+  run_in_rig() { # <stdin: the script> <args...>
+    if [ "$HOP" = wsl ]; then
+      MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$WSL_EXE" -e bash -s -- "$@"
+    else
+      bash -s -- "$@"
+    fi
+  }
+
+  RIG_OUT=$(run_in_rig "$RIG_REPO" "$RIG_OVERRIDE" "$PKG" "$RIG_JOBS" <<'RIG_SCRIPT'
+set -u
+REPO=$1
+RIG=${2:-}
+PKG=$3
+JOBS=$4
+
+say()  { printf '%s\n' "$*"; }
+die()  { printf '##FATAL|%s\n' "$*"; exit 2; }
+res()  { printf '##RESULT|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4"; }
+
+# HOME IS NOT USABLE HERE, and this cost a run in the sibling repository. When this script is
+# piped into WSL from Git Bash the Windows HOME comes with it, so `$HOME` reads /c/Users/...
+# inside a Linux shell and the rig is looked for at a path that cannot exist. The home directory
+# is therefore read from the password database, which describes the account this shell is
+# actually running as.
+REAL_HOME=$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)
+[ -n "$REAL_HOME" ] || REAL_HOME=$(cd ~ 2>/dev/null && pwd)
+[ -n "$REAL_HOME" ] || die 'cannot determine this account'"'"'s home directory, so the default rig path cannot be built'
+[ -n "$RIG" ] || RIG="$REAL_HOME/agora-smoke"
+case "$RIG" in '~/'*) RIG="$REAL_HOME/${RIG#\~/}" ;; esac
+
+[ -d "$RIG" ] || die "no rig at $RIG. Point this at a ddev project holding a built Drupal, with AGORA_RIG or --rig."
+command -v ddev   >/dev/null 2>&1 || die 'ddev is not on PATH inside the container host'
+command -v rsync  >/dev/null 2>&1 || die 'rsync is not on PATH - it is how the line-ending-normalised copy is made'
+command -v curl   >/dev/null 2>&1 || die 'curl is not on PATH - the shared configuration is fetched, never guessed'
+
+cd "$RIG" || die "cannot enter $RIG"
+# EVERY ddev CALL IN THIS SCRIPT REDIRECTS ITS STANDARD INPUT, and leaving that off cost a
+# debugging round with the most confusing symptom available: no output, no error and exit 0.
+# This script is fed to bash on STDIN. ddev reads stdin, so the first `ddev exec` swallowed the
+# REST OF THE SCRIPT, bash hit end-of-file and stopped - cleanly, silently, and looking exactly
+# like a run in which nothing was wrong.
+CONTAINER_ROOT=$(ddev exec pwd </dev/null 2>/dev/null | tr -d '\r\n')
+[ -n "$CONTAINER_ROOT" ] || die "the rig at $RIG has no running container. Start it with: cd $RIG && ddev start"
+
+CORE="$RIG/web/core"
+[ -d "$CORE" ] || die "no Drupal core in the rig at $CORE - the eslint job reads its configuration out of it"
+
+# --------------------------------------------------------------- upstream inputs, fetched ---
+CACHE="$RIG/lint-work-template-cache"
+mkdir -p "$CACHE" || die "cannot create $CACHE"
+TPL='https://git.drupalcode.org/project/gitlab_templates/-/raw/main'
+
+fetch() { # <url-path> <dest> <label>
+  code=$(curl -sS -o "$CACHE/$2.tmp" -w '%{http_code}' "$TPL/$1" 2>/dev/null)
+  if [ "$code" = '200' ]; then
+    mv "$CACHE/$2.tmp" "$CACHE/$2"; say "  fetched  $3"
+  else
+    rm -f "$CACHE/$2.tmp"
+    if [ -s "$CACHE/$2" ]; then
+      say "  STALE    $3 (HTTP $code; using the cached copy - the result may lag the job)"
+    else
+      die "cannot fetch $3 (HTTP $code) and there is no cached copy. The gate cannot be reproduced without it."
+    fi
+  fi
+}
+
+say 'PARITY - the configuration this run resolved, against the configuration the gate resolves.'
+say '  shared template ref: main. CI resolves its own ref at run time and the job log endpoint'
+say '  answers 401 to an anonymous request, so THIS ONE IS UNVERIFIED and is stated rather than'
+say '  implied. Everything else below is read, not assumed.'
+fetch 'includes/include.drupalci.variables.yml'        vars.yml    'gitlab_templates variables (job defaults)'
+fetch 'includes/include.drupalci.hidden-variables.yml' hidden.yml  'gitlab_templates hidden variables (CORE_STABLE)'
+fetch 'assets/phpcs.xml.dist'                          phpcs.xml.dist 'gitlab_templates assets/phpcs.xml.dist'
+fetch 'assets/phpstan.neon'                            phpstan.neon   'gitlab_templates assets/phpstan.neon'
+
+# The rig's core must be the core the pipeline installs. eslint and prettier read their
+# configuration out of web/core, so a different core is a different configuration - the exact
+# failure that made a local run report 43 findings against the gate's 3.
+CORE_STABLE=$(sed -n "s/^[[:space:]]*CORE_STABLE:[[:space:]]*.\([0-9.]*\).*/\1/p" "$CACHE/hidden.yml" | head -1)
+RIG_CORE=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" "$CORE/lib/Drupal.php" | head -1)
+if [ -z "$CORE_STABLE" ]; then
+  say "  UNVERIFIED  could not read CORE_STABLE upstream - the core parity check did NOT run this time."
+  say "              The rig is on $RIG_CORE. If that is not what CI installs, this run may be quieter than the gate."
+elif [ "$CORE_STABLE" != "$RIG_CORE" ]; then
+  die "the rig is on Drupal $RIG_CORE and CI installs $CORE_STABLE. eslint and prettier read their configuration out of web/core, so this pre-flight would resolve a DIFFERENT configuration from the gate - in an unknown direction. Update the rig, or run against one on $CORE_STABLE."
+else
+  say "  parity    CORE_STABLE=$CORE_STABLE upstream, and the rig's core is $RIG_CORE - the same tree the job reads its lint configuration from"
+fi
+
+# ------------------------------------------------------- the job flags, read not written ---
+# Each flag is the upstream default unless this repository's own .gitlab-ci.yml overrides it, in
+# exactly the order CI applies them. Nothing below is a constant chosen here.
+default_of() { awk -v k="$1" '
+  $0 ~ "^[[:space:]]*"k":[[:space:]]*$" { f=1; next }
+  f && $0 ~ /^[[:space:]]*value:/ {
+    sub(/^[[:space:]]*value:[[:space:]]*/, "")
+    sub(/^['"'"'"]/, ""); sub(/['"'"'"][[:space:]]*$/, ""); print; exit }
+  f && $0 ~ /^[[:space:]]*[A-Za-z_]+:[[:space:]]*$/ { exit }' "$CACHE/vars.yml"; }
+
+override_of() { sed -n "s/^[[:space:]]*$1:[[:space:]]*['\"]\{0,1\}\([^'\"]*\)['\"]\{0,1\}[[:space:]]*\$/\1/p" \
+  "$REPO/.gitlab-ci.yml" | head -1; }
+
+flag_of() { v=$(override_of "$1"); if [ -n "$v" ]; then printf '%s' "$v"; else default_of "$1"; fi; }
+
+PHPCS_EXTRA=$(flag_of _PHPCS_EXTRA)
+PHPSTAN_EXTRA=$(flag_of _PHPSTAN_EXTRA)
+PHPSTAN_LEVEL=$(flag_of _PHPSTAN_LEVEL)
+PHPSTAN_BASELINE=$(flag_of _PHPSTAN_BASELINE_FILENAME)
+ESLINT_EXTRA=$(flag_of _ESLINT_EXTRA)
+PARALLEL_LINT_EXTRA=$(flag_of _PARALLEL_LINT_EXTRA)
+PHP_TYPES=$(sed -n "s/^[[:space:]]*DRUPAL_PHP_FILE_TYPES:[[:space:]]*'\([^']*\)'.*/\1/p" "$CACHE/hidden.yml" | head -1)
+[ -n "$PHP_TYPES" ] || die 'could not read DRUPAL_PHP_FILE_TYPES upstream - the composer-lint file set would be invented'
+[ -n "$PHPSTAN_BASELINE" ] || PHPSTAN_BASELINE='phpstan-baseline.neon'
+
+say "  flags     _PHPCS_EXTRA=[$PHPCS_EXTRA] _ESLINT_EXTRA=[$ESLINT_EXTRA] _PHPSTAN_EXTRA=[$PHPSTAN_EXTRA] _PHPSTAN_LEVEL=[$PHPSTAN_LEVEL]"
+say "  rig       $RIG (container root $CONTAINER_ROOT)"
+
+# ---------------------------------------------------------------------- the linted copy ---
+# OUTSIDE THE DOCROOT, ALWAYS. A second copy of this package under web/ wins Drupal's extension
+# discovery race and gets served - which has already happened once on this machine. The name is
+# lint-work-template rather than lint-work because agora_theme's preflight uses lint-work in this
+# same default rig, and two repositories writing one path is two repositories clobbering each
+# other's tree.
+LW="$RIG/lint-work-template"
+case "$LW" in "$RIG/web/"*) die 'the lint tree would land inside the docroot' ;; esac
+rm -rf "$LW"; mkdir -p "$LW/base/$PKG" || die "cannot create $LW"
+rsync -a --exclude '.git' --exclude 'node_modules' --exclude '.cspell-cache' \
+  "$REPO/" "$LW/base/$PKG/" || die 'rsync of the working copy failed'
+find "$LW/base/$PKG" -type f -exec sed -i 's/\r$//' {} + 2>/dev/null || true
+BASE_FILES=$(find "$LW/base/$PKG" -type f | wc -l | tr -d ' ')
+[ "${BASE_FILES:-0}" -gt 0 ] || die 'the linted copy came out empty'
+say "  copy      $BASE_FILES files, carriage returns stripped, at $LW (outside $RIG/web)"
+
+# One copy PER JOB. eslint writes a prettier ignore file into the tree it lints, and in CI each
+# job gets its own container. Sharing one tree here would let one job's setup change the next
+# job's answer, silently.
+for j in $JOBS; do
+  mkdir -p "$LW/$j" && cp -a "$LW/base/$PKG" "$LW/$j/$PKG" || die "cannot stage the copy for $j"
+done
+
+TOOLS="$RIG/lint-work-tools"
+PARALLEL_LINT="$TOOLS/vendor/bin/parallel-lint"
+
+# ------------------------------------------------------------ tools, exercised not located ---
+# A MISSING TOOL IS A FATAL, NEVER A SMALLER GREEN SET. This is the single most important rule in
+# the file: the alternative - quietly dropping a job whose binary is absent - produces a run that
+# passes while covering less, which is exactly the state this script was written to end.
+for j in $JOBS; do
+  case $j in
+    phpcs)   [ -x "$RIG/vendor/bin/phpcs" ]   || die "phpcs is not installed in the rig ($RIG/vendor/bin/phpcs). It arrives with core's dev dependencies; install those in the rig rather than skipping the check." ;;
+    phpstan) [ -x "$RIG/vendor/bin/phpstan" ] || die "phpstan is not installed in the rig ($RIG/vendor/bin/phpstan). It arrives with core's dev dependencies; install those in the rig rather than skipping the check." ;;
+    eslint)  [ -x "$CORE/node_modules/.bin/eslint" ] || die "eslint is not installed in the rig ($CORE/node_modules/.bin/eslint). CI runs core's own copy; install core's node modules in the rig. Try:  cd $RIG && ddev exec 'cd web/core && yarn install'" ;;
+    composer-lint) [ -x "$PARALLEL_LINT" ] || die "parallel-lint is not installed at $PARALLEL_LINT. CI adds php-parallel-lint/php-parallel-lint:^1.2 to the environment it builds. Create it once with:  mkdir -p $TOOLS && cd $RIG && ddev exec 'cd $CONTAINER_ROOT/lint-work-tools && composer require php-parallel-lint/php-parallel-lint:^1.2'" ;;
+  esac
+done
+
+# The two configuration files CI downloads when the project supplies none. The DETECTION is
+# reproduced too, not just the download: if this repository ever grows its own, both CI and this
+# script switch to it on the same condition.
+PHPCS_CFG='(none in the project - gitlab_templates assets/phpcs.xml.dist)'
+if ls "$REPO"/phpcs.xml "$REPO"/phpcs.xml.dist "$REPO"/.phpcs.xml "$REPO"/.phpcs.xml.dist >/dev/null 2>&1; then
+  PHPCS_CFG='the project has its own phpcs configuration - CI uses it, and so does this run'
+else
+  case " $JOBS " in *' phpcs '*) cp "$CACHE/phpcs.xml.dist" "$LW/phpcs/$PKG/phpcs.xml.dist" || die 'cannot place the phpcs configuration' ;; esac
+fi
+PHPSTAN_CFG='(none in the project - gitlab_templates assets/phpstan.neon)'
+if ls "$REPO"/phpstan.neon "$REPO"/phpstan.neon.dist "$REPO"/phpstan.dist.neon >/dev/null 2>&1; then
+  PHPSTAN_CFG='the project has its own phpstan configuration - CI uses it, and so does this run'
+else
+  case " $JOBS " in *' phpstan '*)
+    sed "s#BASELINE_PLACEHOLDER#$PHPSTAN_BASELINE#g" "$CACHE/phpstan.neon" > "$LW/phpstan/$PKG/phpstan.neon" \
+      || die 'cannot place the phpstan configuration'
+    : > "$LW/phpstan/$PKG/$PHPSTAN_BASELINE" ;;
+  esac
+fi
+
+# eslint: CI links core's prettier configuration in when the project has none, and hangs core's
+# eslint configuration in the directory ABOVE the project. Both are reproduced with the same
+# condition CI tests.
+PRETTIER_NOTE='(none in the project - core'"'"'s .prettierrc.json linked in, exactly as CI does)'
+if ls "$REPO"/.prettierrc* "$REPO"/prettier.config.* >/dev/null 2>&1; then
+  PRETTIER_NOTE='the project has its own prettier configuration - CI uses it, and so does this run'
+else
+  case " $JOBS " in *' eslint '*) ln -sfn "$CONTAINER_ROOT/web/core/.prettierrc.json" "$LW/eslint/$PKG/.prettierrc.json" ;; esac
+fi
+case " $JOBS " in *' eslint '*)
+  ln -sfn "$CONTAINER_ROOT/web/core/.eslintrc.passing.json" "$LW/eslint/.eslintrc.json"
+  ln -sfn "$CONTAINER_ROOT/web/core/.eslintrc.jquery.json"  "$LW/eslint/.eslintrc.jquery.json"
+  [ -e "$LW/eslint/$PKG/.prettierignore" ] || printf '*.yml\n' > "$LW/eslint/$PKG/.prettierignore" ;;
+esac
+
+# ------------------------------------------------------------------- run it in the container ---
+# THE SETTINGS TRAVEL IN A FILE, NOT IN ARGUMENTS, and that is not a style choice. `ddev exec`
+# re-joins its arguments into a single shell string, so an argument that is the EMPTY STRING -
+# which several of these routinely are, because the upstream default for those flags is empty -
+# simply disappears, and every argument after it shifts one place left. The symptom was an
+# unbound-variable error; the danger is the case where it does not error and a flag silently
+# lands in the wrong slot.
+q() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+{
+  printf 'CONTAINER_ROOT=%s\n' "$(q "$CONTAINER_ROOT")"
+  printf 'PKG=%s\n'            "$(q "$PKG")"
+  printf 'JOBS=%s\n'           "$(q "$JOBS")"
+  printf 'PHPCS_EXTRA=%s\n'    "$(q "$PHPCS_EXTRA")"
+  printf 'PHPSTAN_EXTRA=%s\n'  "$(q "$PHPSTAN_EXTRA")"
+  printf 'PHPSTAN_LEVEL=%s\n'  "$(q "$PHPSTAN_LEVEL")"
+  printf 'ESLINT_EXTRA=%s\n'   "$(q "$ESLINT_EXTRA")"
+  printf 'PARALLEL_LINT_EXTRA=%s\n' "$(q "$PARALLEL_LINT_EXTRA")"
+  printf 'PHP_TYPES=%s\n'      "$(q "$PHP_TYPES")"
+} > "$LW/run-inside.env" || die 'cannot write the settings for the in-container runner'
+
+cat > "$LW/run-inside.sh" <<'INNER'
+set -u
+SELF_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+. "$SELF_DIR/run-inside.env"
+LW="$CONTAINER_ROOT/lint-work-template"; CORE="$CONTAINER_ROOT/web/core"
+res() { printf '##RESULT|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4"; }
+
+for job in $JOBS; do
+  P="$LW/$job/$PKG"
+  case $job in
+
+  phpcs)
+    printf '\n--- phpcs -------------------------------------------------------------------------------\n'
+    printf 'command: vendor/bin/phpcs <copy> -s --report-full --report-summary --report-source --basepath=<copy> %s --report-width=120\n' "$PHPCS_EXTRA"
+    printf 'note:    the job also passes --report-junit and --colors. The first writes a CI artefact\n'
+    printf '         and the second only paints; neither changes which files are read or what is found.\n'
+    # THE cd IS LOAD-BEARING. phpcs resolves its ruleset from the WORKING DIRECTORY: run from
+    # anywhere else it falls back to the PEAR standard, and this same tree then reports 2993
+    # errors instead of 0. That is the number somebody sees once before concluding phpcs
+    # "cannot be run here".
+    cd "$P" || exit 2
+    OUT=$("$CONTAINER_ROOT"/vendor/bin/phpcs "$P" -s --report-full --report-summary --report-source \
+            --basepath="$P" $PHPCS_EXTRA --report-width=120 2>&1); RC=$?
+    printf '%s\n' "$OUT" | tail -60
+    N=$(printf '%s\n' "$OUT" | grep -oE '[0-9]+ / [0-9]+ \(100%\)' | tail -1 | sed -E 's|.*/ ([0-9]+) .*|\1|')
+    res phpcs "$RC" "${N:-}" 'files offered to phpcs (its own -p progress line)'
+    ;;
+
+  phpstan)
+    printf '\n--- phpstan -----------------------------------------------------------------------------\n'
+    [ -n "$PHPSTAN_LEVEL" ] && LEVEL="--level=$PHPSTAN_LEVEL" || LEVEL=''
+    printf 'command: phpstan analyze . --autoload-file=%s/vendor/autoload.php %s %s --no-progress --debug\n' "$CONTAINER_ROOT" "$LEVEL" "$PHPSTAN_EXTRA"
+    printf 'note:    --debug is added ONLY so the run states which files it opened; upstream passes it\n'
+    printf '         through _PHPSTAN_EXTRA, so it is inside the sanctioned flag surface, not around it.\n'
+    cd "$P" || exit 2
+    OUT=$(php "$CONTAINER_ROOT"/vendor/bin/phpstan analyze . --autoload-file="$CONTAINER_ROOT/vendor/autoload.php" \
+            $LEVEL $PHPSTAN_EXTRA --no-progress --debug 2>&1); RC=$?
+    printf '%s\n' "$OUT" | grep -v "^$P/" | tail -40
+    N=$(printf '%s\n' "$OUT" | grep -c "^$P/")
+    res phpstan "$RC" "${N:-}" 'files analysed (listed by phpstan itself)'
+    ;;
+
+  eslint)
+    printf '\n--- eslint ------------------------------------------------------------------------------\n'
+    printf 'command: core/node_modules/.bin/eslint --no-error-on-unmatched-pattern --ignore-pattern=*.es6.js --resolve-plugins-relative-to=%s --ext=.js,.yml %s .\n' "$CORE" "$ESLINT_EXTRA"
+    printf 'note:    this package ships no JavaScript at all, so the set this job opens is almost\n'
+    printf '         entirely YAML - the recipe, the exported config and the demo content.\n'
+    cd "$P" || exit 2
+    OUT=$("$CORE"/node_modules/.bin/eslint --no-error-on-unmatched-pattern --ignore-pattern='*.es6.js' \
+            --resolve-plugins-relative-to="$CORE" --ext=.js,.yml $ESLINT_EXTRA . 2>&1); RC=$?
+    printf '%s\n' "$OUT" | tail -50
+    # The denominator needs a SECOND run, and the reason is worth the extra seconds: --quiet,
+    # which is the upstream default and therefore part of the gate, drops from the JSON every
+    # file that ended with no message. Counting the first run's output would report zero files
+    # opened on a perfectly clean tree - I-028's degenerate case wearing the right answer.
+    "$CORE"/node_modules/.bin/eslint --no-error-on-unmatched-pattern --ignore-pattern='*.es6.js' \
+      --resolve-plugins-relative-to="$CORE" --ext=.js,.yml --format=json --output-file=/tmp/eslint-preflight.json . >/dev/null 2>&1
+    N=$(python3 -c 'import json;print(len(json.load(open("/tmp/eslint-preflight.json"))))' 2>/dev/null)
+    W=$(python3 -c 'import json;print(sum(f["warningCount"] for f in json.load(open("/tmp/eslint-preflight.json"))))' 2>/dev/null)
+    printf 'note:    %s warning(s) in the tree. The gate hides warnings via %s and so does the verdict above.\n' "${W:-?}" "$ESLINT_EXTRA"
+    res eslint "$RC" "${N:-}" 'files opened (js and yml, counted from eslint JSON)'
+    ;;
+
+  composer-lint)
+    printf '\n--- composer-lint -----------------------------------------------------------------------\n'
+    printf 'command: composer validate  +  parallel-lint -e %s --exclude web --exclude vendor --exclude node_modules --no-progress . %s\n' "$PHP_TYPES" "$PARALLEL_LINT_EXTRA"
+    printf 'note:    CI validates TWO files - the composer.json it generates to build the environment,\n'
+    printf '         and this project'"'"'s. Only the second exists outside CI, so only the second is checked.\n'
+    cd "$P" || exit 2
+    OUT=$(composer validate 2>&1); RC=$?
+    printf '%s\n' "$OUT" | sed 's/^/  /'
+    res composer-validate "$RC" 1 'composer.json validated (the project'"'"'s only)'
+    OUT=$("$CONTAINER_ROOT"/lint-work-tools/vendor/bin/parallel-lint -e "$PHP_TYPES" --exclude web --exclude vendor \
+            --exclude node_modules --no-progress $PARALLEL_LINT_EXTRA . 2>&1); RC=$?
+    printf '%s\n' "$OUT" | sed 's/^/  /' | tail -30
+    N=$(printf '%s\n' "$OUT" | grep -oE 'Checked [0-9]+ file' | tail -1 | grep -oE '[0-9]+')
+    res parallel-lint "$RC" "${N:-}" 'files syntax-checked (parallel-lint'"'"'s own count)'
+    ;;
+
+  esac
+done
+INNER
+
+say ''
+say "  phpcs config     $PHPCS_CFG"
+say "  phpstan config   $PHPSTAN_CFG"
+say "  prettier config  $PRETTIER_NOTE"
+
+ddev exec bash "$CONTAINER_ROOT/lint-work-template/run-inside.sh" </dev/null
+RC=$?
+[ "$RC" -eq 2 ] && die 'the in-container runner could not start'
+exit 0
+RIG_SCRIPT
+  )
+  RIG_RC=$?
+
+  # Both machine-readable prefixes are filtered out of the passthrough: the result rows become
+  # the table below, and the fatal line is re-raised through fatal() so it carries the same
+  # wording every other unfaithful run gets. Printing them raw as well would say each thing twice.
+  printf '%s\n' "$RIG_OUT" | grep -v '^##RESULT|' | grep -v '^##FATAL|'
+  if printf '%s\n' "$RIG_OUT" | grep -q '^##FATAL|'; then
+    fatal "$(printf '%s\n' "$RIG_OUT" | sed -n 's/^##FATAL|//p' | head -1)"
+  fi
+  [ "$RIG_RC" -ne 0 ] && fatal "the rig side exited $RIG_RC without a reason - treat this as an unfaithful run, not a pass"
+
+  group 'rig-side jobs - result and denominator, one row each'
+  RESULT_ROWS=$(printf '%s\n' "$RIG_OUT" | grep -c '^##RESULT|')
+  [ "${RESULT_ROWS:-0}" -gt 0 ] || fatal 'the rig side produced no results at all - a run with nothing in it is not a clean run'
+  printf '%s\n' "$RIG_OUT" | sed -n 's/^##RESULT|//p' | while IFS='|' read -r _j _rc _n _lbl; do
+    printf '  %s%-24s%s %s\n' "$C_DIM" "$_j" "$C_OFF" "$_n $_lbl"
+  done
+  # The rows are tallied from a FILE, read with a redirect rather than through a pipe. A `while`
+  # on the right of a pipe runs in a subshell, so every counter it increments dies with it - and
+  # the summary then prints "0 failures" with complete confidence over checks that did fail.
+  ROWS_FILE=$(mktemp -t preflight-rows.XXXXXX) || fatal 'mktemp failed'
+  printf '%s\n' "$RIG_OUT" | sed -n 's/^##RESULT|//p' > "$ROWS_FILE"
+  while IFS='|' read -r _j _rc _n _lbl; do
+    [ -n "$_j" ] || continue
+    check          "$_j (exit)"   "$_rc" '0'
+    check_positive "$_j (opened)" "$_n"
+  done < "$ROWS_FILE"
+  rm -f "$ROWS_FILE"
+fi
+
+# ------------------------------------------------------------------------------- summary ---
+printf '\n=========================================================================================================\n'
+WANTED_N=$(printf '%s\n' "$WANTED" | grep -c .)
+# The colour token is its own conversion specifier here too, for the reason given at the job-list
+# check above: glued to the word after it, a spell checker reads the pair as one token.
+SUMMARY=$(printf 'preflight: %s checks - %s failures over %s job(s)' "$CHECKS" "$FAILS" "$WANTED_N")
+if [ "$FAILS" -eq 0 ]; then
+  printf '%s%s%s\n' "$C_OK" "$SUMMARY" "$C_OFF"
+else
+  printf '%s%s%s\n' "$C_BAD" "$SUMMARY" "$C_OFF"
+fi
+printf '%s%s job(s) NOT COVERED:%s %s\n' "$C_WARN" "$UNCOVERED_N" "$C_OFF" "$(printf '%s' "$UNCOVERED" | tr '\n' ' ')"
+if [ "$WITH_WAVE3" -eq 0 ] && wanted agora-invariants; then
+  printf '%sPARTIAL:%s agora-invariants covered for gate-a-wave1.sh only - gate-a-wave3.sh was not run.\n' "$C_WARN" "$C_OFF"
+fi
+if [ "$SUBSET" -eq 1 ]; then
+  printf '%sSUBSET RUN - [%s] only. Do not read this as a pre-flight verdict.%s\n' \
+    "$C_WARN" "$(printf '%s' "$WANTED" | tr '\n' ' ')" "$C_OFF"
+fi
+printf '=========================================================================================================\n'
+
+[ "$FAILS" -eq 0 ] && exit 0
+exit 1

@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+#
+# executable-bit - every tracked file whose first line is a shebang is committed 100755.
+#
+# ---------------------------------------------------------------------------------------------
+# WHY THIS EXISTS, AND IT IS NOT A TIDINESS RULE.
+#
+# tests/bin/gate-a-wave1.sh and tests/bin/gate-a-wave3.sh guard every invariant they run with
+# `if [ -x "$INV" ]`. That test asks the FILESYSTEM. On the Windows checkout this project is
+# developed in, git is configured not to track the executable bit at all, so the filesystem
+# answers TRUE for a file committed 100644 and the guard runs the invariant. On the runner,
+# which checks the file out of the index at the mode the index records, the same test answers
+# FALSE, the guard takes its ELSE branch, and the gate reports the invariant as missing.
+#
+# The result is the worst shape a local check can have: it is QUIETER THAN THE GATE. The runner
+# reads "N checks - 0 failures" here and "N checks - M failures" there, on the same commit, and
+# nothing on this side can tell you which one is real.
+#
+# MEASURED IN THE SIBLING REPOSITORY, NOT PREDICTED. Pipeline 950124 of agora_theme, ref 1.x,
+# commit b1744fa: the agora-invariants job failed while the other nine passed, because three
+# scripts had been committed 100644. The local gate was green for a full push cycle. This
+# repository carries the SAME guard in both runners - 1 use in wave 1 and 14 in wave 3 - and
+# had no such check until this file existed.
+#
+# IT WAS NOT VACUOUS ON ITS FIRST RUN HERE, which is the part worth keeping. On the commit that
+# introduced it this tree held 448 tracked files, 28 of them starting with a shebang, and TWO of
+# those 28 were committed 100644: tests/bin/content-timestamps.py and
+# tests/bin/generate-demo-media.py. Neither was breaking the gate today, because G15 reaches
+# generate-demo-media.py through `[ -r ]` and `python3 <path>` rather than through `[ -x ]` and
+# direct execution - so the defect was real, latent, and one refactor away from being a red
+# runner nobody could reproduce locally. Both were corrected with `git update-index --chmod=+x`
+# in the same commit as this file. A check whose first run finds something is a check that was
+# worth writing; this one's first finding is recorded here so nobody later assumes it has never
+# had one.
+#
+# ---------------------------------------------------------------------------------------------
+# THE MODE IS READ FROM THE GIT INDEX. NEVER FROM THE FILESYSTEM.
+#
+# That single sentence is the whole content of this check on this host. `git ls-files -s` prints
+# the mode the index records, which is the mode the runner will check out and the mode a
+# reviewer downloading the package will get. `ls -l`, `test -x` and `stat` all answer a
+# different question here, and they answer it wrongly. If this file is ever "simplified" to use
+# one of them it will pass on every machine and stop meaning anything.
+#
+# THE FIRST LINE IS READ FROM THE INDEX TOO, with `git grep --cached`. Staged-but-uncommitted
+# content is what the next commit will contain, so a check that read the working tree would be
+# answering about a state nobody is about to push.
+#
+# ---------------------------------------------------------------------------------------------
+# THE SELECTOR IS THE SHEBANG, NOT A DIRECTORY AND NOT AN EXTENSION.
+#
+# A rule written as "everything under tests/bin" covers today's scripts and silently fails to
+# cover the first one somebody puts anywhere else. A rule written as "*.sh" fails on this
+# project's own naming, where most of the scripts have no extension at all and six are python
+# helpers that shell invariants call. What actually makes a file need the bit is that the kernel
+# is expected to run it, and the mark of that is the shebang on line one. So that is the
+# selector, and the sweep is the WHOLE tracked tree.
+#
+# Widening it from tests/bin to the repository changes no number today: all 28 shebang files are
+# in tests/bin. That is stated rather than left implied, because a rule whose scope was widened
+# without changing its result is exactly the kind of change somebody quietly narrows again
+# later, having measured only today.
+#
+# ---------------------------------------------------------------------------------------------
+# TWO DENOMINATORS, AND THEY ARE NOT ONE QUESTION ASKED TWICE.
+#
+#   examined  comes from `git ls-files`, so it stays positive even if the shebang selector broke.
+#   scripts   comes from the selector, so it can only be positive if first lines were read.
+#
+# "448 files examined, 0 findings" from a selector that matched nothing is the exact shape of
+# green this refuses (I-028). Both counts are printed on every run and both are asserted by the
+# gate runner beside the exit code.
+#
+# ONE IMPLEMENTATION, TWO CALLERS. tests/bin/gate-a-wave1.sh runs this as G10, and
+# tests/bin/preflight runs it as the first half of its agora-invariants coverage. Neither
+# carries its own copy of the rule. Two copies of one rule disagree eventually, and the
+# disagreement is invisible because both print a plausible number.
+#
+# IT IS IN WAVE 1 AND NOT WAVE 3 ON PURPOSE. It is pure git: no network, no container, no
+# database, and it returns in well under a second. Wave 3 takes about 35 minutes, and a guard
+# against a defect this cheap to detect is a guard that gets skipped if it is only affordable
+# half an hour at a time.
+#
+# ---------------------------------------------------------------------------------------------
+# THIS RULE ALSO EXISTS IN agora_theme, AND THAT IS A D-028 QUESTION WITH AN OWNER.
+#
+# tests/bin/executable-bit was WRITTEN in agora_theme and ported here, which is the opposite of
+# the direction D-028's manifest models - there, agora_transparency is always the source and the
+# theme holds the copy. The theme's tests/bin/shared-invariants currently lists this script in
+# its LOCAL_ONLY set, justified in its own prose with the sentence "the site template has no
+# copy of it". That sentence became FALSE the moment this file landed.
+#
+# Nothing goes red on either side: LOCAL_ONLY membership is what the theme's invariant checks,
+# and the justification beside it is a comment. That is precisely the hazard - a stale claim
+# that no mechanism can contradict. Recorded here, in the file the next reader will be standing
+# in, and reported for routing rather than fixed by reaching into the other repository, because
+# D-028 forbids resolving a shared-file question from one side alone.
+#
+# HOUSE RULES (T-321(c)): `wc -l` never `grep -c` for a compared value; a grep exit status of 2
+# or more is an ERROR, never "no match".
+#
+# Usage:  bash tests/bin/executable-bit
+# Exit:   0 clean - 1 findings, or the run could not be made meaningful.
+
+set -u
+
+C_OK=""; C_BAD=""; C_DIM=""; C_OFF=""
+if [ -t 1 ]; then C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_DIM=$'\033[2m'; C_OFF=$'\033[0m'; fi
+
+REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+cd "$REPO_ROOT" || { printf 'FATAL: cannot reach the repository root\n' >&2; exit 1; }
+
+FINDINGS=0
+
+finding() { # <file> <mode> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3"
+}
+
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+fatal() { # <reason>
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run has NO result, which is not a clean result (I-029).\n'
+  exit 1
+}
+
+printf '=========================================================================================================\n'
+printf 'executable-bit - a tracked file that starts with a shebang is committed 100755\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+command -v git >/dev/null 2>&1 || fatal 'git not found - the mode this check reads exists only in the index'
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || fatal 'not inside a git work tree'
+
+WORKDIR=$(mktemp -d -t executable-bit.XXXXXX) || fatal 'mktemp -d failed'
+trap 'rm -rf "$WORKDIR"' EXIT INT TERM
+
+# ------------------------------------------------------------------ the tracked file set ---
+git ls-files > "$WORKDIR/tracked" 2>/dev/null || fatal 'git ls-files failed'
+EXAMINED=$(wc -l < "$WORKDIR/tracked" | tr -d ' \r')
+[ "${EXAMINED:-0}" -gt 0 ] || fatal 'the index lists 0 tracked files - the result would prove nothing (I-007)'
+
+# ------------------------------------------------------------------- the shebang selector ---
+# `--cached` is what makes this read the index. `-I` skips binary blobs, so a font, a PDF or an
+# image whose first bytes happen to be those two characters is never offered to the mode test -
+# and this package ships demo media, so that guard is load-bearing here rather than theoretical.
+# The `:1:` filter is what makes it FIRST-line: git grep reports every matching line, and a
+# shebang on line 40 is a comment, not an interpreter directive.
+git grep --cached -I -n -E '^#!' -- . > "$WORKDIR/hits" 2>/dev/null
+GREP_RC=$?
+if [ "$GREP_RC" -ge 2 ]; then
+  fatal "git grep exited $GREP_RC while selecting shebang files - a tree that could not be searched is NOT a tree that is correct (I-027)"
+fi
+
+sed -n 's/^\(.*\):1:#!.*$/\1/p' < "$WORKDIR/hits" | LC_ALL=C sort -u > "$WORKDIR/scripts"
+SCRIPTS=$(wc -l < "$WORKDIR/scripts" | tr -d ' \r')
+
+printf '\n'
+note 'scope: every tracked file, first line and mode both read from the git index, never from the filesystem'
+
+# I-028 canary. If the selector breaks - a git that spells --cached differently, a sed that stops
+# matching - this file reports 0 findings over 0 scripts and looks exactly like a clean tree.
+if [ "${SCRIPTS:-0}" -eq 0 ]; then
+  fatal 'the shebang selector matched 0 files. This repository ships the shell invariants and python helpers under tests/bin/ that both gate runners execute, so zero means the selector has broken, not that the tree is clean (I-028).'
+fi
+
+# ---------------------------------------------------------------------- the mode assertion ---
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  MODE=$(git ls-files -s -- "$f" 2>/dev/null | cut -d' ' -f1)
+  if [ -z "$MODE" ]; then
+    finding "$f" '<no mode>' 'the index has no mode for this path although it was listed as tracked - the two git reads disagree and this run cannot be trusted'
+    continue
+  fi
+  [ "$MODE" = '100755' ] && continue
+  finding "$f" "$MODE" "starts with a shebang but is committed $MODE. On this host the executable-bit test answers TRUE for it and every local check passes; on the runner it answers FALSE. Fix with: git update-index --chmod=+x $f   (git add --chmod=+x for a file not yet tracked)."
+done < "$WORKDIR/scripts"
+
+# ----------------------------------------------------------------------------- summary ---
+printf '\n'
+printf 'examined: %s tracked file(s)\n' "$EXAMINED"
+printf 'scripts:  %s with a shebang on line 1\n' "$SCRIPTS"
+printf 'findings: %s\n' "$FINDINGS"
+printf '=========================================================================================================\n'
+
+if [ "$FINDINGS" -eq 0 ]; then
+  printf '%s%s%s\n' "$C_OK" 'executable-bit: clean' "$C_OFF"
+  exit 0
+fi
+printf '%s%s%s%s%s\n' "$C_BAD" 'executable-bit: ' "$FINDINGS" ' finding(s)' "$C_OFF"
+exit 1
