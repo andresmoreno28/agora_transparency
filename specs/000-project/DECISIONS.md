@@ -3651,9 +3651,10 @@ list read from the API, and no pipeline has run yet. Its glyph moves to `○`, n
 #### 1 · The measurement D-036 left open, taken — and it discharges the condition
 
 D-036 made its recommendation conditional on *"whether axe-core can be installed and run inside the
-existing `Drupal CMS` job"*. Read at source on 2026-09-07 in `gitlab_templates` on `main`, and
-confirmed a second time on this machine, the answer has three parts and only the third is the one
-D-036 expected.
+existing `Drupal CMS` job"*. Read at source on 2026-09-07 in `gitlab_templates` on `main`, the
+answer is **yes, but not in that job** — and the five lines below are why. Each is a file and a
+line number rather than a summary, because the whole cost of D-036's condition going untaken for a
+month was that nobody had opened these files.
 
 | what | where it was read | what it says |
 |---|---|---|
@@ -3705,7 +3706,11 @@ why this record names the file and line for every claim above.
 
 ---
 
-#### 2 · Option C — Nightwatch in this repository — is refuted three ways
+#### 2 · Option C's other half — a Nightwatch run in this repository — is refuted three ways
+
+D-036's option C offered two ways to drive the scan: *"PHPUnit `FunctionalJavascript` **or a
+Nightwatch run inside that job's docroot**"*. §1 settled the host; this settles the driver, and
+the Nightwatch half is not merely worse — it is the one that fails while looking like it worked.
 
 D-027 already established that Nightwatch **cannot be collected** in the template repository. That
 finding is not merely reaffirmed here; it is now shown to fail in a way that **produces a green-
