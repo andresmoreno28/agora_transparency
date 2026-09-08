@@ -449,3 +449,165 @@ display:
         - 'config:field.storage.node.field_agora_base_status'
         - 'config:field.storage.node.field_agora_base_subject'
         - 'config:field.storage.node.field_agora_base_tender_amount'
+  attachment_1:
+    id: attachment_1
+    display_title: 'Procedure breakdown'
+    display_plugin: attachment
+    position: 2
+    display_options:
+      fields:
+        field_agora_base_procedure_type:
+          id: field_agora_base_procedure_type
+          table: node__field_agora_base_procedure_type
+          field: field_agora_base_procedure_type
+          group_type: group
+          entity_type: node
+          entity_field: field_agora_base_procedure_type
+          plugin_id: field
+          label: 'Procurement procedure'
+          type: entity_reference_label
+          settings:
+            link: false
+        nid:
+          id: nid
+          table: node_field_data
+          field: nid
+          group_type: count
+          entity_type: node
+          entity_field: nid
+          plugin_id: field
+          label: Contracts
+          separator: ''
+          set_precision: false
+          precision: 0
+          decimal: .
+          format_plural: false
+          prefix: ''
+          suffix: ''
+      pager:
+        type: none
+        options:
+          offset: 0
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          plugin_id: text_custom
+          empty: true
+          content: 'No contracts have been published yet, so there is no procedure breakdown to show.'
+          tokenize: false
+      sorts:
+        nid:
+          id: nid
+          table: node_field_data
+          field: nid
+          group_type: count
+          plugin_id: groupby_numeric
+          order: DESC
+        field_agora_base_procedure_type_target_id:
+          id: field_agora_base_procedure_type_target_id
+          table: node__field_agora_base_procedure_type
+          field: field_agora_base_procedure_type_target_id
+          group_type: group
+          plugin_id: groupby_numeric
+          order: ASC
+      filters:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          group_type: group
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          operator: in
+          value:
+            agora_base_contract: agora_base_contract
+          group: 1
+          exposed: false
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          group_type: group
+          entity_type: node
+          entity_field: status
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+      style:
+        type: table
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+          columns:
+            field_agora_base_procedure_type: field_agora_base_procedure_type
+            nid: nid
+          default: '-1'
+          info:
+            field_agora_base_procedure_type:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            nid:
+              sortable: false
+              default_sort_order: asc
+              align: views-align-right
+              separator: ''
+              empty_column: false
+              responsive: ''
+          sticky: false
+          summary: ''
+          order: asc
+          empty_table: false
+          caption: 'How many published contracts were awarded under each procurement procedure. Counted over the whole register, so the filters above do not change these figures.'
+          description: ''
+          class: 'agora-contract-procedures agora-row-header-first'
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      defaults:
+        empty: false
+        css_class: false
+        pager: false
+        use_more: false
+        group_by: false
+        style: false
+        row: false
+        fields: false
+        sorts: false
+        filters: false
+      css_class: agora-contract-procedures
+      group_by: true
+      display_description: 'The art. 8.1.a) breakdown of contracts by procurement procedure, attached beneath the contracts register. COUNT(nid) rather than any SUM: D-040 forbids aggregating a Field API field with a function that needs a numeric argument, and count is measured safe on all three databases. It inherits neither the exposed filters nor the pager, because the statute asks about the whole register and a legal figure that changes when a reader types in a filter box is a wrong figure.'
+      use_more: false
+      display_extenders: {  }
+      displays:
+        page_1: page_1
+      attachment_position: after
+      inherit_arguments: false
+      inherit_exposed_filters: false
+      inherit_pager: false
+      render_pager: false
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.node.field_agora_base_procedure_type'

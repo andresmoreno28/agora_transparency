@@ -190,6 +190,41 @@ class ValidationTest extends BrowserTestBase {
   private const VIEW_CONTAINER = 'div[class*="js-view-dom-id-"]';
 
   /**
+   * The class the art. 8.1.a) breakdown declares on its own table (T-1103).
+   *
+   * It is a DECLARATION, not a style hook, in the same sense as the theme's
+   * `agora-row-header-first`: no stylesheet selects it, and it exists so that
+   * the one page carrying two tables can say which of them is which.
+   */
+  private const STATISTIC_TABLE_CLASS = 'agora-contract-procedures';
+
+  /**
+   * Selects a register's OWN table on a page that now carries two of them.
+   *
+   * WHY THIS IS NOT SIMPLY `table`, and it stopped being simply `table` on
+   * one page only. `/contracts` renders the register and, attached beneath
+   * it, the breakdown of those contracts by procurement procedure - a second
+   * `<table>`, inside the same view container, because Views renders an
+   * attachment display INSIDE the wrapper of the display it attaches to. So
+   * every count in this class that said "this page has exactly one table"
+   * became a count of two on that page and of one everywhere else, which is
+   * the shape of an assertion that fails for a correct product.
+   *
+   * The exclusion is applied EVERYWHERE rather than only to `/contracts`,
+   * and that is deliberate: a selector that means "the register's table"
+   * should mean the same thing on all six registers, and the alternative -
+   * passing a different selector for one of them - puts the knowledge in the
+   * six call sites instead of in one constant. On the five pages that carry
+   * no statistic table it selects exactly what `table` selected before.
+   *
+   * ⚠️ It is a `:not()`, so it keeps the ABSENCE assertions honest as well:
+   * `::assertEmptyState()` still requires that no register table is rendered
+   * for an empty result set (I-062), and it no longer passes or fails on the
+   * presence of a table that is not the register's.
+   */
+  private const REGISTER_TABLE = 'table:not(.' . self::STATISTIC_TABLE_CLASS . ')';
+
+  /**
    * Tests the six table views on a real site, populated and then emptied.
    *
    * THE TWO LAYERS THAT NEED A RUNNING SITE, and one of them can only be
@@ -355,8 +390,456 @@ class ValidationTest extends BrowserTestBase {
     }
     $this->drupalGet($paths[$smallest]);
     $assert->statusCodeEquals(200);
-    $assert->elementsCount('css', self::VIEW_CONTAINER . ' table', 1);
+    $assert->elementsCount('css', self::VIEW_CONTAINER . ' ' . self::REGISTER_TABLE, 1);
     $assert->pageTextNotContains($empty_text[$smallest]);
+  }
+
+  /**
+   * The view id and display id of the art. 8.1.a) breakdown (T-1103).
+   *
+   * Read here rather than typed at each use, and everything else this method
+   * needs - the caption, the column labels, the empty text - is taken off
+   * the display itself, so a renamed column changes what is asserted instead
+   * of leaving this file agreeing with a string nothing renders any more.
+   */
+  private const STATISTIC_DISPLAY = ['agora_base_contracts', 'attachment_1'];
+
+  /**
+   * The bundle the art. 8.1.a) statistic is about.
+   */
+  private const STATISTIC_BUNDLE = 'agora_base_contract';
+
+  /**
+   * The vocabulary the statistic groups by.
+   */
+  private const STATISTIC_VOCABULARY = 'agora_base_procedure_type';
+
+  /**
+   * The field that carries it.
+   */
+  private const STATISTIC_FIELD = 'field_agora_base_procedure_type';
+
+  /**
+   * Tests the art. 8.1.a) breakdown of contracts by procedure (T-1103).
+   *
+   * WHAT THE STATUTE ASKS FOR, AND WHAT WAS THERE BEFORE. Ley 19/2013
+   * art. 8.1.a) obliges a public body to publish the distribution of its
+   * contracts by procurement procedure.
+   * `specs/002-base-and-theme/plan.md:52-57` records it as a legal
+   * requirement and hands it to unit 003. Until this display existed
+   * nothing on the site grouped contracts by procedure at all: the only
+   * aggregating view in `config/` was the publications one, and the string
+   * `procedure` appeared in no `views.view.*.yml`.
+   *
+   * TWO ROUTES TO THE SAME NUMBERS, SHARING NO CODE. The row's criterion is
+   * that the statistic is asserted against a count the test computes
+   * INDEPENDENTLY, and the weakest reading of that - asking the same view
+   * twice - would pass over a view that grouped on the wrong field. So the
+   * expected breakdown is read from the files this package SHIPS:
+   * `content/node/*.yml` for the contracts and `content/taxonomy_term/*.yml`
+   * to resolve the procedure each one references, parsed off disk with no
+   * database, no view and no Views query involved. The rendered table is
+   * then required to equal it.
+   *
+   * A third route sits between them and is what says the import worked: the
+   * entity query's published count of the bundle must equal the total the
+   * files describe. Disk, database and rendered page therefore have to agree
+   * with one another, and a disagreement names which pair fell out rather
+   * than reporting a bare mismatch.
+   *
+   * THE ROWS ARE COMPARED AS A MAP, NOT AS A LIST. The display sorts by
+   * count descending and three of the four demo procedures hold two
+   * contracts each, so the order among equal counts is not decided by
+   * anything the configuration says and an ordered comparison would be
+   * asserting the database's tie-breaking. What IS asserted about the order
+   * is the property the sort actually promises: no row carries a larger
+   * count than the row above it.
+   *
+   * THE PERCENTAGE IS COMPUTED HERE AND IS NOT ON THE PAGE, and that is
+   * stated rather than left to be discovered. Views cannot divide. A field
+   * rewrite is handed the token set `FieldPluginBase::getRenderTokens()`
+   * builds, and that set carries the current row's own fields and nothing
+   * from any other row, so there is no denominator to divide by; and
+   * `$view->total_rows` on an aggregating display is the number of GROUPS -
+   * four here - not the number of records. Both were measured in core
+   * 11.4.5 and `agora_theme` records the same finding from its own side.
+   * The shares below are therefore asserted as a property of the two
+   * columns the page does render, which is what a reader can compute from
+   * them; the percentage COLUMN is theme work this repository cannot do.
+   *
+   * WHAT THE FILTERS AND THE PAGER MUST NOT DO TO IT. A legal figure that
+   * changes when a reader types in a filter box is a wrong figure, so the
+   * display inherits neither the exposed filters nor the pager - and both
+   * are exercised here rather than trusted. The register is filtered down
+   * to fewer rows and paged past its own end, and the breakdown has to come
+   * back identical through both.
+   *
+   * AND THE EMPTY CASE, WHERE THIS KIND OF TABLE USUALLY LIES. Views emits
+   * no table at all for an empty result set, so axe finds nothing wrong
+   * with it, truthfully and about nothing (I-062). Every markup assertion
+   * below therefore runs only after the row count has been asserted, and
+   * the genuinely empty state is reached at the end by unpublishing the
+   * corpus - where the requirement is the empty text AND the absence of the
+   * table, never one of the two.
+   */
+  public function testContractsByProcedureType(): void {
+    $this->applyRecipe(self::getRecipePath());
+
+    [$view_id, $display_id] = self::STATISTIC_DISPLAY;
+    $view = View::load($view_id);
+    $this->assertInstanceOf(View::class, $view, "$view_id must have been imported by the recipe.");
+    $display = $view->getDisplay($display_id);
+    $this->assertIsArray($display, "$view_id must ship the $display_id display, which is where the art. 8.1.a) statistic is computed.");
+    $options = $display['display_options'];
+
+    // -- (1) The display says what it is, in config -------------------------
+    // Asserted before anything is rendered, because these are the properties
+    // that make the rendered numbers mean what the statute asks for. A
+    // display that lost its aggregation would still render a table.
+    $this->assertTrue($options['group_by'], "$display_id must aggregate, or it lists contracts instead of counting them by procedure.");
+    $this->assertSame('count', $options['fields']['nid']['group_type'], 'The breakdown must COUNT rows. D-040 forbids sum, avg and stddev_pop over a Field API field on every database Drupal supports; count is the aggregate measured safe on all three.');
+    $this->assertSame('group', $options['fields'][self::STATISTIC_FIELD]['group_type'], 'The procedure must be the group key, not an aggregate.');
+    $this->assertFalse($options['inherit_exposed_filters'], 'The statute asks about the whole register, so the breakdown must not follow the exposed filters.');
+    $this->assertFalse($options['inherit_pager'], 'A statistic computed over one page of a pager is a statistic about a page.');
+    $this->assertSame('after', $options['attachment_position'], 'The breakdown is a summary of the register, so it belongs beneath it.');
+    $this->assertSame(['page_1' => 'page_1'], array_filter($options['displays']), "The breakdown must be attached to $view_id's page display, or it renders nowhere.");
+
+    $caption = (string) $options['style']['options']['caption'];
+    $this->assertNotSame('', trim($caption), 'The breakdown must declare a caption: it is the accessible name of the table and the only place that says what the numbers count.');
+    $empty_state = reset($options['empty']);
+    $empty_text = (string) $empty_state['content'];
+    $this->assertNotSame('', trim($empty_text), 'The breakdown must declare empty text, or an install with no contracts shows a reader nothing at all.');
+    $labels = [
+      (string) $options['fields'][self::STATISTIC_FIELD]['label'],
+      (string) $options['fields']['nid']['label'],
+    ];
+    foreach ($labels as $label) {
+      $this->assertNotSame('', trim($label), 'Every column of the breakdown must be labelled, or its header cell has no text for a headers attribute to point at.');
+    }
+
+    // -- (2) Route one: the corpus this package ships, read off disk --------
+    $on_disk = $this->shippedProcedureCounts();
+    $total_on_disk = array_sum($on_disk);
+    $this->assertGreaterThan(0, $total_on_disk, 'This package must ship published contracts, or every count below holds vacuously over an empty corpus (I-007).');
+    // Three distinct procedures is T-1005's non-degeneracy floor, and it is
+    // what makes the statistic carry information rather than restate the row
+    // count: a single-procedure corpus is arithmetically true and empty.
+    $procedures = count($on_disk);
+    $this->assertGreaterThanOrEqual(3, $procedures, sprintf(
+      'The shipped corpus must use at least three distinct procedures for the breakdown to say anything; it uses %d.',
+      $procedures,
+    ));
+
+    // -- (3) Route two: the site the recipe just built ----------------------
+    $published = $this->publishedCount([self::STATISTIC_BUNDLE]);
+    $this->assertSame($total_on_disk, $published, sprintf(
+      'The published nodes on the installed site (%d) must be exactly the ones content/node/*.yml describes (%d), or the import and the package have fallen out of step and no number below can be trusted.',
+      $published,
+      $total_on_disk,
+    ));
+
+    // -- (4) Route three: what a reader is actually served ------------------
+    $this->drupalLogin($this->drupalCreateUser(['access content']));
+    $path = '/' . $view->getDisplay('page_1')['display_options']['path'];
+
+    $rendered = $this->assertStatisticTable($path, $caption, $labels, $empty_text);
+    $observed = $rendered;
+    ksort($observed);
+    $this->assertSame($on_disk, $observed, sprintf(
+      'The rendered breakdown must equal the one computed from content/node/*.yml. Rendered: %s. On disk: %s.',
+      $this->describeCounts($rendered),
+      $this->describeCounts($on_disk),
+    ));
+
+    // -- (5) The statistic itself, and the share each procedure holds -------
+    // The percentages are DERIVED from the two rendered columns and never
+    // stored: this is the art. 8.1.a) figure, and the assertion message is
+    // where the gate reports it, because a test in this package cannot
+    // print - PHPUnit turns any output a test emits into an error.
+    $total_rendered = array_sum($rendered);
+    $this->assertSame($published, $total_rendered, sprintf(
+      'The breakdown must account for every published contract: it counts %d of %d.',
+      $total_rendered,
+      $published,
+    ));
+    $shares = [];
+    foreach ($rendered as $procedure => $count) {
+      $shares[$procedure] = round($count * 100 / $total_rendered, 1);
+    }
+    $this->assertEqualsWithDelta(100.0, array_sum($shares), 0.2, sprintf(
+      'The art. 8.1.a) shares must account for the whole register: %s, over %d published contracts in %d procedures.',
+      implode(' | ', array_map(
+        static fn (string $name, float $share): string => $name . ' ' . $share . '%',
+        array_keys($shares),
+        $shares,
+      )),
+      $total_rendered,
+      $procedures,
+    ));
+
+    // -- (6) The order the display promises ---------------------------------
+    // Not the exact sequence - three procedures hold two contracts each and
+    // nothing in the configuration decides which of them comes first - but
+    // the property the sort is there for.
+    $counts = array_values($rendered);
+    $sorted = $counts;
+    rsort($sorted);
+    $this->assertSame($sorted, $counts, sprintf(
+      'The breakdown is sorted by count, largest first; it rendered %s.',
+      implode(', ', $counts),
+    ));
+
+    // -- (7) The filters must not move it -----------------------------------
+    // A real filter that really narrows the register: the area of some of
+    // the shipped contracts, chosen from the site rather than typed, and
+    // asserted to remove rows BEFORE the breakdown is asked to have ignored
+    // it. A filter that filtered nothing would make this check vacuous.
+    $narrowed = $this->narrowingAreaFilter();
+    $this->drupalGet($path, ['query' => ['area' => $narrowed['tid']]]);
+    $this->assertSession()->statusCodeEquals(200);
+    $register_rows = count($this->getSession()->getPage()->findAll(
+      'css',
+      self::VIEW_CONTAINER . ' ' . self::REGISTER_TABLE . ' tbody tr',
+    ));
+    $this->assertSame($narrowed['rows'], $register_rows, sprintf(
+      'Filtering the register by area %d must leave %d of its %d rows.',
+      $narrowed['tid'],
+      $narrowed['rows'],
+      $published,
+    ));
+    $this->assertLessThan($published, $register_rows, 'The area chosen for this check must genuinely narrow the register, or the breakdown has nothing to have ignored.');
+    $filtered = $this->readStatisticTable();
+    $this->assertSame($rendered, $filtered, 'The art. 8.1.a) breakdown must be unchanged by an exposed filter: it is a statement about the whole register, and a legal figure that moves when a reader types in a filter box is a wrong figure.');
+
+    // -- (8) And neither must the pager -------------------------------------
+    $per_page = (int) $view->getDisplay('default')['display_options']['pager']['options']['items_per_page'];
+    $this->assertGreaterThan(0, $per_page, 'The register must declare a page size, or the page index below has no stride.');
+    $beyond = intdiv($published, $per_page) + 1;
+    $this->drupalGet($path, ['query' => ['page' => $beyond]]);
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->elementNotExists('css', self::VIEW_CONTAINER . ' ' . self::REGISTER_TABLE);
+    $paged = $this->readStatisticTable();
+    $this->assertSame($rendered, $paged, 'The breakdown must survive a page index past the end of the register: it carries its own pager precisely so that it counts the register and not a page of it.');
+
+    // -- (9) The genuinely empty state --------------------------------------
+    // BOTH HALVES REQUIRED. Views emits no table for an empty result set, so
+    // the absent table alone would be satisfied by a page that rendered
+    // nothing and said nothing about why (I-062).
+    $storage = \Drupal::entityTypeManager()->getStorage('node');
+    $nodes = $storage->loadByProperties(['type' => self::STATISTIC_BUNDLE]);
+    $this->assertNotEmpty($nodes, 'There must be contracts to unpublish, or the empty state below is not the state being tested.');
+    foreach ($nodes as $node) {
+      $node->setUnpublished()->save();
+    }
+    $this->assertSame(0, $this->publishedCount([self::STATISTIC_BUNDLE]), 'Every contract must now be unpublished.');
+    $this->drupalGet($path);
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->pageTextContains($empty_text);
+    $this->assertSession()->elementNotExists('css', 'table.' . self::STATISTIC_TABLE_CLASS);
+
+    // -- (10) And back, because neither state alone says they differ --------
+    foreach ($nodes as $node) {
+      $node->setPublished()->save();
+    }
+    $restored = $this->assertStatisticTable($path, $caption, $labels, $empty_text);
+    $this->assertSame($rendered, $restored, 'The breakdown must come back exactly as it was: a table that renders in both states is not rendering either of them.');
+  }
+
+  /**
+   * Counts the shipped contracts by procedure, from `content/` alone.
+   *
+   * NO DATABASE, NO VIEW AND NO QUERY. This is the independent route the
+   * T-1103 row asks for, so it may not share a mechanism with the thing it
+   * checks: it opens the YAML this package ships, resolves each contract's
+   * procedure reference through the term files by uuid, and counts. A view
+   * that grouped on the wrong field, or an import that dropped a record,
+   * disagrees with it.
+   *
+   * Only PUBLISHED contracts are counted, because that is what the register
+   * lists and therefore what the statistic is about.
+   *
+   * @return array<string, int>
+   *   How many published contracts each procedure name holds, keyed by name
+   *   and sorted by name so that comparisons are order-independent.
+   */
+  protected function shippedProcedureCounts(): array {
+    $root = self::getRecipePath();
+
+    $terms = [];
+    $term_files = glob($root . '/content/taxonomy_term/*.yml') ?: [];
+    $this->assertNotEmpty($term_files, 'This package must ship taxonomy terms in content/, or the procedure references below resolve to nothing.');
+    foreach ($term_files as $file) {
+      $data = Yaml::decode((string) file_get_contents($file));
+      if (($data['_meta']['bundle'] ?? '') !== self::STATISTIC_VOCABULARY) {
+        continue;
+      }
+      $uuid = (string) $data['_meta']['uuid'];
+      $terms[$uuid] = (string) $data['default']['name'][0]['value'];
+    }
+    $this->assertNotEmpty($terms, 'This package must ship procedure-type terms, or no contract can name its procedure.');
+
+    $counts = [];
+    $node_files = glob($root . '/content/node/*.yml') ?: [];
+    $this->assertNotEmpty($node_files, 'This package must ship nodes in content/.');
+    foreach ($node_files as $file) {
+      $data = Yaml::decode((string) file_get_contents($file));
+      if (($data['_meta']['bundle'] ?? '') !== self::STATISTIC_BUNDLE) {
+        continue;
+      }
+      if (($data['default']['status'][0]['value'] ?? FALSE) !== TRUE) {
+        continue;
+      }
+      $reference = $data['default'][self::STATISTIC_FIELD][0]['entity'] ?? NULL;
+      $this->assertNotNull($reference, sprintf(
+        '%s names no procedure, so the breakdown cannot account for it.',
+        basename($file),
+      ));
+      $this->assertArrayHasKey($reference, $terms, sprintf(
+        '%s references a term this package does not ship.',
+        basename($file),
+      ));
+      $name = $terms[$reference];
+      $counts[$name] = ($counts[$name] ?? 0) + 1;
+    }
+
+    ksort($counts);
+    return $counts;
+  }
+
+  /**
+   * Asserts the breakdown's markup, then reads its rows.
+   *
+   * THE ORDER IS THE POINT. The row count is asserted before any structural
+   * claim, because Views renders no table at all for an empty result set and
+   * every markup assertion below would hold over a page with nothing on it
+   * (I-062).
+   *
+   * @param string $path
+   *   The register's path.
+   * @param string $caption
+   *   The caption the display declares.
+   * @param array $labels
+   *   The two column labels the display declares, in column order.
+   * @param string $empty_text
+   *   The empty text, which must appear nowhere on a populated page.
+   *
+   * @return array<string, int>
+   *   The rendered breakdown, procedure name to count, in rendered order.
+   */
+  protected function assertStatisticTable(string $path, string $caption, array $labels, string $empty_text): array {
+    $assert = $this->assertSession();
+    $this->drupalGet($path);
+    $assert->statusCodeEquals(200);
+
+    // Scoped inside the main landmark: a statistic rendered outside the
+    // region the skip link leads to is not part of the page's content.
+    $table = 'main.agora-page__main table.' . self::STATISTIC_TABLE_CLASS;
+    $assert->elementsCount('css', $table, 1);
+
+    $rows = $this->getSession()->getPage()->findAll('css', $table . ' tbody tr');
+    $this->assertNotEmpty($rows, 'The breakdown must render rows before its markup is worth asserting: an empty result set renders no table and no violations, truthfully and about nothing (I-062).');
+    $row_count = count($rows);
+
+    // WCAG 2.2 AA, 1.3.1. The caption is the table's accessible name, and it
+    // is the view's own string rather than one typed here.
+    $assert->elementsCount('css', $table . ' > caption', 1);
+    $assert->elementTextContains('css', $table . ' > caption', $caption);
+    // Both column headers, and every one of them scoped. A `th` without a
+    // scope in a table that also has scoped ones slips past a count that
+    // only looks at the scoped set.
+    $assert->elementsCount('css', $table . ' thead th', 2);
+    $assert->elementsCount('css', $table . ' thead th[scope="col"]', 2);
+    foreach ($labels as $index => $label) {
+      $assert->elementTextContains(
+        'css',
+        $table . ' thead th:nth-child(' . ($index + 1) . ')',
+        $label,
+      );
+    }
+    // The procedure is what each row is ABOUT, so it is the row's header and
+    // not a data cell. The theme promotes the first column to a row header
+    // when the view declares `agora-row-header-first`, which this display
+    // does; asserting it here is what makes that declaration load-bearing
+    // rather than an inert class nobody notices the loss of.
+    $assert->elementsCount('css', $table . ' tbody th[scope="row"]', $row_count);
+    $assert->pageTextNotContains($empty_text);
+
+    return $this->readStatisticTable();
+  }
+
+  /**
+   * Reads the breakdown off the page currently loaded.
+   *
+   * @return array<string, int>
+   *   Procedure name to count, in the order the page rendered them.
+   */
+  protected function readStatisticTable(): array {
+    $table = 'table.' . self::STATISTIC_TABLE_CLASS;
+    $rows = $this->getSession()->getPage()->findAll('css', $table . ' tbody tr');
+    $this->assertNotEmpty($rows, 'The breakdown must be on this page for its rows to be read.');
+
+    $counts = [];
+    foreach ($rows as $row) {
+      $header = $row->find('css', 'th');
+      $this->assertNotNull($header, 'Every row of the breakdown carries the procedure as its row header.');
+      $cell = $row->find('css', 'td');
+      $this->assertNotNull($cell, 'Every row of the breakdown carries its count.');
+      $name = trim($header->getText());
+      $value = trim($cell->getText());
+      $this->assertMatchesRegularExpression('/^\d+$/', $value, "The count beside \"$name\" must be a whole number; it rendered \"$value\".");
+      $counts[$name] = (int) $value;
+    }
+    return $counts;
+  }
+
+  /**
+   * Picks an area filter value that genuinely narrows the register.
+   *
+   * Read off the site rather than typed, so that changing the demo corpus
+   * moves what this test filters by instead of breaking it.
+   *
+   * @return array{tid: int, rows: int}
+   *   The term id to filter by, and how many contracts carry it.
+   */
+  protected function narrowingAreaFilter(): array {
+    $storage = \Drupal::entityTypeManager()->getStorage('node');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('type', self::STATISTIC_BUNDLE)
+      ->condition('status', 1)
+      ->execute();
+    $this->assertNotEmpty($ids, 'There must be published contracts for an area filter to narrow.');
+
+    $by_area = [];
+    foreach ($storage->loadMultiple($ids) as $node) {
+      $tid = (int) $node->get('field_agora_base_area')->target_id;
+      $by_area[$tid] = ($by_area[$tid] ?? 0) + 1;
+    }
+    // The largest group that is still smaller than the whole: it has to
+    // narrow, or the check that follows proves nothing.
+    $total = count($ids);
+    $candidates = array_filter($by_area, static fn (int $n): bool => $n < $total);
+    $this->assertNotEmpty($candidates, 'Every contract shares one service area, so no area filter can narrow the register and this check cannot be made.');
+    arsort($candidates);
+    $tid = (int) array_key_first($candidates);
+    return ['tid' => $tid, 'rows' => $candidates[$tid]];
+  }
+
+  /**
+   * Renders a breakdown for a failure message.
+   *
+   * @param array<string, int> $counts
+   *   Procedure name to count.
+   *
+   * @return string
+   *   One readable line.
+   */
+  protected function describeCounts(array $counts): string {
+    return implode(' | ', array_map(
+      static fn (string $name, int $count): string => "$name=$count",
+      array_keys($counts),
+      $counts,
+    ));
   }
 
   /**
@@ -1136,26 +1619,26 @@ class ValidationTest extends BrowserTestBase {
     for ($page = 0; $page < $pages; $page++) {
       $this->drupalGet($path, $page === 0 ? [] : ['query' => ['page' => $page]]);
       $assert->statusCodeEquals(200);
-      $assert->elementsCount('css', $container . ' table', 1);
+      $assert->elementsCount('css', $container . ' ' . self::REGISTER_TABLE, 1);
       // WCAG 2.2 AA, 1.3.1: the table says what it is, and every header cell
       // declares what it heads. This portal's core content IS tables.
-      $assert->elementsCount('css', $container . ' table > caption', 1);
-      $assert->elementsCount('css', $container . ' table thead th[scope="col"]', $columns);
+      $assert->elementsCount('css', $container . ' ' . self::REGISTER_TABLE . ' > caption', 1);
+      $assert->elementsCount('css', $container . ' ' . self::REGISTER_TABLE . ' thead th[scope="col"]', $columns);
       // Every header cell, not merely as many as there are columns: a `<th>`
       // without a scope in a table that also has scoped ones would slip past
       // a count that only looked at the scoped set.
-      $assert->elementsCount('css', $container . ' table thead th', $columns);
+      $assert->elementsCount('css', $container . ' ' . self::REGISTER_TABLE . ' thead th', $columns);
       // The empty text on a page that has rows would mean both states are
       // rendered all the time, which would make every empty-state assertion
       // in this class meaningless.
       $assert->pageTextNotContains($empty_text);
 
       $on_this_page = min($per_page, $expected_rows - count($rows));
-      $assert->elementsCount('css', $container . ' table tbody tr', $on_this_page);
-      $assert->elementsCount('css', $container . ' table tbody tr td', $on_this_page * $columns);
+      $assert->elementsCount('css', $container . ' ' . self::REGISTER_TABLE . ' tbody tr', $on_this_page);
+      $assert->elementsCount('css', $container . ' ' . self::REGISTER_TABLE . ' tbody tr td', $on_this_page * $columns);
 
       if ($headers === []) {
-        foreach ($this->getSession()->getPage()->findAll('css', $container . ' table thead th') as $header) {
+        foreach ($this->getSession()->getPage()->findAll('css', $container . ' ' . self::REGISTER_TABLE . ' thead th') as $header) {
           // The label only; a sortable column's cell also carries the text
           // of its sort link, which is noise in a failure message.
           $headers[] = trim(explode("\n", trim($header->getText()))[0]);
@@ -1163,7 +1646,7 @@ class ValidationTest extends BrowserTestBase {
         $this->assertCount($columns, $headers, "$path must expose one header label per column.");
       }
 
-      foreach ($this->getSession()->getPage()->findAll('css', $container . ' table tbody tr') as $row) {
+      foreach ($this->getSession()->getPage()->findAll('css', $container . ' ' . self::REGISTER_TABLE . ' tbody tr') as $row) {
         $cells = array_map(
           static fn ($cell): string => trim($cell->getText()),
           $row->findAll('css', 'td'),
@@ -1201,7 +1684,7 @@ class ValidationTest extends BrowserTestBase {
     $assert->statusCodeEquals(200);
     $assert->elementExists('css', self::VIEW_CONTAINER);
     $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text);
-    $assert->elementNotExists('css', self::VIEW_CONTAINER . ' table');
+    $assert->elementNotExists('css', self::VIEW_CONTAINER . ' ' . self::REGISTER_TABLE);
   }
 
   /**
@@ -1919,7 +2402,11 @@ class ValidationTest extends BrowserTestBase {
 
     // -- The eight view routes ----------------------------------------------
     $main = 'main.agora-page__main';
-    $caption_selector = $main . ' ' . self::VIEW_CONTAINER . ' table > caption';
+    // The register's own caption, never the breakdown's: `/contracts` carries
+    // two captioned tables since T-1103, and marker (b) is a statement about
+    // which ROUTE was served, so it has to read the caption of the register
+    // and not of the statistic attached beneath it.
+    $caption_selector = $main . ' ' . self::VIEW_CONTAINER . ' ' . self::REGISTER_TABLE . ' > caption';
     $routes = 0;
     $captions = [];
 
