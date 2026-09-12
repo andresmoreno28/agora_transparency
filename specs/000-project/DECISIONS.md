@@ -1808,13 +1808,34 @@ struck it. That is D-045's lesson recurring inside D-045's own neighbourhood: **
 is not visible from the superseded record has not been delivered.**
 
 🔴 **And one thing this amendment deliberately does NOT resolve. D-045 carries `Ruling: B.` with no
-`SIGNED by [andres]` line**, where the neighbouring records have one — verified on disk 2026-09-12
-at `DECISIONS.md:2455`. Three places nonetheless cite it as *signed*. **No signature is written
-here and none is implied**: this block relies on D-045 only for the statement that the
-mirror-as-prerequisite is abolished, which is what its ruling says, and it records the gap rather
-than closing it. `specs/003-demo-content/tasks.md` already carries the same finding as its own
-entry; **[andres] confirms or rules, and until he does, "abolished by D-045, **signed**" is a
-sentence nobody should write.**
+`SIGNED by [andres]` line**, where the neighbouring records have one — verified on disk 2026-09-12.
+**No signature is written here and none is implied**: this block relies on D-045 only for the
+statement that the mirror-as-prerequisite is abolished, which is what its ruling says, and it
+records the gap rather than closing it. `specs/003-demo-content/tasks.md` already carries the same
+finding as its own entry; **[andres] confirms or rules, and until he does, "abolished by D-045,
+**signed**" is a sentence nobody should write.**
+
+⚠️ **Corrected within the hour, and both corrections are the failure this whole amendment is
+about.** The paragraph above was first written citing the ruling at `DECISIONS.md:2455` and saying
+*"three places nonetheless cite it as signed"*. Neither survived being measured.
+
+* **The line citation was made stale by this very block.** Appending these paragraphs pushed D-045
+  down by 29 lines, so `:2455` became `:2484` in the same commit that wrote `:2455`. It is now
+  cited by its quoted `**Ruling: B.**` string instead, which moves with it. ⚠️ **The same insertion
+  also invalidated `tasks.md:545`, which cites `DECISIONS.md:2455` and was correct when written.**
+  That row is dated and append-only; it is **not** edited, and the displacement is recorded here
+  because this is the commit that caused it. **A line number in a cross-file citation is a claim
+  with a very short life**, and nothing in this repository checks one.
+* **"Three places" was carried from a prompt rather than counted.** Read on disk 2026-09-12, before
+  this amendment was written: a `grep` for `D-045` near the word `signed` returned **three lines**,
+  and exactly **one** of them asserts the record is signed — `tasks.md:79`, *"ABOLISHED by D-045,
+  signed"*. The other two, `tasks.md:542` and `:545`, **quote that claim in order to refute it**,
+  which is the opposite of citing it. **Three matches, one claim**; reading the matches instead of
+  counting them is the difference between a live finding and an already-corrected one.
+  ⚠️ **No total is quoted, and the grep is described rather than given as a runnable line, because
+  re-running it now returns this block too.** A figure that a paragraph changes by existing cannot
+  be stated inside that paragraph — the first two attempts at this bullet each quoted a number that
+  their own text had already falsified.
 
 ### D-037 · Does a chart module enter the SBOM for the budgets page?
 
