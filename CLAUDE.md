@@ -358,7 +358,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   ~~`OK (102 tests, 571 assertions)`~~ **`OK (127 tests, 720 assertions)`, job `12024568` on
   pipeline `950770`, read 2026-09-12** — the two struck figures are that first day's and
   2026-09-06's. **The rate of change is the reason this row gets re-read rather than carried: a
-  suite that goes 18 → 102 → 127 tests in five days is one where a stale number is not slightly
+  suite that goes 18 → 102 → 127 tests in ten days is one where a stale number is not slightly
   wrong, it is about a different suite.** ⚠️ **This job still prints `OK (…)` and the site
   template's two no longer do** — see the `--fail-on-empty-test-suite` bullet below, which is the
   same upstream template behaving differently in two repositories on the same day, and the reason
@@ -386,8 +386,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   same seven pages asserted about more, not a seventh page counted twice. ⚠️ **`6` and `362` stood
   in this line until 2026-09-06 and `476` until today**, read from pipeline `943602`, commit
   `c5b0f68`, then from `950212`; the line before those read `297` and was four commits stale.
-  **Four refreshes of one figure in twelve days is the evidence that a hand-maintained number in
-  this block does not stay true — see `tests/bin/claims-match-sources`, which now fails the gate
+  **297 → 362 → 476 → 489: four refreshes of one figure in seventeen days, and that is the
+  evidence that a hand-maintained number in this block does not stay true — see `tests/bin/claims-match-sources`, which now fails the gate
   for the half of these figures that a machine in this repository can check.** It was refreshed by reading
   the job's trace, which needs the maintainer's token because `/trace` answers `401` to anonymous
   requests. And that job has been **seen to fail** on a real missing `alt` (pipeline `935776`) — so
@@ -470,7 +470,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
   `bash tests/bin/spellcheck` offers **451** tracked files to cspell, which **checks 410** and
-  finds 0 issues (re-measured 2026-09-12, including the two files added by this commit; it read
+  finds 0 issues (re-measured 2026-09-12 on a clean tree; **this commit adds no file, so it moved
+  the denominator by nothing** — the +3 since 2026-09-06 arrived in the commits between; it read
   **448/407** on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and
   87/82 before that). The CI job's own count runs two higher — it also opens two files the runner
   generates and this repository does not track. The 36-versus-63 gap **T-222** opened is closed and
@@ -573,10 +574,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
 <!-- cspell:enable -->
 
   ⚠️ **This repository's `.gitlab-ci.yml` predicted this failure in a comment and could not
-  prevent it**, which is the part worth reading twice. Its own words at lines 35-38: *"`_PHPUNIT_
-  CONCURRENT` is deliberately left unset/default ('0'): at '1' drupalci routes `_PHPUNIT_EXTRA` to
-  run-tests.sh instead, where `--fail-on-empty-test-suite` is not a valid option and the guard
-  silently"* — the sentence is right about the mechanism and wrong about the risk, because
+  prevent it**, which is the part worth reading twice. Its own words at **lines 34-37**:
+  *"`_PHPUNIT_CONCURRENT` is deliberately left unset/default ('0'): at '1' drupalci routes
+  `_PHPUNIT_EXTRA` to run-tests.sh instead, where `--fail-on-empty-test-suite` is not a valid
+  option and the guard silently stops existing"* — **the sentence names the exact failure that has
+  now happened**, and it is right about the mechanism and wrong about the risk, because
   **T-214(c) protected the variable it sets and relied on an upstream DEFAULT for the one it does
   not.** A default is not a setting. The last observation with `_PHPUNIT_CONCURRENT=0` is jobs
   `12052123`/`12052124` on pipeline `952632`, commit `6559813`, 2026-09-08, where the flag is in
