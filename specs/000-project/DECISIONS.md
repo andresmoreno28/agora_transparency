@@ -1787,6 +1787,35 @@ asked for may be for the **wrong repository**. Recommendation: **demo-page visua
 the template's existing mirror**, and the theme mirror becomes a separate, smaller, later question.
 **This would remove a prerequisite from unit 003's critical path entirely.**
 
+#### D-036 · Amended 2026-09-12 — BOTH halves are superseded, and the record said so nowhere
+
+**Nothing above is edited** (rule 8). This block is appended because D-036 asked two questions,
+each has since been answered by a later record, and until today **neither supersession was visible
+from D-036 itself** — a reader arriving here read a live `★ C` and a live recommendation.
+
+| D-036's half | Superseded by | What replaced it |
+|---|---|---|
+| **where axe runs over the demo pages** | **D-053**, signed by [ejecutor] 2026-09-07 under standing delegation | A PHPUnit `FunctionalJavascript` test at `tests/src/FunctionalJavascript/AccessibilityTest.php`, collected by the **existing** `phpunit` and `phpunit-pgsql` jobs. No new CI job; the job list stays at ten. D-053 records the measurement `★ C` was made *"conditional on"* and that nobody had taken |
+| **where Playwright runs** | **D-045**, ruled **B** | Playwright functional and visual regression run on drupalcode. D-045: *"The mirror is not abolished — D-016 keeps it as a read-only mirror and D-020 keeps the GitHub install smoke as an informative second opinion. **What is abolished is the mirror being a prerequisite for anything.**"* |
+
+⚠️ **The consequence is the reason this block exists, and it is a blocker that was assigned to a
+human for weeks after it had stopped existing.** D-036's closing paragraph above ends on
+*"demo-page visual regression goes to the template's existing mirror"*, and downstream rows read
+that as *"[andres] must create a mirror first"*. D-045's own ⚠️ names this exact failure — *"The
+cost of not checking was not a wrong CI file. It was a blocker assigned to the human."* — and then
+the same stale precondition kept being quoted **from D-036**, one record away from where D-045
+struck it. That is D-045's lesson recurring inside D-045's own neighbourhood: **a supersession that
+is not visible from the superseded record has not been delivered.**
+
+🔴 **And one thing this amendment deliberately does NOT resolve. D-045 carries `Ruling: B.` with no
+`SIGNED by [andres]` line**, where the neighbouring records have one — verified on disk 2026-09-12
+at `DECISIONS.md:2455`. Three places nonetheless cite it as *signed*. **No signature is written
+here and none is implied**: this block relies on D-045 only for the statement that the
+mirror-as-prerequisite is abolished, which is what its ruling says, and it records the gap rather
+than closing it. `specs/003-demo-content/tasks.md` already carries the same finding as its own
+entry; **[andres] confirms or rules, and until he does, "abolished by D-045, **signed**" is a
+sentence nobody should write.**
+
 ### D-037 · Does a chart module enter the SBOM for the budgets page?
 
 ⚠️ **SUPERSEDED IN PLACE 2026-09-05, and the new recommendation is B rather than A.** D-037 was

@@ -117,6 +117,38 @@ grep -cE '^\| T-(9[0-9]{2}|1[0-2][0-9]{2}) ' specs/003-demo-content/tasks.md
 
 **Known rows: 30. Budget: 34. Headroom: +4.**
 
+⚠️ **The command above became WRONG BY OMISSION and this file was never told, which is worse than
+the same break in `tasks.md` because THIS is the binding copy.** D-031 puts the budget command in
+`plan.md`, not in `tasks.md`, so a reader following the plan runs the line above, gets **41**, and
+concludes the unit is **7** rows over its ceiling of 34. Measured 2026-09-12: the file holds **65**
+rows, so the unit is **31** over. `tasks.md` widened its own copy of this pattern **four times** and
+recorded each break beside the last; `plan.md` widened it **zero** times. **Run this one:**
+
+```
+grep -cE '^\| T-(9[0-9]{2}|1[0-9]{3}) ' specs/003-demo-content/tasks.md
+```
+
+**Measured 2026-09-12: it prints 65. Known rows: 65. Budget: 34. Headroom: −31.**
+
+⚠️ **Why the pattern has to widen, and why this widening is the last one.** The alternation is
+anchored and bounded on purpose — `T-[0-9][0-9][0-9]` would match the first three digits of
+`T-1001`, and every id in unit 001 and unit 002 is three digits — but `1[0-2][0-9]{2}` reaches only
+`T-1299`. Waves 13, 14, 15 and 16 numbered their rows `T-13NN` … `T-16NN`, and each hundred
+boundary silently dropped its wave out of the count. **`1[0-9]{3}` reaches every four-digit id
+from `T-1000` to `T-1999`**, so it does not break at the next hundred boundary; it still matches no
+unit-001 or unit-002 id, for the same reason every earlier bounding did — those ids are three
+digits and this alternation requires four. Verified 2026-09-12: `1[0-9]{3}` and
+`1[0-6][0-9]{2}` — `tasks.md`'s fourth and newest widening — agree at **65** over this file.
+
+⚠️ **`^\| T-` alone prints 66, and the extra row is not an error.** It is **T-804**, carried in from
+unit 002 and cited by this unit's tables; the budget counts the rows this unit **owns**, which is
+what the `9[0-9]{2}|1[0-9]{3}` alternation expresses. That figure is stated here so the next reader
+does not "fix" the command by removing its bound.
+
+⚠️ **The headroom figure is a measurement, not a request.** Per D-044 the budget counts and does
+not ask; the riders [andres] owes are the ones `tasks.md`'s reserve-accounting entries name, and
+nothing here creates or discharges one.
+
 The reserve is sized to named risks, not chosen round: **two unsigned decisions that can each add
 rows** (D-035's answer determines whether the theme grows `lang`-attribute work across seven
 templates; D-010's answer determines the corpus size), **one prerequisite outside our control**
@@ -137,6 +169,20 @@ go four-digit."* Unit 003 is waves **9-12**, so its ids are `T-901…` then `T-1
 digits of `T-1001`. Every count in this unit uses the anchored, bounded form above, which is verified
 not to match any unit-001 or unit-002 id. This is stated here because D-031 exists precisely because
 a scope gate whose content is a number failed on a number nobody ran.
+
+⚠️ **AMENDED 2026-09-12, and the amendment is that this section named the RIGHT hazard and then
+missed the one that actually fired.** Bounding the alternation is what stops a three-digit id being
+matched, and it worked: no unit-001 or unit-002 id has ever been miscounted. But a bound has **two**
+ends, and the upper one is a second, opposite hazard nothing here mentioned — `1[0-2][0-9]{2}`
+stopped at `T-1299` and silently dropped four whole waves. **The form "above" is therefore the one
+corrected in §3(b), `9[0-9]{2}|1[0-9]{3}`, not the `1[0-2][0-9]{2}` this sentence was written
+against.** Read §3(b) first; it carries the measurement and the reason.
+
+⚠️ **The wave list in the paragraph above is also stale, and it is left uncorrected on purpose.**
+Unit 003 was planned as waves **9-12** and ran to **wave 16**: the ids in `tasks.md` reach `T-16NN`.
+That the unit outgrew its own plan is exactly what §3(b)'s headroom figure of **−31** records, and
+this is where a reader coming from the wave list needs to be sent. It is stated rather than rewritten
+because the planned shape is the thing the overrun is measured against.
 
 ## 5 · Waves
 

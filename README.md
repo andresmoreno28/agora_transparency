@@ -204,10 +204,36 @@ before you run them.
 
 ## What it ships
 
-The package a user receives — through the path-repository clone above, or later through a real
-Composer release — is eight entries: `AGENTS.md`, `LICENSE.txt`, `README.md`, `composer.json`,
-`content/`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. That is not a partial list; it is
-what the clean-install evidence above found on disk after Composer mirrored the package.
+The packaged release holds **thirteen** top-level entries. They are not transcribed by hand here,
+because that is how the previous version of this paragraph went wrong — they are derived, and the
+derivation is one command anybody reading this can re-run:
+
+```shell
+git archive HEAD | tar -t | sed 's#/.*#/#' | sort -u
+```
+
+Measured 2026-09-12 at commit `6559813`, it prints, in that order: `.gitattributes`, `.gitignore`,
+`.mailmap`, `AGENTS.md`, `LICENSE.txt`, `README.md`, `composer.json`, `config/`, `content/`,
+`logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`.
+
+`git archive` applies the `export-ignore` rules in [`.gitattributes`](.gitattributes), which is what
+Drupal.org's packaging and a Composer release apply too — so the command answers the question
+rather than approximating it. ⚠️ **A path-repository checkout is a different and larger thing**:
+Composer mirrors the working tree, `export-ignore` does not apply to it, and `tests/` arrives with
+it. The two were conflated in one sentence here until today.
+
+⚠️ **This paragraph said "eight entries" until 2026-09-12, and said in the same breath "that is
+not a partial list". It was one, and it was one on the day it was written.** Run the command above
+at `6471756`, the commit that wrote the sentence on 2026-08-23, and it prints **eleven**: the three
+dotfiles the release ships — `.gitattributes`, `.gitignore`, `.mailmap` — were left out from the
+start. Two more entries then arrived and were never added to it: **`config/`** the very next day,
+2026-08-24, and `logo.png` on 2026-09-02.
+
+⚠️ **The omission that matters is `config/`**, and it is worth naming rather than folding into a
+count. It is the content model — the largest single thing this package ships, and the reason the
+package exists at all — missing from the one paragraph a Drupal.org visitor opens to find out what
+they are installing. A hand-kept list of a directory's contents goes stale in the commit that
+changes the directory, which is every commit of a content-model unit; a command does not.
 
 **Tests do not ship, on purpose.** `/tests` is `export-ignore`d in
 [`.gitattributes`](.gitattributes) — an end user of a site template has no use for its test suite —
@@ -314,8 +340,12 @@ program computes its hashes is worse than one that is noisy.
 1. Run `bash tests/bin/toolchain-floor` on the Mac and paste the whole output back. That fills the
    empty column above and is the only step that needs a Mac in front of a human.
 2. Run `bash tests/bin/doctor` there; it must reach `READY`.
-3. Run both wave runners and reproduce the counts this repository quotes — **61 checks · 0
-   failures** and **37 checks · 0 failures**.
+3. Run both wave runners and reproduce the counts this repository quotes — **67 checks · 0
+   failures** and **49 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
+   It read `61` and `37` until 2026-09-12, which is two invariants and twelve checks behind: the
+   runners grew and the sentence did not. The figures above were read from
+   `bash tests/bin/gate-a-wave1.sh` and `bash tests/bin/gate-a-wave3.sh` on 2026-09-12, and each
+   runner prints its own total on its last line, which is the number to compare against.
 4. Re-run the dirty-case matrix (T-312): 12 injections, each reverted, each seen to fail. A
    platform where no invariant has been watched *failing* has not been shown to have working
    invariants at all — that is what certification means here, and it is the step that separates
@@ -342,25 +372,44 @@ not.
 
 Ágora's pipeline is the shared `gitlab_templates` pipeline the Drupal Association maintains, run on
 [git.drupalcode.org](https://git.drupalcode.org), plus one job of our own defined on top of it,
-`agora-invariants`. This is the list of jobs that actually ran, taken from pipeline `934387` on
-branch `1.x`, commit `25f6163`, read from the API on 2026-08-24 — not from the badge, and not from
-the set of jobs the template could in principle run:
+`agora-invariants`. This is the list of jobs that actually ran, taken from pipeline `952632` on
+branch `1.x`, commit `6559813`, read on 2026-09-12 from
+`/api/v4/projects/project%2Fagora_transparency/pipelines/952632/jobs` — not from the badge, and not
+from the set of jobs the template could in principle run:
 
-| Job | Stage | Status | Blocking |
+| Job | Stage | Status | `allow_failure` |
 |---|---|---|---|
-| `composer` | build | success | yes |
-| `composer-lint` | validate | success | yes |
-| `cspell` | validate | success | yes |
-| `eslint` | validate | success | yes |
-| `phpcs` | validate | success | yes |
-| `phpstan` | validate | success | yes |
-| `phpunit` | test | success | yes |
-| `agora-invariants` | validate | success | yes |
+| `Drupal CMS` | build | success | false |
+| `agora-invariants` | validate | success | false |
+| `composer` | build | success | false |
+| `composer-lint` | validate | success | false |
+| `cspell` | validate | success | false |
+| `eslint` | validate | success | false |
+| `phpcs` | validate | success | false |
+| `phpstan` | validate | success | false |
+| `phpunit` | test | success | false |
+| `phpunit-pgsql` | test | success | false |
 
-**Eight jobs · all blocking · zero named exceptions.**
+**Ten jobs · all blocking · zero named exceptions.**
+
+⚠️ **This table said EIGHT until 2026-09-12, and it had been wrong in two separate ways for weeks.**
+It stood at pipeline `934387` from 2026-08-24, a ninth job (`Drupal CMS`) was appended below it in
+its own dated table rather than merged in, and a **tenth** — `phpunit-pgsql`, added on 2026-08-27
+under D-040(2) — appeared in neither and was named nowhere in this file. The two old tables are
+folded into the single one above for the reason `CLAUDE.md` merged its own pair: two observations of
+one list, split by the commit that produced each, get harder to read as one thing with every
+addition, and the second one is the copy nobody refreshes. **The names are what carry meaning, not
+the total** — see "The tenth job" below for why a count alone would have hidden the thing worth
+knowing.
+
+Read the last column as the API reports it: `allow_failure: false` is a blocking job. This project
+quotes the field rather than a "yes" of its own, because the gate is a statement about that field
+and a translation is one more thing to keep true.
 
 This table is a dated measurement, not a promise: whichever commit changes the CI job list, the
-packaged file set or a gate's denominator is the commit that updates it.
+packaged file set or a gate's denominator is the commit that updates it. `stylelint` is absent from
+the list because this package contains no CSS, and since the theme is a separate Drupal.org project
+(D-014) it may never run here at all; it does run there.
 
 ### The ninth job: the clean-install smoke, now on the canonical gate
 
@@ -370,15 +419,11 @@ overridden here. Together they turn on a job named `Drupal CMS` that builds a fr
 site, installs this package into it from a Composer path repository, and runs Drupal CMS's own
 compatibility test against it.
 
-Observed in pipeline `934533` on branch `1.x`, commit `09fb47b`, read from the API on 2026-08-24:
-
-| Job | Stage | Status | Blocking |
-|---|---|---|---|
-| `Drupal CMS` | build | success | yes |
-
-**Nine jobs, all blocking, no exceptions.** The row was published empty in the commit that declared
-the job and filled in the commit that observed it, because this project publishes job lists it has
-watched run or none at all.
+First observed in pipeline `934533` on branch `1.x`, commit `09fb47b`, read from the API on
+2026-08-24; it is the first row of the current table above, still `success` and still blocking at
+pipeline `952632` on 2026-09-12. The row was published empty in the commit that declared the job and
+filled in the commit that observed it, because this project publishes job lists it has watched run
+or none at all.
 
 Two outcomes would have been failures rather than passes, and both were written down before the
 pipeline ran: a job absent from the list would mean the minimum of nine is unmet and the work is
@@ -391,6 +436,28 @@ Until this landed, the clean-install smoke ran only on the GitHub mirror, which 
 surface — a reviewer on Drupal.org can neither see nor re-run it. The mirror keeps running as a
 second opinion; what ended is its monopoly.
 
+### The tenth job: the suite runs on a second database
+
+`phpunit-pgsql` was added on 2026-08-27 under **D-040(2)**. It runs the same test suite as
+`phpunit` against PostgreSQL 16 instead of MySQL, and it is job `12052124` of pipeline `952632`,
+`success` and blocking, in the table above. **This README named it nowhere until 2026-09-12**,
+which is the reason it gets a heading of its own rather than a row.
+
+⚠️ **Why a tenth job exists is the most useful sentence in this section.** The nine-job list was
+green while this package shipped a view that summed a **text** column — PostgreSQL refusing the
+query outright, MariaDB answering `0` with a warning, SQLite answering `0.0` in silence — and every
+assertion passed because nothing read the result. **A job list is only as good as the environments
+it runs in**, and until D-040(2) this one ran MySQL and SQLite because those are the shared
+pipeline's defaults, not because anyone chose them.
+
+The job also demonstrates a trap worth carrying elsewhere: it prints the database under test twice,
+once as the **unexpanded literal** every job in the phpunit family echoes and once as the real
+value, and it exits non-zero if the real value is not `pgsql`. A criterion that grepped the log for
+the expected string would have matched the literal and passed a PostgreSQL job that never touched
+PostgreSQL. Those two lines are quoted in full in D-040(2), read there with the maintainer's token;
+⚠️ **they cannot be re-read from here**, because `/api/v4/.../jobs/<id>/trace` answers **401** to an
+anonymous request — verified 2026-09-12. The **job list** is public and is what this section quotes.
+
 **The gate is the list of jobs, never the pipeline's status field.** This is not a preference. An
 earlier pipeline reported `success` while the spell check inside it had failed: four of the seven
 jobs then defined were non-blocking by upstream default, so their failures were recorded and then
@@ -398,22 +465,41 @@ rolled up into a green result that hid them. The failure repeated in the opposit
 2026-08-24 — `cspell` red and **blocking** on `934242`, `934297` and `934329`, so the pipelines
 were correctly red and nobody read them, because the local pre-flight this README documented was
 unreadable. Both halves are the same lesson: a signal has to be both correct and read.
-All eight jobs are blocking now, with no exceptions —
+All **ten** jobs are blocking now, with no exceptions —
 `_ALL_VALIDATE_ALLOW_FAILURE: '0'` in [`.gitlab-ci.yml`](.gitlab-ci.yml) is what makes the validate
-stage stop the pipeline. Read the job list; the status field has already been wrong here once.
+stage stop the pipeline, and the two jobs outside that stage arrived blocking on their own. Read
+the job list; the status field has already been wrong here once. ⚠️ This sentence read *"all eight
+jobs"* until 2026-09-12, two jobs after it stopped being true — which is the same defect as the
+table it summarises, one sentence further from the measurement.
 
 **What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
-stayed closed across a change of denominator: of the repository's 70 tracked files, `cspell` opens
-**65** — plus two the CI runner generates and this repository does not track (`.editorconfig`,
-`gitlab_templates_version.txt`), which is why the job's own count reads two higher. `bash
-tests/bin/spellcheck` prints the number every time it runs, so this paragraph is checkable rather
-than quotable. The five tracked files not opened are skipped by the upstream `.cspell.json`
-defaults, not by omission:
-`.eslintrc.json` and `.gitignore` match its dotfile/`*ignore` ignore patterns, `LICENSE.txt` and
-`composer.json` match its case-insensitive filename list regardless of extension, and
-`screenshot.webp` is binary, which `cspell` does not open. `phpcs`, `phpstan` and `eslint` still
-print no file count at all. A passing check over an unknown number of files is a weaker statement
-than it looks, and it is written down here as one rather than counted as coverage.
+stayed closed across four changes of denominator. Measured 2026-09-12 by
+`bash tests/bin/spellcheck`: **451 tracked or stage-able files offered to cspell, 410 checked,
+`Issues found: 0`** — plus two the CI runner generates and this repository does not track
+(`.editorconfig`, `gitlab_templates_version.txt`), which is why the job's own count reads two
+higher. The script prints both numbers every time it runs, so this paragraph is checkable rather
+than quotable. ⚠️ It read **70 tracked · 65 opened** here until 2026-09-12; the repository has since
+grown a content model and a media corpus, and the figures were carried rather than re-run.
+
+**The 41 files not opened, all 41 of them.** The accounting is given in full because an enumeration
+that does not add up to its own denominator reads as an explanation — that exact mistake stood in
+`CLAUDE.md` across three re-measurements, where five named files were offered against a gap of
+thirty-nine, and nobody did the subtraction.
+
+* **37 are binaries `cspell` does not open** — 34 PDF and one WebP under `content/file/`, plus
+  `screenshot.webp` and `logo.png` at the root.
+* **4 are matched by the upstream `.cspell.json` defaults, not by omission** — `.eslintrc.json` and
+  `.gitignore` match its dotfile and `*ignore` patterns; `LICENSE.txt` and `composer.json` match its
+  case-insensitive filename list regardless of extension.
+
+37 + 4 = 41, and the list was derived rather than recalled: run `cspell` without `--no-progress`
+over the same `--file-list` the script builds, and the files it opens are printed one per line; the
+41 above are the set difference. ⚠️ **`cspell` reads `.gitattributes` and `.mailmap`**, which is
+easy to guess wrong in either direction — the dotfile pattern is narrower than "every dotfile".
+
+`phpcs`, `phpstan` and `eslint` still print no file count at all unless asked. A passing check over
+an unknown number of files is a weaker statement than it looks, and it is written down here as one
+rather than counted as coverage.
 
 ### Checking spelling before you push
 
@@ -442,8 +528,12 @@ unreadable output it always printed.
 in shell the same transformations `scripts/prepare-cspell.php` applies in the job. It reads
 **tracked and stage-able files both**, because a file about to be committed is a file the job will
 read. Verified equivalent against pipeline `934329` on 2026-08-24: same verdict before the fix, and
-`65 files checked · 0 issues` after it. It is a replica, not the job — it pins nothing about the
-runner's Node version, and upstream can change `prepare-cspell.php` without this file noticing.
+a clean run after it. ⚠️ **The denominator is deliberately not repeated here** — it stood at
+`65 files checked` in this sentence long after it had moved, because the same figure was written
+down in two places and only one of them was ever refreshed. It is stated once, in
+"What the green does not tell you" above, and the script prints it on every run. It is a replica,
+not the job — it pins nothing about the runner's Node version, and upstream can change
+`prepare-cspell.php` without this file noticing.
 The first run needs network for those three inputs and caches them in `.cspell-cache/`, which is
 git-ignored; later runs are offline, and a stale cache says so rather than pretending.
 
