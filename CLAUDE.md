@@ -260,14 +260,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `950203`, ref `1.x`, commit `7e09615`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/950203/jobs` on 2026-09-06 —
-  not from the UI, not from the badge. **Re-read whole; the list is unchanged since `936386`,
-  and it is re-read rather than carried because a table nobody re-opened is a claim, not a
-  measurement. The two rows that moved are `phpunit` and `phpunit-pgsql`, and they moved in the
-  status column only: both were still `running` when this re-read began, which is why the read was
-  repeated rather than taken once — a job list read mid-pipeline is not the gate.** (The previous
-  observation stood at pipeline `943605`, commit `18bebb8`, 2026-09-01.)
+- **Observed inventory — the site template.** Pipeline `958595`, ref `1.x`, commit `49b4f2f`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/958595/jobs` on 2026-09-12 —
+  not from the UI, not from the badge. **Re-read whole; the ten names are unchanged since
+  `936386`, and it is re-read rather than carried because a table nobody re-opened is a claim, not
+  a measurement.** ⚠️ **This is NOT the pipeline of the commit at the tip, and saying which one it
+  is matters more than being one commit newer.** `958678`, on `31217a5`, was read first: eight
+  jobs `success` and `phpunit` and `phpunit-pgsql` still `running`. **A job list read mid-pipeline
+  is not the gate**, so the newest COMPLETE pipeline is what this table records and the tip's is
+  named rather than quietly used to fill the eight rows that had finished. (The previous
+  observation stood at pipeline `950203`, commit `7e09615`, 2026-09-06.)
 
   | job | stage | status | `allow_failure` |
   |---|---|---|---|
@@ -322,12 +324,18 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `950212`, ref `1.x`, commit `82201a6`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/950212/jobs` on 2026-09-06. ⚠️ **The list
+- **Observed inventory — the theme.** Pipeline `950770`, ref `1.x`, commit `71de28e`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/950770/jobs` on 2026-09-12. ⚠️ **The list
   MOVED on 2026-09-02: nine jobs became TEN**, and the tenth is `phpunit`. It is recorded in
   **this** file because `agora_theme` has no `CLAUDE.md` of its own: it is a theme, and its
   repository holds code, not the process layer. (The previous observation stood at pipeline
-  `945339`, commit `242fd93`, 2026-09-02; the ten names are unchanged.)
+  `950212`, commit `82201a6`, 2026-09-06; the ten names are unchanged.)
+  ⚠️ **The theme's `1.x` has not moved since 2026-09-06, so this row is six days newer than the
+  one it replaces and the SUBJECT is identical** — which is worth one line, because a refreshed
+  date over an unchanged commit is the only case where re-reading looks like busywork and is not:
+  three of the four pipelines between `950212` and `950770` **failed** (`950485`, `950521`,
+  `950575`), and a reader who carried the earlier row forward would have carried a green that was
+  true while three reds it never mentions went past.
 
   | job | stage | status | `allow_failure` |
   |---|---|---|---|
@@ -347,11 +355,14 @@ moving the working copy a session is running in, on the day wave 5 starts.
   so for the whole of its life the pipeline was nine jobs green over 12 functions nothing executed,
   among them the ones computing the money figure and the bar widths. Writing
   `tests/src/Unit/ThemeHelpersTest.php` made the job appear: ~~`OK (18 tests, 63 assertions)`~~
-  **`OK (102 tests, 571 assertions)`, job `12015107` on pipeline `950212`, read 2026-09-06** — the
-  struck figure was that first day's and it is four days and one release behind. **The rate of
-  change is the reason this row gets re-read rather than carried: a suite that goes from 18 tests
-  to 102 in four days is one where a stale number is not slightly wrong, it is about a different
-  suite.**
+  ~~`OK (102 tests, 571 assertions)`~~ **`OK (127 tests, 720 assertions)`, job `12024568` on
+  pipeline `950770`, read 2026-09-12** — the two struck figures are that first day's and
+  2026-09-06's. **The rate of change is the reason this row gets re-read rather than carried: a
+  suite that goes 18 → 102 → 127 tests in five days is one where a stale number is not slightly
+  wrong, it is about a different suite.** ⚠️ **This job still prints `OK (…)` and the site
+  template's two no longer do** — see the `--fail-on-empty-test-suite` bullet below, which is the
+  same upstream template behaving differently in two repositories on the same day, and the reason
+  a criterion must never be written around the string `OK (`.
   **The absence of a job is not the absence of a need for one**, and nothing in a job list says
   which jobs are missing - that is the gap this row closes and the reason it is written down here
   rather than left to be noticed.
@@ -367,16 +378,17 @@ moving the working copy a session is running in, on the day wave 5 starts.
   **`nightwatch`** (the axe gate) and **`stylelint`** (it has CSS), and it runs **no `phpunit`**
   and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
   and *"both are at nine"* is not the same statement as *"both run what they need to run"*. The
-  **denominators** are the part that carries meaning: on pipeline `950212`, commit `82201a6`,
-  job `12015106`, read 2026-09-06, `nightwatch` printed `agora_theme axe gate: 7 pages scanned,
+  **denominators** are the part that carries meaning: on pipeline `950770`, commit `71de28e`,
+  job `12024567`, read 2026-09-12, `nightwatch` printed `agora_theme axe gate: 7 pages scanned,
   89-89 axe rules run per page, 0 violations, heading-order reported on 7 of 7 pages` and
-  **`476 total assertions`** — **the rule count held at 89 while the page count went 6 → 7 and the
-  assertions went 362 → 476**, which is the shape to want: a seventh surface added to the scan, not
-  the same six re-counted. ⚠️ **`6` and `362` stood in this line until 2026-09-06**, read from
-  pipeline `943602`, commit `c5b0f68`; the line before that read `297` and was four commits stale.
-  **Three refreshes of one figure in six days is the evidence that a hand-maintained number in this
-  block does not stay true — see `tests/bin/claims-match-sources`, which now fails the gate for the
-  half of these figures that a machine in this repository can check.** It was refreshed by reading
+  **`489 total assertions`** — **the rule count held at 89 and the page count held at 7 while the
+  assertions went 476 → 489**, which is the shape to want on a commit that added no surface: the
+  same seven pages asserted about more, not a seventh page counted twice. ⚠️ **`6` and `362` stood
+  in this line until 2026-09-06 and `476` until today**, read from pipeline `943602`, commit
+  `c5b0f68`, then from `950212`; the line before those read `297` and was four commits stale.
+  **Four refreshes of one figure in twelve days is the evidence that a hand-maintained number in
+  this block does not stay true — see `tests/bin/claims-match-sources`, which now fails the gate
+  for the half of these figures that a machine in this repository can check.** It was refreshed by reading
   the job's trace, which needs the maintainer's token because `/trace` answers `401` to anonymous
   requests. And that job has been **seen to fail** on a real missing `alt` (pipeline `935776`) — so
   its green is a measurement, not an absence.
@@ -416,11 +428,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
   drift as a number written down twice.
 
 - **The clean-install smoke runs on drupalcode and is observed, not merely declared.** The
-  `Drupal CMS` job builds a fresh `drupal/cms` at `2.1.3`, installs **this package** into it
-  through a Composer path repository, and runs Drupal CMS's own compatibility test against it —
-  `OK (1 test, 1 assertion)` in job `11771967`. It is the clean-install smoke, and it runs **where
-  a Drupal.org reviewer can re-run it**. The GitHub workflow keeps running and stays informative
-  (D-020); what ended is its monopoly.
+  `Drupal CMS` job builds a fresh `drupal/cms` at ~~`2.1.3`~~ **`2.1.4`**, installs **this package**
+  into it through a Composer path repository, and runs Drupal CMS's own compatibility test against
+  it — `OK (1 test, 1 assertion)` in job `12155536` on pipeline `958595`, read 2026-09-12 (it was
+  job `11771967` at `2.1.3`). It is the clean-install smoke, and it runs **where a Drupal.org
+  reviewer can re-run it**. The GitHub workflow keeps running and stays informative (D-020); what
+  ended is its monopoly.
+  ⚠️ **This job DOES still print `OK (…)`**, and that is not a contradiction of the bullet below:
+  it runs the phpunit binary directly on Drupal CMS's own test, so the `_PHPUNIT_CONCURRENT` flip
+  does not reach it. **The same pipeline, on the same day, reports in two formats** — which is why
+  the format is recorded per job rather than per repository.
 
   ⚠️ ~~**And the same log is where discharge condition 2 is visible.** It resolves from
   `packages.drupal.org`, and it prints `Locking drupal/agora_theme (1.0.0)` · `Downloading` ·
@@ -452,17 +469,31 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. ~~**Read `9`.**~~ **Read `10`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **448** tracked files to cspell, which **checks 407** and
-  finds 0 issues (re-measured 2026-09-06, including the two files added by this commit; it read
-  **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before that). The CI
-  job's own count runs two higher — it also opens two files the runner generates and this
-  repository does not track. The 36-versus-63 gap **T-222** opened is closed and has stayed closed
-  across three changes of denominator.
+  `bash tests/bin/spellcheck` offers **451** tracked files to cspell, which **checks 410** and
+  finds 0 issues (re-measured 2026-09-12, including the two files added by this commit; it read
+  **448/407** on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and
+  87/82 before that). The CI job's own count runs two higher — it also opens two files the runner
+  generates and this repository does not track. The 36-versus-63 gap **T-222** opened is closed and
+  has stayed closed across four changes of denominator.
 
-  ⚠️ **The 41 files not opened are only partly accounted for, and the shortfall is stated rather
-  than rounded away.** 36 are binary demo media cspell does not read (34 PDF, 2 WebP) and 4 are
-  matched by the upstream ignore globs (`.eslintrc.json`, `.gitignore`, `LICENSE.txt`,
-  `composer.json`); **that is 40, and 41 are skipped.** The remaining one is not identified.
+  ✅ **The 41 files not opened are now accounted for EXACTLY, by set difference rather than by
+  enumeration, and the shortfall this paragraph used to admit is closed.** **37** are binaries
+  cspell does not read — **34 PDF, 2 WebP and 1 PNG** — and **4** are matched by the upstream
+  ignore globs (`.eslintrc.json` by `**/.*.json`, `.gitignore` by `.*ignore`, `LICENSE.txt` and
+  `composer.json` by name). **37 + 4 = 41**, and 451 − 41 = **410**, the number cspell prints.
+  ⚠️ **The missing file was `logo.png`, which landed on 2026-09-02 — so the shortfall was not an
+  unknown, it was an ARRIVAL nobody subtracted.** The accounting was written when the binaries
+  were 36, the file was added a month later, and the sentence saying *"the remaining one is not
+  identified"* survived two re-measurements because it read like honesty rather than like an
+  unfinished subtraction.
+  ⚠️ **How it was closed is the reusable part: not by reasoning about globs, but by running cspell
+  over the two sets and reading its own counts.** The 41 predicted-skipped files, handed to cspell
+  as a file list, produce **no `Files checked` line at all**; their complement produces
+  `Files checked: 410`. **Falsified in both directions, per file**: `logo.png`, `screenshot.webp`,
+  `.eslintrc.json`, `.gitignore`, `LICENSE.txt` and `composer.json` are each opened **0** times
+  alone, while `.claude/settings.json`, `.gitattributes` and `README.md` are each opened **1** —
+  the first of those being the one a glob-reading argument gets wrong, because `**/.*.json` matches
+  a dot-prefixed FILENAME and not a file inside a dot-prefixed directory.
   ~~the other five ... are skipped by the upstream `.cspell.json` defaults, not by omission~~ —
   the superseded sentence named **five** files against a gap that was **39** at the time, which is
   the failure mode worth remembering: an enumeration that does not add up to its own denominator
@@ -497,9 +528,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
   they reached CI."* **A tool nobody tried is indistinguishable from a tool that cannot run, and
   both look exactly like a tool with nothing to report.** That script runs **7 of the theme's 10
   jobs** with the pipeline's own fetched configuration and prints the 3 it does not cover
-  (`composer`, `nightwatch`, `phpunit`) by name. **There is no equivalent in this repository yet**
-  — the run above was assembled by hand — and that is a gap with no owner, named here rather than
-  left to be discovered by whoever next believes this file.
+  (`composer`, `nightwatch`, `phpunit`) by name. ~~**There is no equivalent in this repository yet**
+  — the run above was assembled by hand — and that is a gap with no owner.~~
+  ⚠️ **CLOSED THE SAME DAY THIS SENTENCE WAS WRITTEN, and it stood false for six days.**
+  `tests/bin/preflight` exists here — 48,569 bytes, committed `100755` in `434e289` on 2026-09-06,
+  under T-1502 — and its own header opens with the measurement that this bullet's first paragraph
+  reports. **The gap was given no owner and closed itself within hours; the sentence naming it was
+  never re-read.** That is the same defect as a stale number, one level up: *"there is no X yet"*
+  is a claim with an expiry date and no mechanism watches it. It runs this pipeline's lint jobs
+  against a rig with the pipeline's own fetched configuration and names the ones it does not cover;
+  it is not wired into either gate runner, because it needs Docker.
 
   ⚠️ **The struck claim below is kept whole, and its second half is still correct and still worth
   using.** The 80-character check is a good pre-flight when a rig is not running, which is the
@@ -519,20 +557,59 @@ moving the working copy a session is running in, on the day wave 5 starts.
           if l.strip().startswith('//') and len(l)>80: print(f,i,len(l))" tests/src/**/*.php
   ```
 
-- PHPUnit runs with **`--fail-on-empty-test-suite`** on every runner — **observed on drupalcode**,
-  not inferred: the flag in the executed command line, `_PHPUNIT_CONCURRENT=0`, and
-  `OK (18 tests, 2247 assertions)` from jobs `12014958` and `12014959` on pipeline `950203`
-  (re-measured 2026-09-06; it read `16 tests, 2024 assertions` on 2026-09-01, `16 tests, 1951` at
-  T-1204, `1717` at T-805 and `3 tests, 38 assertions` before that). ⚠️ **Both database jobs
-  printed the SAME 18 and the same 2247**, which is the whole reason the tenth job exists: the
-  suite is known to hold on MySQL and on PostgreSQL rather than assumed to. ⚠️ **The test count
-  MOVED for the first time in five measurements — 16 to 18** — and the sentence that stood here
-  said it *"has not moved across four measurements"*, which is the kind of claim that reads as a
-  property of the suite until it stops being true. The assertion count has risen from 38 to 2247
-  across those five, which is the shape to expect from a unit that populated a corpus: the methods
-  now walk 56 nodes, 8 rendered surfaces and two Canvas pages instead of a handful of fixtures.
-  A suite that executed 0 tests is a **failed**
-  gate (I-007, I-032). `tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file.
+- 🔴 ~~PHPUnit runs with **`--fail-on-empty-test-suite`** on every runner~~ **IT DOES NOT, AS OF
+  SOMETIME BETWEEN 2026-09-08 AND 2026-09-12, AND NOBODY HERE CHANGED ANYTHING.** The flag is
+  still in `.gitlab-ci.yml`, `tests/bin/no-blind-phpunit` still passes, and the guard is **inert**.
+  Read from the API on 2026-09-12, jobs `12155543` (`phpunit`) and `12155544` (`phpunit-pgsql`) on
+  pipeline `958595`, commit `49b4f2f` — the upstream template now says so **in its own words**, in
+  the trace, in yellow:
+
+<!-- cspell:disable -->
+  ```
+  WARNING: _PHPUNIT_EXTRA ('--fail-on-empty-test-suite') is set, but _PHPUNIT_CONCURRENT is '1'
+  (run-tests.sh) and _RUNTESTS_EXTRA is blank. _PHPUNIT_EXTRA is intended for the 'phpunit'
+  binary only (_PHPUNIT_CONCURRENT: 0).
+  ```
+<!-- cspell:enable -->
+
+  ⚠️ **This repository's `.gitlab-ci.yml` predicted this failure in a comment and could not
+  prevent it**, which is the part worth reading twice. Its own words at lines 35-38: *"`_PHPUNIT_
+  CONCURRENT` is deliberately left unset/default ('0'): at '1' drupalci routes `_PHPUNIT_EXTRA` to
+  run-tests.sh instead, where `--fail-on-empty-test-suite` is not a valid option and the guard
+  silently"* — the sentence is right about the mechanism and wrong about the risk, because
+  **T-214(c) protected the variable it sets and relied on an upstream DEFAULT for the one it does
+  not.** A default is not a setting. The last observation with `_PHPUNIT_CONCURRENT=0` is jobs
+  `12052123`/`12052124` on pipeline `952632`, commit `6559813`, 2026-09-08, where the flag is in
+  the executed command line verbatim; every pipeline read on 2026-09-12 has it at `1`.
+
+  ⚠️ **AND THE OUTPUT FORMAT CHANGED WITH IT, WHICH IS THE MORE USEFUL HALF.** `run-tests.sh`
+  prints **no `OK (…)` line at all** and **no assertion total** — it prints one line per test:
+
+  ```
+  Pass         64.252s testAccessibilityOfTheInstalledPages       (phpunit, MySQL)
+  Pass         50.885s testAccessibilityOfTheInstalledPages       (phpunit-pgsql, PostgreSQL)
+  ```
+
+  **Record the per-test line, not the total.** A `Pass` line names the method, so it says *which*
+  test ran; a criterion written around the string `OK (` would not have survived this change, and
+  would have gone from matching a true statement to matching nothing — reading, to anyone who did
+  not open the trace, exactly like a suite that stopped reporting. **20 tests on each database,
+  identical method for identical method**, across `AccessibilityTest` (1), `ValidationTest` (10),
+  `InstallTest` (1), `ContentModelTest` (6), `RequirementsTest` (1) and `RolesAndPermissionsTest`
+  (1) — and `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` still printed expanded on the second,
+  so the tenth job is still doing its job.
+
+  The last assertion total this gate will have for a while is
+  ~~`OK (18 tests, 2247 assertions)`~~ **`OK (20 tests, 2549 assertions)`** on both jobs of
+  pipeline `952632`, 2026-09-08 (it read `18 / 2247` on 2026-09-06, `16 / 2024` on 2026-09-01,
+  `16 / 1951` at T-1204, `1717` at T-805 and `3 tests, 38 assertions` before that).
+  A suite that executed 0 tests is a **failed** gate (I-007, I-032).
+  🔴 **`tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file and is GREEN
+  while the flag does nothing** — it reads the repository, and the defect is in the environment
+  the repository is read into. **This is an open gate weakening with no owner and no task row**;
+  the fix is one variable (`_PHPUNIT_CONCURRENT: '0'`, or the extra-args variable the warning
+  above names for `run-tests.sh`), and it is named here rather than applied, because
+  `.gitlab-ci.yml` and `tests/bin/` were outside the scope of the change that found it.
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
   (67 checks · 0 failures) and `gate-a-wave3.sh` (**49** checks · 0 failures), **17** invariants in total —
@@ -565,11 +642,19 @@ moving the working copy a session is running in, on the day wave 5 starts.
   the bit and `[ -x ]` therefore answers TRUE for a file committed `100644` — while the Linux
   runner answers FALSE, takes the guard's else branch, and reports the invariant as missing. Both
   runners here carry that guard, **1 use in wave 1 and 14 in wave 3**, and nothing checked it.
-  ⚠️ **It was not vacuous on its first run: 2 of the 28 shebang files were committed `100644`**
-  (`tests/bin/content-timestamps.py`, `tests/bin/generate-demo-media.py`), latent rather than
-  breaking, because G15 reaches its script through `[ -r ]` and `python3 <path>`. Fixed in the
-  same commit. The failure it prevents is measured in the sibling repository, not predicted —
-  `agora_theme` pipeline `950124` was red for a full push cycle behind a green local gate.
+  ⚠️ **It was not vacuous on its first run: 2 of the ~~28~~ 30 shebang files were committed
+  `100644`** (`tests/bin/content-timestamps.py`, `tests/bin/generate-demo-media.py`), latent
+  rather than breaking, because G15 reaches its script through `[ -r ]` and `python3 <path>`.
+  Fixed in the same commit. The failure it prevents is measured in the sibling repository, not
+  predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
+  gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
+  The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
+  prints `examined: 451 tracked file(s)` · `scripts: 30` · `findings: 0` today, re-run 2026-09-12.
+  **A hand-written 28 stood beside a machine-printed 30 in the same paragraph, in the same commit,
+  in three files, and nothing failed** — the denominator is 30, and the two files fixed that day
+  were 2 of 30. `specs/003-demo-content/tasks.md` records the same correction against T-1501's own
+  row, and `specs/000-project/DECISIONS.md` carries it inside a signed table, amended at the end
+  of that file rather than edited in place (rule 8).
   ⚠️ **G10 is the one group that deliberately does NOT use the `[ -x ]` guard**: guarding the
   executable-bit check with the test it exists to police would let the defect disable its own
   detector, silently, in exactly the environment where the defect is real.
@@ -629,6 +714,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   fixed by hand here; the durable fix is that neither copy is machine-checked, because the page
   count exists only in a CI job trace, which is one of the eight exclusions
   `tests/bin/claims-match-sources` prints by name on every run.
+  ⚠️ **Both copies were re-read against job `12024567` on 2026-09-12 and BOTH said 7**, which is
+  the first time this pair has been checked and found to agree. **The assertion total is
+  deliberately NOT repeated here** — it lives once, in the table above. The lesson of the drift is
+  not "refresh both copies faithfully", it is **"stop making the second copy"**, and a figure that
+  exists in one place cannot go stale in the other.
   ⚠️ *"on the demo pages"* is still aspirational: there are no demo pages until unit 003, so what
   it scans today is fixtures.
 - `tests/bin/`: sbom-check (stable + coverage), no-unstable-deps, no-secrets, no-patches.

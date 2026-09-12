@@ -2320,14 +2320,36 @@ class ValidationTest extends BrowserTestBase {
    *       markup is `<table class="cols-8">` with a bare `<caption>` and the
    *       string `agora-table` appears ZERO times on the page. The class-based
    *       selector matched nothing, and the assertion failed by name rather
-   *       than passing on a coincidence. What follows from that is stated in
-   *       the closure report and owned outside this row: the theme's table
-   *       template - its own README calls it the most important one it ships -
-   *       renders no table this portal actually serves, so `agora-table__scroll
-   *       [tabindex="0"]`, the theme's whole answer to horizontal overflow and
-   *       to axe's `scrollable-region-focusable`, is absent from every register
-   *       page. The `scope="col"` that the sibling methods assert is CORE's,
-   *       from the views table preprocess, not this theme's.
+   *       than passing on a coincidence.
+   *
+   *       ⚠️ EVERYTHING THAT FOLLOWED FROM THAT WAS FIXED, AND THIS COMMENT
+   *       WENT ON DESCRIBING THE DEFECT FOR ANOTHER TWO WEEKS. Corrected
+   *       2026-09-12 against a measurement, not against a memory. The
+   *       superseded text said: the theme's table template renders no table
+   *       this portal actually serves, so `agora-table__scroll[tabindex="0"]`
+   *       - its whole answer to horizontal overflow and to axe's
+   *       `scrollable-region-focusable` - is absent from every register page.
+   *
+   *       THE THEME NOW SHIPS `templates/views-view-table.html.twig`, with the
+   *       wrapper at its line 210, and the portal serves it. Measured on the
+   *       smoke rig against `agora_theme` at `71de28e`, the same file by
+   *       sha1 as the sibling checkout, default theme `agora_theme`:
+   *       `/contracts` returns 200 and carries 2 `<table>`, 2
+   *       `agora-table__scroll`, 2 `tabindex="0"`, 2 `<caption>` and 13
+   *       `scope="col"`.
+   *
+   *       WHAT THIS DOES NOT SAY. It does not say the markers below changed:
+   *       marker (b) is still core's bare `<caption>` asserted for its exact
+   *       TEXT, because the caption's string comes from this template's view
+   *       config and is the marker for the ROUTE. And the `scope="col"` the
+   *       sibling methods assert is still CORE's, from the views table
+   *       preprocess, not this theme's - the override does not author it, so
+   *       an assertion on it would keep passing with the theme absent.
+   *
+   *       ⚠️ NOTHING IN THIS CLASS ASSERTS THE WRAPPER, and that gap is named
+   *       rather than quietly filled. A comment corrected in the same commit
+   *       as a new assertion hides which of the two was the finding; adding
+   *       coverage is a change with its own row, not a docblock edit.
    *
    * MARKERS CONSIDERED AND REJECTED, because a rejected marker is the part of
    * this row that is easiest to get wrong:

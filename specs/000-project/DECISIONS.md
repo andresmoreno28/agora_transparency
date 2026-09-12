@@ -4401,3 +4401,59 @@ options left are a rider signed under pressure or a quiet trim.
 unit 004's budget should be set **after** these four rows are placed, not before. Three of them are
 publication-facing and two need [andres]'s hands; a ceiling written without them is a ceiling that
 is already wrong on the day it is signed, which is how this one started.
+
+---
+
+### Rider · AMENDMENT, 2026-09-12 — the `2 of 28` at line 4327 is a row disagreeing with itself, not drift
+
+**Rule 8 governs this: the table above is signed, so it is amended here and NOT edited in place.**
+Line 4327, in the D-044 necessity table, justifies **T-1501** with *"**2 of 28** shebang files were
+committed `100644`"*. **28 is wrong, the correct figure is 30, and the interesting part is that it
+was never a measurement of anything.**
+
+#### What was measured, and by what
+
+`bash tests/bin/executable-bit`, re-run 2026-09-12 on a clean tree:
+
+```
+examined: 451 tracked file(s)
+scripts:  30 with a shebang on line 1
+findings: 0
+```
+
+**`30` is the guard's denominator** — the count of tracked files whose first line is a shebang, read
+from the git index by the invariant itself. The two files fixed on 2026-09-06
+(`tests/bin/content-timestamps.py`, `tests/bin/generate-demo-media.py`) were **2 of 30**.
+
+#### Why this is not ordinary drift, and why that distinction is worth a rider
+
+Drift is a number that was true and stopped being true. **This number was never true.** T-1501's own
+row in `specs/003-demo-content/tasks.md` carries **both figures, three lines apart, written in the
+same commit**: its evidence column prints the machine's `scripts: 30 with a shebang on line 1`, and
+its prose says *"2 of the 28 shebang files"*. A hand-written figure sat beside the machine-printed
+figure that contradicted it, in the same paragraph, and **nothing failed** — not the gate, not
+`claims-match-sources`, not review. The wrong figure then propagated into `CLAUDE.md` and into this
+decision record, so the same fabricated 28 came to stand in **three** files.
+
+⚠️ **Nothing mechanical could have caught it, and saying which mechanism was missing is the point.**
+`tests/bin/claims-match-sources` compares `CLAUDE.md` against the `# GATE-CLAIM:` lines of the two
+gate runners — it does not read this file, it does not read `tasks.md`, and `30` appears in no
+`GATE-CLAIM` line, because it is a denominator the invariant prints at run time rather than a check
+count declared in a header. So the figure lived in prose in three places and in a machine's stdout
+in one, with no comparison between them.
+
+#### What does NOT change
+
+**T-1501 still passes D-044's necessity test, and its reason is untouched.** The argument at line
+4327 is that both gate runners guard every invariant with `[ -x "$INV" ]`, which answers TRUE on
+this Windows checkout and FALSE on the Linux runner, and that the defect was **already latently
+present here** — two shebang files committed `100644`. **That remains true at 30 exactly as it was
+claimed at 28**: the numerator, the two file names, the latency and the conclusion are all
+unchanged. Only the denominator moves, and it moves from a figure nobody measured to the one the
+guard prints.
+
+No other row, count, classification or total in the rider above is altered by this amendment. The
+budget arithmetic (65 rows, ceiling 34, 9 necessary · 26 useful) does not reference the figure.
+
+**Recorded by [ejecutor], 2026-09-12. No signature is sought: this corrects a measurement inside a
+signed record without changing what the record decided.**
