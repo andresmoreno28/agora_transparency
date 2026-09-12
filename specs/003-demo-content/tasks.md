@@ -648,3 +648,104 @@ re-examined and are not restated. No success criterion, no `Blocked by` cell and
 accounting entry is edited; the only bytes changed inside a row are the `#` cell of the 44. The
 `plan.md` §4 row count is unaffected — it matches `^\| T-NNNN ` with a trailing space, and still
 prints **65**.
+
+---
+
+## Row state, amended — [ejecutor] 2026-09-12, after five records were closed
+
+**This section AMENDS the two state sections above; it does not overwrite them** (rule 8). Five
+decision records were signed or amended in `specs/000-project/DECISIONS.md` on 2026-09-12 under
+[andres]'s standing delegation of the same day —
+<!-- cspell:disable -->*"Firma tú lo que haya siempre que esté todo correcto y continua"*<!-- cspell:enable -->
+("sign whatever there is yourself, so long as everything is correct, and continue" — translated,
+per rule 6). **Four of them touch a row's state. Not one moves a glyph**, and that is measured
+rather than convenient: each is stated below with the reason the glyph stays where it is.
+
+### What changed, per row
+
+- **T-1006 · `⏸` stays `⏸`, and only its owner and prerequisite change.** **D-038 = A is signed**:
+  the CSV distribution becomes an accessible table through a preprocess hook and template in
+  **`agora_theme`**, with a file-size ceiling and a column ceiling printed by a test. That settles
+  the ownership contradiction this row itself recorded — `plan.md` §3's *"Theme repository"* wins;
+  this row's *"wave 10 lane A"* and the carried-debt table's same words are **superseded, not
+  edited**. The second half is **SPLIT OUT and scheduled in unit 006**, because D-044's necessity
+  test fails it: the four register routes already render as accessible tables at **0** axe
+  violations across D-053's nine-page scan, **nothing shipped reads a CSV** (the art. 8.1.a)
+  statistic comes from the imported entities per T-1005, and T-1305's chart from a bounded
+  `getAggregateQuery()`), and the download anchor already reads *"Budget execution 2024, CSV, 692
+  bytes"*. The legend defines `⏸` as *"deferred with an owner and a named prerequisite"* — which is
+  precisely the state it is now in, with a named owner it did not have this morning. **Unit 006's
+  budget must carry the row when that unit is written** (I-105).
+- **T-1202 · `○` stays `○`, and the strike already on its row stands on a BETTER basis than the one
+  it cites.** That row and the carried-debt table were struck on 2026-09-12 citing **D-045**.
+  🔴 **D-045 is NOT signed and was not signed today** — its account of D-009 does not survive being
+  read on disk: it says D-009 *"chose option A"*, and D-009 is signed as **option C**, whose
+  clause 2 reads *"Visual regression → GitHub Actions, NON-blocking."* Overturning a clause [andres]
+  deliberately wrote is a product trade-off, not methodology, so it stays his. **The strike holds
+  anyway, because no signed decision ever imposed the prerequisite:** it rode on T-804 being written
+  `H` (the theme), and `git remote -v` measured today shows the **template has a `github` mirror**
+  and the **theme has only `drupalcode`** — so the mirror the work needs exists and the missing one
+  belongs to the repository the work does not live in. Read the strike against **that**, not against
+  D-045. The glyph does not move: **no `playwright.config.*` exists in either repository.**
+- **T-1216 and T-1217 · both `✓`, unchanged.** **D-046 = A is signed**, ratifying what already
+  shipped. Its two once-corrected bullets were **re-measured before signing** — the footer template
+  is reached by **region** (`_agora_theme_block_region($variables) === 'footer'`, two call sites,
+  theme commit `fddbe37`), and `_agora_theme_social_brand()` maps exactly **six** hosts with
+  **LinkedIn absent** and a `NULL` fall-through. The template ships **four** social links, every one
+  a **root URL**, in **two** config objects. ⚠️ **A decision catching up with its implementation
+  makes nothing newly done**, so no glyph moves.
+- **T-1201 · `○` stays `○`, and a claim made to this session about it was wrong.** The dispatch that
+  ordered today's work stated that T-1201 *"closed on 2026-09-07"*. **Disk wins:** the glyph is `○`.
+  The work landed — `tests/src/FunctionalJavascript/AccessibilityTest.php`, **29,500 bytes** — and
+  D-053 says so explicitly: *"the last clause of that row's own criterion is a job list read from
+  the API, and no pipeline has run yet. Its glyph moves to `○`, not `✓`."* It is **built and
+  awaiting one API read**, which is neither done nor displaced.
+
+### The third finding of the section above is now half closed, and half closed differently
+
+That section's finding 3 recorded two things. **The first is discharged:** T-1304 and T-1305 read
+`BLOCKED ON … unsigned` against D-048 and D-037, both signed 2026-09-05, and both rows are `✓`.
+**The second is NOT, and it is now false in a second way:** line 79 of this file reads *"The
+GitHub-mirror risk is **ABOLISHED by D-045, signed**"*. D-045 still carries `**Ruling: B.**` and no
+`SIGNED by` line. ⚠️ **And it would have stayed misleading even if signed today** — every
+neighbouring signature in the decision record is [andres]'s, so *"D-045, signed"* in a risk register
+reads as *his*, and a human's blocker released by a machine's signature is the one sentence this
+project must never let pass unlabelled. Line 79 is dated and append-only; it is **not** edited, and
+this is the correction it should be read against.
+
+### The budget rider exists now, and it is smaller than the draft
+
+**`### Rider · Unit 003's task budget: 65 rows against a ceiling of 34, and what the overrun
+displaces`** is signed in `DECISIONS.md`, discharging what nine accounting entries above said was
+owed. Re-derived by command on a clean tree, not carried: **65 rows · ceiling 34 · overrun 31**;
+**35** rows appended beyond the original 30; **9 necessary · 26 useful** by D-044's test, with the
+two classifications that are `[ejecutor]`'s own marked as such and one candidate (T-1314) argued
+and rejected.
+
+⚠️ **The displacement table is FOUR rows, not the seven the closure audit drafted**, and the
+correction that matters is not the two that got done: **T-1307, T-1310 and T-1406 cannot be counted
+as displaced because all three are among the 35 appended rows.** A row that is itself part of the
+overrun is the overrun, not its victim. What the overrun actually displaced is **T-1006** (second
+half, leaving today by decision), **T-1106** (`screenshot.webp` still the placeholder: **6,686
+bytes**, sha256 `98363dd5a77e…`), **T-1107** (the visible preview) and **T-1202** (Playwright).
+T-1203, T-1205 and T-1206 are excluded deliberately — the closure machinery runs at closure by
+construction.
+
+### Gate B is deliberately LEFT OPEN
+
+**T-1206 stays `○` and nothing in today's work closes it.** `CLAUDE.md`'s roles section reserves it —
+*"Human (Andrés): decides what is load-bearing, **signs B gates**"* — and no delegation reaches it,
+because the two judgements T-1206's own row asks for cannot be made by a gate or by an executor:
+the **institutional tone**, and whether the **fictional corpus reads as plausibly truthful**. Both
+are questions about how the product lands on a reader, and the only reader whose answer counts is
+his. ⚠️ **This is stated here rather than left implicit** so that a later reader finds five records
+closed on 2026-09-12 and does not infer that the unit was closed with them. **It was not. Gate B is
+open, by design, and it is the only signature this unit still needs from [andres]** — alongside the
+one open ruling D-045's amendment hands back to him.
+
+### What this change did not touch
+
+No row, no success criterion, no `Blocked by` cell and **no `#` cell** is edited — this section adds
+bytes only at the end of the file. No earlier accounting entry and neither earlier state section is
+rewritten. The `plan.md` §4 row count is unaffected: it still prints **65**, verified by command on
+2026-09-12 after this change.

@@ -2079,6 +2079,111 @@ in the theme at all — that is a maintenance preference, and it is his to hold.
 theme and template respectively; B is a template dependency; D moves the whole question. `plan.md`
 §3 and the carried-debt table are then amended, not edited, to agree with it.
 
+#### D-038 · SIGNED = A by [ejecutor] 2026-09-12 under [andres]'s standing delegation
+
+**SIGNED = A.** T-1006's own row asked for exactly this and named both routes —
+*"**Needs one word from [andres], or a ruling under standing delegation.**"* The word is delegated,
+2026-09-12: <!-- cspell:disable -->*"Firma tú lo que haya siempre que esté todo correcto y
+continua"*<!-- cspell:enable --> ("sign whatever there is yourself, so long as everything is
+correct, and continue" — translated, per rule 6), the same delegation D-027 through D-030 and D-053
+were signed on, with the same boundary: **methodology and licence-constrained choices are
+[ejecutor]'s; product trade-offs are not.** ⚠️ **A is inside that boundary and B would have been
+outside it.** D-038 says so itself — *"**B is a legitimate answer** if [andres] would rather not
+have PHP in the theme at all — that is a maintenance preference, and **it is his to hold**"* — and
+B adds a dependency, which is rule 2 territory. A adds nothing to the SBOM, so the choice is
+between *"solve it with what Drupal CMS already ships"* and a dependency nobody has found; that is
+methodology.
+
+**RE-VERIFIED ON DISK BEFORE SIGNING, because a recommendation prepared 2026-08-26 is not a
+recommendation confirmed 2026-09-12.** Every measured premise holds, and A's **only** cultural cost
+has gone stale in A's favour:
+
+| D-038's premise | measured 2026-09-12 | verdict |
+|---|---|---|
+| the display renders a download link via `file_default` | `config/core.entity_view_display.node.agora_base_dataset.default.yml` → `field_agora_base_distribution:` `type: file_default` | **holds** |
+| five small CSVs, *"302 to 859 bytes"* | `content/file/`: 302 · 692 · 692 · 692 · 859 bytes | **holds** |
+| *"no core formatter parses a CSV into a table"* — nothing renders one today | no parser and no table-from-file template in **either** repository. The only `csv` strings on disk are the field's `file_extensions: 'csv json xml ods rdf'`, the `format` vocabulary's `CSV` label, and a comment in the theme's `file-link.html.twig` | **holds** |
+| the accessible-table markup already exists and is already gated | `agora-theme/templates/table.html.twig` and `views-view-table.html.twig`, both exercised by the blocking `nightwatch` axe gate | **holds** |
+| ⚠️ *"Also puts PHP in a theme, which this project has so far avoided"* | **STALE — and this was A's only non-technical cost.** `agora_theme.theme` is **2,528 lines** carrying **28 functions**, and since 2026-09-02 a `phpunit` job that did not exist when D-038 was written covers them: `OK (102 tests, 571 assertions)` (CLAUDE.md's observed theme table, pipeline `950212`, job `12015107`) | **cost discharged**, not merely outweighed |
+
+**So A is now strictly better than it was when it was recommended**: the thing that made it
+uncomfortable — PHP in a theme — is already true, already tested, and already has a CI job to put
+the parser's ceilings under. **The two ceilings D-038 requires are unchanged and binding:** a
+**file-size ceiling** and a **column ceiling**, stated in the code and **printed by a test rather
+than trusted**, because *"an unbounded parse at render time is a memory fault waiting for its first
+real dataset"*.
+
+**The ownership contradiction is settled by this signature, as D-038 said it would be: the owner is
+`agora_theme`.** `specs/003-demo-content/plan.md` §3 was right — it lists the debt under the
+heading *"Theme repository (`drupal/agora_theme`)"*, cited by that string rather than by a line
+number, since appending to a file moves every line number in it and nothing here checks one — and
+T-1006's row and the carried-debt table, which
+put it in wave 10 lane A (the template), are **superseded, not edited** (rule 8). ⚠️ The template's
+share is **zero new code and at most one config change**: whether the dataset's view display keeps
+`file_default`, gains a second formatter, or renders both the table and the download link is a
+display decision that follows the theme's implementation and does not need deciding here.
+
+#### What T-1006's second half becomes: **SPLIT**, and it leaves this unit
+
+The dispatch asked for one of three — done here, deferred to a named unit, or split. **It is split**,
+and the three reasons are on disk rather than argued:
+
+1. **The first half stays done and stays here.** `datasets` **5** rows; **5 of 5** distributions
+   resolve at HTTP 200; every CSV parses with rows and columns printed (**9×7 · 9×7 · 4×8 · 2×5 ·
+   12×6**). That is template work, it is evidenced, and nothing about it moves.
+2. **The second half is not template work at all under A**, so it cannot be finished as a row in
+   this unit's template lane. It is a theme preprocess plus a template plus unit tests plus the two
+   ceilings — and, because the template resolves `drupal/agora_theme` from
+   `packages.drupal.org` rather than pinning it, it also needs a **published theme release** before
+   a clean install would receive it. That last step is [andres]'s (rule 10), which makes it a
+   cross-repository piece of work and not a task-row detail.
+3. 🔴 **D-044's necessity test, applied honestly: it FAILS, and that is why it is deferred rather
+   than appended.** *Work without which something already signed is broken, false, or impossible to
+   ship* — measured, none of that is the case:
+   - **The registers already render as accessible tables** and are under the axe gate: D-053's
+     nine-page scan covers the four register routes at **0 violations**.
+   - **Nothing shipped reads the CSV.** The art. 8.1.a) statistic is computed from the imported
+     entities (T-1005), and T-1305's cumulative-award chart draws from a bounded
+     `getAggregateQuery()` — **not** from a distribution file. So no rendered figure depends on a
+     table that does not exist.
+   - **The download affordance is already good, not a placeholder.** The theme's
+     `file-link.html.twig` renders the anchor as *"Budget execution 2024, CSV, 692 bytes"* —
+     format and weight in the accessible name, which is what an open-data portal is supposed to
+     offer.
+   ⚠️ **What IS incomplete is a sentence in D-026**, and it is named rather than smoothed over:
+   *"the machine-readable execution table … **is** the accessible table and feeds any chart."* Today
+   it is a download, and no chart is fed by it. That makes D-026's parenthetical **not yet true** —
+   a description of intent that the product has not reached — rather than a statement the site
+   contradicts. **Incomplete, not false**, and D-044's word is *false*.
+4. **Unit 003 is 31 rows over its ceiling** (65 against 34 — see this file's budget rider, signed
+   today). Appending a cross-repository wave to it on a basis that is neither necessity nor
+   [andres]'s signature is the precise move D-044's ⚠️ forbids: *"This is not a licence to grow
+   scope."*
+
+**Named unit: 006 (Hardening).** That is where D-038's own option D put it, and the alternatives are
+worse fits by their own scope statements — unit 004 is editorial workflow and FOI, unit 005 is AI
+and Config Guardian. ⚠️ **D-038's cost bullet for option D is accepted rather than waved away**: it
+warned that 006 *"is already carrying the SBOM sweep, the WCAG attestation and the keyboard
+walkthrough"*, and that is now one item heavier. **Unit 006's budget must carry this row when it is
+written** — which is the accounting arriving before the unit rather than at its closure (I-105).
+⚠️ **And one thing that is deliberately NOT constrained:** the theme releases on its own cadence
+(D-050), so if a theme release happens for another reason the parser may ship earlier. Unit 006 is
+the **accounting home**, not an embargo.
+
+**T-1006's glyph does not move, and that is the correct answer rather than a convenience.** The
+legend defines `⏸` as *"deferred with an owner and a named prerequisite"*, which is exactly its
+state — only the owner and the prerequisite change. Before: blocked on a ruling, owner ambiguous
+between two documents. **After: owner `agora_theme`, scheduled unit 006, no prerequisite on
+[andres] except the eventual theme release.** The row is not edited (rule 8); the change is recorded
+in this block and in `tasks.md`'s appended state section.
+
+**The success criterion travels with it, verbatim, because it is the part that makes the work
+falsifiable:** *"the rendered table's row count equals the CSV's row count, asserted, so a table
+that silently truncates is a finding."* ⚠️ To it, this signature adds the two ceilings: **the
+file-size and column limits must be printed by a test**, so that a parse refusing an oversized file
+is a stated, measured refusal and not a blank `<div>` (I-062 in a third shape — an empty table
+reports no violations, truthfully and about nothing).
+
 ### Rider requested · The accessibility statement's unit
 
 Not a decision, a **contradiction between two on-disk documents** that needs one word.
@@ -2515,6 +2620,100 @@ it reads, to everyone downstream, as though the check was done. Six task rows ci
 settled fact. **A recommendation carrying an unmet precondition must not be quoted without the
 precondition** (see I-045, the same defect in the shape of a denominator).
 
+#### D-045 · Amended 2026-09-12 — NOT SIGNED, and the reason is that its account of D-009 does not survive being read on disk
+
+**Nothing above is edited** (rule 8). This block is appended because D-045 was put in front of me
+to sign under [andres]'s standing delegation of 2026-09-12 —
+<!-- cspell:disable -->*"Firma tú lo que haya siempre que esté todo correcto y continua"*<!-- cspell:enable -->
+("sign whatever there is yourself, so long as everything is correct, and continue" — translated,
+per rule 6) — and **his delegation is conditional on its own clause,
+<!-- cspell:disable -->*"siempre que esté todo correcto"*<!-- cspell:enable -->
+("so long as everything is correct"). It is not correct.** So it stays unsigned, and the two things
+that actually needed closing are closed below on a different and stronger basis.
+
+🔴 **THE FINDING: D-045 says D-009 chose option A. D-009 was signed as option C.** Read on disk
+2026-09-12, and both halves are verbatim:
+
+- D-045's own second line above: *"**Amends D-009, which chose option A on a premise it told us to
+  verify and nobody did.**"*
+- `DECISIONS.md`, the signed entry: *"**D-009** · **Where the visual tests run: option C.** Signed
+  by [andres] 2026-08-21."* Its next sentence is the one that settles it: *"⚠️ **C is a third
+  option, not one of the A/B framed on 2026-08-20 above** … It supersedes that framing."*
+
+**What D-045 quoted was the recommendation, not the ruling.** The 2026-08-20 framing does say
+*"★ **A**, but **verify first**: if drupalcode supports Playwright, B is cleaner (a single gate)"*
+— that quotation is exact, and D-045's lesson about an unmet precondition being quoted as settled
+fact is **correct and worth keeping**. But **A was never signed.** ⚠️ **And the defect is D-045's
+own lesson happening to D-045**: a recommendation was read as a ruling, one record away from where
+the ruling is written.
+
+**What D-009 = C actually says, because it changes what D-045 is amending:**
+
+1. *"**Accessibility (axe) → drupalcode, canonical and MANDATORY.**"* — so axe was **never** on the
+   mirror. D-045's mirror half can only ever have concerned visual regression.
+2. *"**Visual regression → GitHub Actions, NON-blocking.**"*
+
+⚠️ **So D-045 amends C(2), a clause [andres] wrote deliberately after being handed the A/B
+framing — not an unverified default. That is the whole reason this is not mine to sign.** C's own
+*"Facts verified 2026-08-21"* include *"`gitlab_templates` ships **no** Playwright job, no axe job
+and no visual-regression job; Nightwatch is its only browser tool."* **That fact is still true**,
+and D-045 does not refute it: D-045 measures that the runner drives a real headless Chrome — which
+it does, and the theme's blocking `nightwatch` job is the standing proof — but a Playwright job on
+drupalcode would still have to be **hand-written**, exactly as C recorded. Capability and provision
+are two claims, and only one of them was measured. Moving visual regression off GitHub is therefore
+a **product and process trade-off against a signed human choice**, and the delegation's boundary
+(methodology and licence-constrained choices, not product trade-offs) puts it on his side of the
+line. **It stays open. [andres] rules.**
+
+#### The two things that actually needed closing, closed without this signature
+
+**1 · The prerequisite is struck, and it needs no signature at all — because no signed decision
+ever imposed it.** This is the stronger close and it was available all along:
+
+- The words on the rows are *"prerequisite: **[andres] creates the GitHub mirror**"*, and they were
+  attached to **T-804**, which `specs/003-demo-content/tasks.md` records as written `H` — the
+  **theme**. D-036's own text says where that came from: *"T-804 was written `H` (theme), but demo
+  pages live in the template, whose mirror exists — while the theme has **no GitHub repository at
+  all**."* D-036's closing recommendation is **unsigned**, and a recommendation is not a ruling —
+  which is this record's own lesson.
+- **Measured 2026-09-12, by command rather than by memory.** `git remote -v` in this working copy:
+  `drupalcode` **and** `github` → `https://github.com/andresmoreno28/agora_transparency.git`. In the
+  theme's sibling checkout: `drupalcode` **only**. **So the mirror the work needs already exists,
+  and the one that does not exist is for the repository the work does not live in.**
+- **Therefore the prerequisite was never a requirement of anything signed.** It was a task-level
+  assignment error — the right work pointed at the wrong repository — and striking it costs no
+  signature, no ruling and none of [andres]'s time. The carried-debt table and T-1202's row already
+  strike it as of 2026-09-12; **this paragraph is the basis they should be read against**, in place
+  of D-045.
+
+**2 · `tasks.md`'s claim that D-045 is signed is still false, and it is now false in a second way.**
+`specs/003-demo-content/tasks.md` line 79 reads *"The GitHub-mirror risk is **ABOLISHED by D-045,
+signed**"*. D-045 carries `**Ruling: B.**` and **no `SIGNED by` line** — verified again today, and
+this amendment does not add one. ⚠️ **And the sentence would have been misleading even if I had
+signed**: a reader meeting *"D-045, signed"* in a risk register reasonably infers [andres] signed
+it, since that is what every neighbouring signature means. Under the delegation it would have been
+**[ejecutor]**, and a human's blocker released by a machine's signature is precisely the sentence
+this project should never let pass unlabelled. That row is dated and append-only; it is **not**
+edited, and the correction is recorded here and in that file's own appended state section.
+
+⚠️ **What this amendment does NOT do, named so nobody infers it.** It does **not** re-impose the
+prerequisite — item 1 removes it on a basis that does not need D-045. It does **not** dispute
+D-045's measurement: the drupalcode runner does drive a real headless Chrome, and that is worth
+keeping. It does **not** move T-1202's glyph, which stays `○`: **no `playwright.config.*` exists in
+either repository** (`git ls-files` finds none in `agora_transparency` and none in `agora_theme`),
+and removing a prerequisite has never made a row done. And it does **not** touch D-009, D-016 or
+D-020, all of which stand — including C(2), which remains the signed answer to *where visual
+regression runs* until [andres] rules otherwise.
+
+**🔴 HOLD for [andres], one question, options attached:** visual regression currently has a signed
+home — D-009(2), GitHub Actions, non-blocking — and an unsigned proposal to move it to drupalcode
+and make it a tenth-or-later blocking gate. **(A)** Leave C(2) as signed and build T-1202 on the
+template's existing mirror, which needs nothing from him. **(B)** Rule D-045 = B and move it to
+drupalcode as a hand-written job, one gate in one place a reviewer can re-run, at the cost of
+writing and maintaining a job upstream does not ship. **★ A is available today and costs him
+nothing; B is better if a single gate matters more than the job being ours to maintain.** Either
+way the prerequisite is gone.
+
 
 ---
 
@@ -2603,6 +2802,51 @@ disk: the template half is T-1216 and T-1217 here, the theme half is the theme l
 of meaning - the name is always present for assistive technology; no account is invented; nothing
 is fetched from any network at render time, since the marks are static paths in the theme, so the
 footer makes no third-party request and the template's privacy posture is unchanged.
+
+#### D-046 · SIGNED = A by [ejecutor] 2026-09-12 under [andres]'s standing delegation
+
+**SIGNED = A.** The header above reads `PREPARED … UNSIGNED. [andres] signs`; that is superseded
+here and not edited (rule 8). The authority is his standing delegation, given 2026-09-12:
+<!-- cspell:disable -->*"Firma tú lo que haya siempre que esté todo correcto y continua"*<!-- cspell:enable -->
+("sign whatever there is yourself, so long as everything is correct, and continue" — translated,
+per rule 6) — the delegation D-027 through D-030 and D-053 were signed on, with the same boundary:
+**methodology and licence-constrained choices are [ejecutor]'s; product trade-offs are not.**
+D-046 is a licence-constrained choice in both of its halves — CC0-1.0 renditions of marks that
+remain their owners' trademarks, used nominatively, and root URLs because a fictional council owns
+no account — and the aesthetic half of the request was [andres]'s own: he asked for the marks.
+
+⚠️ **RE-CHECKED BEFORE SIGNING, AND THE REASON IS THE RECORD'S OWN HISTORY: this record was
+corrected once, on 2026-09-04, after an audit found two of its measured bullets FALSE on disk. A
+record corrected once is not a record verified.** Both corrected bullets, and the three that were
+never challenged, were re-measured on 2026-09-12:
+
+| bullet | re-measured 2026-09-12 | verdict |
+|---|---|---|
+| **corrected #1** — the footer template is reached by **region**, not by a menu's machine name | `agora_theme.theme` calls `_agora_theme_block_region($variables) === 'footer'` at **two** sites, and its own comment reads *"a menu reaches the footer template because of the REGION its block is placed in"*. Theme commit **`fddbe37`** is present in the theme's history, with the message D-046 quotes | **holds** |
+| **corrected #2** — `linkedin.com` is **NOT** a recognised host | `_agora_theme_social_brand()` maps exactly six: `facebook.com`→`facebook`, `x.com`→`x`, `twitter.com`→`x`, `instagram.com`→`instagram`, `youtube.com`→`youtube`, `bsky.app`→`bluesky`, then `return $brands[$registrable] ?? NULL`. **No LinkedIn**, and the fall-through is NULL | **holds** |
+| Simple Icons **16.29.0**, CC0-1.0, five slugs | the version string appears in `agora_theme.theme`, `README.md` (four places) and `templates/menu--footer.html.twig`, each naming the same pinned `cdn.jsdelivr.net/npm/simple-icons@16.29.0/icons/` source and the same five slugs. The template's own header carries *"NO LINKEDIN, AND IT IS NOT MISSING BY ACCIDENT"* | **holds** |
+| the template ships **four** of the five marks, on **root URLs** | `content/menu_link_content/*.yml` — exactly four social `uri` values, and every one is a root: `https://www.facebook.com/`, `https://www.instagram.com/`, `https://www.youtube.com/`, `https://x.com/`. **No invented handle anywhere** | **holds** |
+| the template half is **two config objects** | `config/system.menu.agora-base-footer-social.yml` and `config/block.block.agora_base_footer_social.yml` — two, exactly as A priced | **holds** |
+
+**Nothing has gone false since 2026-09-04, and the two corrected bullets are the two that were
+measured hardest.** The one figure that has moved is not in this record: the theme's comment now
+speaks of *"All six footer menus"* where D-046 reasoned about a fifth, because wave 13's legal
+bottom bar (T-1311, T-1312) added another. **That does not touch this ruling** — the region rule
+D-046 signs is precisely what made a sixth menu cost nothing, which is the property it was chosen
+for.
+
+**So the signature ratifies what is already on disk**, rather than authorising work: the template
+lane (T-1216, T-1217) and the theme lane shipped against A under the dispatch's standing delegation
+and are both `✓`. ⚠️ **No glyph moves and no row changes**: a decision catching up with its
+implementation does not make anything newly done.
+
+⚠️ **What signing A does NOT do, restated because these are the sentences that protect the licence
+position.** It does not assert any right in the marks themselves — CC0-1.0 §4(a), quoted in full
+above, waives no trademark and cannot. It does not permit altering a mark or implying endorsement.
+It does not adopt LinkedIn by any other route: the absence is a **licence fact**, Simple Icons
+having removed the mark in release 14.0.0, and a `linkedin.com` link renders as a text link in the
+same row. And it fetches nothing at render time — the paths are static in the theme, so the footer
+makes no third-party request and the template's privacy posture is unchanged.
 
 
 ---
@@ -3227,6 +3471,48 @@ rule 1 was always about dependencies rather than about us; it does not commit `a
 version number, a date or a next release; it does not delete, unpublish or renumber anything already
 released; and it does not make the Wednesday convention retroactive — it binds the next minor, not
 this one.
+
+#### D-050 part 3 · Amended 2026-09-12 — when the template's first STABLE version comes, in [andres]'s own words
+
+**Nothing in part 3 is edited** (rule 8). It is amended because [andres] added the half it left
+open, on 2026-09-12, unprompted:
+
+> <!-- cspell:disable -->*"La plantilla dijimos que la primera versión estable saldría al estar
+> terminada al 100%, así que de momento sigamos."*<!-- cspell:enable -->
+
+("we said the template's first stable version would come out once it was finished 100%, so for now
+let's carry on" — translated, per rule 6.)
+
+**What this adds to part 3, exactly:** part 3 ruled *how* `agora_transparency` versions itself —
+pre-releases until marketplace-ready — and named no condition for leaving that phase. His sentence
+names it: **the first stable version is cut when the template is finished, not when a milestone
+feels close.** And the second clause is the operative one for today:
+<!-- cspell:disable -->*"de momento sigamos"*<!-- cspell:enable --> — **nothing is released now.**
+
+⚠️ **What this is NOT, named because it is the easy misreading and it would be a real loss.** It is
+**not** a prohibition on pre-releases. Part 3 *permitted* them and required none; he has declined
+to cut one **today**, which is a decision about today. A reader arriving here later must not find
+*"D-050 part 3 was narrowed to forbid pre-releases"* — the phase stays available the moment a
+pre-release would buy something, and part 3's own measurement is the reason it exists:
+**`haven` and `byte` both spent a pre-release phase in public before promising anything**, and the
+theme lost its phase because *"it was never forbidden — it was never considered"*.
+
+⚠️ **And it does not set a date, a version number or a definition of "finished."**
+<!-- cspell:disable -->*"Terminada al 100%"*<!-- cspell:enable --> is his standard, applied by him. This project's own instrument for it is the unit roadmap:
+unit 007 is *"Publication — the human's hands"*, and units 004, 005 and 006 stand between here and
+it. So the honest statement of today's position is that the template is **three units from the
+condition he named**, and that is a measurement rather than an estimate of when.
+
+**Consequence for the release procedure, so nobody looks for work that does not exist:** part 2's
+Wednesday convention and the unchecking step bind `agora_theme`, which has published branches. They
+bind `agora_transparency` from its **first** tag, which has not been cut. **Measured here rather
+than quoted from part 3's reading of the project page, because a tag is a local fact:** `git tag`
+in this working copy returns **0 tags**, against **10** in the theme's (`1.0.0`-`1.0.8`, `1.1.0`).
+⚠️ Part 3's table counted **8 released tags** for the theme on 2026-09-06 and there are **10 tags
+on disk** today — **two different quantities**, since a tag is cut here and a release is created on
+drupal.org by [andres] (rule 10), so the pair is reported as a difference to be read rather than as
+a contradiction. Neither figure is this record's business beyond noting that one of them moved. Nothing
+is owed to [andres]'s form (rule 10) today: **no tag, no release notes, no drupal.org action.**
 
 
 ---
@@ -3914,3 +4200,204 @@ questions of different surfaces. It does **not** edit D-036 or D-027. It does **
 to the SBOM — §5's rider is open, not decided. And it does **not** touch the parked directory
 outside this repository; §2 names what needs annotating there and leaves the annotation to whoever
 owns that tree.
+
+---
+
+#### 8 · The §5 rider, SIGNED — axe-core needs no SBOM line and no licence-manifest entry
+
+**SIGNED by [ejecutor], 2026-09-12, under [andres]'s standing delegation**, given the same day in
+two sentences, the first of which is the authority this signature rests on:
+<!-- cspell:disable -->*"Firma tú lo que haya siempre que esté todo correcto y continua"*<!-- cspell:enable -->
+("sign whatever there is yourself, so long as everything is correct, and continue" — translated,
+per rule 6). It is the delegation D-027, D-028, D-029, D-030 and D-053 itself were signed on, and
+its boundary is unchanged: **methodology and licence-constrained choices are [ejecutor]'s; product
+trade-offs are not.** A licence question about a tool the package does not ship is squarely the
+first kind, and §5's own text says the alternative costs *"one line in `DECISIONS.md` and one in
+`MEDIA-LICENCES.md`'s neighbour, and nothing about the test changes"* — so nothing the installer
+receives turns on it either way.
+
+⚠️ **The signature is conditional on his own condition —
+<!-- cspell:disable -->*"siempre que esté todo correcto"*<!-- cspell:enable --> — so
+the absence was MEASURED on 2026-09-12 rather than carried from §5.** Three surfaces, three
+commands, and the third is the one that matters because it is what a user downloads:
+
+| surface | command | result |
+|---|---|---|
+| `require` | `grep -in axe composer.json` | **exit 1** — no match |
+| Project Browser list | `grep -in axe recommended.yml` | **exit 1** — no match |
+| the packaged tarball | `git archive HEAD \| tar -x` into a scratch directory, then a recursive case-insensitive grep | **373 files extracted · 5 files match `axe` · 0 of them ship axe-core** |
+
+**The five matches are the useful part of this measurement, because "0 matches" would have been the
+wrong answer to report.** Three are the word **`taxes`** (*"municipal taxes and charges"*, twice,
+and *"municipal taxes and procurement"*). The other two are **prose in one content file** —
+`content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml`, the accessibility statement T-1105
+shipped — which **names** axe-core in a sentence about how the site is tested. **Naming a tool is
+not distributing it.** MPL-2.0's obligations attach to distributing the covered Source Code Form;
+a GPL-2.0-or-later content file that mentions a tool's name triggers none of them, and the
+marketplace criteria ask for a manifest of *"components like default content and images"* — not of
+the test harness. `axe-core` therefore stays on the same footing as PHPUnit, phpcs, phpstan,
+Selenium and chromedriver: read from the CI runner's own `core/node_modules` at test time, present
+in no `require`, no `recommended.yml` row and no packaged byte.
+
+**So: no SBOM line, and no entry in `content/MEDIA-LICENCES.md` or any neighbour of it.** Rule 2's
+*"every contrib module added needs a line"* is a statement about what the SBOM ships, and this
+ships nothing. ⚠️ **What this does NOT do:** it does not exempt anything, and it creates no
+precedent that a test-time tool can become a shipped one quietly — the moment axe-core appears in
+`require`, in `recommended.yml` or in `git archive`, it is a dependency and rule 2 applies in full.
+The test's own first assertion is the guard on the other side of that line: it proves `axe.min.js`
+is readable and fails with a sentence naming `_COMPOSER_YARN_INSTALL` if it is not, so an absent
+axe is a red with an explanation rather than a scan of nothing (I-007, I-032).
+
+🟡 **And one finding this verification produced that is NOT part of the rider, recorded because it
+was found by opening the file the rider sent me to.** The shipped accessibility statement says
+<!-- cspell:disable -->*"axe-core runs over six representative page types"*<!-- cspell:enable -->
+and enumerates the **theme's fixtures** — *"two hand-built data tables, a view rendering a real
+table, a prose page, a content record page and the core sign-in form"* — reporting **89 rules
+applied per page, 0 violations**. Two things have moved underneath it since T-1105 was written:
+the theme's axe gate now scans **7** pages (CLAUDE.md's observed table, pipeline `950212`, job
+`12015106`), and **D-053 added a nine-page scan of the installed product** — which is the first
+accessibility result this project has ever had about the product rather than about scaffolding, and
+the statement does not mention it at all. The text hedges honestly (*"the figures are those
+reported by the most recent run at the time this text was written"*), so it is **stale rather than
+false** — but a public accessibility statement that understates its own gate is worth one edit, and
+it is content rather than process, so it is named here and **not** touched from this turn. Owner:
+whoever next opens T-1105's node. It needs no new task row.
+
+---
+
+### Rider · Unit 003's task budget: 65 rows against a ceiling of 34, and what the overrun displaces
+
+**SIGNED by [ejecutor], 2026-09-12, under [andres]'s standing delegation** —
+<!-- cspell:disable -->*"Firma tú lo que haya siempre que esté todo correcto y continua"*<!-- cspell:enable -->
+("sign whatever there is yourself, so long as everything is correct, and continue" — translated,
+per rule 6). **D-031 requires a rider naming what an overrun displaces; D-044 amended the mechanism
+so the rider is a record rather than a precondition.** This is that record, and it is written
+before closure rather than at it, which is the whole of what I-105 asks for.
+
+⚠️ **A naming divergence, stated first because the dispatch that ordered this rider called it
+`R-003`.** That label is recorded here so it is findable — but **this repository has never used an
+`R-NNN` series.** Riders are named sections: `## Riders on wave 1, signed by [andres] 2026-08-21`,
+`### Rider requested · The accessibility statement's unit`, `### Rider requested · Four-digit task
+ids from wave 10`. **There is no `R-001` and no `R-002` on disk**, so a rider numbered 3 would
+imply two predecessors that do not exist. Written in the house style instead, with the dispatch's
+label quoted rather than adopted.
+
+#### The arithmetic, re-derived by command and not carried
+
+Every figure below was re-run on 2026-09-12 on a clean working tree. **The count is a command with
+its output, never a number in prose** (D-031's own method fix):
+
+```
+grep -cE '^\| T-(9[0-9]{2}|1[0-6][0-9]{2}) ' specs/003-demo-content/tasks.md
+```
+
+| quantity | value | how |
+|---|---|---|
+| ceiling | **34** | `specs/003-demo-content/tasks.md:3` — *"Budget: **34** tasks"* |
+| rows on disk | **65** | the command above |
+| **overrun** | **31** | 65 − 34 |
+| original signed scope | **30** | waves 9 (6) + 10 (11) + 11 (7) + 12's first six, `T-1201…T-1206` |
+| rows appended beyond it | **35** | 65 − 30 = wave 12's `T-1207…T-1217` (11) + wave 13 (14) + wave 14 (6) + wave 15 (2) + wave 16 (2) |
+
+⚠️ **`T-804` is in this file and is NOT in that 65**, which is correct rather than an oversight:
+it is unit 002's carried row, three digits, and the anchored regex requires four. Counted by eye it
+would make 66 and the budget would be wrong by one — the exact class of error the anchoring exists
+to prevent.
+
+#### D-044's necessity test, applied row by row: **9 necessary · 26 useful**
+
+D-044's wording is the standard — *work without which something already signed is broken, false,
+or impossible to ship* — and its ⚠️ is the reason this is enumerated rather than totalled:
+*"'Necessary' is not 'useful'. This is not a licence to grow scope."*
+
+**The nine that pass.** Seven are classified by `tasks.md`'s own accounting entries or by D-044's
+own text; **two are mine, and they are marked as mine** because an unattributed classification is
+how a total gets inflated.
+
+| row | why it passes | whose classification |
+|---|---|---|
+| **T-1207** | the front page shipped SQL that summed a text column, so its headline money figure was **false on every database** | D-040 / D-044's *"the PostgreSQL fix"* |
+| **T-1208** | the invariant that catches it; a signed gate that cannot see the defect it was green over | D-044 names it |
+| **T-1209** | the PostgreSQL job; nine green jobs over a query wrong on every database, because the ones that ran were the **defaults** | D-040(2) |
+| **T-1210** | ⚠️ **mine.** Without the frame, a shipped site presents a **fictional** municipality as a real one. That is the one judgement gate B is reserved for, and leaving it unframed made the English-language reading the wrong one — D-041's own words | **[ejecutor]**, borderline |
+| **T-1211** | all **39** rows of `content/MEDIA-LICENCES.md` cited a build script that **did not exist**; a shipped manifest was false | D-044 names it |
+| **T-1305** | discharges **T-1103**, signed scope then undone, whose criterion was already this chart's criterion verbatim | `tasks.md`, sixth entry |
+| **T-1306** | six shipped PDFs print `21300.00 EUR` beside a table rendering `21,300.00`; not silent, **inconsistent** | `tasks.md`, sixth entry |
+| **T-1308** | the same inconsistency on the seven register field instances | `tasks.md`, sixth entry |
+| **T-1501** | both gate runners guard every invariant with `[ -x ]`, which answers TRUE on this checkout and FALSE on the runner — and **2 of 28** shebang files were committed `100644`, so it was already latently false here | `tasks.md`, eighth entry |
+
+⚠️ **One row was considered for a tenth place and REJECTED, and saying so is worth more than the
+row would have been.** **T-1314** deleted the discharged D-034 SBOM exemption, which removed a live
+bypass from `sbom-check` — real hygiene. But by then `sbom-check` itself printed that the exemption
+*"excused nothing"*, so **nothing signed was broken or false while it sat there**. It is counted as
+**useful**. The nine above are nine because this one was argued and lost, not because nine was the
+number I arrived with.
+
+**The twenty-six that do not**, with the basis each actually rests on, because
+`tasks.md`'s ninth entry is right that *"an unlabelled basis is how 'approved' gets read onto work
+nobody approved"*:
+
+| rows | count | basis |
+|---|---|---|
+| `T-1212`-`T-1214`, `T-1215`, `T-1216`, `T-1217` | 6 | [andres]'s front-page and footer direction; D-046 for the last two |
+| `T-1301`-`T-1304`, `T-1307`, `T-1309`-`T-1312` | 9 | **[andres] approved the design round, 2026-09-04** |
+| `T-1313`, `T-1314` | 2 | the masthead boundary [andres] set in his own words; SBOM hygiene |
+| `T-1401`-`T-1406` | 6 | **D-049, signed 2026-09-05** — <!-- cspell:disable -->*"Sí, al cerrar esta ronda"*<!-- cspell:enable --> |
+| `T-1502` | 1 | **measured failures** — pipelines `949480`, `949481`, `950124` red behind green local checks |
+| `T-1601`, `T-1602` | 2 | **a defect found by opening the page**; no gate had an opinion about it |
+
+**9 + 26 = 35.** ⚠️ The read-only audit that drafted this rider reached **9 and 26** as well. The
+totals agreeing is not confirmation — **the sets may differ**, since the audit's nine is not
+enumerated anywhere I can compare it against, and I reached mine by rejecting `T-1314` and
+admitting `T-1210`. Stated rather than presented as agreement.
+
+#### What the overrun displaces — four rows, and the draft's table was stale in both directions
+
+⚠️ **Re-derived, and it is SMALLER than the seven the audit drafted.** Two corrections, and the
+second is the one that matters:
+
+1. **`T-1103` is done** — `✓` on disk, discharged by `T-1305`. It cannot be displaced.
+2. 🔴 **`T-1201` is NOT closed, and the dispatch that ordered this rider says it is.** Disk wins:
+   its glyph is **`○`**. The *work* landed — `tests/src/FunctionalJavascript/AccessibilityTest.php`,
+   **29,500 bytes**, dated 2026-09-07 — and D-053 says in as many words that this does **not** close
+   it: *"the last clause of that row's own criterion is a job list read from the API, and no
+   pipeline has run yet. Its glyph moves to `○`, not `✓`."* So it is neither done nor displaced; it
+   is **built and awaiting one API read**.
+3. ⚠️ **`T-1307`, `T-1310` and `T-1406` cannot be counted as displaced, and this is the correction
+   that makes the table honest rather than merely shorter.** All three are **among the 35 appended
+   rows**. A row that is itself part of the overrun is not something the overrun pushed out — it is
+   the overrun. Counting them would double-count in the project's own favour.
+
+**So the displaced set is the rows of the ORIGINAL 30 that are undone and are not the closure
+machinery itself:**
+
+| row | state | what is actually missing |
+|---|---|---|
+| **T-1006** (second half) | `⏸` | the CSV-distribution table. **Leaves this unit today** by D-038 = A — see that record's signature block |
+| **T-1106** | `○` | `screenshot.webp` is still the placeholder: **6,686 bytes**, sha256 `98363dd5a77e…`, unchanged since 2026-08-27 |
+| **T-1107** | `○` 👤 | the visible preview at `agora-smoke.ddev.site`; needs a rebuilt rig and [andres]'s eyes |
+| **T-1202** | `○` | Playwright: **no `playwright.config.*` in either repository** — `git ls-files` finds none in `agora_transparency` and none in `agora_theme` |
+
+**Four rows.** `T-1203`, `T-1205` and `T-1206` are excluded deliberately: they are the invariant
+sweep, the audit and the closure report — the closure mechanism runs at closure by construction,
+and calling it displaced would make every unit's rider name its own last three rows.
+
+#### What the overrun cost, stated as a cost rather than as an accounting note
+
+**The reserve was four rows, one per named risk, and it was spent on none of them.** All four risks
+were answered anyway — D-035 and D-010 without a row, the accessibility statement inside `T-1105`,
+and the mirror by ruling — so the reserve's failure was not that the risks consumed it. It is that
+**31 rows of unplanned work went in ahead of four rows of signed scope**, and three of those four
+are the ones a marketplace reviewer meets first: the **screenshot** on the project page, the
+**preview** [andres] looks at, and the **visual-regression gate** that would have caught by machine
+the presentation defects I-106 records being found by eye.
+
+**Nothing is re-based and no row is moved.** D-044 rules that the budget counts and does not gate,
+and 26 of the 35 rest on [andres]'s own signatures and approvals — he is the one who signs scope.
+What this rider refuses is the shape I-105 names: an overrun discovered at closure, when the only
+options left are a rider signed under pressure or a quiet trim.
+
+🟡 **The one recommendation this rider makes, and it is a recommendation rather than a ruling:**
+unit 004's budget should be set **after** these four rows are placed, not before. Three of them are
+publication-facing and two need [andres]'s hands; a ceiling written without them is a ceiling that
+is already wrong on the day it is signed, which is how this one started.
