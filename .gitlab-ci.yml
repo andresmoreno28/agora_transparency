@@ -32,12 +32,62 @@ include:
 # is handed to the phpunit binary and armed with --fail-on-empty-test-suite
 # so an empty suite fails the pipeline instead of passing silently (see
 # tests/bin/no-blind-phpunit, and I-007 - the false-green pattern this
-# closes). _PHPUNIT_CONCURRENT is deliberately left unset/default ('0'):
-# at '1' drupalci routes _PHPUNIT_EXTRA to run-tests.sh instead, where
-# --fail-on-empty-test-suite is not a valid option and the guard silently
-# stops existing (include.drupalci.variables.yml:107-109).
+# closes).
+#
+# AMENDED 2026-09-13 (T-1701). The sentence that stood here said
+# _PHPUNIT_CONCURRENT was "deliberately left unset/default ('0')", and then
+# described, correctly and in full, the exact failure that came true. The
+# reasoning was right; the word "default" was the defect. Upstream flipped
+# that default to concurrent between 2026-09-08 and 2026-09-12 and NOT ONE
+# CHARACTER of this repository changed. At the concurrent setting drupalci
+# routes the flags to run-tests.sh instead of the phpunit binary and strips
+# every phpunit-only option out of them on the way, so
+# --fail-on-empty-test-suite reached nothing at all.
+#
+# MEASURED, from the API with the maintainer's token (/trace answers 401
+# anonymously) rather than from the pipeline badge:
+#   952632 (2026-09-08) - the phpunit binary, the flag on its command line,
+#                         "OK (20 tests, 2549 assertions)".
+#   958565 and every pipeline since - run-tests.sh, no "OK (...)" line, no
+#                         assertion total, 20 "Pass" lines, and upstream's own
+#                         warning in the trace that _PHPUNIT_EXTRA "is
+#                         intended for the 'phpunit' binary only". The trace
+#                         shows _RUNTESTS_EXTRA='' after the compatibility
+#                         copy had removed the phpunit-only options.
+#
+# So the value is PINNED below instead of inherited. Upstream documents it at
+# include.drupalci.variables.yml:111-113 ("set to 0 to use the plain phpunit
+# binary"), and _PHPUNIT_EXTRA's own description at :103-105 now states the
+# coupling in as many words: "used when _PHPUNIT_CONCURRENT is set to 0". The
+# citation in the superseded sentence (:107-109) pointed at that pair before
+# the file moved underneath it, which is its own small instance of the same
+# lesson.
+#
+# THIS REDEFINES NO UPSTREAM JOB, and that reading is confirmed against this
+# file's own standing rule rather than asserted: setting a documented pipeline
+# variable is what the header of this file invites in its own example block
+# (lines 22-29, "Uncomment the lines below if you want to override any of the
+# variables"), and it is what _ALL_VALIDATE_ALLOW_FAILURE, _CSPELL_EXTRA,
+# _PHPCS_EXTRA, OPT_IN_TEST_DRUPAL_CMS and _AUTORUN_DRUPAL_CMS below already
+# do. The `include:` block above stays byte-identical to upstream and no
+# upstream job key is redefined, copied or overridden.
+#
+# COST, MEASURED RATHER THAN ASSUMED, because concurrency was presumably
+# turned on upstream for a reason. It buys this package nothing: over the four
+# most recent serial runs `phpunit` took 480-696 s, and over the four
+# concurrent ones 569-661 s - ranges that overlap almost entirely, because 20
+# tests dominated by functional-test setup do not fill eight threads. Upstream
+# declares no `timeout` in any of the three included files, so the GitLab
+# default of one hour applies and the job sits at roughly a fifth of it. There
+# is no timeout risk to weigh; if that changes, the number to watch is the one
+# above and not this sentence.
+#
+# tests/bin/no-ci-allow-dev asserts the pin. It has to be asserted somewhere,
+# because a guard that reads only our files cannot see a default that lives in
+# somebody else's (I-116).
 variables:
   _PHPUNIT_EXTRA: '--fail-on-empty-test-suite'
+  _PHPUNIT_CONCURRENT: '0'
 
 # D-023(1): makes the validate stage blocking. Documented at
 # include.drupalci.variables.yml:127-129 ("set to 0 for not allowing any

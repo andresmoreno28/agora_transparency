@@ -836,3 +836,82 @@ T-1501's row are **amended with their original text left standing**, and this se
 only at the end of the file. **`DECISIONS.md` is not edited at all** — the `2 of 28` it carries at
 line 4327 and D-053's unsigned §5 rider are named for routing, not changed from here. **Gate B
 remains open**, exactly as the section above it says.
+
+## Wave 17 — a blocking gate went inert with nobody touching our code — [ejecutor] 2026-09-13
+
+**What this wave is, in one sentence:** between 2026-09-08 and 2026-09-12 `--fail-on-empty-test-suite`
+stopped reaching PHPUnit, **no commit of ours caused it**, and `tests/bin/no-blind-phpunit` — the
+invariant written to make exactly this failure loud — was **green throughout**, because it asserts
+that the flag appears in our files and the flag's *effect* lives somewhere it cannot see.
+
+**The measurement, taken from the API with the maintainer's token before anything was changed**
+(`/trace` answers `401` anonymously, so none of this is readable from the badge or the UI):
+
+| pipeline | date | `_PHPUNIT_CONCURRENT` | what the trace printed |
+|---|---|---|---|
+| `952632`, job `12052123` | 2026-09-08 | `0` | the phpunit binary, the flag on its command line, **`OK (20 tests, 2549 assertions)`** |
+| `958565`, job `12155035` | 2026-09-12 | `1` | `run-tests.sh`, **no `OK (…)` line, no assertion total**, 20 `Pass` lines |
+| `958719`, job `12156909` | 2026-09-12 (HEAD) | `1` | the same, plus upstream's own warning that `_PHPUNIT_EXTRA` *"is intended for the `'phpunit'` binary only"*, and **`_RUNTESTS_EXTRA=`** — blank, after the compatibility copy stripped every phpunit-only option out of it |
+
+⚠️ **Upstream flipped the default, and upstream documents the flip against us in its own file.**
+`include.drupalci.variables.yml:111-113` now reads `value: '1'`, and `_PHPUNIT_EXTRA`'s description
+at `:103-105` states the coupling in as many words: *"used when `_PHPUNIT_CONCURRENT` is set to 0"*.
+The superseded comment in `.gitlab-ci.yml` cited `:107-109` — which is where that pair used to be.
+**The citation went stale in the same movement that broke the gate**, which is a small instance of
+the same lesson and is why the amendment quotes line numbers *and* the text at them.
+
+⚠️ **The cost of pinning was measured rather than assumed, because concurrency was presumably
+turned on upstream for a reason.** It buys this package nothing: over the four most recent **serial**
+runs `phpunit` took **480-696 s**, over the four **concurrent** ones **569-661 s** — ranges that
+overlap almost entirely, because 20 tests dominated by functional-test setup do not fill eight
+threads. No `timeout` is declared in any of the three included files, so GitLab's one-hour default
+applies and the job sits at roughly a fifth of it. **There was no timeout risk to trade away.**
+
+⚠️ **Reserve accounting, tenth entry, 2026-09-13 — one row, and its basis is a FIFTH this file has
+not used before.** T-1701 takes the count from **65 to 66** against a ceiling of **34**, so the
+D-031 rider this unit needs now names **thirty-two** rows over the ceiling rather than thirty-one.
+Stated, not asked about, per **D-044**: the budget counts and does not gate. The four bases used so
+far were an approved design round, a signed decision, a measured red pipeline, and a defect found by
+opening the page. **This is none of them: the pipeline was GREEN, every job `success`, every
+`allow_failure` `false`, and the gate was inert anyway.** A fifth category — *a gate that stopped
+measuring while continuing to report* — is worth naming precisely because nothing in the previous
+four would have caught it.
+
+**D-044's necessity test, applied honestly: this row PASSES it, and it is the first in several
+waves that does.** By D-044's wording — *work without which something already signed is broken,
+false, or impossible to ship* — `CLAUDE.md`'s Gate A block and several task criteria are written
+around assertion totals that **no longer exist in any log**, and T-1201 was closed on 2026-09-12
+quoting a trace format that had already changed. Those records are false while the flag is
+unrouted. That is the definition, not a plea for the row.
+
+⚠️ **The signed budget rider is now one row behind, and this is stated rather than fixed.**
+`### Rider · Unit 003's task budget: 65 rows against a ceiling of 34` in `DECISIONS.md` re-derives
+**65 · ceiling 34 · overrun 31**; the disk now holds **66 · 34 · 32**. Rule 8 makes a signed record
+something to amend rather than edit, and `DECISIONS.md` is outside this change's scope — so the
+divergence is recorded here, where the next reader of the budget will meet it.
+
+⚠️ **And the count command broke again for the ordinary reason.** Wave 17's ids are `T-17NN`, which
+`1[0-6]` does not reach:
+
+```
+grep -cE '^\| T-(9[0-9]{2}|1[0-7][0-9]{2}) ' specs/003-demo-content/tasks.md
+```
+
+Verified 2026-09-13: it prints **66**; it differs from the wave-16 command over this file by exactly
+the one wave-17 row (65 + 1); and the alternation still matches **no** unit-001 or unit-002 id, for
+the same reason as every widening before it — every id in those two files is three digits and this
+alternation requires four.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1701 ○ | · | **Pin `_PHPUNIT_CONCURRENT: '0'` in `.gitlab-ci.yml`, and make the class of defect checkable offline.** The pin is the smallest change that makes this file's existing claims true again. ⚠️ **The durable half is the guard, and where it went is a constrained choice rather than the best one.** Its correct home is `tests/bin/no-blind-phpunit`, whose subject it exactly is — and **D-028 makes that one of five invariants SHARED with `agora_theme` and forbids editing a shared file in one repository alone**, so it was not touched. ⚠️ **A new script was also refused, and the reason is mechanical:** any new group in either runner moves a `GATE-CLAIM` total, `tests/bin/claims-match-sources` binds all three totals to `CLAUDE.md`, and `CLAUDE.md` is outside this change's scope — so a correctly-named new script **cannot be wired to a gate** without a red gate or an out-of-scope edit. The assertion therefore **widens `tests/bin/no-ci-allow-dev`**, the one local-only invariant whose subject is already *a CI variable that decides whether a gate is real*: `CI_ALLOW_DEV` is the "must never be DEFINED" half, `PINNED_VARS` the "must always BE defined, by us" half. ⚠️ **Its NAME is now narrower than its contents**, which is a real cost and is written into the script's own header rather than left to be discovered | **The pin is present and is the string `'0'`, not the integer `0`** — `yaml.safe_load` reports `type str`, and `'0'` is what upstream's rule compares against. **The guard was seen FAILING before it was seen passing, three ways, each restored**: with the pin **removed** — the exact pre-fix state — `1 finding … exit 1`; with it set to the concurrent value, `_PHPUNIT_CONCURRENT is '1' and this gate requires '0'`, **and `no-blind-phpunit`'s own finding 3 fires independently on that same state**, which is the cross-check that the two guards disagree about different things; and with `PINNED_VARS` **emptied**, `the required-variable list is EMPTY - this section proves nothing (I-028)`, because a require-list that has been emptied finds nothing and prints the same `0 findings` a clean tree prints. **Both runner denominators are UNCHANGED at `67 · 0` and `49 · 0`** and `claims-match-sources` still reports **0 mismatches over 7 comparisons** — the widening adds a finding, not a check. ⚠️ **The criterion that cannot be met from this session, and the reason this glyph is `○` and not `✓`:** the trace must be read after a pipeline runs and show **`OK (N tests, M assertions)` back in both `phpunit` and `phpunit-pgsql`**, the upstream warning **gone**, and the job list still at **10, every `allow_failure: false`**. **The prediction, written down so it can be compared rather than trusted: `OK (20 tests, 2549 assertions)` in both, unchanged from `952632`** — this change adds no test and the four commits since were documentation. If it reads anything else, the difference is not this row's and should be traced before it is absorbed | — |
+
+### What this change did not touch
+
+`CLAUDE.md`, `config/`, `content/`, `recipe.yml`, `composer.json`, `recommended.yml`, `tests/src/`,
+the sibling theme, `tests/bin/no-blind-phpunit` (D-028), and every other row, glyph, success
+criterion, `Blocked by` cell and `#` cell in this file. **No earlier accounting entry and no earlier
+state section is rewritten**; this section adds bytes only at the end of the file, and the tenth
+accounting entry is placed **here with its wave** rather than beside the other nine at the top,
+because inserting it there would have put new bytes between existing paragraphs. ⚠️ **`DECISIONS.md`
+is not edited at all** — its budget rider is named above for routing, not changed from here.

@@ -1276,3 +1276,32 @@
   produced it**, because they know which cells they filled from memory. Re-opening your own cost table
   before the work starts is cheaper than every other way of finding out. Recorded 2026-09-06 with
   D-052.
+
+- I-116 · **A guard that asserts a setting EXISTS, while the behaviour it buys depends on a default
+  somebody else owns, is green about a question it never asked.** Between 2026-09-08 and 2026-09-12
+  a blocking gate in this project stopped protecting anything and **nobody changed a character of
+  our code**. `.gitlab-ci.yml` set `_PHPUNIT_EXTRA: '--fail-on-empty-test-suite'`, and
+  `tests/bin/no-blind-phpunit` asserted — correctly, on every run — that the flag was present: *2
+  invocations, 2 guarded, 0 findings*. Upstream `gitlab_templates` flipped `_PHPUNIT_CONCURRENT`'s
+  default to concurrent; at that setting drupalci hands the flag to `run-tests.sh` instead of the
+  phpunit binary and **strips every phpunit-only option out of it**. Measured from the API with the
+  maintainer's token — pipeline `952632` printed `OK (20 tests, 2549 assertions)`; `958565` and every
+  pipeline since printed **no `OK (…)` line and no assertion total**, and carried upstream's own
+  warning that `_PHPUNIT_EXTRA` *"is intended for the 'phpunit' binary only"*. ⚠️ **The defect was in
+  the environment the file is read INTO, which is a layer the assertion could not reach** — the
+  guard's scope was our repository and the answer lived outside it. ⚠️ **The sharpest part is that
+  the trap had been PREDICTED and the wrong shape of it was guarded.** `no-blind-phpunit`'s finding
+  3 fires when `_PHPUNIT_CONCURRENT` is set to the concurrent value — which nobody ever wrote — and
+  never when the variable is simply **absent**; and `.gitlab-ci.yml`'s own comment described the
+  entire mechanism while calling the default *"deliberately left unset"*. **Writing the danger down
+  is not the same as testing for it**, and a comment saying "we rely on the default here" is the
+  marker for this bug rather than a defence against it. ⚠️ **The generalisable test is one question
+  asked of every gate: if I delete a line, does a check go red?** For an inherited default the
+  answer is no — there is no line to delete, which is exactly why nothing notices when its meaning
+  changes underneath. **The fix is to pin the value in our own file and assert the pin**, so the
+  thing the gate depends on is a line a check can read. ⚠️ **Corollary, and it is the reusable half:
+  the denominators were the only honest signal.** The job list stayed at ten, every job stayed
+  `success`, every `allow_failure` stayed `false` — the gate looked identical — and the one
+  observable difference was that a number the log used to print **stopped being printed at all**. A
+  green that quietly stops stating its denominator is the same event as a red (I-007, I-045).
+  Recorded 2026-09-13 with T-1701.

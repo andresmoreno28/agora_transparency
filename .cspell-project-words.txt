@@ -355,3 +355,8 @@ klaro
 # `drupal_cms_content_type_base`. Its text filter is what resolves the legal pages'
 # cross-links from an entity uuid to a real alias. A project name, not a word.
 linkit
+# T-1701: `RUNTESTS`, from `_RUNTESTS_EXTRA` - the upstream `gitlab_templates` variable that
+# receives the flags when `_PHPUNIT_CONCURRENT` is concurrent, at which point drupalci strips
+# every phpunit-only option out of them. Quoted from a job trace and from
+# include.drupalci.variables.yml:107-109. An upstream variable name, not a word.
+RUNTESTS
