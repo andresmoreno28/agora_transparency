@@ -1206,3 +1206,94 @@ place: the install-smoke bullet, whose claim about the mirror was the sentence t
 false. The clause is struck rather than deleted and the correction is appended beneath it, per
 rule 8. No number that `tests/bin/claims-match-sources` binds was touched, and the checker was
 re-run afterwards to prove it.
+
+## Wave 21 — the mirror is legible; now something reads it — [ejecutor] 2026-09-19
+
+**Wave 20 made the next red readable and said, in its own last paragraph, that it had not made it
+noticed.** That paragraph is the dispatch for this one. `tests/bin/watch-gate` read drupalcode and
+only drupalcode; `tests/bin/claims-match-sources` named eight quantities it cannot check and
+**none of them was GitHub** — so the mirror was absent from the covered half of the guard and from
+the named-uncovered half at the same time, which is the worst of the three places a subject can
+be. The mechanism that let nine consecutive reds pass unread over three weeks was, at the end of
+wave 20, exactly what it had been at the start: a human noticing an email.
+
+⚠️ **Where it belongs was the decision, and the rejected option is written down because it is the
+one that sounds more rigorous.** The obvious shape is an INVARIANT under `tests/bin/` that fails
+when the mirror has been red for longer than some window. It was rejected: it needs the network
+and a GitHub token inside `agora-invariants`, a job that runs in a drupalcode container which has
+neither, so it would go red because a token is absent rather than because the mirror is broken —
+and **a gate that fails for the wrong reason is a gate somebody makes permissive within the
+week**, which is the exact outcome D-023(5) exists to refuse, arriving through the door marked
+"more rigour". Every one of the seventeen existing invariants is offline, and that property is
+worth more than this one check. `watch-gate` already needs the network, already knows which commit
+the verdict is about, and is already the thing a human runs after a push. So the conclusion is
+**read** there and **accounted for** offline in `claims-match-sources`.
+
+⚠️ **It prints; it does not gate.** D-020 makes drupalcode the gate and the mirror informative, so
+turning a red mirror into a failed gate here would be a signed decision taken by a tool instead of
+by a person. The exit status is computed from the drupalcode job list and from nothing else, the
+section says so in its own first two lines on every run, and it was falsified in both directions
+rather than argued.
+
+⚠️ **The STREAK is the thing that was missing, and this is the reusable part.** A conclusion for
+one commit would not have caught this defect: every one of those nine runs was a fresh red on a
+fresh commit, and each was individually unremarkable. What nobody ever had was **the number
+nine**. A tool that answers "is the mirror green for this commit" would have answered honestly on
+all nine days and taught nobody anything.
+
+⚠️ **The reserve accounting below reports 71 rows on disk where the dispatch said 69.** The
+dispatch was written from wave 20's own accounting sentence, which records the count *before* that
+wave's two rows landed. Disk wins: the count was re-run rather than copied, and the arithmetic
+here starts from 71.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1907 ✓ | · | **Make the mirror's conclusion readable by this project's own tooling, in the place a human already looks.** Extend `tests/bin/watch-gate` to read, beside the drupalcode job list, the GitHub run for the commit under verdict AND the **consecutive non-success streak** on the branch, with the last success and its age. ⚠️ **Report it from an `EXIT` trap, not from the verdict path**: this script has six terminating exits and the commonest invocation — straight after a push — lands on *"no pipeline for HEAD yet"*, so a section printed only beside a finished verdict would be missing from precisely the run a human makes most. ⚠️ **It must state its denominator** (runs examined, out of the page requested) and treat every way of not knowing as a **third state** that cannot be mistaken for a pass. ⚠️ **It must not gate**: D-020 says the mirror does not block, and promoting it would be a decision nobody signed | **Against the live API on `0d7b834` it prints `runs examined: 30 of at most 30 (branch 1.x, newest first)` · `HEAD 0d7b834: success run 35454803744` · `consecutive non-success completed runs: 0` · `workflows declared here: 1 phpunit.yml`, and exits 0.** ⚠️ **Falsified in TEN directions, five of them against the REAL API payload rather than invented JSON** — the genuine 30-run page, windowed. (1) windowed to the moment the defect was found it prints `RED STREAK: 9 consecutive non-success completed runs` · `conclusions in the streak: failure x9` · `oldest in the streak: 2026-08-27T13:30:25Z (23 days ago)` · `last success: 505c18a run 33074134414 (23 days ago)` — **the sentence that would have been read three weeks earlier**; (2) with no success in the page at all it prints `RED STREAK: >= 9 … a FLOOR and not a count`; (3) a run for HEAD still going prints `in_progress - it has concluded NOTHING yet`; (4) an empty page prints `NO RUNS AT ALL in that scope. That is an unread mirror, not a green one.`; (5) a run relabelled to a second workflow prints `UNDECLARED WORKFLOW: playwright.yml … its conclusion is being read by nobody`. And five against the environment: (6) `gh` off `PATH` → `NOT READ - gh is not installed` plus the URL to read by hand and `THIS IS NOT A PASS`; (7) `gh` real but with an empty `GH_CONFIG_DIR` and no token → `NOT READ - gh is installed and NOT AUTHENTICATED … A third state, not a pass`, quoting gh's own stderr; (8) a checkout with no `github` remote → `NOT READ - this checkout has no remote named github … it is "nothing here can see the mirror"`; (9) `--repo project%2Fagora_theme` → `NOT READ - --repo names … so the github remote here is not that project's mirror`; (10) a stub answering HTML → `NOT READ - the GitHub API answered something that is not JSON`. ⚠️ **The non-gating property is falsified in BOTH directions**: case (10), an unreadable mirror over a green pipeline, exits **0**; cases (8) and (9), a readable-or-skipped mirror over a pipeline that measured nothing, exit **1** | — |
+| T-1908 ✓ | · | **Account for GitHub offline, in the guard whose NOT CHECKED list did not name it.** Add to `tests/bin/claims-match-sources`: the mirror's conclusion as a **named** NOT CHECKED quantity pointing at the tool that reads it, and an **eighth comparison** — the workflow files on disk under `.github/workflows/` against the `MIRROR_WORKFLOWS` list `watch-gate` declares it reads. ⚠️ **This is the half that catches the NEXT one**: D-009(d) and T-804 put visual regression on the mirror, so a second workflow is expected, and one whose conclusion nothing reads would be this defect one file over. ⚠️ **No gate runner grows a check**: the comparison lands inside G9, which already asserts `comparisons > 0` and `unchecked named > 0`, so both `# GATE-CLAIM:` lines and the three figures `CLAUDE.md` states about them are untouched by construction | **`bash tests/bin/claims-match-sources` prints `comparisons: 8` (was 7), `NOT CHECKED - 9 quantities` (was 8), `mismatches: 0`, exit 0.** ⚠️ **The new comparison is falsified in THREE directions, each restored afterwards**: a second workflow file on disk → `mirror_workflows MISMATCH` printing `claimed: phpunit.yml, playwright.yml` against `source: phpunit.yml`, exit 1; `MIRROR_WORKFLOWS` renamed out of `watch-gate` → `comparisons: 7` and a FATAL reading *"the tool that reads the mirror has stopped saying what it reads"*, exit 1; the workflow file moved off disk → a FATAL naming the **empty scope** (I-028) and pointing at D-020 rider (a) for the deliberate deletion, exit 1. **Both gate runners print the totals their GATE-CLAIM lines declare** — `gate-a-wave1.sh` 67 checks · 0 failures against `checks=67 invariants=2`, `gate-a-wave3.sh` 51 checks · 0 failures against `checks=51 invariants=15` — and `claims-match-sources` agrees with `CLAUDE.md` on all eight comparisons | T-1907 |
+
+⚠️ **Reserve accounting, fourteenth entry, 2026-09-19 — two rows.** T-1907 and T-1908 take the
+count from **71 to 73** against a ceiling of **34** by this file's own command
+(`grep -cE '^\| T-(9[0-9]{2}|1[0-9]{3}) ' specs/003-demo-content/tasks.md`), so the D-031 rider now
+names **thirty-nine** rows over the ceiling rather than thirty-seven. Stated, not asked about, per
+**D-044**: the budget counts and does not gate. ⚠️ **The ids stay inside the `T-19NN` block** for
+the reason wave 20 gave: `T-20NN` would fall outside `1[0-9]{3}` and break the counting command
+again, and a wave number and an id block have never been the same thing in this file.
+
+**D-044's necessity test, applied honestly — YES for both rows, and for the same reason wave 20
+passed it.** D-044's wording is *work without which something already signed is broken, false, or
+impossible to ship*. D-020's own text says the mirror *"may fail without blocking, but it may
+never lie"*. Wave 20 repaired the instance — the workflow is green again — but left the
+**mechanism** untouched and said so in writing: nothing in the repository read the mirror, so the
+next three-week lie would go exactly as unnoticed as the last. A signed property that holds only
+while a human reads his email is not a property; these two rows are what make it one. ⚠️ **What
+would NOT have passed this test, named so the line means something:** a window-based invariant
+that fails the gate when the mirror has been red for N days. That is *useful*, not *necessary* —
+it is new enforcement rather than a repaired claim — and it was rejected above on its own merits
+anyway.
+
+🔴 **What is NOT closed, named so the green is not read as more than it is.** The mirror's
+conclusion is read **only when somebody runs `watch-gate`**. That is a real improvement over
+"somebody reads an email" — it is the project's own documented after-push ritual, it prints on
+every exit path, and it now carries a number — but it is still a pull, not a push, and a session
+that pushes without running `watch-gate` learns nothing. Making it a push needs either a GitHub
+token inside `agora-invariants` or a scheduled job somewhere, and **neither has an owner**. It is
+written here rather than left to be rediscovered.
+
+### What this change did not touch
+
+`recipe.yml`, `config/`, `content/`, `composer.json`, `recommended.yml`, `tests/src/`,
+`.gitlab-ci.yml`, `.github/workflows/phpunit.yml`, the sibling theme checkout — **not one byte**,
+by dispatch — and every earlier row, glyph, success criterion, `Blocked by` cell and `#` cell in
+this file. No earlier accounting entry and no earlier state section is rewritten; this section
+adds bytes only at the end of the file, and the fourteenth accounting entry sits here with its
+wave rather than beside the others.
+
+⚠️ **No tag was cut**, by dispatch. Neither gate runner was edited, so no `# GATE-CLAIM:` line
+moved and the three figures `CLAUDE.md` states about them are unchanged — which is why this wave
+reports them rather than amending them. **`CLAUDE.md` IS edited**, in four places: the install-smoke
+bullet's 🔴 open paragraph is struck and the closure appended beneath it (rule 8); the comparison
+count moves from seven to eight in the two places that state it; and the exclusion count moves
+from eight to nine in the one remaining place that quotes it, a clause inside the axe bullet.
+⚠️ **No axe figure was touched** — not the page count, not the rules per page, not the assertion
+total — a second implementer owns those today, and the one word changed in that bullet is a count
+of `claims-match-sources` exclusions, not a measurement of the accessibility gate.

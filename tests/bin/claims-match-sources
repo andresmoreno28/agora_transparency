@@ -22,7 +22,7 @@
 # coverage it does not have.
 #
 # ---------------------------------------------------------------------------
-# WHAT IS CHECKED - seven comparisons, all offline, all in under a second:
+# WHAT IS CHECKED - eight comparisons, all offline, all in under a second:
 #
 #   wave1_checks           CLAUDE.md          vs  the GATE-CLAIM line in gate-a-wave1.sh
 #   wave3_checks           CLAUDE.md          vs  the GATE-CLAIM line in gate-a-wave3.sh
@@ -31,16 +31,29 @@
 #   template_jobs          CLAUDE.md's table  vs  EXPECTED_agora_transparency in watch-gate
 #   theme_jobs             CLAUDE.md's table  vs  EXPECTED_agora_theme in watch-gate
 #   floor                  CLAUDE.md          vs  the shorter of those two lists
+#   mirror_workflows       .github/workflows/ vs  MIRROR_WORKFLOWS in watch-gate
 #
-# FIVE OF THE SEVEN COMPARE PROSE AGAINST PROSE, and pretending otherwise would
+# FIVE OF THE EIGHT COMPARE PROSE AGAINST PROSE, and pretending otherwise would
 # be the same defect one layer up. A GATE-CLAIM line is a declaration a human
 # writes; it is not the runner's output. What makes the chain worth having is
 # that the declaration sits in the file it describes, three lines from the
 # arithmetic that derives it, so the commit that moves a count has to walk past
-# it - whereas CLAUDE.md is a different file that nobody re-opens. Two of the
-# seven are stronger than that: `invariants_structural` counts the runner's
-# actual group declarations, and the two job-list comparisons read the array
-# `watch-gate` executes against the live API.
+# it - whereas CLAUDE.md is a different file that nobody re-opens. Three of the
+# eight are stronger than that: `invariants_structural` counts the runner's
+# actual group declarations, `mirror_workflows` lists a real directory, and the
+# two job-list comparisons read the array `watch-gate` executes against the live
+# API.
+#
+# WHY A GITHUB ROW APPEARS IN A FILE THAT CANNOT REACH GITHUB, 2026-09-19. The
+# mirror's only workflow had failed on nine consecutive runs over three weeks
+# with nothing in this repository reading it, and this script's NOT CHECKED list
+# named eight quantities of which NONE was GitHub - so the mirror was absent from
+# the covered half and from the named-uncovered half at once, which is the worst
+# of the three places a subject can be. The conclusion itself needs the network
+# and is read by tests/bin/watch-gate; what is checkable offline is that every
+# workflow on the mirror is one watch-gate has been told to read, and that is the
+# row above. The conclusion is now in the NOT CHECKED list by name, pointing at
+# the tool that does read it.
 #
 # THE GAP THAT REMAINS, stated rather than left to be discovered: nothing here
 # proves a GATE-CLAIM line matches what its runner PRINTS. Closing it needs the
@@ -206,9 +219,14 @@ if [ "${FATAL_COUNT:-0}" -gt 0 ]; then
 fi
 
 if [ "${MISMATCHES:-0}" -gt 0 ]; then
-  printf '\nFAILURE: %s claim(s) in CLAUDE.md disagree with this repository. The\n' "$MISMATCHES"
-  printf 'remedy is to re-measure and update CLAUDE.md in the commit that moved the\n'
-  printf 'number - never to change the source to match the prose.\n'
+  printf '\nFAILURE: %s comparison(s) disagree.\n' "$MISMATCHES"
+  printf 'SIX of the eight have CLAUDE.md on the left, and for those the remedy is to\n'
+  printf 're-measure and update CLAUDE.md in the commit that moved the number - never\n'
+  printf 'to change the source to match the prose. The other two do NOT:\n'
+  printf '`invariants_structural` compares a GATE-CLAIM line against its own runner,\n'
+  printf 'and `mirror_workflows` compares a directory against a declaration. The note\n'
+  printf 'beside each row names the two things it compared, because a message that\n'
+  printf 'sends the reader to edit the wrong file is this whole script in miniature.\n'
   exit 1
 fi
 

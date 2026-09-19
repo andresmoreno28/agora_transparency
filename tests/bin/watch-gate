@@ -44,9 +44,10 @@
 # it is called a failure: superseded and broken look identical in the status field and are
 # not the same event.
 #
-# Usage:  bash tests/bin/watch-gate [--wait] [--repo <project-path>]
-#           --wait   poll until the pipeline reaches a terminal state (default: report now)
-#           --repo   defaults to the remote of this checkout
+# Usage:  bash tests/bin/watch-gate [--wait] [--repo <project-path>] [--mirror-page <n>]
+#           --wait         poll until the pipeline reaches a terminal state (default: report now)
+#           --repo         defaults to the remote of this checkout
+#           --mirror-page  how many GitHub runs to examine for the streak (default 30)
 
 set -u
 
@@ -56,22 +57,38 @@ cd "$REPO" || { echo "FATAL: cannot cd to repository root"; exit 2; }
 API="https://git.drupalcode.org/api/v4/projects"
 PROJECT=""
 WAIT=0
+MIRROR_PAGE=30
 while [ $# -gt 0 ]; do
   case "$1" in
     --wait) WAIT=1 ;;
     --repo) shift; PROJECT="${1:-}" ;;
+    --mirror-page) shift; MIRROR_PAGE="${1:-}" ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
 done
 
+case "$MIRROR_PAGE" in
+  ''|*[!0-9]*) echo "FATAL: --mirror-page wants a positive integer, got '$MIRROR_PAGE'" >&2; exit 2 ;;
+esac
+[ "$MIRROR_PAGE" -gt 0 ] || { echo "FATAL: --mirror-page 0 would examine nothing" >&2; exit 2; }
+
+# The project is inferred from this checkout's canonical remote even when --repo
+# names one explicitly, because the MIRROR section below reads the GitHub remote
+# of THIS tree. If the two disagree, the mirror this tree can reach is not the
+# mirror of the project being watched, and saying so is the only honest answer -
+# reporting the wrong repository's conclusion under the right project's name is
+# precisely the shape of false green this whole script exists to refuse.
+URL="$(git config --get remote.drupalcode.url 2>/dev/null || true)"
+INFERRED=""
+case "$URL" in
+  *agora_theme*)        INFERRED="project%2Fagora_theme" ;;
+  *agora_transparency*) INFERRED="project%2Fagora_transparency" ;;
+esac
+
 if [ -z "$PROJECT" ]; then
-  URL="$(git config --get remote.drupalcode.url 2>/dev/null || true)"
-  case "$URL" in
-    *agora_theme*)        PROJECT="project%2Fagora_theme" ;;
-    *agora_transparency*) PROJECT="project%2Fagora_transparency" ;;
-    *) echo "FATAL: cannot infer the project from remote.drupalcode.url ('$URL'). Pass --repo." >&2; exit 2 ;;
-  esac
+  [ -n "$INFERRED" ] || { echo "FATAL: cannot infer the project from remote.drupalcode.url ('$URL'). Pass --repo." >&2; exit 2; }
+  PROJECT="$INFERRED"
 fi
 
 SHA="$(git rev-parse HEAD)"
@@ -150,6 +167,289 @@ case "$PROJECT" in
   *agora_transparency*) EXPECTED="$EXPECTED_agora_transparency" ;;
   *) EXPECTED='' ;;
 esac
+
+# ---------------------------------------------------------------- THE MIRROR --
+#
+# WHY A SCRIPT WHOSE SUBJECT IS THE GATE ALSO READS SOMETHING THAT IS NOT THE GATE.
+#
+# On 2026-09-19 the GitHub mirror's only workflow was found to have failed on NINE
+# consecutive runs since 2026-08-27 - three weeks, an email to the maintainer on
+# every push, and nobody looked. D-020 keeps that workflow as an informative
+# second opinion and says, in its own words, that it "may fail without blocking,
+# but it may never lie". The half about lying had quietly stopped holding, and the
+# mechanism that let it stop was not a missing check. It was that NOTHING IN THIS
+# REPOSITORY EVER READ IT: the mirror was watched by a human noticing an email,
+# which is the same mechanism that had just missed nine of them in a row.
+#
+# THIS IS WHERE IT BELONGS, and the alternative was considered by name and
+# rejected. An INVARIANT under tests/bin/ that went red on a stale mirror would
+# need the network and a GitHub token inside `agora-invariants`, a job that runs
+# in a drupalcode container which has neither. A gate that goes red because a
+# token is absent is a gate somebody makes permissive within the week - the exact
+# shape D-023(5) exists to refuse, arriving through the door marked "more rigour".
+# watch-gate already needs the network, already knows which commit the verdict is
+# about, and is already the thing a human runs after a push. So the mirror is READ
+# here and ACCOUNTED FOR offline in tests/bin/claims-match-sources, which names it
+# in the NOT CHECKED list rather than leaving GitHub absent from both.
+#
+# IT DOES NOT TOUCH THE EXIT STATUS, and that is not timidity. D-020 makes
+# drupalcode the gate and the mirror informative; promoting a red mirror to a
+# failed gate here would be a signed decision taken by a tool instead of by a
+# person. The verdict line is computed from the drupalcode job list and from
+# nothing else, and this section says so on every run so that a later reader does
+# not read the omission as an oversight and "fix" it.
+#
+# THE THIRD STATE IS THE WHOLE POINT. No gh, no authentication, no github remote,
+# no run for this commit, a run still going, a page that answered nothing - each
+# prints its own sentence naming itself. None of them may read as "the mirror is
+# fine", because an absence of information reading as good news for three weeks is
+# the entire defect being closed here (I-045, I-054).
+#
+# THE STREAK IS THE QUANTITY THAT WAS MISSING, and one conclusion for one commit
+# would not have caught this. Every one of those nine runs was a fresh red on a
+# fresh commit and each was individually unremarkable; what nobody had was the
+# NUMBER NINE. So this counts consecutive non-success completed runs on the
+# branch, names the conclusions they carried, names the last success and its age,
+# and prints how many runs it examined. When the page it read contains no success
+# at all it reports the streak as a FLOOR (">= N"), never as a count it cannot
+# justify - the same reason `jobs: 0` is a failure and not an empty result.
+#
+# WHY THE WORKFLOW LIST IS DECLARED. The mirror is scheduled to grow: D-009(d)
+# and T-804 put visual regression on it. A second workflow whose conclusion
+# nobody reads would reproduce this defect exactly, one file over, so the names
+# are declared here and an undeclared one is named on sight. The disk side of the
+# same comparison is offline and lives in tests/bin/claims-match-sources.
+MIRROR_WORKFLOWS='phpunit.yml'
+MIRROR_REPORTED=0
+
+MIRROR_SKIP=''
+if [ -z "$INFERRED" ]; then
+  MIRROR_SKIP="this checkout has no recognised drupalcode remote, so which GitHub mirror belongs to $PROJECT cannot be established from here"
+elif [ "$PROJECT" != "$INFERRED" ]; then
+  MIRROR_SKIP="--repo names $PROJECT while this checkout is $INFERRED, so the github remote here is not that project's mirror"
+fi
+
+# Reported from an EXIT trap rather than from the verdict path, and that is a
+# requirement rather than a convenience. This script has six terminating paths -
+# no pipeline yet, still running, superseded, cancelled, green, not green - and
+# the commonest way to run it is straight after a push, which lands on "no
+# pipeline yet". A mirror section printed only beside a finished verdict would be
+# absent from exactly the invocation a human makes most often, which is how it
+# would come to be unread again. The trap captures $? first and returns it, so
+# this section can never change the verdict it is printed beside.
+report_mirror() {
+  _rc=$?
+  [ "$MIRROR_REPORTED" -eq 1 ] && return "$_rc"
+  MIRROR_REPORTED=1
+
+  printf '\nmirror (GitHub Actions) - INFORMATIVE under D-020. It does not affect the exit\n'
+  printf 'status: the verdict above is computed from the drupalcode job list and nothing else.\n'
+
+  if [ -n "$MIRROR_SKIP" ]; then
+    printf '  NOT READ - %s\n' "$MIRROR_SKIP"
+    return "$_rc"
+  fi
+
+  _mirror_url="$(git config --get remote.github.url 2>/dev/null || true)"
+  if [ -z "$_mirror_url" ]; then
+    printf '  NOT READ - this checkout has no remote named `github`, which is the name D-016\n'
+    printf '             gives the mirror. That is not "the mirror is fine"; it is "nothing\n'
+    printf '             here can see the mirror".\n'
+    return "$_rc"
+  fi
+
+  _slug="$_mirror_url"
+  _slug="${_slug#https://github.com/}"
+  _slug="${_slug#http://github.com/}"
+  _slug="${_slug#git@github.com:}"
+  _slug="${_slug#ssh://git@github.com/}"
+  _slug="${_slug%.git}"
+  case "$_slug" in
+    */*) : ;;
+    *) printf '  NOT READ - remote.github.url (%s) does not parse to owner/repo\n' "$_mirror_url"
+       return "$_rc" ;;
+  esac
+
+  if ! command -v gh >/dev/null 2>&1; then
+    printf '  NOT READ - gh is not installed, so the mirror cannot be reached from this shell.\n'
+    printf '             Read it by hand at https://github.com/%s/actions - an unread\n' "$_slug"
+    printf '             mirror is exactly how nine consecutive reds went unnoticed for\n'
+    printf '             three weeks. THIS IS NOT A PASS.\n'
+    return "$_rc"
+  fi
+
+  _branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)"
+  _query="repos/$_slug/actions/runs?per_page=$MIRROR_PAGE"
+  if [ "$_branch" = "HEAD" ]; then
+    _scope='all branches - this checkout is in detached HEAD, so no branch filter applies'
+  else
+    _query="$_query&branch=$_branch"
+    _scope="branch $_branch"
+  fi
+
+  _err_file="$(mktemp -t watch-gate-mirror.XXXXXX 2>/dev/null)" || _err_file=''
+  if [ -z "$_err_file" ]; then
+    printf '  NOT READ - cannot create a temp file, so the gh error stream cannot be read\n'
+    printf '             and a failure could not be told apart from an empty answer.\n'
+    return "$_rc"
+  fi
+  _json="$(gh api "$_query" 2>"$_err_file")"
+  _gh_status=$?
+  _msg="$(tr '\n' ' ' < "$_err_file" | cut -c1-300)"
+  rm -f "$_err_file"
+
+  if [ "$_gh_status" -ne 0 ]; then
+    case "$_msg" in
+      *authentication*|*"not logged"*|*"Bad credentials"*|*"HTTP 401"*|*"gh auth login"*|*GH_TOKEN*)
+        printf '  NOT READ - gh is installed and NOT AUTHENTICATED for %s.\n' "$_slug"
+        printf '             Run `gh auth login`, then re-run. A third state, not a pass.\n' ;;
+      *"HTTP 404"*|*"Not Found"*)
+        printf '  NOT READ - GitHub answered 404 for %s: either that repository does not\n' "$_slug"
+        printf '             exist or this token cannot see it. Either way it is unwatched.\n' ;;
+      *)
+        printf '  NOT READ - the GitHub API call failed (gh exit %s).\n' "$_gh_status" ;;
+    esac
+    printf '             gh said: %s\n' "${_msg:-(nothing on stderr)}"
+    return "$_rc"
+  fi
+
+  # The env vars go on the python3 side of the pipe. Setting them on gh would
+  # export them into the process that does not read them - the same mistake the
+  # job-list reader above records having made once already.
+  printf '%s' "$_json" | \
+    MIRROR_HEAD="$SHA" MIRROR_SCOPE="$_scope" MIRROR_SLUG="$_slug" \
+    MIRROR_DECLARED="$MIRROR_WORKFLOWS" MIRROR_PAGE="$MIRROR_PAGE" python3 -c '
+import datetime, json, os, sys
+
+def out(line):
+    sys.stdout.write("  " + line + "\n")
+
+try:
+    data = json.load(sys.stdin)
+except Exception as exc:
+    out("NOT READ - the GitHub API answered something that is not JSON: %s" % exc)
+    raise SystemExit(0)
+
+runs = data.get("workflow_runs")
+if runs is None:
+    out("NOT READ - the answer carries no workflow_runs key, so nothing was examined.")
+    raise SystemExit(0)
+
+page = os.environ["MIRROR_PAGE"]
+out("runs examined: %d of at most %s  (%s, newest first)"
+    % (len(runs), page, os.environ["MIRROR_SCOPE"]))
+if not runs:
+    out("NO RUNS AT ALL in that scope. That is an unread mirror, not a green one.")
+    raise SystemExit(0)
+
+UTC = datetime.timezone.utc
+NOW = datetime.datetime.now(UTC)
+
+def age_days(stamp):
+    try:
+        when = datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ")
+    except Exception:
+        return None
+    return (NOW - when.replace(tzinfo=UTC)).days
+
+def aged(stamp):
+    days = age_days(stamp or "")
+    return "%s (%s days ago)" % (stamp, days) if days is not None else str(stamp)
+
+head = os.environ["MIRROR_HEAD"]
+short = head[:7]
+noisy = False
+
+# ------------------------------------------ the run for the commit under verdict
+mine = [r for r in runs if r.get("head_sha") == head]
+if not mine:
+    noisy = True
+    out("HEAD %s: NO RUN - GitHub has started none for this commit in the page" % short)
+    out("         examined. Pushed to `github` yet? The mirror is a separate push.")
+    out("         NO RUN IS A THIRD STATE: neither a pass nor a failure.")
+else:
+    run = mine[0]
+    status = run.get("status") or "?"
+    verdict = run.get("conclusion")
+    if status != "completed":
+        noisy = True
+        out("HEAD %s: %s - it has concluded NOTHING yet (run %s)"
+            % (short, status, run.get("id")))
+    elif verdict == "success":
+        out("HEAD %s: success  run %s  %s" % (short, run.get("id"), run.get("created_at")))
+    else:
+        noisy = True
+        out("HEAD %s: %s  run %s  %s   <-- NOT a success"
+            % (short, verdict or "(no conclusion recorded)", run.get("id"),
+               run.get("created_at")))
+
+# ----------------------------------------------------------------- the streak
+completed = [r for r in runs if r.get("status") == "completed"]
+out("completed runs in that page: %d" % len(completed))
+if not completed:
+    noisy = True
+    out("streak: NOT COMPUTED - none of the runs examined has completed.")
+else:
+    streak = 0
+    for run in completed:
+        if run.get("conclusion") == "success":
+            break
+        streak += 1
+    success = None
+    for run in completed:
+        if run.get("conclusion") == "success":
+            success = run
+            break
+
+    if streak == 0:
+        out("consecutive non-success completed runs: 0 - the newest completed run passed.")
+    else:
+        noisy = True
+        kinds = {}
+        for run in completed[:streak]:
+            key = run.get("conclusion") or "(none)"
+            kinds[key] = kinds.get(key, 0) + 1
+        spread = ", ".join("%s x%d" % (k, v) for k, v in sorted(kinds.items()))
+        oldest = completed[streak - 1].get("created_at")
+        if success is None:
+            out("RED STREAK: >= %d consecutive non-success completed runs - the page" % streak)
+            out("            examined holds NO success, so that is a FLOOR and not a count.")
+            out("            Re-run with --mirror-page N to bound it.")
+        else:
+            out("RED STREAK: %d consecutive non-success completed runs." % streak)
+        out("            conclusions in the streak: %s" % spread)
+        out("            oldest in the streak: %s" % aged(oldest))
+
+    if success is None:
+        out("last success: NONE in the %d runs examined." % len(runs))
+    else:
+        out("last success: %s  run %s  %s"
+            % ((success.get("head_sha") or "?")[:7], success.get("id"),
+               aged(success.get("created_at"))))
+
+# -------------------------------------------------------- workflow accounting
+declared = sorted(set(os.environ.get("MIRROR_DECLARED", "").split()))
+seen = sorted(set((r.get("path") or "").split("/")[-1] for r in runs if r.get("path")))
+out("workflows declared here: %d  %s" % (len(declared), " ".join(declared) or "(none)"))
+out("workflows seen in page:  %d  %s" % (len(seen), " ".join(seen) or "(none)"))
+for name in sorted(set(seen) - set(declared)):
+    noisy = True
+    out("UNDECLARED WORKFLOW: %s runs on the mirror and is not declared here, so" % name)
+    out("                     its conclusion is being read by nobody.")
+for name in sorted(set(declared) - set(seen)):
+    out("declared and not seen in this page: %s (it may simply not have run lately)" % name)
+
+if noisy:
+    out("look at it: https://github.com/%s/actions" % os.environ["MIRROR_SLUG"])
+'
+  _reader_status=$?
+  if [ "$_reader_status" -ne 0 ]; then
+    printf '  NOT READ - the mirror reader itself failed (exit %s). A reader that did not\n' "$_reader_status"
+    printf '             run is not a mirror that is fine (I-027).\n'
+  fi
+  return "$_rc"
+}
+trap report_mirror EXIT
 
 attempt=0
 while : ; do

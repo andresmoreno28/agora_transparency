@@ -706,8 +706,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   figures out of this sentence and fails the gate when they disagree with the `# GATE-CLAIM:` line
   each runner carries in its own header — along with the two job tables above, which it compares
   against `watch-gate`'s declared job lists, and the `jobs >= N` floor, which it compares against
-  the length of those lists. **Seven comparisons, all offline, well under a second**, which is why
-  it is wired into wave 1 and not into the runner that takes 35 minutes.
+  the length of those lists. ~~**Seven comparisons**~~ **EIGHT as of 2026-09-19** — all offline,
+  well under a second, which is why it is wired into wave 1 and not into the runner that takes 35
+  minutes. The eighth reads `.github/workflows/` against the workflow list `tests/bin/watch-gate`
+  declares it reads, so a workflow appearing on the GitHub mirror that nothing has been told to
+  watch fails the gate on the day it lands rather than on the day somebody notices.
   ⚠️ **It covers about half of this block and says which half on every run.** Assertion counts, axe
   denominators and per-job traces live only in a CI log — `/trace` answers `401` to anonymous
   requests — so they are printed by name in a `NOT CHECKED` list that the gate asserts is
@@ -715,8 +718,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   of it**, and the deleted-exclusion-list case is checked for the same reason the deny-list lengths
   in G7, G13 and G14 are: an empty list passes by construction (I-028).
   ⚠️ **What it still does not prove**, stated so it is not mistaken for full cover: nothing yet
-  asserts that a `# GATE-CLAIM:` line matches the total its own runner PRINTS. Five of the seven
-  comparisons are therefore prose against prose — better than prose against nothing, because the
+  asserts that a `# GATE-CLAIM:` line matches the total its own runner PRINTS. Five of the
+  ~~seven~~ **eight** comparisons are therefore prose against prose — better than prose against nothing, because the
   declaration lives three lines from the arithmetic that derives it, but not a measurement. Closing
   it is one line in each runner's summary and it has no owner yet.
   ⚠️ **The seventeenth invariant is `executable-bit`, and it is the first number this file has
@@ -813,13 +816,57 @@ moving the working copy a session is running in, on the day wave 5 starts.
   reconciles the classes that ran against the `*Test.php` the package ships and goes red naming
   the class if that difference is not exactly the declared one (T-1906).
 
-  🔴 **What is STILL open, named so that "closed" is not read as more than it is: nothing in
+  ~~🔴 **What is STILL open, named so that "closed" is not read as more than it is: nothing in
   this repository watches the mirror's conclusion.** `tests/bin/watch-gate` reads drupalcode and
   only drupalcode — correctly, because that is the gate — and `tests/bin/claims-match-sources`
   prints eight exclusions by name, none of which is GitHub. **The mechanism that let nine reds
   pass unread is unchanged**: the mirror is watched by a human noticing an email, and this
   paragraph is the only thing in the repository that says so. The fix above makes the next red
-  **legible**; it does not make it **noticed**.
+  **legible**; it does not make it **noticed**.~~
+
+  ✅ **CLOSED THE SAME DAY IT WAS WRITTEN, 2026-09-19 (T-1907, T-1908), and the struck paragraph
+  is kept whole because its last sentence is the test the fix had to pass.** `tests/bin/watch-gate`
+  now prints the mirror's state beside the drupalcode job list on **every** terminating path —
+  including the *"no pipeline yet"* exit, which is what a push is normally followed by. It is
+  reported from an `EXIT` trap for exactly that reason: a section printed only beside a finished
+  verdict would be absent from the commonest invocation there is, which is how it would come to be
+  unread again.
+
+  ⚠️ **What it prints is the STREAK, and the absence of that number is the whole story.** A single
+  conclusion for a single commit would not have caught this: each of the nine reds was a fresh
+  failure on a fresh commit, and each was individually unremarkable. **Nobody ever had the number
+  nine.** So it counts consecutive non-success completed runs on the branch, names the conclusions
+  in the streak, names the last success and its age, and states how many runs it examined.
+  Falsified against the **real API payload windowed to the moment the defect was found**, not
+  against invented JSON: `RED STREAK: 9 consecutive non-success completed runs` ·
+  `conclusions in the streak: failure x9` · `oldest in the streak: 2026-08-27T13:30:25Z (23 days
+  ago)` · `last success: 505c18a run 33074134414 (23 days ago)`. When the page it read holds no
+  success at all it reports a FLOOR — `>= N` — never a count it cannot justify.
+
+  ⚠️ **It does NOT gate, and that is deliberate rather than timid.** D-020 makes drupalcode the
+  gate and the mirror informative; promoting a red mirror to a failed gate here would be a decision
+  taken by a tool instead of by a person. The exit status is computed from the drupalcode job list
+  and from nothing else — **falsified in both directions**: a mirror the tool could not read at all
+  still exits `0` over a green pipeline, and a green mirror still exits `1` over a pipeline that
+  measured nothing.
+
+  ⚠️ **Ten ways of not knowing, each with its own sentence, because the defect being closed is an
+  absence that read as good news for three weeks.** No `gh`; `gh` unauthenticated; no `github`
+  remote; a remote that does not parse; `--repo` naming a project this checkout is not; a 404; any
+  other API failure; a non-JSON answer; an empty page; and no run for this commit. Every one prints
+  `NOT READ` or `NO RUN` and says which, and **all ten were run**: unauthenticated prints *"gh is
+  installed and NOT AUTHENTICATED … A third state, not a pass"*, and `gh` absent prints the URL to
+  go and read by hand.
+
+  ⚠️ **The offline half is in `tests/bin/claims-match-sources`, and it is the half that catches the
+  NEXT one.** The conclusion itself needs the network, so it is named in the NOT CHECKED list
+  pointing at the tool that reads it — that list had named eight quantities, **none of them
+  GitHub**, so the mirror was missing from the covered half and from the named-uncovered half at
+  the same time. What IS checkable offline is that every workflow on the mirror is one `watch-gate`
+  has been told to read, and that is the eighth comparison: `.github/workflows/` against
+  `MIRROR_WORKFLOWS`. It earns its place because the mirror is **scheduled to grow** — D-009(d) and
+  T-804 put visual regression there — and a second workflow nobody reads would be this same defect
+  one file over.
 - Playwright: functional + visual regression of the demo pages.
   ⏸ **NOT RUNNING ANYWHERE, and not counted as coverage until it is.** T-804 is **deferred to unit
   003 with the mirror as its prerequisite**: D-009(d) puts visual regression on the GitHub mirror,
@@ -833,7 +880,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   **A number written down twice is a number that goes stale in one place first — and this is the
   clearest instance of it in the file, having now drifted twice in the same direction.** It is
   fixed by hand here; the durable fix is that neither copy is machine-checked, because the page
-  count exists only in a CI job trace, which is one of the eight exclusions
+  count exists only in a CI job trace, which is one of the ~~eight~~ **nine** exclusions
   `tests/bin/claims-match-sources` prints by name on every run.
   ⚠️ **Both copies were re-read against job `12024567` on 2026-09-12 and BOTH said 7**, and
   again against job `12303707` on 2026-09-19 — still 7, still 89, still `489 total assertions`,

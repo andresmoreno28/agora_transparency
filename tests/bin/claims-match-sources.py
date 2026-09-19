@@ -12,6 +12,9 @@ wrapper does the reporting and this file does the reading:
     CLAIM    <name>   <value>            a number or list read out of CLAUDE.md
     SOURCE   <name>   <value>            the same quantity read from the repo
     CMP      <name>   OK|MISMATCH  <claimed>  <source>  <what was compared>
+                                       (left is not always CLAUDE.md - two of
+                                        the eight compare a source against a
+                                        fact; the note says which two things)
     UNCHECKED  <name> <why>
     COUNT    <name>   <n>
     FATAL    <why>                       extraction failed; nothing was compared
@@ -30,7 +33,9 @@ quote, two struck amendments and the operative value - and whose rule is stated
 where it is applied.
 """
 
+import glob
 import io
+import os
 import re
 import sys
 
@@ -64,6 +69,9 @@ UNCHECKED = [
      "lives in the agora_theme repository; not readable from this tree"),
     ("whether a LOWERED gate floor is still consistent",
      "the floor is read as the maximum of six mentions - see the header"),
+    ("the GitHub mirror's conclusion, and how long it has been red",
+     "network; tests/bin/watch-gate reads it live beside the gate and prints "
+     "the streak, the last success and how many runs it examined"),
 ]
 
 
@@ -164,6 +172,53 @@ def expected_list(text, variable, records):
     return sorted(names)
 
 
+def mirror_declared(text, records):
+    """The workflow filenames tests/bin/watch-gate says it reads."""
+    match = re.search(r"^MIRROR_WORKFLOWS='([^']*)'", text, re.M)
+    if not match:
+        records.append(("FATAL",
+                        "MIRROR_WORKFLOWS is not assigned in %s in the "
+                        "single-quoted shape this extractor reads - the tool "
+                        "that reads the mirror has stopped saying what it reads"
+                        % WATCH))
+        return None
+    names = sorted(set(match.group(1).split()))
+    if not names:
+        records.append(("FATAL",
+                        "MIRROR_WORKFLOWS is assigned an EMPTY list in %s - "
+                        "every workflow on the mirror would then be undeclared "
+                        "and none would be named (I-028)" % WATCH))
+        return None
+    return names
+
+
+def mirror_on_disk(records):
+    """The workflow files the mirror actually carries, from the working tree.
+
+    THE ONLY EXTRACTOR HERE THAT READS A DIRECTORY, and the reason is dated.
+    D-009(d) and T-804 put visual regression on the GitHub mirror, so a SECOND
+    workflow is expected to appear. A workflow whose conclusion nothing reads is
+    exactly the defect closed on 2026-09-19 - nine consecutive reds over three
+    weeks - reproduced one file over. This comparison fires the day the file
+    lands rather than the day somebody notices.
+    """
+    names = sorted(set(
+        os.path.basename(path)
+        for pattern in (".github/workflows/*.yml", ".github/workflows/*.yaml")
+        for path in glob.glob(pattern)))
+    if not names:
+        records.append(("FATAL",
+                        "mirror_workflows: no workflow file under "
+                        ".github/workflows/, so this comparison has an empty "
+                        "scope and would pass by construction (I-028). If the "
+                        "workflow was deliberately deleted - D-020 rider (a) "
+                        "sets its expiry at unit 007 - remove MIRROR_WORKFLOWS "
+                        "from %s and this comparison with it, deliberately."
+                        % WATCH))
+        return None
+    return names
+
+
 def main():
     records = []
     claims = {}
@@ -254,6 +309,9 @@ def main():
         watch, "EXPECTED_agora_transparency", records)
     sources["theme_jobs"] = expected_list(watch, "EXPECTED_agora_theme", records)
 
+    sources["mirror_declared"] = mirror_declared(watch, records)
+    sources["mirror_disk"] = mirror_on_disk(records)
+
     if sources.get("template_jobs") and sources.get("theme_jobs"):
         sources["floor"] = str(min(len(sources["template_jobs"]),
                                    len(sources["theme_jobs"])))
@@ -295,6 +353,11 @@ def main():
     compared += compare("floor", claims.get("floor"), sources.get("floor"),
                         "the largest `jobs >= N` in CLAUDE.md vs the shorter of "
                         "the two declared job lists")
+    compared += compare("mirror_workflows", sources.get("mirror_disk"),
+                        sources.get("mirror_declared"),
+                        "the workflow files under .github/workflows/ vs "
+                        "MIRROR_WORKFLOWS in " + WATCH + " - a directory "
+                        "against a declaration, not prose against prose")
 
     for name, value in sorted(claims.items()):
         if value is not None:
