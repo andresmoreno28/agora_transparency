@@ -324,8 +324,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `968062`, ref `1.x`, commit `2fe883e`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/968062/jobs` on 2026-09-19. (It stood at
+- **Observed inventory — the theme.** Pipeline `968335`, ref `1.x`, commit `35038cc`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/968335/jobs` on 2026-09-19.
+  ⚠️ **The axe gate moved for the first time since 2026-09-06: SEVEN pages became EIGHT**, and
+  the figures below are the new ones. `nightwatch` job `12308877` prints `agora_theme axe gate:
+  8 pages scanned, 89-89 axe rules run per page, 0 violations, heading-order reported on 8 of 8
+  pages` and **`576 total assertions`** (was `489` over 7). ⚠️ **The rule count HELD at 89, and
+  that is the figure to read rather than the page count**: a new page that scanned fewer rules
+  would raise the total while covering less, which is the exact shape of a green that means less
+  than it did. `phpunit` job `12308878` prints **`OK (156 tests, 797 assertions)`**, unchanged
+  from `968062`, correct for a commit that adds no PHP test. (It stood at
   `968026`/`1db46dd` and `967950`/`7d7e791` earlier the same day and at `950770`/`71de28e` on
   2026-09-12; the ten names are unchanged, every job `success`, every `allow_failure` false.
   **Three observations in one day is not churn — the theme took three commits that day**, and a
@@ -334,15 +342,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
   useful part.** `phpunit` went `127 / 720` → `127 / 720` → **`OK (156 tests, 797 assertions)`**:
   unchanged across the two tooling commits, then +29 tests and +77 assertions on the one that
   added behaviour, which is exactly the shape to want and was predicted before it was read.
-  `nightwatch` printed **7 pages, 89-89 rules, 0 violations, heading-order on 7 of 7,
-  `489 total assertions`** on all three — correctly, because none of them added a scanned page.
-  ⚠️ 🔴 **AND THAT LAST SENTENCE IS THE GAP, not a reassurance.** The change that moved `phpunit`
+  `nightwatch` printed **7 pages … `489 total assertions`** on all three — correctly, because
+  none of them added a scanned page.
+  ✅ ~~⚠️ 🔴 **AND THAT LAST SENTENCE IS THE GAP, not a reassurance.**~~ **CLOSED the same day it
+  was opened, by `e79c265`.** What it said, and it was right: the change that moved `phpunit`
   added a views empty-region message and an exposed-form button row to every register page, and
-  **none of the seven axe-scanned fixtures contains an exposed form** — so neither surface is
-  scanned by the accessibility gate anywhere. The stylesheet's own comment has recorded that the
-  fixtures carry no exposed form since it was written; until 2026-09-19 that absence cost nothing,
-  and now it does. **It has no owner and no task row.** The fix is a fixture page with an exposed
-  filter, which moves the axe page count from 7 to 8 and therefore moves this block. ⚠️ **The list
+  **none of the seven axe-scanned fixtures contained an exposed form** — so neither surface was
+  scanned by the accessibility gate anywhere. The theme's own stylesheet had recorded that
+  absence since it was written; until 2026-09-19 it cost nothing.
+  **An eighth fixture now carries a view with an exposed filter and is scanned in BOTH states**,
+  which is the half that matters: unfiltered it reads 3 body rows, 1 exposed form, 2 labelled
+  controls and **one** action; filtered it reads 0 tables, 1 empty region, a way out, **two**
+  actions in the order `Search|Reset`, and the phrase *"been published yet"* **absent**. The
+  accessibility gate now also watches for the return of the falsehood that opened this.
+  ⚠️ **The existing register fixture was NOT given an exposed filter, and refusing the cheaper
+  option is the point**: exposing one on it costs no new file, and it would have changed what
+  seven already-green pages are a measurement OF. ⚠️ **The list
   MOVED on 2026-09-02: nine jobs became TEN**, and the tenth is `phpunit`. It is recorded in
   **this** file because `agora_theme` has no `CLAUDE.md` of its own: it is a theme, and its
   repository holds code, not the process layer. (Before `950770` the row stood at pipeline
@@ -874,7 +889,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   Repository"*). With no demo content until unit 003, the only pages a screenshot could capture are
   four synthetic fixtures. **Prerequisite: [andres] creates the mirror.**
 - axe (a11y) with no violations on the demo pages. **Running in the theme, not here**, as the
-  blocking `nightwatch` job — **7** pages, 89 rules per page, 0 violations; see the theme's table.
+  blocking `nightwatch` job — **8** pages, 89 rules per page, 0 violations; see the theme's table.
   ⚠️ This line said **4** until 2026-08-26 and **5** until 2026-09-06, while the table above said
   6 and then 7: the same gate block carries the figure twice and only one copy is ever refreshed.
   **A number written down twice is a number that goes stale in one place first — and this is the
@@ -885,6 +900,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   ⚠️ **Both copies were re-read against job `12024567` on 2026-09-12 and BOTH said 7**, and
   again against job `12303707` on 2026-09-19 — still 7, still 89, still `489 total assertions`,
   which is what a commit that adds no surface should do to them.
+  ⚠️ **BOTH COPIES MOVED TO 8 on 2026-09-19 (job `12308877`), in the same commit**, which is the
+  first time this pair has been refreshed together rather than one of them going stale first.
   The 2026-09-12 note follows: which is
   the first time this pair has been checked and found to agree. **The assertion total is
   deliberately NOT repeated here** — it lives once, in the table above. The lesson of the drift is
