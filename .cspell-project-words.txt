@@ -360,3 +360,12 @@ linkit
 # every phpunit-only option out of them. Quoted from a job trace and from
 # include.drupalci.variables.yml:107-109. An upstream variable name, not a word.
 RUNTESTS
+# T-1106: `Lanczos`, the resampling filter used to reduce the 2560x2048 capture to the
+# 500x400 shipped in screenshot.webp. Named after Cornelius Lanczos; it is the standard
+# name of the kernel and naming it is what makes the reduction reproducible. A surname,
+# not a word.
+Lanczos
+# T-1106: `PSNR`, peak signal-to-noise ratio - the measure quoted (34.01 dB) to justify
+# WebP quality 86 over 90 for screenshot.webp, which is the difference between "it looks
+# fine" and a number someone else can reproduce. A standard acronym, not a word.
+PSNR
