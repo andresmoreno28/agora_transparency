@@ -1095,3 +1095,37 @@ turn that owns that change, and this dispatch does not. ⚠️ **The correction 
 in its own words why nobody will notice**: `claims-match-sources` reads `CLAUDE.md`, not
 `DECISIONS.md`, and `cited-tasks-exist` compares task *ids*, never task *counts* — **a number that
 gates nothing is a number nothing checks**.
+
+⚠️ **CORRECTED WITHIN THE HOUR, AND THE CORRECTION IS THE MORE INTERESTING HALF. The paragraph
+immediately above is FALSE at `1b4c1a4`, and it was made false by a SECOND WRITER in the same
+checkout.** It is appended to rather than edited (rule 8). What happened, in the order it was
+measured rather than the order it was understood:
+
+- **12:33** — this wave's six files were final and the wave-3 gate was running over them.
+- **12:40:13** — `specs/000-project/DECISIONS.md` gained a 41-line amendment. **Nothing in this
+  wave wrote it**, and `git status` had shown the file unmodified eight minutes earlier.
+- **12:46** — `git add -A` swept that file into this wave's commit. It was caught by reading the
+  staged file list before pushing, **not** by any gate: the commit was un-made with
+  `git reset --soft`, the foreign file unstaged, and the six files re-committed as `a49875b`.
+  The foreign edit was left **byte-for-byte on disk**, uncommitted — deleting another writer's
+  work is worse than committing it, and both are worse than handing it back.
+- **12:52** — a commit appeared at `HEAD` that this wave did not make, `1b4c1a4`, *"fix: the
+  pinned-variable guard moves to the invariant whose subject it is"*. It contains **only**
+  `DECISIONS.md` — because the other six were already committed — under a message describing the
+  whole task, this wave's measurements included. Both remotes now carry it.
+
+**The tree is coherent and nothing was lost**, which is the part to state before the complaint:
+`a49875b` is an ancestor of `1b4c1a4`, `gate-a-wave3.sh` still declares `checks=51 invariants=15`,
+and `no-blind-phpunit` holds exactly one `PINNED_VARS` assignment. **What is NOT coherent is the
+paragraph above**: `DECISIONS.md` *was* edited, its rider is **not** two rows behind, and it now
+names the counting command instead of a digit — which is the better fix and is the one this file
+has been arguing for since its first stale count.
+
+⚠️ **The lesson is not about a budget count.** Two writers were in one working copy with no lock
+and no detector, and the only thing that stopped a foreign edit entering a signed commit was a
+human-readable file list being read before a push. `CLAUDE.md` warns at length about three clones
+of this repository on this machine and names `tests/bin/identity-strings` as the mechanical guard;
+**that guard cannot see this**, for exactly the reason it already states about the rigs — the tree
+*is* the repository it claims to be. **A second writer inside the correct checkout is invisible to
+every invariant this project owns**, and the accounting entry above is the second record in two
+hours of a number going stale between being written and being read.
