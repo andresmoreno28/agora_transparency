@@ -90,5 +90,98 @@ jobs:
       # holds even if this workflow's runner changes later. A suite that executed 0 tests is a
       # FAILED gate, not a passed one (I-007, I-032). --testdox names each test in the log
       # instead of only counting them (T-406).
+      #
+      # --log-junit writes the SAME run to XML, and the next step reads it. The printer and
+      # the logger are independent code paths: a test that fails inside setUp() never reaches
+      # the TestDox collector and is therefore absent from the --testdox list it failed in,
+      # while the XML still carries its <testcase> and the <failure> under it. That gap cost
+      # this workflow three weeks of unreadable reds - see the next step.
       - name: Run tests
-        run: ddev exec phpunit --configuration=./web/core --testdox --fail-on-empty-test-suite ./recipes/$(basename $PACKAGE_NAME)
+        run: ddev exec phpunit --configuration=./web/core --testdox --fail-on-empty-test-suite --log-junit /var/www/html/phpunit-junit.xml ./recipes/$(basename $PACKAGE_NAME)
+
+      # WHY THIS STEP EXISTS, and it is a legibility defect rather than a test defect.
+      #
+      # This workflow failed on nine consecutive runs between 2026-08-27 and 2026-09-19,
+      # emailing the maintainer each time, and the log never said why. The final run printed
+      # `Tests: 19, Assertions: 2362, Failures: 1, Deprecations: 138` over 138 deprecation
+      # reports and NOT ONE WORD about the failure: no `x` marker in the --testdox list, no
+      # "There was 1 failure:" section, no assertion message anywhere in 408 KB of log. The
+      # failing test was missing from the very list it failed in, which reads exactly like a
+      # test that never ran.
+      #
+      # A check that is red for three weeks is not informative, it is noise that teaches its
+      # reader to ignore it (D-020: the mirror may fail without blocking, but it may never
+      # lie). So the first fix is not to the test, it is to the reporting: a result nobody
+      # can read is not a result (I-034).
+      #
+      # IT DOES NOT WEAKEN THE GATE, and that is the point rather than a caveat. It changes
+      # nothing about which tests run; `Run tests` above still owns the job's exit code. What
+      # it adds is a sentence at the END of the log where a reader looks, a ::error::
+      # annotation so the notification email names the test instead of only naming the job,
+      # and a step summary. A missing or empty XML FAILS here, because a report about nothing
+      # must never be able to look like a clean report (I-007, I-028).
+      - name: Name every failed test, with its message
+        if: always()
+        run: |
+          ddev exec cat /var/www/html/phpunit-junit.xml > junit.xml 2>/dev/null || true
+          if [ ! -s junit.xml ]; then
+            echo "::error::PHPUnit wrote no JUnit log, so the failure detail this step exists to print does not exist. Failing rather than reporting nothing."
+            exit 1
+          fi
+          python3 - junit.xml <<'PYEOF'
+          import os
+          import sys
+          import xml.etree.ElementTree as ElementTree
+
+          log = ElementTree.parse(sys.argv[1])
+          cases = list(log.iter('testcase'))
+          bad = [(case, child) for case in cases for child in case
+                 if child.tag in ('failure', 'error')]
+
+          rule = '=' * 74
+          print('')
+          print(rule)
+          print('JUnit log: %d testcase(s) recorded; %d carry a failure or an error.'
+                % (len(cases), len(bad)))
+          # One line per CLASS, because the count is the first thing to disagree with the
+          # canonical pipeline and the class list is what says which test is missing here.
+          for suite in log.iter('testsuite'):
+              if suite.find('testsuite') is None and suite.get('tests'):
+                  print('  %-34s tests=%s failures=%s errors=%s skipped=%s'
+                        % (suite.get('name'), suite.get('tests'), suite.get('failures'),
+                           suite.get('errors'), suite.get('skipped')))
+          print(rule)
+
+          if not cases:
+              print('The JUnit log records no testcase at all.')
+              sys.exit(1)
+
+          found = []
+          for case, child in bad:
+              name = '%s::%s' % (case.get('class') or '?', case.get('name') or '?')
+              where = '%s:%s' % (case.get('file') or '?', case.get('line') or '?')
+              text = (child.text or child.get('message') or '').strip()
+              print('')
+              print('%s  <%s>' % (name, child.tag))
+              print('  declared at %s' % where)
+              for line in (text or '(no message recorded)').splitlines():
+                  print('    ' + line)
+              found.append((name, where, text))
+
+          for name, where, text in found:
+              # PHPUnit's failure text opens with the test id, so line 1 is the name
+              # again; the sentence a reader needs is the first line after it.
+              speaking = [line.strip() for line in text.splitlines()
+                          if line.strip() and line.strip() != name]
+              head = speaking[0] if speaking else '(no message recorded)'
+              print('::error::%s (%s) - %s' % (name, where, head[:500]))
+
+          summary = os.environ.get('GITHUB_STEP_SUMMARY')
+          if summary:
+              with open(summary, 'a', encoding='utf-8') as handle:
+                  handle.write('### PHPUnit: %d testcase(s) recorded, %d failed\n\n'
+                               % (len(cases), len(bad)))
+                  for name, where, text in found:
+                      handle.write('**%s**\n\n`%s`\n\n```\n%s\n```\n\n'
+                                   % (name, where, text or '(no message recorded)'))
+          PYEOF
