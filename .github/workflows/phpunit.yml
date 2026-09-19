@@ -10,6 +10,10 @@ jobs:
   phpunit:
     name: Run PHPUnit tests
     runs-on: ubuntu-latest
+    env:
+      # Test classes this rig cannot run, declared here ONCE so the command line below
+      # and the reconciliation in the last step read the same list. Space-separated.
+      EXCLUDED_TEST_CLASSES: AccessibilityTest
     steps:
       # Use DDEV to set up the environment, because it gives us everything we
       # need and it just works.
@@ -92,35 +96,67 @@ jobs:
       # instead of only counting them (T-406).
       #
       # --log-junit writes the SAME run to XML, and the next step reads it. The printer and
-      # the logger are independent code paths: a test that fails inside setUp() never reaches
-      # the TestDox collector and is therefore absent from the --testdox list it failed in,
-      # while the XML still carries its <testcase> and the <failure> under it. That gap cost
-      # this workflow three weeks of unreadable reds - see the next step.
+      # the logger are independent code paths, and the difference is not academic: a test
+      # that fails inside setUp() never emits PHPUnit's Test\Prepared event, so the TestDox
+      # collector never registers it. Run 35451608869 printed a --testdox list of 19 tests
+      # with no failure marker in it, above a summary reading `Tests: 19 ... Failures: 1`,
+      # while the JUnit log of the very next run recorded 20 testcases and named the failing
+      # one. The test was missing from the list it failed in, which reads exactly like a test
+      # that never ran.
+      #
+      # WHY ONE TEST CLASS IS EXCLUDED, BY NAME, AND WHY THAT IS NOT A WEAKENED GATE.
+      #
+      # AccessibilityTest extends WebDriverTestBase: it drives a real browser over Selenium
+      # and scans each installed page with axe. This rig provides neither half. It builds a
+      # plain `ddev config --project-type=drupal11` project with no selenium add-on, so
+      # nothing listens on port 4444; and it never runs `yarn install` in core, so
+      # `web/core/node_modules/axe-core/axe.min.js` - the file that test's first assertion
+      # guards - is absent too. Measured rather than assumed: run 35452977342 failed with
+      #
+      #   Behat\Mink\Exception\DriverException: Could not open connection: Failed to
+      #   connect to localhost port 4444 after 0 ms: Could not connect to server
+      #
+      # and every frame of that stack is inside BrowserTestBase::setUp() and
+      # WebDriverTestBase::initMink(); not one is inside AccessibilityTest.php. The test is
+      # right and this environment is wrong. The canonical drupalcode pipeline runs it
+      # properly - real Chrome behind a Selenium service, node_modules delivered as an
+      # artifact by the `composer` job - and is green on it. D-020 makes drupalcode the gate
+      # and this mirror a second opinion, so the honest answer is to say which question this
+      # mirror does not answer, not to make it answer that question badly.
+      #
+      # NEVER SILENTLY, and that is the whole difference between this and the three shapes
+      # of cheating it resembles. The exclusion is one variable, spelled out in the command
+      # line, and the NEXT STEP RECONCILES IT: it lists every *Test.php the package ships
+      # and every class the JUnit log records, and fails unless the difference is exactly
+      # EXCLUDED_TEST_CLASSES. Add a test class that quietly does not run, or delete the
+      # excluded one without updating the list, and this job goes red naming the class.
       - name: Run tests
-        run: ddev exec phpunit --configuration=./web/core --testdox --fail-on-empty-test-suite --log-junit /var/www/html/phpunit-junit.xml ./recipes/$(basename $PACKAGE_NAME)
+        run: |
+          EXCLUDE="$(echo "$EXCLUDED_TEST_CLASSES" | tr -s ' ' '|')"
+          echo "Excluding by name: $EXCLUDED_TEST_CLASSES"
+          ddev exec phpunit --configuration=./web/core --testdox --fail-on-empty-test-suite \
+            --exclude-filter "/^($EXCLUDE)::/" \
+            --log-junit /var/www/html/phpunit-junit.xml \
+            ./recipes/$(basename $PACKAGE_NAME)
 
       # WHY THIS STEP EXISTS, and it is a legibility defect rather than a test defect.
       #
       # This workflow failed on nine consecutive runs between 2026-08-27 and 2026-09-19,
-      # emailing the maintainer each time, and the log never said why. The final run printed
-      # `Tests: 19, Assertions: 2362, Failures: 1, Deprecations: 138` over 138 deprecation
-      # reports and NOT ONE WORD about the failure: no `x` marker in the --testdox list, no
-      # "There was 1 failure:" section, no assertion message anywhere in 408 KB of log. The
-      # failing test was missing from the very list it failed in, which reads exactly like a
-      # test that never ran.
+      # emailing the maintainer each time, and the log never said why - see the run quoted
+      # above. A check that is red for three weeks is not informative, it is noise that
+      # teaches its reader to ignore it. D-020 holds that this mirror may fail without
+      # blocking but may never lie, and a result nobody can read is not a result (I-034).
       #
-      # A check that is red for three weeks is not informative, it is noise that teaches its
-      # reader to ignore it (D-020: the mirror may fail without blocking, but it may never
-      # lie). So the first fix is not to the test, it is to the reporting: a result nobody
-      # can read is not a result (I-034).
+      # So this prints every failed or errored test by name, file and message, at the END of
+      # the log where a reader looks; emits a ::error:: annotation so the notification email
+      # names the test rather than only the job; and writes the same into the step summary.
+      # It then reconciles the classes that ran against the classes the package ships.
       #
-      # IT DOES NOT WEAKEN THE GATE, and that is the point rather than a caveat. It changes
-      # nothing about which tests run; `Run tests` above still owns the job's exit code. What
-      # it adds is a sentence at the END of the log where a reader looks, a ::error::
-      # annotation so the notification email names the test instead of only naming the job,
-      # and a step summary. A missing or empty XML FAILS here, because a report about nothing
+      # IT WEAKENS NOTHING. `Run tests` above still owns the job's verdict on the tests. This
+      # step fails ONLY for instrumentation and accounting defects - no XML, no testcases, or
+      # a set of absent classes that is not the declared one - because a report about nothing
       # must never be able to look like a clean report (I-007, I-028).
-      - name: Name every failed test, with its message
+      - name: Name every failed test, and account for every class
         if: always()
         run: |
           ddev exec cat /var/www/html/phpunit-junit.xml > junit.xml 2>/dev/null || true
@@ -128,7 +164,8 @@ jobs:
             echo "::error::PHPUnit wrote no JUnit log, so the failure detail this step exists to print does not exist. Failing rather than reporting nothing."
             exit 1
           fi
-          python3 - junit.xml <<'PYEOF'
+          RECIPE_DIR="./recipes/$(basename "$PACKAGE_NAME")" python3 - junit.xml <<'PYEOF'
+          import glob
           import os
           import sys
           import xml.etree.ElementTree as ElementTree
@@ -143,8 +180,8 @@ jobs:
           print(rule)
           print('JUnit log: %d testcase(s) recorded; %d carry a failure or an error.'
                 % (len(cases), len(bad)))
-          # One line per CLASS, because the count is the first thing to disagree with the
-          # canonical pipeline and the class list is what says which test is missing here.
+          # One line per CLASS. The count is the first thing to disagree with the canonical
+          # pipeline, and the class list is what says WHICH test is missing here.
           for suite in log.iter('testsuite'):
               if suite.find('testsuite') is None and suite.get('tests'):
                   print('  %-34s tests=%s failures=%s errors=%s skipped=%s'
@@ -152,10 +189,39 @@ jobs:
                            suite.get('errors'), suite.get('skipped')))
           print(rule)
 
-          if not cases:
-              print('The JUnit log records no testcase at all.')
-              sys.exit(1)
+          problems = []
 
+          # ------------------------------------------------ account for every test class
+          # An exclusion that is only a comment is an exclusion that grows. This compares
+          # what the package ships against what the log records and insists the difference
+          # is exactly what the job declares.
+          recipe = os.environ.get('RECIPE_DIR', '')
+          pattern = os.path.join(recipe, 'tests', '**', '*Test.php')
+          shipped = sorted({os.path.basename(path)[:-4]
+                            for path in glob.glob(pattern, recursive=True)})
+          declared = sorted(set(os.environ.get('EXCLUDED_TEST_CLASSES', '').split()))
+          ran = sorted({case.get('class') for case in cases if case.get('class')})
+          absent = sorted(set(shipped) - set(ran))
+
+          print('')
+          print('class accounting')
+          print('  shipped by the package : %d  %s' % (len(shipped), ' '.join(shipped)))
+          print('  recorded in the log    : %d  %s' % (len(ran), ' '.join(ran)))
+          print('  absent from the log    : %d  %s' % (len(absent), ' '.join(absent)))
+          print('  declared as excluded   : %d  %s' % (len(declared), ' '.join(declared)))
+
+          if not shipped:
+              problems.append('No *Test.php found under %s, so this accounting compared '
+                              'nothing against nothing.' % pattern)
+          if not cases:
+              problems.append('The JUnit log records no testcase at all.')
+          if absent != declared:
+              problems.append('Classes absent from the run are %s but this job declares '
+                              '%s. Every class this rig does not run must be named in '
+                              'EXCLUDED_TEST_CLASSES, with the reason, in the step above.'
+                              % (absent or ['none'], declared or ['none']))
+
+          # ------------------------------------------------ name what actually failed
           found = []
           for case, child in bad:
               name = '%s::%s' % (case.get('class') or '?', case.get('name') or '?')
@@ -181,7 +247,13 @@ jobs:
               with open(summary, 'a', encoding='utf-8') as handle:
                   handle.write('### PHPUnit: %d testcase(s) recorded, %d failed\n\n'
                                % (len(cases), len(bad)))
+                  handle.write('Excluded by name: %s\n\n'
+                               % (', '.join(declared) or 'nothing'))
                   for name, where, text in found:
                       handle.write('**%s**\n\n`%s`\n\n```\n%s\n```\n\n'
                                    % (name, where, text or '(no message recorded)'))
+
+          for problem in problems:
+              print('::error::%s' % problem)
+          sys.exit(1 if problems else 0)
           PYEOF
