@@ -904,7 +904,7 @@ alternation requires four.
 
 | # | Repo | Task | Success criterion (falsifiable) | Blocked by |
 |---|---|---|---|---|
-| T-1701 ○ | · | **Pin `_PHPUNIT_CONCURRENT: '0'` in `.gitlab-ci.yml`, and make the class of defect checkable offline.** The pin is the smallest change that makes this file's existing claims true again. ⚠️ **The durable half is the guard, and where it went is a constrained choice rather than the best one.** Its correct home is `tests/bin/no-blind-phpunit`, whose subject it exactly is — and **D-028 makes that one of five invariants SHARED with `agora_theme` and forbids editing a shared file in one repository alone**, so it was not touched. ⚠️ **A new script was also refused, and the reason is mechanical:** any new group in either runner moves a `GATE-CLAIM` total, `tests/bin/claims-match-sources` binds all three totals to `CLAUDE.md`, and `CLAUDE.md` is outside this change's scope — so a correctly-named new script **cannot be wired to a gate** without a red gate or an out-of-scope edit. The assertion therefore **widens `tests/bin/no-ci-allow-dev`**, the one local-only invariant whose subject is already *a CI variable that decides whether a gate is real*: `CI_ALLOW_DEV` is the "must never be DEFINED" half, `PINNED_VARS` the "must always BE defined, by us" half. ⚠️ **Its NAME is now narrower than its contents**, which is a real cost and is written into the script's own header rather than left to be discovered | **The pin is present and is the string `'0'`, not the integer `0`** — `yaml.safe_load` reports `type str`, and `'0'` is what upstream's rule compares against. **The guard was seen FAILING before it was seen passing, three ways, each restored**: with the pin **removed** — the exact pre-fix state — `1 finding … exit 1`; with it set to the concurrent value, `_PHPUNIT_CONCURRENT is '1' and this gate requires '0'`, **and `no-blind-phpunit`'s own finding 3 fires independently on that same state**, which is the cross-check that the two guards disagree about different things; and with `PINNED_VARS` **emptied**, `the required-variable list is EMPTY - this section proves nothing (I-028)`, because a require-list that has been emptied finds nothing and prints the same `0 findings` a clean tree prints. **Both runner denominators are UNCHANGED at `67 · 0` and `49 · 0`** and `claims-match-sources` still reports **0 mismatches over 7 comparisons** — the widening adds a finding, not a check. ⚠️ **The criterion that cannot be met from this session, and the reason this glyph is `○` and not `✓`:** the trace must be read after a pipeline runs and show **`OK (N tests, M assertions)` back in both `phpunit` and `phpunit-pgsql`**, the upstream warning **gone**, and the job list still at **10, every `allow_failure: false`**. **The prediction, written down so it can be compared rather than trusted: `OK (20 tests, 2549 assertions)` in both, unchanged from `952632`** — this change adds no test and the four commits since were documentation. If it reads anything else, the difference is not this row's and should be traced before it is absorbed | — |
+| T-1701 ✓ | · | **Pin `_PHPUNIT_CONCURRENT: '0'` in `.gitlab-ci.yml`, and make the class of defect checkable offline.** The pin is the smallest change that makes this file's existing claims true again. ⚠️ **The durable half is the guard, and where it went is a constrained choice rather than the best one.** Its correct home is `tests/bin/no-blind-phpunit`, whose subject it exactly is — and **D-028 makes that one of five invariants SHARED with `agora_theme` and forbids editing a shared file in one repository alone**, so it was not touched. ⚠️ **A new script was also refused, and the reason is mechanical:** any new group in either runner moves a `GATE-CLAIM` total, `tests/bin/claims-match-sources` binds all three totals to `CLAUDE.md`, and `CLAUDE.md` is outside this change's scope — so a correctly-named new script **cannot be wired to a gate** without a red gate or an out-of-scope edit. The assertion therefore **widens `tests/bin/no-ci-allow-dev`**, the one local-only invariant whose subject is already *a CI variable that decides whether a gate is real*: `CI_ALLOW_DEV` is the "must never be DEFINED" half, `PINNED_VARS` the "must always BE defined, by us" half. ⚠️ **Its NAME is now narrower than its contents**, which is a real cost and is written into the script's own header rather than left to be discovered | **The pin is present and is the string `'0'`, not the integer `0`** — `yaml.safe_load` reports `type str`, and `'0'` is what upstream's rule compares against. **The guard was seen FAILING before it was seen passing, three ways, each restored**: with the pin **removed** — the exact pre-fix state — `1 finding … exit 1`; with it set to the concurrent value, `_PHPUNIT_CONCURRENT is '1' and this gate requires '0'`, **and `no-blind-phpunit`'s own finding 3 fires independently on that same state**, which is the cross-check that the two guards disagree about different things; and with `PINNED_VARS` **emptied**, `the required-variable list is EMPTY - this section proves nothing (I-028)`, because a require-list that has been emptied finds nothing and prints the same `0 findings` a clean tree prints. **Both runner denominators are UNCHANGED at `67 · 0` and `49 · 0`** and `claims-match-sources` still reports **0 mismatches over 7 comparisons** — the widening adds a finding, not a check. ⚠️ **The criterion that cannot be met from this session, and the reason this glyph is `○` and not `✓`:** the trace must be read after a pipeline runs and show **`OK (N tests, M assertions)` back in both `phpunit` and `phpunit-pgsql`**, the upstream warning **gone**, and the job list still at **10, every `allow_failure: false`**. **The prediction, written down so it can be compared rather than trusted: `OK (20 tests, 2549 assertions)` in both, unchanged from `952632`** — this change adds no test and the four commits since were documentation. If it reads anything else, the difference is not this row's and should be traced before it is absorbed. ✓ **MET. Pipeline `959227`, commit `fc83f63`, job list read from `/api/v4/projects/project%2Fagora_transparency/pipelines/959227/jobs` on 2026-09-19 — not from the badge: **10 jobs, every one `success`, every one `allow_failure: false`.** Jobs `12163739` (`phpunit`) and `12163740` (`phpunit-pgsql`) each print **`OK (20 tests, 2549 assertions)`** — **the prediction written in this cell before the push, exact on both**. In each trace: `_PHPUNIT_CONCURRENT=0`, `--fail-on-empty-test-suite` on the command line, upstream's warning **0 occurrences**, and **0** `Pass` per-test lines, so the run-tests.sh output format is gone as well as its routing. ⚠️ **The row closes on the trace, not on the push** — that is why it stood `○` for six days with the fix already merged and green.  ⚠️ **The sibling defect this row's own text names is now also closed**: `agora_theme` pinned the same variable on 2026-09-19 (`7d7e791`), measured at the source — `include.drupalci.variables.yml` on `main` reads `value: '1'` — rather than inferred. **The guard's displacement is NOT closed** and has no row: the PINNED_VARS assertion still lives in `no-ci-allow-dev` instead of `no-blind-phpunit`, because D-028 shares that file with the theme | — |
 
 ### What this change did not touch
 
@@ -915,3 +915,71 @@ state section is rewritten**; this section adds bytes only at the end of the fil
 accounting entry is placed **here with its wave** rather than beside the other nine at the top,
 because inserting it there would have put new bytes between existing paragraphs. ⚠️ **`DECISIONS.md`
 is not edited at all** — its budget rider is named above for routing, not changed from here.
+
+
+## Wave 18 — the same gate was inert in the sibling repository, and its last green looked like immunity — [ejecutor] 2026-09-19
+
+**Wave 17 pinned `_PHPUNIT_CONCURRENT` here and its commit ended with the line *"agora_theme
+carries the identical defect and is NOT fixed here"*.** This wave is that sentence being kept.
+It is one row, in the other repository, and it is written down here because `agora_theme` has no
+process layer of its own (D-014): it is a theme, and its repository holds code.
+
+⚠️ **The interesting part is not the pin, it is what the theme's green looked like.** On
+2026-09-12 the site template's two `phpunit` jobs had lost their `OK (…)` line while the theme's
+still printed `OK (127 tests, 720 assertions)`, and `CLAUDE.md` wrote that down as *"the same
+upstream template behaving differently in two repositories on the same day"*. **It was not.** The
+theme's figure came from pipeline `950770`, which ran on **2026-09-06** — before the upstream
+flip — and the theme's `1.x` had not moved since, so it had **not executed one pipeline under the
+new default**. Two measurements six days apart were *read* on the same day and compared as though
+they were simultaneous. **The theme was never immune; it was untested**, and "behaving
+differently" was an explanation invented for a difference that was only a date.
+
+⚠️ **The mechanism was then settled at the source instead of by argument**, because this project
+has been wrong about this exact failure twice before by reasoning about it. `include.drupalci.variables.yml`
+on `main` reads `_PHPUNIT_CONCURRENT` / `value: '1'` today, and `_PHPUNIT_EXTRA`'s own description
+there now ends *"used when _PHPUNIT_CONCURRENT is set to 0"*. Neither repository pins a templates
+version, so both inherit that `'1'`. Nothing had to be inferred from a trace at all.
+
+⚠️ **A baseline pipeline on the unpinned commit was attempted and could not be had, which is
+worth a line so nobody spends the same hour.** Creating a pipeline through the API answers `404`
+with the maintainer's token, and a throwaway branch pushed at the unpinned commit produced **no
+pipeline at all** — upstream's `include.drupalci.workflows.yml` creates them for version branches,
+merge requests and tags, and for nothing else. The branch was deleted. The source reading above is
+what replaced it, and it is better evidence than the trace would have been.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1702 ✓ | theme | **Pin `_PHPUNIT_CONCURRENT: '0'` in `agora_theme`'s `.gitlab-ci.yml`, and correct the two sentences in it that had gone false.** The first called the upstream default *"load-bearing rather than incidental"* — right about the mechanism, wrong in the one word that mattered, because a default is somebody else's setting. The second said *"this theme has no PHP test today, so no phpunit job materialises at all and the flag bites nothing yet"*; the first test arrived 2026-09-02 and the job materialised on its own. **`README.md`**: five configuration variables becomes six, and the sentence claiming `--fail-on-empty-test-suite` makes an empty suite fail now states what that claim depends on | **The pin is the string `'0'`** — `yaml.safe_load` reports the variables block at **6 entries** with `_PHPUNIT_CONCURRENT: '0'`. Local gate before the push: `gate-a-theme.sh` **35 checks, 0 failures**; `spellcheck` **82 files checked, 0 issues**; `no-blind-phpunit` **1 invocation, 1 guarded, 0 unguarded, 0 findings**. ⚠️ **The criterion that decides this row is the trace, not the push** — the same rule that kept T-1701 at `○` for six days | — |
+
+⚠️ **Reserve accounting, eleventh entry, 2026-09-19 — one row, and its basis is the SIXTH this
+file has used.** T-1702 takes the count from **66 to 67** against a ceiling of **34**, so the
+D-031 rider now names **thirty-three** rows over the ceiling rather than thirty-two. Stated, not
+asked about, per **D-044**: the budget counts and does not gate. The basis is new and is named so
+it can be argued with: **a defect already fixed here, found unfixed in the sibling repository by
+the fix's own closing sentence.** That is not new scope and it is not a discovery; it is the
+second half of work this unit had already decided to do, and leaving it without a row would have
+reproduced the exact complaint Wave 17 opened with — *"an open gate weakening with no owner and
+no task row"*.
+
+### What this change did not touch
+
+`config/`, `content/`, `recipe.yml`, `composer.json`, `recommended.yml`, `tests/src/`,
+`tests/bin/` in either repository, and every earlier row, glyph, success criterion, `Blocked by`
+cell and `#` cell in this file. **`tests/bin/no-blind-phpunit` is untouched in both**, and the
+reason given at the time was wrong. ⚠️ **CORRECTED THE SAME DAY, before this wave was committed:
+the constraint this section was about to cite does not exist in the decision it cites.** D-028
+makes `no-blind-phpunit` one of five invariants shared with `agora_theme`, and it was read here
+as *forbidding a shared file to be edited from one repository alone*. **D-028's own text prices
+the opposite** — option B's cost is *"one manifest to regenerate whenever a shared script
+legitimately changes"*. Its 2026-08-24 amendment holds that *"a copied invariant is never edited
+**until it passes**"*: a ban on adjusting a copy to make a red go away, **not** a ban on editing.
+The true cost of the move is one manifest row, which is what D-028 signed up for. ⚠️ **So the
+theme's pin is guarded by nothing, and it was avoidable** — the blocker was a sentence, not a
+rule. The `PINNED_VARS` assertion that guards this repository's pin lives
+in `tests/bin/no-ci-allow-dev`, a script the theme does not have, and moving it to its proper home
+is a coordinated two-repository change with **no row yet**. Named here rather than left to be
+noticed. ⚠️ **`CLAUDE.md` IS edited by this wave**, unlike Wave 17's: four passages in its gate
+block described this defect in the present tense as open and unowned, and one of them was the
+false same-day comparison above. ⚠️ **`DECISIONS.md` is edited too** — its budget rider heading
+still said 65 rows, one behind before this wave and two behind after it; the correction is
+appended at the end of that file per rule 8, not written into the signed heading.

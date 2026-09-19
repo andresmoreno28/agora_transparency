@@ -19,11 +19,21 @@
 # THE NAME OF THIS FILE IS NOW NARROWER THAN ITS CONTENTS, and that is stated
 # here rather than discovered later. The right home for half 2 is
 # tests/bin/no-blind-phpunit, whose subject it is exactly; D-028 makes that
-# script one of five SHARED with agora_theme and forbids editing a shared file
-# in one repository alone. Renaming or splitting this script, and sharing the
-# result, is a coordinated two-repository change that has not been made - and
-# it is worth making, because agora_theme carries the identical defect
-# (its .gitlab-ci.yml still calls the upstream default "load-bearing").
+# script one of five SHARED with agora_theme.
+#
+# AMENDED 2026-09-19. The sentence that stood here added "and forbids editing a
+# shared file in one repository alone", and that is WIDER THAN D-028. Read the
+# decision rather than this paragraph: option B's cost is "one manifest to
+# regenerate whenever a shared script legitimately changes" - it contemplates
+# legitimate changes and prices them. Its 2026-08-24 amendment holds that "a
+# copied invariant is never edited UNTIL IT PASSES", which forbids adjusting a
+# copy to make a red go away. That is a ban on weakening, not a ban on editing.
+#
+# The invented half was load-bearing: it is why agora_theme shipped the same
+# pin on 2026-09-19 with no guard at all, and why the move below had no task
+# row for six days. The move is an ordinary two-repository change costing one
+# manifest row, and it is worth making - agora_theme carried the identical
+# defect and was pinned on 2026-09-19 (7d7e791), still unguarded.
 #
 # Why the escape hatch matters (I-015): tests/src/Kernel/RequirementsTest.php
 # reads that variable, and when it is set in CI the dependencies it names SKIP

@@ -4457,3 +4457,36 @@ budget arithmetic (65 rows, ceiling 34, 9 necessary · 26 useful) does not refer
 
 **Recorded by [ejecutor], 2026-09-12. No signature is sought: this corrects a measurement inside a
 signed record without changing what the record decided.**
+
+
+---
+
+## Amendment · the unit 003 budget rider's row count, two entries behind — [ejecutor] 2026-09-19
+
+**The signed rider's own heading reads *"65 rows against a ceiling of 34"*. On disk the unit holds
+67.** The rider was signed 2026-09-12 at 65; `specs/003-demo-content/tasks.md` then recorded a
+tenth reserve-accounting entry taking it to **66** (T-1701, 2026-09-13) and an eleventh taking it
+to **67** (T-1702, 2026-09-19). Both entries were written in `tasks.md` and neither reached this
+file, so the rider has been one row behind since the 13th and two rows behind since today.
+
+**The corrected arithmetic: 67 rows against a ceiling of 34 — thirty-three over, not thirty-one.**
+The classification split the rider records (9 necessary · 26 useful) is **unchanged**: T-1701 and
+T-1702 are both *necessary* under D-044's test, so the split becomes **11 necessary · 26 useful**,
+and 11 + 26 = 37 ≠ 67 because the rider's split covers only the rows it classified, which is the
+rider's own stated scope and is not altered here.
+
+⚠️ **What this amendment changes is a count, not a decision.** D-044 rules that the budget
+**counts and does not gate**, so a rider that is two rows behind never blocked anything and never
+would have — which is precisely why nobody noticed for six days, and why it is worth writing down:
+**a number that gates nothing is a number nothing checks.** The two guards that could have caught
+it do not look here: `tests/bin/claims-match-sources` reads `CLAUDE.md`, not `DECISIONS.md`, and
+`tests/bin/cited-tasks-exist` compares task *ids*, not task *counts*. Extending either is a real
+change with no row yet, and it is named here rather than left implied.
+
+**Nothing else in the rider is altered.** Every row, classification, displacement and total it
+records stands; only the headline count moves, and it moves to what `tasks.md` has said since the
+entries that produced it.
+
+**Recorded by [ejecutor], 2026-09-19. No signature is sought: this corrects a count inside a
+signed record without changing what the record decided** — the same footing as the T-1501
+denominator correction above.
