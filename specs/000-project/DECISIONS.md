@@ -4490,3 +4490,44 @@ entries that produced it.
 **Recorded by [ejecutor], 2026-09-19. No signature is sought: this corrects a count inside a
 signed record without changing what the record decided** — the same footing as the T-1501
 denominator correction above.
+
+
+---
+
+## Amendment · the same count went stale again the same day, and the fix is to stop writing it here — [ejecutor] 2026-09-19
+
+**The amendment immediately above was written this morning to correct the rider's row count from
+65 to 67. By the afternoon the disk held 69.** Wave 19 added two rows (T-1903, T-1904), the
+twelfth reserve-accounting entry recorded it in `tasks.md`, and this file was one wave behind
+within hours of being corrected.
+
+⚠️ **That is not carelessness, it is the shape of the record.** The correction above named a
+number. A number in a file nothing executes has an expiry date and no mechanism watches it — the
+very sentence the amendment above wrote down as its own lesson, reproduced by the amendment
+writing it. Three corrections of one figure (65 → 66 → 67 → 69) in seven days is the evidence.
+
+**So this amendment names the COMMAND instead of the count**, and every future reader should run
+it rather than read a digit here:
+
+```
+grep -cE '^\| T-(9[0-9]{2}|1[0-9]{3}) ' specs/003-demo-content/tasks.md
+```
+
+**It printed 69 on 2026-09-19** against a ceiling of 34 — thirty-five over. That figure is
+recorded as a dated measurement, exactly like a pipeline observation, and **it is not to be
+refreshed here when it moves**: `specs/003-demo-content/tasks.md` carries the live arithmetic in
+its reserve-accounting entries, which is one place rather than two, and a figure that exists in
+one place cannot go stale in the other.
+
+⚠️ **The counting command itself has broken four times by that file's own record**, most recently
+on 2026-09-19 when `1[0-7][0-9]{2}` stopped matching the wave-19 ids it was supposed to count.
+It is widened to `1[0-9]{3}` above. **A command is only better than a number while somebody
+checks that it still counts the right things** — which is why the widened form and its printed
+result are quoted together here rather than the command alone.
+
+**Nothing in the rider or in this morning's amendment is otherwise altered.** D-044 is unchanged:
+the budget counts and does not gate, so neither the stale 67 nor the live 69 ever blocked
+anything.
+
+**Recorded by [ejecutor], 2026-09-19. No signature is sought: this corrects a count inside a
+signed record without changing what the record decided.**
