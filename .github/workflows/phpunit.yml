@@ -130,14 +130,28 @@ jobs:
       # and every class the JUnit log records, and fails unless the difference is exactly
       # EXCLUDED_TEST_CLASSES. Add a test class that quietly does not run, or delete the
       # excluded one without updating the list, and this job goes red naming the class.
+      #
+      # RUN THROUGH A FILE, NOT THROUGH ARGUMENTS, and that is a measured requirement rather
+      # than a style. `ddev exec` re-assembles everything after it into ONE shell string and
+      # runs that inside the container, so host-side quoting does not survive the trip. Run
+      # 35453860620 passed --exclude-filter "/^(AccessibilityTest)::/" and the container
+      # answered `bash: -c: line 1: syntax error near unexpected token '('`, having seen the
+      # parentheses bare. Writing the invocation to a file and running the file removes
+      # argument quoting from the problem entirely, and it keeps the filter ANCHORED - the
+      # alternative, a bare substring filter carrying no regex metacharacters, would survive
+      # `ddev exec` but would silently also match any future class whose name contains this
+      # one.
       - name: Run tests
         run: |
           EXCLUDE="$(echo "$EXCLUDED_TEST_CLASSES" | tr -s ' ' '|')"
-          echo "Excluding by name: $EXCLUDED_TEST_CLASSES"
-          ddev exec phpunit --configuration=./web/core --testdox --fail-on-empty-test-suite \
-            --exclude-filter "/^($EXCLUDE)::/" \
-            --log-junit /var/www/html/phpunit-junit.xml \
-            ./recipes/$(basename $PACKAGE_NAME)
+          cat > run-phpunit.sh <<SCRIPT
+          set -eu
+          cd /var/www/html
+          phpunit --configuration=./web/core --testdox --fail-on-empty-test-suite --exclude-filter '/^($EXCLUDE)::/' --log-junit /var/www/html/phpunit-junit.xml ./recipes/$(basename $PACKAGE_NAME)
+          SCRIPT
+          echo "--- excluding by name: $EXCLUDED_TEST_CLASSES ---"
+          cat run-phpunit.sh
+          ddev exec bash /var/www/html/run-phpunit.sh
 
       # WHY THIS STEP EXISTS, and it is a legibility defect rather than a test defect.
       #
