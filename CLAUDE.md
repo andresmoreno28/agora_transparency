@@ -650,11 +650,23 @@ moving the working copy a session is running in, on the day wave 5 starts.
   `--fail-on-empty-test-suite` on the command line, upstream's warning **absent**, and **zero**
   `Pass` per-test lines. `agora_theme` carried the identical defect and was fixed on 2026-09-19
   (`7d7e791`).
-  ⚠️ **What is NOT closed, named so it is not read as finished:** the assertion that a
+  ✅ ~~⚠️ **What is NOT closed, named so it is not read as finished:**~~ **CLOSED HERE
+  2026-09-19 by T-1903, and the struck text is kept because its last sentence is still true of
+  the THEME.** What it said: the assertion that a
   gate-critical variable is pinned *by us* lives in `tests/bin/no-ci-allow-dev`, whose subject it
   is not. Its proper home is `no-blind-phpunit` — one of the five invariants **D-028** shares
   with `agora_theme`. Until that move lands the theme's pin is guarded by nothing but this
   paragraph.
+  ⚠️ **What the move is, stated so “closed” is not read as more than it is.** The
+  `PINNED_VARS` section now lives in `tests/bin/no-blind-phpunit` **here**, and its two
+  denominators — `pinned required` and `correctly pinned` — are asserted by the wave-3 runner's
+  **existing** `no-blind-phpunit` group, which is why that runner's check total moved and its
+  invariant count did not. **`agora_theme` is NOT fixed by this.** A shared invariant reaches the
+  theme by copy plus a manifest row (D-028 option B), which is a second dispatch; **until it
+  lands, the theme's pin is guarded by nothing**, exactly as the struck sentence says. The two
+  copies differed by **26 comment lines** before this change — one `diff -u` hunk, the
+  `D-040(2)` sharp-edge block, executable code byte-identical — and that block is left in place
+  so the copies end identical when the theme takes this file whole.
   🔴 **AND THE REASON IT HAD NOT LANDED WAS A CONSTRAINT NOBODY WROTE. Corrected 2026-09-19,
   same day, by reading D-028 instead of citing it.** This paragraph said until today that D-028
   *"forbids editing a shared file from one repository alone"*, and that sentence is **wider than
@@ -670,7 +682,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (67 checks · 0 failures) and `gate-a-wave3.sh` (**49** checks · 0 failures), **17** invariants in total —
+  (67 checks · 0 failures) and `gate-a-wave3.sh` (**51** checks · 0 failures), **17** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
   ⚠️ **THESE THREE NUMBERS ARE NOW MACHINE-CHECKED, AND THEY ARE THE REASON THE CHECKER EXISTS.**
   On 2026-09-06 this line read **61 · 48 · 15** while the runners printed **61 · 49** and carried

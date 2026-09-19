@@ -65,6 +65,21 @@
 #   directions before it was trusted - one byte appended, the file removed, a
 #   stale filesize in its entity export, and the clean tree.       48 -> 49
 #
+# UNIT 003 WAVE 19 (2026-09-19) takes it from 49 to 51. No new invariant, and
+# NO NEW GROUP - which is the constraint that shaped the change rather than an
+# observation about it:
+#   T-1904 G8 gains a FOURTH and a FIFTH check - `pinned required` and
+#          `correctly pinned`, the two denominators the PINNED_VARS section
+#          brought with it when T-1903 moved that section out of
+#          no-ci-allow-dev and into no-blind-phpunit, whose subject it is.
+#          They are asserted for the reason G7, G13 and G14 assert their
+#          deny-term counts: a require-list that has been emptied examines
+#          nothing, prints "0 findings", and passes by construction (I-028).
+#          Watched failing at `required: 0` before it was trusted.
+#          A new group would have moved `invariants` as well as `checks`, and
+#          claims-match-sources binds the structural group count too - so the
+#          checks land in the EXISTING group and only `checks` moves.  49 -> 51
+#
 # THE LINE BELOW IS MACHINE-READ, and it exists because the arithmetic above did
 # not survive being prose. tests/bin/claims-match-sources compares it against the
 # figure CLAUDE.md's Gate A block states for this runner, and against the number
@@ -76,7 +91,7 @@
 # `invariants=15` is G1..G15; G0 is the preflight and is not an invariant. The
 # total CLAUDE.md quotes is across BOTH runners, so it is this 15 plus wave 1's.
 #
-# GATE-CLAIM: checks=49 invariants=15
+# GATE-CLAIM: checks=51 invariants=15
 #
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
@@ -405,14 +420,33 @@ INV=tests/bin/no-blind-phpunit
 if [ -x "$INV" ]; then
   run_invariant "$INV"
   # own summary line: "scope: ... - files scanned: N - phpunit invocations: N -
-  # guarded: N - unguarded: N - findings: N"
+  # guarded: N - unguarded: N - pinned required: N - correctly pinned: N -
+  # findings: N"
   CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  # T-1904 / I-028. The PINNED_VARS half of this invariant arrived from
+  # no-ci-allow-dev with T-1903, and it brought its own denominators, which is
+  # the whole reason it can be trusted: an emptied require-list examines
+  # nothing and prints the same "0 findings" a clean tree prints. `required`
+  # is the length of the list the invariant demanded; `correctly pinned` is how
+  # many of those it actually found carrying the required value - two
+  # questions, not one asked twice, because a list of one variable that the
+  # scan never reached reports 1 and 0.
+  #
+  # Neither is pinned to a number. A variable legitimately joins or leaves that
+  # list when upstream moves a default, and a pinned count is one somebody
+  # relaxes the first time it is inconvenient.
+  REQ_CNT=$(extract_count "$INV_OUT" 'pinned required:[[:space:]]*[0-9]+')
+  PIN_CNT=$(extract_count "$INV_OUT" 'correctly pinned:[[:space:]]*[0-9]+')
   note "$(printf '%s' "$INV_OUT" | grep -E 'files scanned:' | tail -1)"
   check 'no-blind-phpunit (exit)'          "$INV_RC" '0'
   check_positive 'no-blind-phpunit (scanned)' "$CNT"
+  check_positive 'no-blind-phpunit (pinned required)' "$REQ_CNT"
+  check_positive 'no-blind-phpunit (correctly pinned)' "$PIN_CNT"
 else
   check 'no-blind-phpunit present'         "$(trunc "$INV" 24)" 'present'
   check_positive 'no-blind-phpunit (scanned)' ''
+  check_positive 'no-blind-phpunit (pinned required)' ''
+  check_positive 'no-blind-phpunit (correctly pinned)' ''
 fi
 
 # ------------------------------------------------------ G9 - cited-tasks-exist (T-223) --

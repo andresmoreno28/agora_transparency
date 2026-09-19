@@ -983,3 +983,115 @@ block described this defect in the present tense as open and unowned, and one of
 false same-day comparison above. ⚠️ **`DECISIONS.md` is edited too** — its budget rider heading
 still said 65 rows, one behind before this wave and two behind after it; the correction is
 appended at the end of that file per rule 8, not written into the signed heading.
+
+
+## Wave 19 — the guard moves to the file whose subject it is, and the gate learns to count it — [ejecutor] 2026-09-19
+
+**Wave 18 closed by naming what it could not do**, in its own words: *"moving it to its proper
+home is a coordinated two-repository change with **no row yet**."* These two rows are that change,
+template half. The theme half is a separate dispatch and is **not** closed here.
+
+⚠️ **The blocker was a sentence, and it was read rather than repeated.** Five places in these two
+repositories said D-028 *"forbids editing a shared file from one repository alone"*. **That
+constraint is not in D-028.** Option B's cost, in the decision's own table, is *"one manifest to
+regenerate whenever a shared script legitimately changes"* — it **contemplates** legitimate changes
+and prices them; and its 2026-08-24 amendment holds that *"a copied invariant is never edited
+**until it passes**"*, which forbids adjusting a copy to make a red go away. **A ban on weakening
+is not a ban on editing.** So this is ordinary work, and the whole of its cost on the theme side is
+one manifest row. Wave 18 corrected the sentence in `CLAUDE.md`, in its own closing section and in
+`tests/bin/no-ci-allow-dev`'s header; this wave is the work that correction unblocked.
+
+⚠️ **What moved, precisely, so that "moved" is not read as "rewritten":** the `PINNED_VARS`
+section left `tests/bin/no-ci-allow-dev` — whose subject is a variable that must never be
+**defined** — and arrived in `tests/bin/no-blind-phpunit`, whose subject is the phpunit gate, which
+is the thing the pinned variable decides. **The executable code is carried across unchanged**; the
+header paragraphs around it are rewritten at both ends, because each file's opening sentence had
+been widened to cover a half it no longer has or narrowed to exclude a half it now does.
+
+⚠️ **The two copies of `no-blind-phpunit` differed by 26 comment lines before this change**, and
+that is measured rather than remembered: `diff -u` reports exactly one hunk, the `D-040(2)` sharp-edge
+block this repository gained on 2026-08-27, which the theme's copy predates. **The executable code
+was byte-identical.** The block is left in place, so that when the theme's dispatch takes this file
+whole the two copies end byte-identical and the manifest records `status=verbatim`.
+
+⚠️ **And the count command broke again, for the ordinary reason** — wave 19's ids are `T-19NN` and
+`1[0-7]` does not reach them. It is widened **past the next hundred boundary rather than up to it**,
+which is what `specs/003-demo-content/plan.md:137` has prescribed since 2026-09-12: four digits
+beginning with 1 reaches every id from `T-1000` to `T-1999`, so this is the **last** time this
+particular breakage can happen inside unit 003.
+
+```
+grep -cE '^\| T-(9[0-9]{2}|1[0-9]{3}) ' specs/003-demo-content/tasks.md
+```
+
+Verified 2026-09-19: it prints **69**; it differs from the wave-17 command over this file by exactly
+the two wave-19 rows (67 + 2) — **not by three**, and the discrepancy is recorded rather than
+rounded away: wave 18 numbered its single row `T-1702`, which `1[0-7]` already reaches, so the
+narrow command was never behind on that row at all; and the alternation still matches **no**
+unit-001 or unit-002 id — measured, not assumed: the same anchored pattern run over
+`specs/001-foundation/tasks.md` and `specs/002-base-and-theme/tasks.md` prints **0** against each,
+for the reason every earlier widening gave, which is that every id in those two files is three
+digits and this alternation requires four.
+
+⚠️ **`plan.md`'s verification line is now stale in its number and still right in its argument**,
+and the two are separated here because this file has confused them before. It records that
+`1[0-9]{3}` and `1[0-6][0-9]{2}` *"agree at **65** over this file"* — true on 2026-09-12 and false
+since T-1701 and T-1702 landed, which is a figure that stopped being true, not a regex that stopped
+matching. The widened pattern is unaffected: it is the narrow one that drifts.
+
+⚠️ **The ids skip a block, and it is recorded rather than tidied.** This file holds no `T-18NN` id
+at all — wave 18 numbered its single row `T-1702` — and no `T-1901` or `T-1902`. The ids below were
+assigned by the dispatch and are used as given: **rule 8 forbids renumbering**, and a gap in an
+append-only sequence is cheaper than a renumbering that breaks every citation pointing at it.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1903 ✓ | · | **Move the `PINNED_VARS` section out of `tests/bin/no-ci-allow-dev` and into `tests/bin/no-blind-phpunit`, its proper home.** The donor's subject is `CI_ALLOW_DEV` — a variable that must never be **defined**; the receiver's subject is the phpunit gate, which is exactly what the pinned variable decides. The donor keeps its `CI_ALLOW_DEV` half byte-for-byte and its header paragraph about the displaced section becomes a pointer to the new home. The receiver's header grows the second half of its subject, and its finding list goes from three to five. ⚠️ **Findings 3, 4 and 5 are three messages and must stay three:** finding 3 fires on a value somebody **wrote**, finding 4 on a value **nobody wrote** — the state that actually happened, and the one finding 3 is structurally blind to — and finding 5 names the value found beside the value required. They also cover different ground: 3 sweeps the whole scope, `.github/workflows/` included, while 4 and 5 interrogate the one named file that must carry the pin. ⚠️ **`.gitlab-ci.yml`'s own comment is corrected in the same commit**: it named the donor as the script that asserts the pin, and leaving it would have made the repository state something false about itself, which is the defect class this whole wave is about | **`PINNED_VARS` occurs nowhere in the donor** — `grep -c` prints `0` — and the donor still exits 0 over `460 files scanned · 11 mentions · 0 definitions`. The receiver exits 0 printing `pinned required: 1 · correctly pinned: 1` beside its existing `files scanned: 2 · phpunit invocations: 2 · guarded: 2 · unguarded: 0`. **Three dirty cases watched failing in a scratch copy outside the tracked tree, each with a DIFFERENT message, then restored to exit 0**: the pin set to the concurrent value → **2 findings, exit 1**, `_PHPUNIT_CONCURRENT is '1' and this gate requires '0'` **plus** finding 3 firing independently on the same line, which is the cross-check that the two guards answer different questions; the pin line **deleted outright** → **1 finding, exit 1**, `_PHPUNIT_CONCURRENT is NOT pinned here - its value is whatever upstream defaults to`; and `PINNED_VARS` **emptied** → **1 finding, exit 1**, `the required-variable list is EMPTY - this section proves nothing (I-028)`, because a require-list that has been emptied finds nothing and prints the same `0 findings` a clean tree prints. ⚠️ **The theme is NOT fixed by this row** and saying so is part of it: a shared invariant reaches `agora_theme` by copy plus a manifest row, which is a second dispatch | — |
+| T-1904 ✓ | · | **Wire the two denominators the moved section brought with it into the wave-3 gate runner, and move every number they bind in the same commit.** The two checks land in the **existing** `G8 - no-blind-phpunit` group rather than in a new one, and that is a constraint rather than a preference: a new group moves `invariants` as well as `checks`, and `tests/bin/claims-match-sources` binds the structural group count as well as both totals. So `gate-a-wave3.sh`'s `# GATE-CLAIM:` line, its header arithmetic and `CLAUDE.md`'s `67 · 49 · 17` sentence all move together, and only `checks` moves | **`gate-a-wave3.sh` PRINTS `51 checks · 0 failures` and its `GATE-CLAIM` line DECLARES `checks=51 invariants=15`** — both quoted, because `CLAUDE.md` records that nothing yet asserts a runner's declaration against its own printed total. **`gate-a-wave1.sh` prints `67 checks · 0 failures` against a declared `checks=67 invariants=2`**, unmoved. `bash tests/bin/claims-match-sources` ends `comparisons: 7`, `mismatches: 0`, with a **non-empty** `NOT CHECKED` list of **8** named exclusions. ⚠️ **The two new checks were falsified in both directions before they were trusted**, using the runner's own `extract_count` and `check_positive` lifted verbatim out of it by `sed` so the harness cannot drift from the code it claims to exercise: against the clean invariant output both read `1` and both verdicts are `OK`; against the emptied-`PINNED_VARS` output both read `0` and both verdicts are `FAIL`. A check that has only ever been seen green is a claim, not a measurement | T-1903 |
+
+⚠️ **Reserve accounting, twelfth entry, 2026-09-19 — two rows.** T-1903 and T-1904 take the count
+from **67 to 69** against a ceiling of **34**, so the D-031 rider now names **thirty-five** rows
+over the ceiling rather than thirty-three. Stated, not asked about, per **D-044**: the budget counts
+and does not gate.
+
+**D-044's necessity test, applied honestly: neither row passes it on this side of the move, and the
+two fail it for different reasons worth separating.** By D-044's wording — *work without which
+something already signed is broken, false, or impossible to ship* — **T-1903 does not pass**:
+the assertion worked where it was, and this repository's pin was guarded before this wave and is
+guarded after it. What the move buys is that the assertion can **reach the theme at all**, since
+D-028's sharing mechanism is a copy of a shared file and `no-ci-allow-dev` is one of the five
+scripts that decision deliberately excludes — so while the assertion lived there, the theme's pin
+could not be guarded by any route. **T-1904 does not pass either**: a denominator nobody asserts is
+not a broken gate, it is an unproven one. Its basis is I-028, which this file has applied eleven
+times for the same reason — an emptied list prints the same word a clean tree prints.
+
+⚠️ **The basis is the fifth this file has used, and naming it is the point.** Wave 17's row was
+*a measured failure*; wave 18's was *a defect already fixed here, found unfixed in the sibling*.
+These two are **the second half of a change this unit had already decided to make**, unblocked by
+discovering that the constraint holding it back was never written down. That is not new scope and
+it is not a discovery; it is work that was refused for six days on a misreading, and leaving it
+without a row would reproduce wave 17's own complaint — *"an open gate weakening with no owner and no
+task row"*.
+
+### What this change did not touch
+
+`config/`, `content/`, `recipe.yml`, `composer.json`, `recommended.yml`, `tests/src/`, the sibling
+theme checkout — **not one byte**, by dispatch — and every earlier row, glyph, success criterion,
+`Blocked by` cell and `#` cell in this file. No earlier accounting entry and no earlier state
+section is rewritten; this section adds bytes only at the end of the file, and the twelfth
+accounting entry is placed **here with its wave** rather than beside the other nine at the top,
+for the same reason wave 17 gave: inserting it there would put new bytes between existing
+paragraphs.
+
+⚠️ **`CLAUDE.md` IS edited**, in two places and no more: the `67 · 49 · 17` sentence, which the
+gate binds mechanically, and the paragraph two bullets above it that named this move as open and
+unowned in the present tense. Leaving that paragraph would have been the exact drift the checker
+below it exists to catch.
+
+⚠️ **`DECISIONS.md` is NOT edited, and its budget rider is therefore two rows behind again** — it
+was corrected to 67 on 2026-09-19 by wave 18 and this wave takes the count to 69. It is named here
+for routing rather than changed from here, because a decision record is amended at its end by a
+turn that owns that change, and this dispatch does not. ⚠️ **The correction wave 18 appended says
+in its own words why nobody will notice**: `claims-match-sources` reads `CLAUDE.md`, not
+`DECISIONS.md`, and `cited-tasks-exist` compares task *ids*, never task *counts* — **a number that
+gates nothing is a number nothing checks**.

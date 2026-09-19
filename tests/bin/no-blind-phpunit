@@ -2,8 +2,23 @@
 #
 # no-blind-phpunit - Agora - unit 001, task T-214(b).
 #
-# What it enforces: every PHPUnit invocation in CI is armed with
-# --fail-on-empty-test-suite, and nothing quietly disarms it.
+# What it enforces, in one sentence covering both halves: THE PHPUNIT GATE IS
+# ARMED HERE, AND ITS ARMING IS DECIDED IN THIS REPOSITORY AND NOWHERE ELSE.
+#
+#   1. every PHPUnit invocation in CI carries --fail-on-empty-test-suite, and
+#      nothing quietly disarms it;
+#   2. every variable in PINNED_VARS is DEFINED, by us, with the value this
+#      gate needs - NOT defining it leaves the gate's behaviour to somebody
+#      else's default (moved here 2026-09-19, T-1903; see that section's own
+#      comment for the failure that produced it).
+#
+# HALF 2 ARRIVED FROM tests/bin/no-ci-allow-dev, where T-1701 had parked it
+# under a constraint that does not exist. That script's subject is a variable
+# that must never be DEFINED; this script's subject is the phpunit gate, which
+# is exactly what the pinned variable decides. The move is D-028's ordinary
+# "one manifest to regenerate whenever a shared script legitimately changes",
+# not a forbidden edit - the misreading that blocked it for six days is
+# corrected in that script's header, in CLAUDE.md and in the task row.
 #
 # Why this exists: nine of ten green CI runs executed ZERO tests and nobody
 # noticed for two days, because nothing ever checked that the test run had
@@ -20,16 +35,32 @@
 #     a bare command - it hands flags to the upstream job through this
 #     variable instead).
 #
-# Three findings:
+# Five findings:
 #   1. an invocation with no --fail-on-empty-test-suite on its own line;
 #   2. any occurrence of --do-not-fail-on-empty-test-suite anywhere in scope
 #      (the literal negation of the guard);
-#   3. _PHPUNIT_CONCURRENT set to '1'.
+#   3. _PHPUNIT_CONCURRENT set to '1';
+#   4. a PINNED_VARS variable ABSENT from the file that must pin it;
+#   5. a PINNED_VARS variable present carrying a value this gate does not want.
+#
+# FINDINGS 3, 4 AND 5 ARE THREE CHECKS AND THREE MESSAGES, NEVER ONE. Finding
+# 3 fires on a value somebody WROTE. Finding 4 fires on a value nobody wrote -
+# the state that actually happened (I-116), and the one finding 3 is
+# structurally blind to, because there is no line for it to match. Finding 5
+# names the value found and the value required. They also cover different
+# ground: 3 sweeps the whole scope, .github/workflows/*.yml included, while 4
+# and 5 interrogate the one named file that must carry the pin. One message
+# for two causes is a message that stops being read.
 #
 # Finding 3 is not obvious and is a real trap: on drupalcode,
 # `_PHPUNIT_EXTRA` is handed to the `phpunit` binary only while
-# `_PHPUNIT_CONCURRENT` is '0' (its default - verified in
-# include.drupalci.variables.yml:107-109). Set it to '1' and `_PHPUNIT_EXTRA`
+# `_PHPUNIT_CONCURRENT` is '0'. This sentence used to add "(its default)", and
+# that parenthesis is DELETED rather than reworded: upstream's
+# include.drupalci.variables.yml on main reads `value: '1'` as of 2026-09-19,
+# so '0' is not the default and has not been since roughly 2026-09-08. Finding
+# 4 below exists because of that flip, and a comment still calling '0' the
+# default would have argued against the check three screens down from it. Set
+# `_PHPUNIT_CONCURRENT` to '1' and `_PHPUNIT_EXTRA`
 # goes to `run-tests.sh` instead, where --fail-on-empty-test-suite is not a
 # valid option - the guard silently stops existing. Someone enabling
 # concurrency for speed would remove the guard without ever touching the
@@ -38,6 +69,8 @@
 # Contract (shared by every invariant in tests/bin/, see no-ci-allow-dev):
 #   scope:    the exact set of files inspected
 #   scanned:  N files, N must be > 0
+#   required: N pinned variables demanded, and N must be > 0
+#   correctly pinned: N of those found carrying the required value
 #   findings: M, each printed as  path:line  reason
 #   exit 0 if and only if M == 0
 #
@@ -269,10 +302,104 @@ if [ "${INVOCATIONS:-0}" -eq 0 ]; then
   exit 1
 fi
 
+# ---------------------------------------------------- pinned gate variables --
+# Half 2 of this script's subject - see the header. The flag checked above must
+# be PRESENT in our files; the variables here must be PINNED in them, by us.
+#
+# WHY THIS EXISTS. It is a measured failure, not a precaution. Between
+# 2026-09-08 and 2026-09-12 upstream gitlab_templates flipped
+# _PHPUNIT_CONCURRENT's default to concurrent. Nobody changed a character in
+# this repository. At that setting drupalci hands _PHPUNIT_EXTRA to
+# run-tests.sh instead of the phpunit binary and strips every phpunit-only
+# option out of it, so --fail-on-empty-test-suite reached NOTHING: pipeline
+# 952632 printed "OK (20 tests, 2549 assertions)"; 958565 and every pipeline
+# until the pin printed no OK(...) line, no assertion total, and upstream's own
+# warning that _PHPUNIT_EXTRA "is intended for the 'phpunit' binary only".
+#
+# AND THIS SCRIPT WAS GREEN THROUGHOUT - 2 invocations, 2 guarded, 0 findings -
+# because it asserted that the FLAG APPEARS in our files, which it did. The
+# flag's EFFECT lived in an environment this scope cannot reach. It had even
+# anticipated the trap and guarded the wrong shape of it: finding 3 fires when
+# _PHPUNIT_CONCURRENT is set to the concurrent value, which nobody ever wrote,
+# and never when the variable is simply ABSENT. Asserting that a setting exists
+# while the behaviour it buys depends on a default somebody else owns is being
+# green about a question never asked (I-116).
+#
+# ENTRY CRITERION, so this list does not become a junk drawer: a variable
+# belongs here when its DEFAULT is owned by somebody else AND that default
+# decides whether one of our gates is real. _PHPUNIT_EXTRA does NOT qualify -
+# its upstream default is empty, an empty value disarms nothing silently, and
+# the scan above already checks the flag we set. _PHPUNIT_CONCURRENT does: its
+# default IS a behaviour, and that behaviour moved underneath us.
+#
+# Entries are `file|variable|required value`, one per line. The list's LENGTH
+# is printed and asserted below, for the reason G7, G13 and G14 print their
+# deny-term counts: a require-list that has been emptied finds nothing, prints
+# the same "0 findings" a clean tree prints, and passes by construction
+# (I-028).
+PINNED_VARS='.gitlab-ci.yml|_PHPUNIT_CONCURRENT|0'
+
+printf '\npinned gate variables: a value a gate depends on, set HERE and not inherited\n'
+
+REQUIRED=0
+PINNED_OK=0
+while IFS='|' read -r pv_file pv_name pv_want; do
+  [ -n "$pv_file" ] || continue
+  REQUIRED=$((REQUIRED + 1))
+
+  if [ ! -r "$pv_file" ]; then
+    finding "$pv_file" '0' \
+      "must pin $pv_name, but the file is not readable - the check did not run"
+    continue
+  fi
+
+  # A YAML mapping entry: optional indent, the name, optional space, a colon.
+  # A whole-line comment can never match, because `#` would precede the name -
+  # so no comment filter is needed here, unlike the scans above.
+  PV_HITS=$(LC_ALL=C grep -nE "^[[:space:]]*${pv_name}[[:space:]]*:" "$pv_file" 2>/dev/null)
+  PV_RC=$?
+  [ "$PV_RC" -ge 2 ] && \
+    grep_failed "$PV_RC" "^[[:space:]]*${pv_name}[[:space:]]*:" "$pv_file"
+
+  # House rule 1: `wc -l`, never `grep -c`, for a value that feeds a
+  # comparison. A blank left-hand side makes `[` exit 2 and the guard below
+  # would simply not be taken (I-031).
+  PV_N=$(printf '%s\n' "$PV_HITS" | grep -E '^[0-9]+:' | wc -l | tr -d ' ')
+
+  # Defaulted because zero means FAIL here - the safe direction of I-031.
+  if [ "${PV_N:-0}" -eq 0 ]; then
+    finding "$pv_file" '0' \
+      "$pv_name is NOT pinned here - its value is whatever upstream defaults to, and upstream can change that without touching this repository (T-1701 / I-116)"
+    continue
+  fi
+
+  PV_LINE=${PV_HITS%%$'\n'*}
+  PV_LN=${PV_LINE%%:*}
+  PV_RHS=$(printf '%s' "$PV_LINE" | sed -E \
+    "s/^[0-9]+:[[:space:]]*${pv_name}[[:space:]]*:[[:space:]]*//; s/[[:space:]]*#.*\$//; s/[[:space:]]+\$//; s/^['\"]//; s/['\"]\$//")
+
+  if [ "$PV_RHS" = "$pv_want" ]; then
+    PINNED_OK=$((PINNED_OK + 1))
+    note "pinned:    ${pv_file}:${PV_LN}  ${pv_name} = ${PV_RHS}"
+  else
+    finding "$pv_file" "$PV_LN" \
+      "$pv_name is '$PV_RHS' and this gate requires '$pv_want' (T-1701 / I-116)"
+  fi
+done <<< "$(printf '%s\n' "$PINNED_VARS" | grep -vE '^[[:space:]]*$')"
+
+# I-028 applied to this section's own denominator: an emptied require-list
+# would examine nothing and report nothing, which reads exactly like a pass.
+# Defaulted because zero means FAIL here.
+if [ "${REQUIRED:-0}" -eq 0 ]; then
+  finding '<pinned>' '0' \
+    'the required-variable list is EMPTY - this section proves nothing (I-028)'
+fi
+printf '  required: %s - correctly pinned: %s\n' "$REQUIRED" "$PINNED_OK"
+
 # ----------------------------------------------------------------- summary ---
 printf '\n---------------------------------------------------------------------------------------------------------\n'
-printf 'scope: .gitlab-ci.yml, .github/workflows/*.yml (working tree) · files scanned: %s · phpunit invocations: %s · guarded: %s · unguarded: %s · findings: %s\n' \
-  "$SCANNED" "$INVOCATIONS" "$GUARDED" "$UNGUARDED" "$FINDINGS"
+printf 'scope: .gitlab-ci.yml, .github/workflows/*.yml (working tree) · files scanned: %s · phpunit invocations: %s · guarded: %s · unguarded: %s · pinned required: %s · correctly pinned: %s · findings: %s\n' \
+  "$SCANNED" "$INVOCATIONS" "$GUARDED" "$UNGUARDED" "$REQUIRED" "$PINNED_OK" "$FINDINGS"
 
 if [ "$FINDINGS" -eq 0 ]; then
   printf '%sno-blind-phpunit: clean%s\n' "$C_OK" "$C_OFF"

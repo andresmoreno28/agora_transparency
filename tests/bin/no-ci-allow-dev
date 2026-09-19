@@ -6,34 +6,19 @@
 # append-only); it is merely EXECUTED in wave 3, because its file is disjoint
 # from everything else in that wave.
 #
-# What it enforces, in one sentence that covers both halves: THE STRENGTH OF A
-# GATE IS DECIDED IN THIS REPOSITORY AND NOWHERE ELSE.
+# What it enforces, in one sentence: the `CI_ALLOW_DEV` escape hatch is never
+# DEFINED in a versioned file, because defining it WEAKENS a gate.
 #
-#   1. the `CI_ALLOW_DEV` escape hatch is never DEFINED in a versioned file -
-#      defining it WEAKENS a gate;
-#   2. every variable in PINNED_VARS is always DEFINED, by us, with the value
-#      our gate needs - NOT defining it leaves a gate's behaviour to somebody
-#      else's default (added 2026-09-13, T-1701; see that section's own
-#      comment for the failure that produced it).
-#
-# THE NAME OF THIS FILE IS NOW NARROWER THAN ITS CONTENTS, and that is stated
-# here rather than discovered later. The right home for half 2 is
-# tests/bin/no-blind-phpunit, whose subject it is exactly; D-028 makes that
-# script one of five SHARED with agora_theme.
-#
-# AMENDED 2026-09-19. The sentence that stood here added "and forbids editing a
-# shared file in one repository alone", and that is WIDER THAN D-028. Read the
-# decision rather than this paragraph: option B's cost is "one manifest to
-# regenerate whenever a shared script legitimately changes" - it contemplates
-# legitimate changes and prices them. Its 2026-08-24 amendment holds that "a
-# copied invariant is never edited UNTIL IT PASSES", which forbids adjusting a
-# copy to make a red go away. That is a ban on weakening, not a ban on editing.
-#
-# The invented half was load-bearing: it is why agora_theme shipped the same
-# pin on 2026-09-19 with no guard at all, and why the move below had no task
-# row for six days. The move is an ordinary two-repository change costing one
-# manifest row, and it is worth making - agora_theme carried the identical
-# defect and was pinned on 2026-09-19 (7d7e791), still unguarded.
+# THE SECOND HALF THIS SCRIPT CARRIED BETWEEN 2026-09-13 AND 2026-09-19 HAS
+# MOVED TO ITS PROPER HOME (T-1903). The "a gate variable must always BE
+# defined, by us, with the value our gate needs" assertion now lives in
+# tests/bin/no-blind-phpunit, whose subject the pinned variable exactly is.
+# It was parked here because D-028 was read as forbidding a shared file to be
+# edited from one repository alone; D-028 does not say that, and the move cost
+# what D-028 actually prices - one manifest row in agora_theme. This file's
+# name fits its contents again, and nothing was weakened on the way: the two
+# denominators moved with the section and are asserted by the wave-3 gate
+# runner in the group that runs no-blind-phpunit.
 #
 # Why the escape hatch matters (I-015): tests/src/Kernel/RequirementsTest.php
 # reads that variable, and when it is set in CI the dependencies it names SKIP
@@ -251,105 +236,10 @@ while IFS= read -r f; do
 done < "$ALL_LIST"
 [ "$DEFINITIONS" -eq 0 ] && note 'none'
 
-# ---------------------------------------------------- pinned gate variables --
-# Half 2 of this script's subject - see the header. CI_ALLOW_DEV above must
-# never be DEFINED; the variables here must always BE defined, by us.
-#
-# WHY THIS EXISTS. It is a measured failure, not a precaution. Between
-# 2026-09-08 and 2026-09-12 upstream gitlab_templates flipped
-# _PHPUNIT_CONCURRENT's default to concurrent. Nobody changed a character in
-# this repository. At that setting drupalci hands _PHPUNIT_EXTRA to
-# run-tests.sh instead of the phpunit binary and strips every phpunit-only
-# option out of it, so --fail-on-empty-test-suite reached NOTHING: pipeline
-# 952632 printed "OK (20 tests, 2549 assertions)"; 958565 and every pipeline
-# since printed no OK(...) line, no assertion total, and upstream's own
-# warning that _PHPUNIT_EXTRA "is intended for the 'phpunit' binary only".
-#
-# AND tests/bin/no-blind-phpunit WAS GREEN THROUGHOUT - 2 invocations, 2
-# guarded, 0 findings - because it asserts that the FLAG APPEARS in our files,
-# which it did. The flag's EFFECT lived in an environment that script cannot
-# reach. It had even anticipated this trap and guarded the wrong shape of it:
-# its finding 3 fires when _PHPUNIT_CONCURRENT is set to the concurrent value,
-# which nobody ever wrote, and never when the variable is simply ABSENT.
-# Asserting that a setting exists, while the behaviour it buys depends on a
-# default somebody else owns, is being green about a question never asked
-# (I-116).
-#
-# ENTRY CRITERION, so this list does not become a junk drawer: a variable
-# belongs here when its DEFAULT is owned by somebody else AND that default
-# decides whether one of our gates is real. _PHPUNIT_EXTRA does NOT qualify -
-# its upstream default is empty, an empty value disarms nothing silently, and
-# no-blind-phpunit already checks the flag we set. _PHPUNIT_CONCURRENT does:
-# its default IS a behaviour, and that behaviour moved underneath us.
-#
-# Entries are `file|variable|required value`, one per line. The list's LENGTH
-# is printed and asserted below, for the reason G7, G13 and G14 print their
-# deny-term counts: a require-list that has been emptied finds nothing, prints
-# the same "0 findings" a clean tree prints, and passes by construction
-# (I-028).
-PINNED_VARS='.gitlab-ci.yml|_PHPUNIT_CONCURRENT|0'
-
-printf '\npinned gate variables: a value a gate depends on, set HERE and not inherited\n'
-
-REQUIRED=0
-PINNED_OK=0
-while IFS='|' read -r pv_file pv_name pv_want; do
-  [ -n "$pv_file" ] || continue
-  REQUIRED=$((REQUIRED + 1))
-
-  if [ ! -r "$pv_file" ]; then
-    finding "$pv_file" '0' \
-      "must pin $pv_name, but the file is not readable - the check did not run"
-    continue
-  fi
-
-  # A YAML mapping entry: optional indent, the name, optional space, a colon.
-  # A whole-line comment can never match, because `#` would precede the name -
-  # so no comment filter is needed here, unlike the scans above.
-  PV_HITS=$(LC_ALL=C grep -nE "^[[:space:]]*${pv_name}[[:space:]]*:" "$pv_file" 2>/dev/null)
-  PV_RC=$?
-  [ "$PV_RC" -ge 2 ] && \
-    grep_failed "$PV_RC" "^[[:space:]]*${pv_name}[[:space:]]*:" "$pv_file"
-
-  # House rule 1: `wc -l`, never `grep -c`, for a value that feeds a
-  # comparison. A blank left-hand side makes `[` exit 2 and the guard below
-  # would simply not be taken (I-031).
-  PV_N=$(printf '%s\n' "$PV_HITS" | grep -E '^[0-9]+:' | wc -l | tr -d ' ')
-
-  # Defaulted because zero means FAIL here - the safe direction of I-031.
-  if [ "${PV_N:-0}" -eq 0 ]; then
-    finding "$pv_file" '0' \
-      "$pv_name is NOT pinned here - its value is whatever upstream defaults to, and upstream can change that without touching this repository (T-1701 / I-116)"
-    continue
-  fi
-
-  PV_LINE=${PV_HITS%%$'\n'*}
-  PV_LN=${PV_LINE%%:*}
-  PV_RHS=$(printf '%s' "$PV_LINE" | sed -E \
-    "s/^[0-9]+:[[:space:]]*${pv_name}[[:space:]]*:[[:space:]]*//; s/[[:space:]]*#.*\$//; s/[[:space:]]+\$//; s/^['\"]//; s/['\"]\$//")
-
-  if [ "$PV_RHS" = "$pv_want" ]; then
-    PINNED_OK=$((PINNED_OK + 1))
-    note "pinned:    ${pv_file}:${PV_LN}  ${pv_name} = ${PV_RHS}"
-  else
-    finding "$pv_file" "$PV_LN" \
-      "$pv_name is '$PV_RHS' and this gate requires '$pv_want' (T-1701 / I-116)"
-  fi
-done <<< "$(printf '%s\n' "$PINNED_VARS" | grep -vE '^[[:space:]]*$')"
-
-# I-028 applied to this section's own denominator: an emptied require-list
-# would examine nothing and report nothing, which reads exactly like a pass.
-# Defaulted because zero means FAIL here.
-if [ "${REQUIRED:-0}" -eq 0 ]; then
-  finding '<pinned>' '0' \
-    'the required-variable list is EMPTY - this section proves nothing (I-028)'
-fi
-printf '  required: %s - correctly pinned: %s\n' "$REQUIRED" "$PINNED_OK"
-
 # ----------------------------------------------------------------- summary ---
 printf '\n---------------------------------------------------------------------------------------------------------\n'
-printf 'scanned: %s files - mentions in scope: %s - definitions: %s - pinned required: %s - pinned OK: %s - findings: %s\n' \
-  "$SCANNED" "$MENTIONS" "$DEFINITIONS" "$REQUIRED" "$PINNED_OK" "$FINDINGS"
+printf 'scanned: %s files - mentions in scope: %s - definitions: %s - findings: %s\n' \
+  "$SCANNED" "$MENTIONS" "$DEFINITIONS" "$FINDINGS"
 
 if [ "$FINDINGS" -eq 0 ]; then
   printf '%sno-ci-allow-dev: clean%s\n' "$C_OK" "$C_OFF"

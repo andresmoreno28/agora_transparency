@@ -82,9 +82,11 @@ include:
 # is no timeout risk to weigh; if that changes, the number to watch is the one
 # above and not this sentence.
 #
-# tests/bin/no-ci-allow-dev asserts the pin. It has to be asserted somewhere,
+# tests/bin/no-blind-phpunit asserts the pin. It has to be asserted somewhere,
 # because a guard that reads only our files cannot see a default that lives in
-# somebody else's (I-116).
+# somebody else's (I-116). It was asserted in tests/bin/no-ci-allow-dev between
+# 2026-09-13 and 2026-09-19, which was never its subject; T-1903 moved it to
+# the invariant whose subject the phpunit gate actually is.
 variables:
   _PHPUNIT_EXTRA: '--fail-on-empty-test-suite'
   _PHPUNIT_CONCURRENT: '0'
