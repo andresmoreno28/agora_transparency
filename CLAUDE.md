@@ -521,11 +521,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. ~~**Read `9`.**~~ **Read `10`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **451** tracked files to cspell, which **checks 410** and
-  finds 0 issues (re-measured 2026-09-12 on a clean tree; **this commit adds no file, so it moved
-  the denominator by nothing** — the +3 since 2026-09-06 arrived in the commits between; it read
-  **448/407** on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and
-  87/82 before that). The CI job's own count runs two higher — it also opens two files the runner
+  `bash tests/bin/spellcheck` offers **455** tracked files to cspell, which **checks 414** and
+  finds 0 issues (re-measured 2026-09-19; **this commit adds four files and moved the denominator
+  by exactly four**, which is the shape to want — it read **451/410** on 2026-09-12, **448/407**
+  on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before
+  that).
+  ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** Four markdown
+  files were added and cspell opened all four: 455 − 414 = 41, the same 37 binaries and 4 globs
+  accounted for below. **A denominator that rises while the gap also rises would mean a new file
+  went unopened**, which reads exactly like a clean measurement and is not one. The CI job's own count runs two higher — it also opens two files the runner
   generates and this repository does not track. The 36-versus-63 gap **T-222** opened is closed and
   has stayed closed across four changes of denominator.
 

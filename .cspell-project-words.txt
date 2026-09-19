@@ -369,3 +369,27 @@ Lanczos
 # WebP quality 86 over 90 for screenshot.webp, which is the difference between "it looks
 # fine" and a number someone else can reproduce. A standard acronym, not a word.
 PSNR
+# Unit 005 scaffolding, 2026-09-19. Six drupal.org project and vendor names quoted from
+# release-history XML and from .info.yml files at tag 1.4.9, so that unit 005's research can
+# cite what it measured instead of paraphrasing it. Every one is a package or company name,
+# not a word - and each is quoted because a name that cannot be written down cannot be
+# verified by the next reader.
+#
+# `milvus`, from ai_vdb_provider_milvus - one of the three vector-database providers measured
+# on 2026-09-19, all of which have NO stable release at all, which is what closes
+# embedding-based RAG to this project under rule 1.
+milvus
+# `deepchat`, the web component bundled by ai_chatbot as deepchat.bundle.js. Its licence and
+# its accessibility are two of unit 005's open research questions.
+deepchat
+# `Amazee` and `amazee`, from ai_provider_amazeeio and its config action ensureAmazeeAiAccess.
+# Both cases occur: the company name in prose and the machine name in identifiers.
+Amazee
+amazee
+# `amazeeio`, the module machine name drupal.org/project/ai_provider_amazeeio - excluded from
+# Agora as a dependency, because a keyless free trial is a third-party data processor reached
+# from a public body's site.
+amazeeio
+# `automators`, from ai_automators - one of the five editor-productivity submodules unit 005
+# puts explicitly OUT of scope.
+automators
