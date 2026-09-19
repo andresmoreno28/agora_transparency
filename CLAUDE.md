@@ -781,9 +781,45 @@ moving the working copy a session is running in, on the day wave 5 starts.
   ✅ **Observed running on drupalcode as the blocking `Drupal CMS` job** — see its own bullet
   above, with the pipeline, the job id and the line it printed. This paragraph said *"not yet
   observed running there"* until 2026-08-26, pointing at a placeholder row; the row is filled and
-  the placeholder is gone. D-020's holding is unchanged and the GitHub workflow keeps running as an
+  the placeholder is gone. D-020's holding is unchanged and ~~the GitHub workflow keeps running as an
   **informative** second opinion — it may fail without blocking, but it may never lie, and no wave
-  closes on its green. What the amendment ended is GitHub's **monopoly** on running this smoke.
+  closes on its green.~~ What the amendment ended is GitHub's **monopoly** on running this smoke.
+
+  ⚠️ **AMENDED 2026-09-19. The struck clause was FALSE for three weeks, and nothing in this
+  project was watching it — which is the worse half of the finding.** The mirror's
+  `.github/workflows/phpunit.yml` failed on **nine consecutive runs** between 2026-08-27 and
+  2026-09-19; the last green was `505c18a0`, run `33074134414`, 2026-08-27 12:54. Every push in
+  between emailed the maintainer a red. **A check that has been red for three weeks is not
+  "informative", it is noise that trains its reader to ignore it** — so the half of D-020 saying
+  the mirror *may never lie* had quietly stopped holding, while the half saying it *may fail
+  without blocking* went on being quoted as though it covered this.
+
+  ⚠️ **The failure was UNREADABLE, and that is the part that generalises.** Run `35451608869`
+  printed `Tests: 19, Assertions: 2362, Failures: 1, Deprecations: 138` above 138 deprecation
+  reports and **not one word about the failure**: no failure marker in the `--testdox` list, no
+  "There was 1 failure:" section, no assertion message anywhere in 408 KB of log. The cause is
+  structural rather than a formatting accident: **a test that fails inside `setUp()` never emits
+  PHPUnit's `Test\Prepared` event, so the TestDox collector never registers it** — the failing test
+  is absent from the very list it failed in, which reads exactly like a test that never ran. The
+  `Tests: 19` was wrong too; the JUnit log of the next run records **20**.
+
+  ✅ **Closed by `--log-junit` plus a reporting step (T-1905), so the printer is no longer the only
+  witness.** What it named on its first run: `AccessibilityTest::testAccessibilityOfTheInstalledPages`,
+  `Behat\Mink\Exception\DriverException: Could not open connection: Failed to connect to localhost
+  port 4444` — every frame inside `BrowserTestBase::setUp()` and `WebDriverTestBase::initMink()`,
+  **not one inside the test file**. The test is right and this rig is wrong: it has no Selenium
+  service and no `core/node_modules`, while the canonical pipeline has both and is green on the
+  same test. It is now excluded **by name** through `EXCLUDED_TEST_CLASSES`, and the job
+  reconciles the classes that ran against the `*Test.php` the package ships and goes red naming
+  the class if that difference is not exactly the declared one (T-1906).
+
+  🔴 **What is STILL open, named so that "closed" is not read as more than it is: nothing in
+  this repository watches the mirror's conclusion.** `tests/bin/watch-gate` reads drupalcode and
+  only drupalcode — correctly, because that is the gate — and `tests/bin/claims-match-sources`
+  prints eight exclusions by name, none of which is GitHub. **The mechanism that let nine reds
+  pass unread is unchanged**: the mirror is watched by a human noticing an email, and this
+  paragraph is the only thing in the repository that says so. The fix above makes the next red
+  **legible**; it does not make it **noticed**.
 - Playwright: functional + visual regression of the demo pages.
   ⏸ **NOT RUNNING ANYWHERE, and not counted as coverage until it is.** T-804 is **deferred to unit
   003 with the mirror as its prerequisite**: D-009(d) puts visual regression on the GitHub mirror,

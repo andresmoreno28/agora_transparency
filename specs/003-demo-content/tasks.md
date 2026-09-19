@@ -1129,3 +1129,80 @@ of this repository on this machine and names `tests/bin/identity-strings` as the
 *is* the repository it claims to be. **A second writer inside the correct checkout is invisible to
 every invariant this project owns**, and the accounting entry above is the second record in two
 hours of a number going stale between being written and being read.
+
+## Wave 20 — a check nobody could read had been red for three weeks — [ejecutor] 2026-09-19
+
+**The GitHub mirror's `.github/workflows/phpunit.yml` failed on every run since 2026-08-27** —
+nine consecutive failures, each one emailing the maintainer — and the log never said which test
+failed. Nobody looked. The last green was `505c18a0`, run `33074134414`, 2026-08-27 12:54.
+`CLAUDE.md`'s gate block meanwhile went on describing that workflow as *"informative"* and as
+something that *"may never lie"*, which is the half of D-020 that had quietly stopped holding
+while the half about failing without blocking went on being quoted as though it covered this.
+
+⚠️ **THE FAILURE WAS UNREADABLE, and that is the finding rather than the test that failed.** Run
+`35451608869` printed `Tests: 19, Assertions: 2362, Failures: 1, Deprecations: 138` above 138
+deprecation reports and **not one word about the failure**: no failure marker in the `--testdox`
+list, no `There was 1 failure:` section, no assertion message anywhere in 408 KB of log. The cause
+is a property of PHPUnit, not of this project: **a test that fails inside `setUp()` never emits
+`Test\Prepared`, so the TestDox collector never registers it**. The failing test was absent from
+the very list it failed in, which reads exactly like a test that never ran. **`Tests: 19` was
+wrong too** — the JUnit log of the next run records **20**, which is what the canonical pipeline
+has always run.
+
+⚠️ **The ordering was the method, not a formality, and it earned its keep on the first run.** The
+dispatch required the failure to be made legible **before** anything was fixed, and that was right:
+two plausible causes — a missing `axe-core` bundle and a missing browser — fitted every visible
+number equally, and both are genuinely absent from this rig. Guessing between them would have
+produced a green whose reason nobody could state, which is the same defect one level up from the
+one being repaired. The legible log answered it in one run, by name, with a stack.
+
+⚠️ **The ids stay inside the `T-19NN` block, and that is deliberate rather than untidy.** Wave 19
+widened the counting command *past* the next hundred boundary to `1[0-9]{3}` and recorded that this
+was the last time the pattern could break inside unit 003. **`T-20NN` would break it again
+immediately**, since `1[0-9]{3}` does not reach it. So these rows continue the `T-19NN` block,
+exactly as wave 18 numbered its single row `T-1702`: a wave number and an id block have never been
+the same thing in this file.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1905 ✓ | · | **Make the mirror's failure legible before touching what fails.** Add `--log-junit` to the phpunit invocation and a step that reads that XML and prints every failed or errored testcase by class, method, file, line and message — at the END of the log where a reader looks, as a `::error::` annotation so the notification email names the test rather than only the job, and into the step summary. ⚠️ **The printer and the logger are separate witnesses and this project had been relying on one**: the JUnit logger records a `<testcase>` and its `<failure>` child regardless of which PHPUnit events the TestDox collector saw. ⚠️ **It must weaken nothing**: what runs is unchanged, `--fail-on-empty-test-suite` untouched, no step made permissive, and `Run tests` keeps sole ownership of the job's verdict on the tests | **Run `35452977342` prints `JUnit log: 20 testcase(s) recorded; 1 carry a failure or an error.`** — **20, against the `Tests: 19` the text printer reported on the run before it** — with one line per class, and names the failure: `AccessibilityTest::testAccessibilityOfTheInstalledPages`, `Behat\Mink\Exception\DriverException: Could not open connection: Failed to connect to localhost port 4444 after 0 ms`. **Falsified in three directions against synthetic JUnit logs before pushing**: a recorded failure prints the name and message and exits 0; a missing XML exits 1; an XML with zero testcases exits 1. ⚠️ **The no-XML branch was then falsified IN CI rather than in a harness** — run `35453860620` died before phpunit wrote anything and the step failed with `PHPUnit wrote no JUnit log`, which is why that run cost one cycle instead of three | — |
+| T-1906 ✓ | · | **Name what the legible log named, then exclude it by name with a mechanical guard.** Every frame of that stack is inside `BrowserTestBase::setUp()` and `WebDriverTestBase::initMink()`; **not one is inside `AccessibilityTest.php`**. The test is right and the environment is wrong: the rig is a plain `ddev config --project-type=drupal11` project with no selenium add-on, so nothing listens on port 4444, and it never runs `yarn install` in core, so the axe-core bundle that test's first assertion guards is absent as well — **two independent gaps, either of which alone fails it**. The canonical pipeline has both halves and is green on the same test, so D-020's answer is to say which question this mirror does not answer, not to make it answer that question badly. So: excluded through `EXCLUDED_TEST_CLASSES`, declared once, spelled out in the command line — and **reconciled**, because an exclusion that is only a comment is an exclusion that grows. ⚠️ **`ddev exec` re-assembles its arguments into one shell string**, so the anchored filter arrived with bare parentheses and the container answered `syntax error near unexpected token '('`; the invocation is therefore written to a file and the file is run, which keeps the filter anchored where a metacharacter-free substring filter would have silently matched any future class containing this name | **Run `35454074462` is GREEN — the first success since 2026-08-27** — printing `OK, but there were issues!` over `Tests: 19, Assertions: 2362, Deprecations: 137` and a progress line `DDDDDDDDDDD........ 19 / 19 (100%)`. ⚠️ **The assertion count is IDENTICAL to the red run's 2362**, which is the number that proves no coverage was removed: the excluded test died in `setUp()` and had contributed zero assertions, so excluding it subtracts nothing but the failure. Deprecations fall **138 → 137**, exactly the one attributed to that test's setUp. The accounting prints `shipped by the package : 6` · `recorded in the log : 5` · `absent from the log : 1  AccessibilityTest` · `declared as excluded : 1  AccessibilityTest`. **Falsified in five directions before pushing**: the expected run exits 0; a class that silently stops running exits 1 naming it; an exclusion that silently stops working exits 1; tests that never reached the package exit 1; a missing JUnit log exits 1. **And the quoting fix was falsified against a stub printing the argv it receives**, with one excluded class and with two: the generated script carries `--exclude-filter '/^(AccessibilityTest\|OtherTest)::/'` intact, `ddev exec` is handed three metacharacter-free arguments, and the generated script passes `bash -n` | T-1905 |
+
+⚠️ **Reserve accounting, thirteenth entry, 2026-09-19 — two rows.** T-1905 and T-1906 take the
+count from **69 to 71** against a ceiling of **34**, so the D-031 rider now names **thirty-seven**
+rows over the ceiling rather than thirty-five. Stated, not asked about, per **D-044**: the budget
+counts and does not gate.
+
+**D-044's necessity test, applied honestly — and this time the answer is YES, which it has not
+been for the last three waves.** By D-044's wording — *work without which something already signed
+is broken, false, or impossible to ship* — **both rows pass**, and not on a technicality:
+`CLAUDE.md`'s gate block asserted in the present tense that the mirror *"keeps running and stays
+informative"* and *"may never lie"*, and that sentence had been **false for three weeks** when it
+was read today. This is not new scope and it is not an improvement; it is a signed claim that had
+stopped being true, repaired, plus the measurement that proves it. The previous three waves each
+recorded that their row did **not** pass this test, which is what makes saying so here worth the
+line.
+
+🔴 **What is NOT closed, named so that a green is not read as more than it is: nothing in this
+repository watches the mirror's conclusion.** `tests/bin/watch-gate` reads drupalcode and only
+drupalcode — correctly, because that is the gate — and `tests/bin/claims-match-sources` prints
+eight exclusions by name, **none of which is GitHub**. So the mechanism that let nine reds pass
+unread is **unchanged**: the mirror is watched by a human noticing an email. This wave makes the
+next red **legible**; it does not make it **noticed**, and there is no row for that here because
+the dispatch's scope was the workflow and the records, not `tests/bin/`.
+
+### What this change did not touch
+
+`recipe.yml`, `config/`, `content/`, `composer.json`, `recommended.yml`, `tests/src/`, `tests/bin/`,
+`.gitlab-ci.yml`, the sibling theme checkout — **not one byte**, by dispatch — and every earlier
+row, glyph, success criterion, `Blocked by` cell and `#` cell in this file. No earlier accounting
+entry and no earlier state section is rewritten; this section adds bytes only at the end of the
+file, and the thirteenth accounting entry is placed **here with its wave** rather than beside the
+others at the top, for the reason wave 17 gave: inserting it there would put new bytes between
+existing paragraphs.
+
+⚠️ **No tag was cut and no release was prepared**, by dispatch. **`CLAUDE.md` IS edited**, in one
+place: the install-smoke bullet, whose claim about the mirror was the sentence this wave found
+false. The clause is struck rather than deleted and the correction is appended beneath it, per
+rule 8. No number that `tests/bin/claims-match-sources` binds was touched, and the checker was
+re-run afterwards to prove it.
