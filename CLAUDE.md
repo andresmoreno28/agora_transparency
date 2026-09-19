@@ -324,10 +324,25 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `967950`, ref `1.x`, commit `7d7e791`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/967950/jobs` on 2026-09-19. (The previous
-  observation stood at pipeline `950770`, commit `71de28e`, 2026-09-12; the ten names are
-  unchanged, every job `success`, every `allow_failure` false.) ⚠️ **The list
+- **Observed inventory — the theme.** Pipeline `968062`, ref `1.x`, commit `2fe883e`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/968062/jobs` on 2026-09-19. (It stood at
+  `968026`/`1db46dd` and `967950`/`7d7e791` earlier the same day and at `950770`/`71de28e` on
+  2026-09-12; the ten names are unchanged, every job `success`, every `allow_failure` false.
+  **Three observations in one day is not churn — the theme took three commits that day**, and a
+  row carried forward would have described none of them.)
+  ⚠️ **The two denominators moved in OPPOSITE ways across those three commits, and that is the
+  useful part.** `phpunit` went `127 / 720` → `127 / 720` → **`OK (156 tests, 797 assertions)`**:
+  unchanged across the two tooling commits, then +29 tests and +77 assertions on the one that
+  added behaviour, which is exactly the shape to want and was predicted before it was read.
+  `nightwatch` printed **7 pages, 89-89 rules, 0 violations, heading-order on 7 of 7,
+  `489 total assertions`** on all three — correctly, because none of them added a scanned page.
+  ⚠️ 🔴 **AND THAT LAST SENTENCE IS THE GAP, not a reassurance.** The change that moved `phpunit`
+  added a views empty-region message and an exposed-form button row to every register page, and
+  **none of the seven axe-scanned fixtures contains an exposed form** — so neither surface is
+  scanned by the accessibility gate anywhere. The stylesheet's own comment has recorded that the
+  fixtures carry no exposed form since it was written; until 2026-09-19 that absence cost nothing,
+  and now it does. **It has no owner and no task row.** The fix is a fixture page with an exposed
+  filter, which moves the axe page count from 7 to 8 and therefore moves this block. ⚠️ **The list
   MOVED on 2026-09-02: nine jobs became TEN**, and the tenth is `phpunit`. It is recorded in
   **this** file because `agora_theme` has no `CLAUDE.md` of its own: it is a theme, and its
   repository holds code, not the process layer. (Before `950770` the row stood at pipeline
