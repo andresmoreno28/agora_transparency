@@ -213,6 +213,14 @@ class ValidationTest extends BrowserTestBase {
    * view this template places beside the page does not. `recipe.yml` imports
    * `block.block.agora_theme_content` by name, so the id exists on every
    * clean install and not merely on a developer's rig.
+   *
+   * ⚠️ IT SCOPES, IT DOES NOT COUNT, and the difference was measured rather
+   * than reasoned about. Asserting exactly one match reds on `/contracts`
+   * (pipeline `969085`): `agora_base_contracts` has an `attachment_1`
+   * display, and an attachment nests a second view container INSIDE the
+   * page's own, which is correct. What this constant guarantees is that a
+   * block this template PLACES - always a sibling of the main content block -
+   * is never one of the matches.
    */
   private const PAGE_VIEW = '#block-agora-theme-content ' . self::VIEW_CONTAINER;
 
@@ -1709,10 +1717,20 @@ class ValidationTest extends BrowserTestBase {
     $assert = $this->assertSession();
     $this->drupalGet($path, $options);
     $assert->statusCodeEquals(200);
-    // EXACTLY ONE, not "at least one": this is the assertion T-1310 broke,
-    // and a count is what turns the ambiguity it exposed into a failure
-    // instead of a silently wrong first match. See PAGE_VIEW.
-    $assert->elementsCount('css', self::PAGE_VIEW, 1);
+    // ⚠️ A COUNT OF ONE WAS TRIED HERE AND IS WRONG, and it is recorded
+    // rather than quietly dropped. `elementsCount(PAGE_VIEW, 1)` reds on
+    // `/contracts` with `2 elements ... found on the page, but should be 1`
+    // (pipeline 969085): `agora_base_contracts` carries an `attachment_1`
+    // display, and an attachment renders a second view container NESTED
+    // inside the page's own. Two containers there is correct by design, so
+    // "exactly one" is false of a page nobody has broken.
+    //
+    // The durable guarantee is the SCOPE, not a count: a block this template
+    // places is a SIBLING of the main content block and can never be inside
+    // it, while an attachment can only ever be inside the page's own view -
+    // so the first match under PAGE_VIEW is the page's view in both cases,
+    // and its text subtree contains the attachment's anyway.
+    $assert->elementExists('css', self::PAGE_VIEW);
     $assert->elementTextContains('css', self::PAGE_VIEW, $empty_text);
     $assert->elementNotExists('css', self::PAGE_VIEW . ' ' . self::REGISTER_TABLE);
   }
