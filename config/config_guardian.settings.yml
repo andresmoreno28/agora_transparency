@@ -1,11 +1,11 @@
 # Config Guardian, configured for a transparency portal rather than left at the
 # module's defaults (T-0510, D-059).
 #
-# ⚠️ THIS OBJECT IS SHIPPED COMPLETE, WITH EVERY KEY THE SCHEMA DECLARES, AND A
+# WARNING: THIS OBJECT IS SHIPPED COMPLETE, WITH EVERY KEY THE SCHEMA DECLARES, AND A
 # PARTIAL COPY WOULD SILENTLY DISABLE THE FEATURE. `RecipeRunner::processInstall()`
 # hands the recipe's own `config/` to the config installer wrapped in a
 # `RecipeOverrideConfigStorage`, whose documented purpose is "allow the recipe to
-# override simple configuration from the modules" — so this file REPLACES
+# override simple configuration from the modules" - so this file REPLACES
 # `config_guardian/config/install/config_guardian.settings.yml` wholesale at
 # module-install time; it does not merge with it. A key omitted here therefore
 # arrives as NULL, and `SettingsService::isAutoSnapshotEnabled()` reads
@@ -13,14 +13,14 @@
 # fallback: NULL becomes FALSE, automatic snapshots stop, and nothing reports it.
 # Four of the seven getters do have a `?? default`; three do not. Ship all seven.
 #
-# ⚠️ AND THE COMMENTS BELOW DO NOT SURVIVE A ROUND TRIP. `drush site:export`
+# WARNING: AND THE COMMENTS BELOW DO NOT SURVIVE A ROUND TRIP. `drush site:export`
 # regenerates `config/` from the active store, which has no comments. If this
-# object is ever re-exported, restore this header by hand — the reasons are the
+# object is ever re-exported, restore this header by hand - the reasons are the
 # deliverable T-0510 asked for, not decoration.
 #
 # WHY NOT A `config.actions` ENTRY IN `recipe.yml` INSTEAD. An action would run
 # after the module had already created its own defaults, so the site would carry
-# the module's values for the length of one request and this file's afterwards —
+# the module's values for the length of one request and this file's afterwards -
 # two states where one will do. The override path above produces one.
 langcode: en
 
@@ -28,9 +28,9 @@ langcode: en
 # portal audits its own configuration; a module installed with its scheduler
 # switched off would make that claim false on every install.
 #
-# ⚠️ IT NEEDS CRON, and that is not measured. `ConfigGuardianHooks::cron()` is
+# WARNING: IT NEEDS CRON, and that is not measured. `ConfigGuardianHooks::cron()` is
 # the only automatic producer, so on a site whose cron never fires the interval
-# below describes nothing. Unit 005 plan §6 holds "scheduled" as PROSE bounded
+# below describes nothing. Unit 005 plan section 6 holds "scheduled" as PROSE bounded
 # by R16 for exactly this reason, and R16 has no rig measurement yet (wave 22
 # ran with no Docker). Do not write "daily snapshots" into shipped text until it
 # has been observed.
@@ -43,7 +43,7 @@ auto_snapshot_before_import: true
 
 # WEEKLY, NOT THE MODULE'S `daily`, and the reason is arithmetic rather than
 # taste. `cron()` creates a snapshot every time the interval has elapsed,
-# whether or not anything changed — so `daily` on a site whose configuration is
+# whether or not anything changed - so `daily` on a site whose configuration is
 # stable produces ~365 near-identical full-configuration blobs a year. A small
 # council on shared hosting pays for those in database size, and an audit trail
 # of a config that did not change is not evidence of anything. The changes that
@@ -51,12 +51,12 @@ auto_snapshot_before_import: true
 # snapshots taken by hand.
 auto_snapshot_interval: weekly
 
-# ⚠️ TWO CAPS APPLY AND THE TIGHTER ONE WINS, so they are set to say which.
+# WARNING: TWO CAPS APPLY AND THE TIGHTER ONE WINS, so they are set to say which.
 # `cleanupOldSnapshots()` deletes by age first and then by count. At the weekly
-# interval above, 400 days is about 57 snapshots — so the AGE cap is the
+# interval above, 400 days is about 57 snapshots - so the AGE cap is the
 # operative one and `max_snapshots` is the ceiling behind it.
 #
-# ⚠️ AND `max_snapshots` COUNTS SNAPSHOTS IT WILL NOT DELETE: `getSnapshotCount()`
+# WARNING: AND `max_snapshots` COUNTS SNAPSHOTS IT WILL NOT DELETE: `getSnapshotCount()`
 # counts every row, while both deletes are restricted to `type = 'auto'`. Manual
 # snapshots therefore consume the budget permanently. 60 leaves room for a
 # handful of them without silently squeezing the automatic history to nothing.
@@ -79,7 +79,7 @@ compression: gzip
 # THE `exclusions` HALF OF T-0510. Patterns are matched against config OBJECT
 # NAMES with glob semantics (`SnapshotManagerService::applyExclusions()`), and
 # the same list also filters what a ROLLBACK is allowed to write back
-# (`RollbackEngineService::filterExcludedConfigs()`) — which is what makes the
+# (`RollbackEngineService::filterExcludedConfigs()`) - which is what makes the
 # third entry a security boundary rather than housekeeping.
 exclude_patterns:
   # Module default, kept. `system.cron` stores `last`, a timestamp rewritten on
@@ -87,14 +87,14 @@ exclude_patterns:
   # configuration change. Excluding it is what keeps a diff readable.
   - 'system.cron'
   # Module default, kept. A rollback that rewrote `core.extension` would
-  # uninstall modules — that is a site rebuild, not a configuration change, and
+  # uninstall modules - that is a site rebuild, not a configuration change, and
   # it is the one rollback a clerk must never trigger by accident.
   - 'core.extension'
-  # ⚠️ THIS PACKAGE'S OWN, AND IT IS THE POINT OF THE WHOLE UNIT.
+  # WARNING: THIS PACKAGE'S OWN, AND IT IS THE POINT OF THE WHOLE UNIT.
   # A snapshot is a gzipped blob in a database table that an export writes to a
   # file and a rollback writes back into active configuration. The `key` module
-  # stores an API key's provider settings — and, with the default provider, the
-  # key itself — in a `key.key.*` config entity. This package ships none, which
+  # stores an API key's provider settings - and, with the default provider, the
+  # key itself - in a `key.key.*` config entity. This package ships none, which
   # `tests/bin/no-key-material` asserts, but a site owner who later configures a
   # generative provider will have one, and it must not enter a store this
   # package told their site to create.
