@@ -260,10 +260,20 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `969327`, ref `1.x`, commit `434a0e2`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/969327/jobs` on 2026-09-20 —
+- **Observed inventory — the site template.** Pipeline `969557`, ref `1.x`, commit `bc4baa4`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/969557/jobs` on 2026-09-21 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ⚠️ **Refreshed BECAUSE THE RULE AT THE FOOT OF THIS BLOCK DEMANDED IT, which is the first time
+  that has happened rather than a human noticing.** Unit 005 wave 23 moved a gate's denominators —
+  `phpunit` 21 → 22 tests and 2555 → 2596 assertions, `cspell` 417 → 423 files — so *"the commit
+  that changes … a gate's denominator is the commit that updates it"* applied, and the trace-figures
+  table below moves with it. **The ten job NAMES did not change**, which is exactly the staleness
+  the warning below says nothing can see; what made this refresh happen was the denominator rule,
+  not the list comparison. (The previous row stood at `969327` / `434a0e2` / 2026-09-20.)
+  ⚠️ **This one IS the pipeline of the commit at the tip, and it is complete**: `watch-gate --wait`
+  ran it to a verdict — *"GREEN for `bc4baa4` — every declared job ran, every job success, every job
+  blocking"* — so it is a finished job list rather than one read mid-flight.
   ⚠️ **The figures those traces printed left this sentence on 2026-09-20 and moved into the
   second table below**, which is the one `tests/bin/claims-match-sources --online` re-reads from
   the jobs themselves. They were prose, and prose is where a stale figure hides: the whole of
@@ -311,9 +321,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   |---|---|
   | `Drupal CMS` | `Locking drupal/agora_theme (1.1.0)` |
   | `Drupal CMS` | `OK (1 test, 1 assertion)` |
-  | `cspell` | `Files checked: 417, Issues found: 0` |
-  | `phpunit` | `OK (21 tests, 2555 assertions)` |
-  | `phpunit-pgsql` | `OK (21 tests, 2555 assertions)` |
+  | `cspell` | `Files checked: 423, Issues found: 0` |
+  | `phpunit` | `OK (22 tests, 2596 assertions)` |
+  | `phpunit-pgsql` | `OK (22 tests, 2596 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
