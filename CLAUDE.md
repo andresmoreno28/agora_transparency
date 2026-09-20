@@ -260,9 +260,25 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `958595`, ref `1.x`, commit `49b4f2f`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/958595/jobs` on 2026-09-12 —
-  not from the UI, not from the badge. **Re-read whole; the ten names are unchanged since
+- **Observed inventory — the site template.** Pipeline `969327`, ref `1.x`, commit `434a0e2`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/969327/jobs` on 2026-09-20 —
+  not from the UI, not from the badge. **Ten jobs, every one `success`, every one
+  `allow_failure: false`.** Figures read from the job traces the same day:
+  `phpunit` **`OK (21 tests, 2555 assertions)`** and `phpunit-pgsql` the **same 21 and the same
+  2555**, with `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` printed expanded; `Drupal CMS`
+  `OK (1 test, 1 assertion)` on `drupal/cms (2.1.4)` resolving **`Locking drupal/agora_theme
+  (1.1.0)`**; `cspell` `Files checked: 417, Issues found: 0`.
+  ⚠️ **This row stood at `958595` / `49b4f2f` / 2026-09-12 until today — nine days and eight
+  pipelines stale, in the same file whose theme row was refreshed three times in that period.**
+  Nothing caught it, and the reason is worth more than the refresh:
+  `tests/bin/claims-match-sources` compares this table's **job NAMES** against `watch-gate`'s
+  declared list, and the names had not changed. **A stale observation of an unchanged list is
+  invisible to a check that compares lists.** The block's own rule — *"the commit that changes the
+  CI job list, the packaged file set or a gate's denominator is the commit that updates it"* —
+  does not reach it either, because none of those three moved. ⚠️ **`Locking drupal/agora_theme
+  (1.1.0)` is the figure to read twice**: the theme's `1.x` is 21 commits past that release and
+  its `components/` directory exists in no published release, so what a clean install receives is
+  not what this repository is developed against. **Re-read whole; the ten names are unchanged since
   `936386`, and it is re-read rather than carried because a table nobody re-opened is a claim, not
   a measurement.** ⚠️ **This is NOT the pipeline of the commit at the tip, and saying which one it
   is matters more than being one commit newer.** `958678`, on `31217a5`, was read first: eight
