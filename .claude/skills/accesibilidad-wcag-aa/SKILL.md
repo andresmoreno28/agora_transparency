@@ -20,7 +20,7 @@ unfinished task.
 | Contrast | Text ≥ 4.5:1; large text and UI ≥ 3:1 | Theme tokens |
 | Forms | Associated `<label>`; errors linked to the field; not colour alone | axe + manual |
 | Images | Purposeful `alt`; decorative ones with `alt=""` | Review |
-| Language | Correct `lang`, and per fragment in bilingual ES/EN content | Review |
+| Language | Correct `lang` on the page. Demo content is ENGLISH-ONLY (D-035, signed 2026-08-26), so there are no Spanish fragments to mark up — this line read "per fragment in bilingual ES/EN content" for 25 days after that and would have sent a reader hunting for something the product forbids | Review |
 | Motion | Respects `prefers-reduced-motion` | CSS |
 
 ## The 2.2 criteria most often forgotten

@@ -61,7 +61,7 @@ Never close one of these on your own. Prepare the decision, do not take it.
 
 | Rule | Detail |
 |---|---|
-| Languages | The **entire repository is in English** (D-017), process layer included. Spanish is the language of orchestration outside the repo. Demo content bilingual ES/EN |
+| Languages | The **entire repository is in English** (D-017), process layer included. Spanish is the language of orchestration outside the repo. Demo content ENGLISH-ONLY (D-035, signed 2026-08-26; this line read "bilingual ES/EN" for 25 days after that) |
 | Commits | Conventional, in English, **no AI co-authorship trailers** |
 | Labels | `[ejecutor]`, `[andres]` — never AI tool names |
 | Tooling | Composer for PHP, **pnpm exclusively** for JS (no npm, no yarn, not in docs or CI either) |

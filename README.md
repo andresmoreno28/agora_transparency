@@ -4,20 +4,25 @@
 and open government portals**: small local councils, public bodies, foundations and any organisation
 that has to publish what it decides, what it spends and who works for it.
 
-![Placeholder image, not a screenshot: Ágora has no demo site yet, so there is nothing real to capture. It will be replaced once the demo content exists.](screenshot.webp)
+![The Ágora front page as the template installs it: the masthead, the search block, the key figures for the fictional municipality of Fuentelclaro, and the register of published records beneath them.](screenshot.webp)
 
 ## Status — in development
 
-Ágora is being built in the open and is **not usable as a transparency portal yet**. So far only the
-foundation exists: the packaging skeleton, the recipe that composes Drupal CMS, and the test suite
-that installs Drupal with the template applied.
+Ágora is being built in the open and is **not finished**, but it is no longer only a skeleton: the
+recipe composes Drupal CMS, installs the theme, and ships a demonstration corpus of **60 records
+across six registers** — 224 files in `content/`, 131 config objects — which a clean install
+renders as a working portal.
+
+⚠️ **This paragraph described a skeleton until 2026-09-20, months after that stopped being true,
+and the section below still listed the content model and the demo content as "not yet".** A status
+section is the first thing a reader believes and the last thing anyone re-reads.
 
 **What the template does today**
 
 * Installs a working Drupal CMS site: administrative back end, media, basic SEO, basic privacy and
   consent, anti-spam, authentication tweaks and HTML email.
 * Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
-  this template requires at `^1.0` — and makes it the site's default theme.
+  this template requires at `^1.1` — and makes it the site's default theme.
 * Sets a Canvas landing page as the home page, carrying **five** blocks from the template's own
   views. (It read *four* until 2026-09-20 and was already wrong: the page carried six, and
   T-1310 moved the service-area cards off it to `/publications`, beside the register they
@@ -30,8 +35,8 @@ feature list:
 
 | Planned | Where it is going |
 |---|---|
-| Content model: documents, officials, contracts, budget lines, public calls | unit 002 |
-| Demo content — English only, see below — and the real screenshot | unit 003 |
+| ~~Content model: documents, officials, contracts, budget lines, public calls~~ **DONE, unit 002** | six bundles ship in `config/` |
+| ~~Demo content — English only, see below — and the real screenshot~~ **DONE, unit 003** | 60 records, and `screenshot.webp` is a real 500×400 capture |
 | Editorial workflow and freedom-of-information requests | unit 004 |
 | AI assistant with citations, and configuration auditing | unit 005 |
 
@@ -56,12 +61,31 @@ D-035 and D-041 in `specs/000-project/DECISIONS.md` in this repository.
 
 ## Accessibility
 
-**A goal, not a verified result — yet.** Ágora targets WCAG 2.2 AA, and the plan is for automated
-accessibility checks over the demo pages to gate every release, with the outcome reported in this
-section. No such check has run here, because there is nothing in this repository to run it
-against: the template ships no demo pages. The theme it installs is a separate project,
-`drupal/agora_theme`, developed and tested in its own repository. **No conformance with any WCAG
-level is claimed at this point.**
+**Ágora targets WCAG 2.2 AA, and two automated gates now measure it — but neither of them is a
+conformance claim, and the difference is the point of this section.**
+
+⚠️ **This paragraph said until 2026-09-20 that "no such check has run here, because there is
+nothing in this repository to run it against".** That was false, and it contradicted the
+accessibility statement this same package ships, which describes the check in detail. Understating
+is the safe direction for liability and the wrong one for a reader deciding whether to trust the
+product.
+
+What actually runs, and what it covers:
+
+* **In this repository**, `tests/src/FunctionalJavascript/AccessibilityTest.php` runs axe-core over
+  **nine pages of the site as the template installs it** — the two composed landing pages, the
+  front page as a visitor meets it, four listing routes, one published record, and the
+  page-not-found screen — **anonymously**, as a member of the public meets them. It is **blocking**
+  in both PHPUnit jobs. Result: **0 violations**.
+* **In `drupal/agora_theme`**, a `nightwatch` job runs axe over **nine fixture pages**, 89 rules
+  each, **0 violations**, with heading order reported on 9 of 9.
+
+**What neither gate covers, stated because a gate's silence is not a pass:** anything behind a
+login; four of the eight listing routes, the prose pages — including this statement's own page —
+and 59 of the 60 record pages; and the three AA criteria axe cannot decide — **2.4.7 Focus
+Visible, 2.5.8 Target Size (Minimum) and 1.4.10 Reflow** — plus 2.4.1 Bypass Blocks *in use*.
+**No conformance with any WCAG level is claimed.** The shipped accessibility statement carries the
+full account.
 
 ## Requirements
 
@@ -269,8 +293,9 @@ pages.
 
 ## Known limitations
 
-* **`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
-  installed site.
+* ~~**`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
+  installed site.~~ **Replaced 2026-09-19: it is a 500×400 capture of the front page of an
+  installed site carrying the demonstration corpus.**
 * **The demo corpus is a fictional Spanish municipality published in English**, which is a
   deliberate frame rather than a gap — see
   ["The demo content is a fictional Spanish municipality, published in English"](#the-demo-content-is-a-fictional-spanish-municipality-published-in-english)

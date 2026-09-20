@@ -692,8 +692,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
   ~~The last assertion total this gate will have for a while~~ **— it was for five days; the
   totals came back with the pin on 2026-09-13 —** is
-  ~~`OK (18 tests, 2247 assertions)`~~ **`OK (20 tests, 2549 assertions)`** on both jobs of
-  pipeline `952632`, 2026-09-08 (it read `18 / 2247` on 2026-09-06, `16 / 2024` on 2026-09-01,
+  ~~`OK (18 tests, 2247 assertions)`~~ ~~`OK (20 tests, 2549 assertions)`~~
+  **`OK (21 tests, 2555 assertions)`** on both jobs of pipeline `969201`, commit `bc10c00`,
+  2026-09-20 (it read `20 / 2549` on pipeline `952632`, 2026-09-08)
+  ⚠️ **This figure was stale for two days and NOTHING FAILED, which is the finding rather than the
+  number.** It is one of the nine quantities `tests/bin/claims-match-sources` prints as NOT
+  CHECKED, and its stated reason — *"only in a CI job trace; `/trace` answers 401 anonymously"* —
+  **is false**: `https://git.drupalcode.org/project/<name>/-/jobs/<id>/raw` serves the whole log
+  with no credential, **provided the redirect is followed** (`-L`; without it the 302 looks exactly
+  like a failure). **Four of those nine are readable today and could be compared by machine.** The
+  remedy is named in the audit of 2026-09-20 and owned by unit 006. (it read `18 / 2247` on 2026-09-06, `16 / 2024` on 2026-09-01,
   `16 / 1951` at T-1204, `1717` at T-805 and `3 tests, 38 assertions` before that).
   A suite that executed 0 tests is a **failed** gate (I-007, I-032).
   🔴 **`tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file and is GREEN

@@ -8,7 +8,7 @@ description: Use when adding, upgrading or evaluating any dependency for the sit
 ## Core principle
 
 In this project **every dependency is a signed decision, not a `composer require`**. The
-marketplace requires an SBOM with security coverage status, and forbids unstable releases and patches.
+marketplace requires an SBOM with security coverage status and forbids patches. ⚠️ **It does NOT forbid unstable releases, and this line said it did.** CLAUDE.md rule 1 was amended 2026-09-05 on evidence: the starter kit's seven ironclad rules name patching and pinning and say nothing about release stability, and `haven` 1.0.3 — a published site template — ships `"drupal/webform": "^6.3.0-beta8"`. **A requirement a published package violates is not a requirement.** Agora's stable-only rule stands on its own merits and is stricter than the ecosystem by choice; sourcing it to the marketplace loses the argument the first time anyone opens haven's composer.json.
 A dependency without a justification in `specs/000-project/DECISIONS.md` **does not exist**.
 
 ## Gateway — the four questions
