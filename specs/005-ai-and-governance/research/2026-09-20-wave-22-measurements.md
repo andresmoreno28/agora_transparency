@@ -651,7 +651,10 @@ ddev drush watchdog:show --count=50 --format=table   # count rows AND print seve
 
 ```bash
 # SEPARATE rig. Never the one above.
-ddev drush recipe recipes/... --input=openai_api_key=FAKE-KEY-DO-NOT-USE
+# The value below is a PLACEHOLDER and must stay one: writing a literal
+# credential-shaped assignment into a tracked file is what tests/bin/no-secrets
+# exists to refuse, and it refused this very line before it was rewritten.
+ddev drush recipe recipes/... --input=openai_api_key=<placeholder, never a real key>
 ddev drush config:export -y
 find config/ -name 'key.key.*' | tee /dev/stderr | wc -l     # the denominator, printed either way
 grep -rn "key_provider:" config/key.key.* 2>/dev/null
