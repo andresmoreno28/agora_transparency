@@ -263,11 +263,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
 - **Observed inventory — the site template.** Pipeline `969327`, ref `1.x`, commit `434a0e2`,
   read from `/api/v4/projects/project%2Fagora_transparency/pipelines/969327/jobs` on 2026-09-20 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
-  `allow_failure: false`.** Figures read from the job traces the same day:
-  `phpunit` **`OK (21 tests, 2555 assertions)`** and `phpunit-pgsql` the **same 21 and the same
-  2555**, with `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` printed expanded; `Drupal CMS`
-  `OK (1 test, 1 assertion)` on `drupal/cms (2.1.4)` resolving **`Locking drupal/agora_theme
-  (1.1.0)`**; `cspell` `Files checked: 417, Issues found: 0`.
+  `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ⚠️ **The figures those traces printed left this sentence on 2026-09-20 and moved into the
+  second table below**, which is the one `tests/bin/claims-match-sources --online` re-reads from
+  the jobs themselves. They were prose, and prose is where a stale figure hides: the whole of
+  this bullet's warning below is about a staleness that nothing could see.
   ⚠️ **This row stood at `958595` / `49b4f2f` / 2026-09-12 until today — nine days and eight
   pipelines stale, in the same file whose theme row was refreshed three times in that period.**
   Nothing caught it, and the reason is worth more than the refresh:
@@ -299,6 +299,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `phpstan` | validate | success | false |
   | `phpunit` | test | success | false |
   | `phpunit-pgsql` | test | success | false |
+
+  **Trace figures — the site template.** Every row is a line the named pipeline's job actually
+  printed, and `tests/bin/claims-match-sources --online` re-reads each one from that job's own
+  `/-/jobs/<id>/raw`, anonymously, because that route needs no credential. **A figure that goes
+  stale here now goes RED**, which is precisely what the nine-day staleness described above had
+  nothing to make it do. Keep the rows to ONE canonical statement of each figure: the point is
+  not to record them twice more carefully, it is to stop recording them twice.
+
+  | job | the line its trace printed |
+  |---|---|
+  | `Drupal CMS` | `Locking drupal/agora_theme (1.1.0)` |
+  | `Drupal CMS` | `OK (1 test, 1 assertion)` |
+  | `cspell` | `Files checked: 417, Issues found: 0` |
+  | `phpunit` | `OK (21 tests, 2555 assertions)` |
+  | `phpunit-pgsql` | `OK (21 tests, 2555 assertions)` |
+  | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
   row is the only one in this file that is a PREDICTION rather than an observation, which is why it
@@ -348,13 +364,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `969068`, ref `1.x`, commit `8909f76`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/969068/jobs` on 2026-09-20.
-  ⚠️ **The axe gate moved again: EIGHT pages became NINE** (T-1307), and it now scans the
-  composed front page. `nightwatch` job `12319513` prints `agora_theme axe gate: 9 pages scanned,
-  89-89 axe rules run per page, 0 violations, heading-order reported on 9 of 9 pages` and
-  **`677 total assertions`** (was `576` over 8, `489` over 7). `phpunit` job `12319514` prints
-  **`OK (156 tests, 797 assertions)`**, unchanged, correct for a change that adds no PHP test.
+- **Observed inventory — the theme.** Pipeline `969322`, ref `1.x`, commit `4f82307`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/969322/jobs` on 2026-09-20. **Ten jobs, every
+  one `success`, every one `allow_failure: false`.**
+  🔴 **THIS ROW WAS FOUR PIPELINES STALE WHEN THE ONLINE CHECKER WAS BUILT, AND BUILDING THE
+  CHECKER IS HOW THAT WAS FOUND.** It named `969068`/`8909f76` while **T-1205's own audit, signed
+  in this repository earlier the same day, had already read `969322`/`4f82307`** — so the file
+  and its own audit disagreed about the theme, in writing, for hours. The theme took **five
+  pipelines on 2026-09-20**, one of them red (`969297`). ⚠️ **This is the same class as the site
+  template's nine-day staleness above, found the same way and not by a gate**, which is the
+  argument for reading a trace rather than trusting a table: the offline half compared job names,
+  and the ten names have not changed through any of it.
+  ⚠️ **The axe gate has moved twice more since T-1307's ninth page: NINE became TEN.** Every
+  current figure is in this bullet's **trace-figures table**, once, where a machine re-reads it
+  from the jobs themselves; it used to be restated here as well, and the restatement is gone
+  rather than refreshed. (For scale: the axe totals were `677` over 9 pages, `576` over 8 and
+  `489` over 7, and `phpunit` was `156 / 797` at `969068`.)
   ⚠️ **The rules-run range held at 89-89 across BOTH moves**, and that is the figure that makes
   the rise meaningful: a new page scanning fewer rules raises the assertion total while covering
   less. ⚠️ **The ninth page had to BE the site's front page, not merely look like one.** The hero
@@ -428,6 +453,27 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `phpunit` | test | success | false |
   | `stylelint` | validate | success | false |
 
+  **Trace figures — the theme.** Same mechanism as the site template's table above, same
+  credential-free `/-/jobs/<id>/raw` route, read from pipeline `969322`'s own jobs. ⚠️ **The
+  `gate-a-theme.sh` row is the first figure from the SIBLING repository that anything here can
+  check at all** — it was listed as unreachable on the grounds that it "lives in the `agora_theme`
+  repository", which is true of the script and false of the number its CI prints.
+
+  | job | the line its trace printed |
+  |---|---|
+  | `agora-invariants` | `35 checks — 0 failures` |
+  | `nightwatch` | `10 pages scanned, 89-89 axe rules run per page, 0 violations` |
+  | `nightwatch` | `heading-order reported on 10 of 10 pages` |
+  | `nightwatch` | `774 total assertions` |
+  | `phpunit` | `OK (203 tests, 959 assertions)` |
+
+  ⚠️ **A TABLE CAN NEVER NAME ITS OWN COMMIT'S PIPELINE, and that is structural rather than an
+  oversight.** The pipeline is produced *by* the commit that carries the table, so every
+  observation here names an EARLIER one and is at best one commit behind by construction. What
+  `--online` proves is that the observation is TRUE OF THE PIPELINE IT NAMES — not that it is the
+  newest. "Is it the newest?" is `tests/bin/watch-gate`'s question, and it is named in the NOT
+  CHECKED list for exactly that reason.
+
   ⚠️ **`phpunit` IS NEW, 2026-09-02, AND NOBODY ADDED A JOB TO GET IT.** The upstream template
   materialises that job only when the package contains PHP test classes, and this theme had none -
   so for the whole of its life the pipeline was nine jobs green over 12 functions nothing executed,
@@ -469,20 +515,29 @@ moving the working copy a session is running in, on the day wave 5 starts.
   **`nightwatch`** (the axe gate) and **`stylelint`** (it has CSS), and it runs **no `phpunit`**
   and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
   and *"both are at nine"* is not the same statement as *"both run what they need to run"*. The
-  **denominators** are the part that carries meaning: on pipeline `967950`, commit `7d7e791`,
-  job `12319513`, read 2026-09-20, `nightwatch` printed `agora_theme axe gate: 9 pages scanned,
-  89-89 axe rules run per page, 0 violations, heading-order reported on 9 of 9 pages` and
-  **`677 total assertions`** — ~~**the rule count held at 89 and the page count held at 7 while the
-  assertions went 476 → 489**~~ **the rule count has now held at 89 across 7 → 8 → 9 pages and
-  489 → 576 → 677 assertions**, which is the shape to want on a commit that added no surface: the
-  same seven pages asserted about more, not a seventh page counted twice. ⚠️ **`6` and `362` stood
+  **denominators** are the part that carries meaning, and they are in the theme's trace-figures
+  table above — once, read by machine.
+  🔴 ~~on pipeline `967950`, commit `7d7e791`, job `12319513`, read 2026-09-20, `nightwatch`
+  printed …~~ **THAT ATTRIBUTION WAS WRONG AND IT IS THE BEST ARGUMENT ON THIS PAGE FOR NOT
+  WRITING A FIGURE TWICE.** Job `12319513` belongs to pipeline **`969068`**, commit **`8909f76`**;
+  `967950`/`7d7e791` is the 2026-09-19 observation. The paragraph had been HALF refreshed — the
+  job id and the figures were moved forward, the pipeline and the commit were left behind — so it
+  read as a dated measurement of a pipeline that never produced it. Nothing caught it, because
+  nothing was comparing this copy to anything. The figures now live in the table and this
+  paragraph keeps only the argument.
+  ~~**the rule count held at 89 and the page count held at 7 while the
+  assertions went 476 → 489**~~ **the rule count has now held at 89 across 7 → 8 → 9 → 10 pages
+  and 489 → 576 → 677 → 774 assertions**, which is the shape to want on a commit that added no
+  surface: the same pages asserted about more, not a page counted twice. ⚠️ **`6` and `362` stood
   in this line until 2026-09-06 and `476` until today**, read from pipeline `943602`, commit
   `c5b0f68`, then from `950212`; the line before those read `297` and was four commits stale.
   **297 → 362 → 476 → 489: four refreshes of one figure in seventeen days, and that is the
   evidence that a hand-maintained number in this block does not stay true — see `tests/bin/claims-match-sources`, which now fails the gate
   for the half of these figures that a machine in this repository can check.** It was refreshed by reading
-  the job's trace, which needs the maintainer's token because `/trace` answers `401` to anonymous
-  requests. And that job has been **seen to fail** on a real missing `alt` (pipeline `935776`) — so
+  the job's trace, ~~which needs the maintainer's token because `/trace` answers `401` to anonymous
+  requests~~ **which needs no credential at all: that is the second of the three places this file
+  repeated the `401` claim, and it is corrected here rather than left for a reader to trip over.
+  `/-/jobs/<id>/raw` with `-L` serves the whole log to anybody.** And that job has been **seen to fail** on a real missing `alt` (pipeline `935776`) — so
   its green is a measurement, not an absence.
 
   ⚠️ **The `heading-order reported on N of N pages` clause is the newest and the most useful.**
@@ -712,12 +767,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
   **`OK (21 tests, 2555 assertions)`** on both jobs of pipeline `969201`, commit `bc10c00`,
   2026-09-20 (it read `20 / 2549` on pipeline `952632`, 2026-09-08)
   ⚠️ **This figure was stale for two days and NOTHING FAILED, which is the finding rather than the
-  number.** It is one of the nine quantities `tests/bin/claims-match-sources` prints as NOT
+  number.** It was one of the nine quantities `tests/bin/claims-match-sources` printed as NOT
   CHECKED, and its stated reason — *"only in a CI job trace; `/trace` answers 401 anonymously"* —
   **is false**: `https://git.drupalcode.org/project/<name>/-/jobs/<id>/raw` serves the whole log
   with no credential, **provided the redirect is followed** (`-L`; without it the 302 looks exactly
-  like a failure). **Four of those nine are readable today and could be compared by machine.** The
-  remedy is named in the audit of 2026-09-20 and owned by unit 006. (it read `18 / 2247` on 2026-09-06, `16 / 2024` on 2026-09-01,
+  like a failure). **Four of those nine were readable the whole time.**
+  ✅ **CLOSED 2026-09-20 by T-1601**: the figure lives once, in the site template's trace-figures
+  table, and `claims-match-sources --online` re-reads it from job `12324052`'s own log. The audit
+  assigned this to unit 006 and it was pulled forward to unit 003 deliberately — **unit 006 still
+  carries the accounting** (I-105). (it read `18 / 2247` on 2026-09-06, `16 / 2024` on 2026-09-01,
   `16 / 1951` at T-1204, `1717` at T-805 and `3 tests, 38 assertions` before that).
   A suite that executed 0 tests is a **failed** gate (I-007, I-032).
   🔴 **`tests/bin/no-blind-phpunit` enforces the flag in every versioned CI file and is GREEN
@@ -769,7 +827,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (67 checks · 0 failures) and `gate-a-wave3.sh` (**51** checks · 0 failures), **17** invariants in total —
+  (68 checks · 0 failures) and `gate-a-wave3.sh` (**51** checks · 0 failures), **17** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
   ⚠️ **THESE THREE NUMBERS ARE NOW MACHINE-CHECKED, AND THEY ARE THE REASON THE CHECKER EXISTS.**
   On 2026-09-06 this line read **61 · 48 · 15** while the runners printed **61 · 49** and carried
@@ -778,20 +836,41 @@ moving the working copy a session is running in, on the day wave 5 starts.
   figures out of this sentence and fails the gate when they disagree with the `# GATE-CLAIM:` line
   each runner carries in its own header — along with the two job tables above, which it compares
   against `watch-gate`'s declared job lists, and the `jobs >= N` floor, which it compares against
-  the length of those lists. ~~**Seven comparisons**~~ **EIGHT as of 2026-09-19** — all offline,
-  well under a second, which is why it is wired into wave 1 and not into the runner that takes 35
-  minutes. The eighth reads `.github/workflows/` against the workflow list `tests/bin/watch-gate`
-  declares it reads, so a workflow appearing on the GitHub mirror that nothing has been told to
-  watch fails the gate on the day it lands rather than on the day somebody notices.
-  ⚠️ **It covers about half of this block and says which half on every run.** Assertion counts, axe
-  denominators and per-job traces live only in a CI log — `/trace` answers `401` to anonymous
-  requests — so they are printed by name in a `NOT CHECKED` list that the gate asserts is
-  non-empty. **A guard that silently covers half its subject reads exactly like one that covers all
-  of it**, and the deleted-exclusion-list case is checked for the same reason the deny-list lengths
-  in G7, G13 and G14 are: an empty list passes by construction (I-028).
+  the length of those lists. ~~**Seven comparisons**~~ ~~**EIGHT as of 2026-09-19**~~ **TEN as of
+  2026-09-20** — all offline, well under a second, which is why it is wired into wave 1 and not
+  into the runner that takes 35 minutes. The eighth reads `.github/workflows/` against the workflow
+  list `tests/bin/watch-gate` declares it reads, so a workflow appearing on the GitHub mirror that
+  nothing has been told to watch fails the gate on the day it lands rather than on the day somebody
+  notices. The ninth and tenth check that neither trace-figures table attributes a figure to a job
+  its own inventory does not list.
+  ⚠️ **AND IT NOW HAS AN ONLINE HALF, `--online`, which the gate never passes and which reads the
+  CI job traces themselves — FIFTEEN more comparisons.** Per repository: the pipeline the table
+  **names** is fetched and its ref and commit checked against the bullet's; its whole job list is
+  compared against all FOUR columns of the table, stage and status included; and every row of the
+  trace-figures table is looked for in that job's own log, by shape, so a mismatch prints the
+  claimed value beside the measured one. ⚠️ **It reads the pipeline the table NAMES and never "the
+  newest"** — reading the tip would compare today's prose against something nobody observed, and
+  this file says in as many words that a job list read mid-pipeline is not the gate.
+  ⚠️ **The absence of `--online` is a THIRD STATE and prints as one.** No flag, no network, no
+  `curl`, a non-200, a pipeline still running, a job id that no longer exists: each prints its own
+  sentence, and none of them may read as agreement. Asking for `--online` and reading **zero** of
+  its items is a FAILURE, for the same reason `jobs: 0` is.
+  ⚠️ **It covered about half of this block, and the half it did not cover was named for weeks with
+  reasons that were FALSE.** *"Only in a CI job trace; `/trace` answers 401 anonymously"* was true
+  of the API endpoint and false of traces, and *"needs Chrome and chromedriver to reproduce"*
+  confused reproducing an axe run with reading what one printed. **Four of those nine entries were
+  readable the whole time**, and the cost was measured rather than argued: on 2026-09-20 this file
+  stated `OK (20 tests, 2549 assertions)` against a gate printing 21/2555, and the site template's
+  inventory stood nine days and eight pipelines stale — both found by a human reading, neither by a
+  gate. The `NOT CHECKED` list is down to **six** entries and every reason in it now says what
+  specifically is out of reach. **A guard that silently covers half its subject reads exactly like
+  one that covers all of it**, and the deleted-exclusion-list case is checked for the same reason
+  the deny-list lengths in G7, G13 and G14 are: an empty list passes by construction (I-028). So is
+  the trace-figures table itself: **0 rows would leave `--online` comparing nothing**, so 0 rows is
+  a failure and not "no figures to check".
   ⚠️ **What it still does not prove**, stated so it is not mistaken for full cover: nothing yet
   asserts that a `# GATE-CLAIM:` line matches the total its own runner PRINTS. Five of the
-  ~~seven~~ **eight** comparisons are therefore prose against prose — better than prose against nothing, because the
+  ~~seven~~ ~~**eight**~~ **ten** offline comparisons are therefore prose against prose — better than prose against nothing, because the
   declaration lives three lines from the arithmetic that derives it, but not a measurement. Closing
   it is one line in each runner's summary and it has no owner yet.
   ⚠️ **The seventeenth invariant is `executable-bit`, and it is the first number this file has
@@ -821,7 +900,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   detector, silently, in exactly the environment where the defect is real.
 
   ⚠️ **The sixteenth invariant is the first one whose subject is this file** rather than the
-  package: G9 in wave 1, three checks — exit, comparisons made, and exclusions named. **61 → 64.**
+  package: G9 in wave 1, ~~three checks — exit, comparisons made, and exclusions named~~ **FOUR as
+  of 2026-09-20 — exit, comparisons made, exclusions named, and trace figures claimed. 67 → 68.**
+  The fourth is the I-028 guard on the new online half: emptying the two trace-figures tables
+  would leave `--online` comparing nothing and saying so as if it were agreement. **61 → 64.**
   ⚠️ **They moved twice on 2026-08-27 — 43 · 13 to 46 · 14, then to 48 · 15** — and the second
   move is the interesting one: G15 runs `generate-demo-media.py`, the script D-042 wrote so the
   media manifest's 39 provenance rows could cite something that exists. **A generator nobody runs
@@ -947,14 +1029,21 @@ moving the working copy a session is running in, on the day wave 5 starts.
   Repository"*). With no demo content until unit 003, the only pages a screenshot could capture are
   four synthetic fixtures. **Prerequisite: [andres] creates the mirror.**
 - axe (a11y) with no violations on the demo pages. **Running in the theme, not here**, as the
-  blocking `nightwatch` job — **9** pages, 89 rules per page, 0 violations; see the theme's table.
+  blocking `nightwatch` job — the page count, the rules-per-page range and the violation count are
+  in the theme's **trace-figures table**, and this line no longer repeats them.
+  ~~**9** pages, 89 rules per page, 0 violations; see the theme's table.~~
   ⚠️ This line said **4** until 2026-08-26 and **5** until 2026-09-06, while the table above said
   6 and then 7: the same gate block carries the figure twice and only one copy is ever refreshed.
   **A number written down twice is a number that goes stale in one place first — and this is the
-  clearest instance of it in the file, having now drifted twice in the same direction.** It is
-  fixed by hand here; the durable fix is that neither copy is machine-checked, because the page
-  count exists only in a CI job trace, which is one of the ~~eight~~ **nine** exclusions
-  `tests/bin/claims-match-sources` prints by name on every run.
+  clearest instance of it in the file, having now drifted twice in the same direction.** It was
+  fixed by hand each time; the durable fix was said to be impossible, because neither copy could be
+  machine-checked — the page count *"exists only in a CI job trace"*, one of the exclusions
+  `tests/bin/claims-match-sources` printed by name.
+  ✅ **BOTH HALVES OF THAT ARE FIXED, 2026-09-20.** `claims-match-sources --online` reads the
+  trace, so the figure IS machine-checkable; and the second copy is struck above, so there is
+  nothing left to drift. **The lesson stated further down this bullet — "stop making the second
+  copy" — is finally the thing that was done, rather than the thing that was recommended while
+  both copies were refreshed by hand.**
   ⚠️ **Both copies were re-read against job `12024567` on 2026-09-12 and BOTH said 7**, and
   again against job `12303707` on 2026-09-19 — still 7, still 89, still `489 total assertions`,
   which is what a commit that adds no surface should do to them.

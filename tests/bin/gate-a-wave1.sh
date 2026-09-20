@@ -48,7 +48,15 @@
 # here, and 16 -> 17 across both runners. It is the second group whose subject is
 # this repository's own tooling rather than the packaged product.
 #
-# GATE-CLAIM: checks=67 invariants=2
+# 2026-09-20: G9 grows a FOURTH check, `trace figures claimed > 0`, so 67 -> 68
+# here and `invariants` does NOT move - no group was added. It guards the online
+# half of claims-match-sources from its own back door: the gate never passes
+# --online, so what it can assert offline is that there are still figures for
+# --online to read. Emptying the two trace-figures tables in CLAUDE.md would
+# otherwise leave that half comparing nothing and printing the silence as
+# agreement, which is I-028 arriving inside the tool built to end it.
+#
+# GATE-CLAIM: checks=68 invariants=2
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -490,22 +498,32 @@ group 'G9 - claims-match-sources (CLAUDE.md against this repository)'
 INV=tests/bin/claims-match-sources
 if [ -x "$INV" ]; then
   INV_OUT=$("$INV" 2>&1); INV_RC=$?
-  CMP_N=$(printf '%s\n' "$INV_OUT" | grep -E '^comparisons: [0-9]+$' | tail -1 | grep -oE '[0-9]+')
+  CMP_N=$(printf '%s\n' "$INV_OUT" | grep -E '^comparisons: [0-9]+ ' | tail -1 | grep -oE '[0-9]+' | head -1)
   UNC_N=$(printf '%s\n' "$INV_OUT" | grep -E '^NOT CHECKED - [0-9]+ ' | tail -1 | grep -oE '[0-9]+' | head -1)
-  note "$(printf '%s' "$INV_OUT" | grep -E '^(claims extracted|comparisons|mismatches)' | tr '\n' ' ')"
+  FIG_N=$(printf '%s\n' "$INV_OUT" | grep -E '^trace figures claimed: +[0-9]+$' | tail -1 | grep -oE '[0-9]+' | head -1)
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(claims extracted|trace figures|comparisons|mismatches)' | tr '\n' ' ')"
   check 'claims-match-sources (exit)'      "$INV_RC" '0'
-  # check_positive does not exist in this runner; these two reproduce it. Both
-  # denominators are asserted for the reason I-028 gives: a reader that compared
-  # nothing, and a reader whose NOT CHECKED list had been deleted, would each
-  # print "mismatches: 0" and pass by construction.
+  # check_positive does not exist in this runner; these three reproduce it. All
+  # three denominators are asserted for the reason I-028 gives: a reader that
+  # compared nothing, a reader whose NOT CHECKED list had been deleted, and a
+  # reader whose trace-figures tables had been emptied would each print
+  # "mismatches: 0" and pass by construction.
   check 'claims-match-sources (comparisons > 0)' \
     "$([ "${CMP_N:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
   check 'claims-match-sources (unchecked named > 0)' \
     "$([ "${UNC_N:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  # The gate NEVER passes --online, so the figures themselves are not read here.
+  # What is asserted is that there are still figures to read: emptying the two
+  # trace-figures tables in CLAUDE.md would leave `--online` comparing nothing
+  # and reporting the silence as agreement, which is the defect the online half
+  # was built to end, arriving through its own back door.
+  check 'claims-match-sources (trace figures claimed > 0)' \
+    "$([ "${FIG_N:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
 else
   check 'claims-match-sources present'     "$(trunc "$INV" 28)" 'present'
   check 'claims-match-sources (comparisons > 0)'     'not run' 'yes'
   check 'claims-match-sources (unchecked named > 0)' 'not run' 'yes'
+  check 'claims-match-sources (trace figures claimed > 0)' 'not run' 'yes'
 fi
 
 # ------------------------------------------ G10 - executable-bit (2026-09-06) --

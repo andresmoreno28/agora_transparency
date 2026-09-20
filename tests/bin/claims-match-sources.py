@@ -13,9 +13,14 @@ wrapper does the reporting and this file does the reading:
     SOURCE   <name>   <value>            the same quantity read from the repo
     CMP      <name>   OK|MISMATCH  <claimed>  <source>  <what was compared>
                                        (left is not always CLAUDE.md - two of
-                                        the eight compare a source against a
-                                        fact; the note says which two things)
-    UNCHECKED  <name> <why>
+                                        the offline ten compare a source against
+                                        a fact; the note says which two things)
+    ONLINE   <name>   OK|MISMATCH  <claimed>  <source>  <what was compared>
+                                       the same, but read over the network from
+                                       a CI job trace. Only with --online.
+    NOT_READ  <name>   <why>              an ONLINE item that was not read. Never
+                                         an agreement, never a disagreement.
+    UNCHECKED  <name> <why>              nothing here can confirm it, ever
     COUNT    <name>   <n>
     FATAL    <why>                       extraction failed; nothing was compared
 
@@ -31,13 +36,52 @@ instead of being silently preferred over the first. The one exception is the
 gate floor, which the file mentions six times on purpose - a verbatim D-023(5)
 quote, two struck amendments and the operative value - and whose rule is stated
 where it is applied.
+
+THE ONLINE HALF, 2026-09-20, and why it is opt-in.
+--------------------------------------------------
+Four of the nine quantities this file used to print as unreachable were
+reachable all along, and two of the stated reasons were FALSE:
+
+    /api/v4/projects/<id>/jobs/<id>/trace   -> 401, 30 bytes, anonymously
+    /project/<name>/-/jobs/<id>/raw         -> 302 -> 200, the WHOLE log
+
+The web route needs no credential at all, so every figure this project's CI
+prints is readable by anybody - a marketplace reviewer included. `-L` is
+mandatory: without it the 302 is 622 bytes and looks exactly like a failure.
+
+That gap cost real staleness twice on 2026-09-20, both caught by a human
+reading rather than by a gate: CLAUDE.md stated `OK (20 tests, 2549
+assertions)` while the gate printed 21/2555, and the site template's observed
+inventory stood NINE DAYS and eight pipelines behind - invisible to the
+offline half, because the offline half compares job NAMES and the names had
+not changed. A stale observation of an unchanged list is invisible to a check
+that compares lists.
+
+So the figures are read. But NOT by default, and the constraint is the reason:
+this script is wired into gate-a-wave1.sh precisely because it is offline and
+finishes in under a second. A gate that needs the network is a gate somebody
+makes permissive within the week. --online is therefore opt-in, and its
+absence is a THIRD STATE that is printed by name for every item it covers -
+never an agreement. No network, no curl, a non-200, a pipeline still running,
+a job id that no longer exists: each prints its own NOT READ line. An absence
+of information reading as good news is the exact defect being closed here.
+
+WHICH PIPELINE IS READ, decided rather than defaulted. The one the table
+NAMES, never "the newest". CLAUDE.md's own convention is that each table
+records a named, complete observation, and the file says in as many words that
+"a job list read mid-pipeline is not the gate". Reading the newest would
+compare today's prose against something nobody observed, and would go green or
+red for reasons that have nothing to do with whether the prose is stale. The
+tip's pipeline is tests/bin/watch-gate's subject and is named in NOT CHECKED.
 """
 
 import glob
 import io
 import os
 import re
+import subprocess
 import sys
+import tempfile
 
 # Forward slashes, not os.path.join: these strings are PRINTED, and a path that
 # renders as tests\bin\watch-gate on Windows and tests/bin/watch-gate on the
@@ -48,30 +92,60 @@ WAVE1 = "tests/bin/gate-a-wave1.sh"
 WAVE3 = "tests/bin/gate-a-wave3.sh"
 WATCH = "tests/bin/watch-gate"
 
-# Quantities CLAUDE.md states that NOTHING in this repository can confirm.
-# Printed on every run, by name. A guard that silently covers half its subject
-# is the failure `preflight` was built for: the uncovered half has to be as
-# visible as the covered one or the green reads as total coverage.
+HOST = "https://git.drupalcode.org"
+
+# The two observed inventories, each with the anchors its four extractors use.
+# `api` is the URL-encoded project path the API wants; `web` is the plain path
+# the raw-log route wants. They differ, and passing one where the other belongs
+# is the first mistake anybody makes here.
+OBSERVED = (
+    ("template", "the site template",
+     "**Observed inventory — the site template.**",
+     "**Trace figures — the site template.**",
+     "project%2Fagora_transparency", "project/agora_transparency"),
+    ("theme", "the theme",
+     "**Observed inventory — the theme.**",
+     "**Trace figures — the theme.**",
+     "project%2Fagora_theme", "project/agora_theme"),
+)
+
+# A pipeline in any of these states has finished deciding. Anything else - and
+# `canceling` especially, which watch-gate learned the hard way is not terminal -
+# is NOT READ rather than read, because a job list read mid-pipeline is not the
+# gate and a half-finished list would disagree with a true table.
+TERMINAL = ("success", "failed", "canceled", "skipped", "manual")
+
+# Quantities CLAUDE.md states that NOTHING can confirm from here, with or
+# without the network. Printed on every run, by name. A guard that silently
+# covers half its subject is the failure `preflight` was built for: the
+# uncovered half has to be as visible as the covered one or the green reads as
+# total coverage.
+#
+# FIVE ENTRIES LEFT THIS LIST ON 2026-09-20 and they did not leave because the
+# list was tidied. Two of them carried reasons that were false - the `401` one
+# and the "needs Chrome to reproduce" one, which confused REPRODUCING a figure
+# with READING it - and had carried them for weeks. The lesson is in the list's
+# own shape now: every reason below says what specifically is out of reach, not
+# merely that something is.
 UNCHECKED = [
-    ("phpunit test and assertion counts (both repositories)",
-     "only in a CI job trace; /trace answers 401 anonymously"),
-    ("axe pages, rules per page and total assertions (theme nightwatch)",
-     "only in a CI job trace; needs Chrome and chromedriver to reproduce"),
-    ("job status and allow_failure in both job tables",
-     "network; tests/bin/watch-gate reads them live and is the tool for it"),
-    ("spellcheck denominators (files offered, files checked)",
-     "cspell needs the network for core's dictionaries and pnpm to run"),
-    ("Drupal CMS install-smoke figures and the resolved agora_theme version",
-     "only in a CI job trace"),
+    ("spellcheck's LOCAL denominators (files offered to cspell, files it opened)",
+     "running cspell here needs the network for core's dictionaries and pnpm; "
+     "the CI job's own `Files checked` line IS read, with --online, from its trace"),
     ("phpcs, phpstan, eslint and stylelint findings and denominators",
-     "need a container rig with the project's PHP and JS toolchains"),
-    ("gate-a-theme.sh check count",
-     "lives in the agora_theme repository; not readable from this tree"),
+     "need a container rig with the project's PHP and JS toolchains; "
+     "tests/bin/preflight runs them and needs Docker"),
     ("whether a LOWERED gate floor is still consistent",
      "the floor is read as the maximum of six mentions - see the header"),
     ("the GitHub mirror's conclusion, and how long it has been red",
      "network; tests/bin/watch-gate reads it live beside the gate and prints "
      "the streak, the last success and how many runs it examined"),
+    ("the pipeline at the TIP of 1.x, and whether it agrees with the tables",
+     "deliberate: --online reads the pipeline each table NAMES, because a job "
+     "list read mid-pipeline is not the gate. tests/bin/watch-gate reads HEAD's"),
+    ("figures restated in the prose AROUND each trace-figures table",
+     "only the table is compared. A value repeated in the narrative beside it - "
+     "historical, struck through or simply said twice - is not, and the remedy "
+     "is to stop making the second copy rather than to refresh both"),
 ]
 
 
@@ -99,42 +173,92 @@ def one(text, pattern, name, records):
                         "%s: %d matches for %r (values %s) - the same number is "
                         "written in more than one place, which is the drift this "
                         "guard exists to refuse" % (name, len(found), pattern,
-                                                    ", ".join(found))))
+                                                    ", ".join(str(f) for f in found))))
         return None
     return found[0]
 
 
-def job_table(text, anchor, name, records):
-    """The first column, wrapped in backticks, of the table following *anchor*.
+def table_after(text, anchor, name, records, cells, window=None):
+    """The rows of the first markdown table following *anchor*.
 
-    The header row's first cell is `job`, with no backticks around it, so it is
-    skipped without needing to be recognised; the separator row likewise. Collection
-    stops at the first non-table line after at least one row, so a later table
-    in the file can never be absorbed into this one.
+    Returns a list of tuples of the first *cells* columns, stripped of the
+    backticks CLAUDE.md wraps identifiers in. The header row's first cell is
+    `job`, with no backticks around it, so it is skipped without needing to be
+    recognised; the separator row likewise. Collection stops at the first
+    non-table line after at least one row, so a later table in the file can
+    never be absorbed into this one once collection has begun.
+
+    WINDOW IS NOT OPTIONAL FOR THE TRACE TABLES, and the reason was found by
+    falsifying rather than by reasoning. Deleting every row of both trace-figures
+    tables - the exact I-028 case the wave-1 gate check exists to catch - did NOT
+    produce "0 rows". With nothing to collect under its own label, the scan ran
+    on and collected the NEXT table in the file, so the figure count went UP,
+    from 11 to 17, and the guard that was supposed to fire read `yes`. The run
+    failed anyway, on two mismatches against nonsense values, but it failed for
+    the wrong reason and the denominator check was useless.
+
+    So a table that is placed directly under its own label declares how far it
+    may be looked for. The job tables pass window=None because prose genuinely
+    separates them from their anchor - 27 lines in one case and 67 in the other -
+    and shortening that is a different change.
     """
     where = text.find(anchor)
     if where < 0:
         records.append(("FATAL",
-                        "%s: the anchor %r is gone from CLAUDE.md - the job "
-                        "table cannot be located" % (name, anchor)))
+                        "%s: the anchor %r is gone from CLAUDE.md - the table "
+                        "cannot be located" % (name, anchor)))
         return None
     rows = []
-    for line in text[where:].splitlines()[1:]:
+    for offset, line in enumerate(text[where:].splitlines()[1:]):
         stripped = line.strip()
         if not stripped.startswith("|"):
             if rows:
                 break
+            if window is not None and offset >= window:
+                break
             continue
-        match = re.match(r"^\|\s*`([^`]+)`\s*\|", stripped)
-        if match:
-            rows.append(match.group(1))
+        if not stripped.startswith("| `"):
+            continue
+        columns = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(columns) < cells:
+            continue
+        rows.append(tuple(c.strip("`") for c in columns[:cells]))
     if not rows:
         records.append(("FATAL",
-                        "%s: the table after %r yielded 0 rows - an empty job "
-                        "list is a parse failure, not an empty gate"
+                        "%s: the table after %r yielded 0 rows%s - an empty "
+                        "table is a parse failure, not an empty gate (I-028)"
+                        % (name, anchor,
+                           "" if window is None
+                           else " within %d lines of its label" % window)))
+        return None
+    return rows
+
+
+def observation_header(text, anchor, name, records):
+    """The pipeline id, ref and commit the observation bullet names.
+
+    They are read from the 400 characters after the anchor rather than from the
+    whole file, because every one of those three values appears many times in
+    CLAUDE.md's narrative: the point is the one the TABLE is about.
+    """
+    where = text.find(anchor)
+    if where < 0:
+        records.append(("FATAL",
+                        "%s: the anchor %r is gone from CLAUDE.md - the "
+                        "pipeline the table is about cannot be located"
                         % (name, anchor)))
         return None
-    return sorted(rows)
+    window = text[where:where + 400]
+    found = re.findall(
+        r"Pipeline `(\d+)`, ref `([^`]+)`, commit `([0-9a-f]+)`", window)
+    if len(found) != 1:
+        records.append(("FATAL",
+                        "%s: %d matches for the `Pipeline <id>, ref <r>, commit "
+                        "<c>` opening in the 400 characters after %r, expected "
+                        "exactly 1 - the observation no longer says which "
+                        "pipeline it observed" % (name, len(found), anchor)))
+        return None
+    return found[0]
 
 
 def marker(text, path, name, records):
@@ -195,12 +319,12 @@ def mirror_declared(text, records):
 def mirror_on_disk(records):
     """The workflow files the mirror actually carries, from the working tree.
 
-    THE ONLY EXTRACTOR HERE THAT READS A DIRECTORY, and the reason is dated.
-    D-009(d) and T-804 put visual regression on the GitHub mirror, so a SECOND
-    workflow is expected to appear. A workflow whose conclusion nothing reads is
-    exactly the defect closed on 2026-09-19 - nine consecutive reds over three
-    weeks - reproduced one file over. This comparison fires the day the file
-    lands rather than the day somebody notices.
+    THE ONLY OFFLINE EXTRACTOR HERE THAT READS A DIRECTORY, and the reason is
+    dated. D-009(d) and T-804 put visual regression on the GitHub mirror, so a
+    SECOND workflow is expected to appear. A workflow whose conclusion nothing
+    reads is exactly the defect closed on 2026-09-19 - nine consecutive reds
+    over three weeks - reproduced one file over. This comparison fires the day
+    the file lands rather than the day somebody notices.
     """
     names = sorted(set(
         os.path.basename(path)
@@ -219,17 +343,295 @@ def mirror_on_disk(records):
     return names
 
 
+# --------------------------------------------------------------- the network --
+#
+# curl is the transport rather than urllib, and that is a decision rather than
+# an accident: tests/bin/watch-gate already reaches this same API with curl and
+# parses the answer with python3, so following its shape means one proxy story,
+# one TLS store and one thing to fix. It also makes "no curl" a state this
+# script can NAME, which is one of the third states the design demands.
+
+def have_curl():
+    """The curl binary, or None. Exercised, not merely located (I-026)."""
+    for candidate in ("curl",):
+        try:
+            probe = subprocess.Popen([candidate, "--version"],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+            probe.communicate()
+            if probe.returncode == 0:
+                return candidate
+        except OSError:
+            continue
+    return None
+
+
+def fetch(curl, url, timeout=90):
+    """(status, body, why). status is None when nothing was fetched at all.
+
+    -L is not optional. Without it the raw-log route answers 302 with a 622-byte
+    body, which parses as a perfectly well-formed nothing and reads exactly like
+    a job that printed no figures.
+    """
+    if curl is None:
+        return None, "", "curl is not on PATH, so nothing here can reach %s" % HOST
+    handle, path = tempfile.mkstemp(prefix="claims-online.")
+    os.close(handle)
+    try:
+        proc = subprocess.Popen(
+            [curl, "-sS", "-L", "--max-time", str(timeout),
+             "-o", path, "-w", "%{http_code}", url],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        code = out.decode("ascii", "replace").strip()
+        if proc.returncode != 0:
+            detail = err.decode("utf-8", "replace").replace("\n", " ").strip()
+            return None, "", ("curl exited %d for %s: %s"
+                              % (proc.returncode, url, detail[:200] or "(silent)"))
+        if not code.isdigit():
+            return None, "", ("curl reported no HTTP status for %s (got %r)"
+                              % (url, code[:60]))
+        with io.open(path, encoding="utf-8", errors="replace") as handle2:
+            return int(code), handle2.read(), ""
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+
+def fetch_json(curl, url):
+    """(object, why). A non-200 or unparsable answer yields (None, why)."""
+    import json
+    status, body, why = fetch(curl, url)
+    if status is None:
+        return None, why
+    if status != 200:
+        return None, ("%s answered HTTP %d (%d bytes), not 200"
+                      % (url, status, len(body)))
+    try:
+        return json.loads(body), ""
+    except ValueError as exc:
+        return None, "%s answered something that is not JSON: %s" % (url, exc)
+
+
+def shape_of(figure):
+    """The claimed literal, generalised over its digit runs.
+
+    Comparing by shape rather than by presence is what lets a mismatch name BOTH
+    values. Searching the trace for the claimed string would answer only "still
+    there / not there", and "not there" is the same answer whether the figure
+    moved, the job stopped printing it, or the log format changed - three very
+    different things. Generalising the digits finds what the trace prints NOW,
+    so the report can say `claimed 21/2555, measured 22/2600`.
+    """
+    escaped = re.escape(figure)
+    return re.sub(r"[0-9]+", "[0-9]+", escaped)
+
+
+def measure(trace, figure):
+    """(value, why). The one string in *trace* shaped like *figure*."""
+    found = sorted(set(re.findall(shape_of(figure), trace)))
+    if not found:
+        return None, ("the trace prints nothing shaped like it (searched for "
+                      "%r over %d characters)" % (shape_of(figure), len(trace)))
+    if len(found) > 1:
+        return None, ("the trace prints %d DIFFERENT values of this shape (%s) "
+                      "- an ambiguous measurement is not a measurement"
+                      % (len(found), "; ".join(found[:4])))
+    return found[0], ""
+
+
+def online(curl, records, state):
+    """Read each table's NAMED pipeline and compare the figures it printed.
+
+    Every item this function is responsible for ends as exactly one ONLINE or
+    exactly one NOT_READ, never as silence. state['items'] is incremented for
+    each, so the wrapper can print `read X of N` and a reader can see at a
+    glance how much of the online half actually happened.
+    """
+    for key, _label, obs_anchor, fig_anchor, api, web in OBSERVED:
+        header = state["headers"].get(key)
+        rows = state["rows"].get(key)
+        figures = state["figures"].get(key) or []
+
+        # Every online item this repository owns, named up front, so that a
+        # failure at step one still accounts for all of them by name.
+        items = ["%s_pipeline" % key, "%s_job_rows" % key]
+        items += ["%s_trace[%s: %s]" % (key, job, fig) for job, fig in figures]
+        state["items"] += len(items)
+
+        def blocked(why):
+            for item in items:
+                records.append(("NOT_READ", item, why))
+                state["not_read"] += 1
+
+        if header is None or rows is None:
+            blocked("the offline extractors did not yield a pipeline id or a "
+                    "job table for %s, so there is nothing to read it against"
+                    % key)
+            continue
+
+        pipeline_id, claimed_ref, claimed_commit = header
+        url = "%s/api/v4/projects/%s/pipelines/%s" % (HOST, api, pipeline_id)
+        data, why = fetch_json(curl, url)
+        if data is None:
+            # A 404 IS AN ANSWER, and it is the one case here that is a
+            # disagreement rather than a third state. Everything else - a
+            # timeout, a 5xx, a rate limit, no curl - means the measurement
+            # could not be taken. A 404 means the server took it and said the
+            # pipeline CLAUDE.md names does not exist, which is a claim about
+            # this repository being wrong, and a wrong claim must not exit 0
+            # merely because it was wrong in a way that also stopped the read.
+            if " answered HTTP 404 " in why:
+                records.append(("ONLINE", "%s_pipeline" % key, "MISMATCH",
+                                "pipeline %s, ref %s, commit %s" % (
+                                    pipeline_id, claimed_ref, claimed_commit),
+                                "no such pipeline (HTTP 404)",
+                                "the observation bullet names a pipeline that "
+                                "%s does not have" % HOST))
+                state["read"] += 1
+                for item in items[1:]:
+                    records.append(("NOT_READ", item,
+                                    "pipeline %s does not exist, so nothing "
+                                    "could be read from it" % pipeline_id))
+                    state["not_read"] += 1
+                continue
+            blocked("pipeline %s of %s: %s" % (pipeline_id, api, why))
+            continue
+
+        status = str(data.get("status") or "?")
+        if status not in TERMINAL:
+            blocked("pipeline %s is `%s` and has not finished deciding. A job "
+                    "list read mid-pipeline is not the gate (CLAUDE.md), so "
+                    "this is NOT READ and never a pass" % (pipeline_id, status))
+            continue
+
+        # 1 - the pipeline is the one the bullet says it is.
+        claimed = "pipeline %s, ref %s, commit %s" % (
+            pipeline_id, claimed_ref, claimed_commit)
+        measured = "pipeline %s, ref %s, commit %s" % (
+            data.get("id"), data.get("ref"), str(data.get("sha") or "")[:len(claimed_commit)])
+        records.append(("ONLINE", "%s_pipeline" % key,
+                        "OK" if claimed == measured else "MISMATCH",
+                        claimed, measured,
+                        "the observation bullet's own pipeline/ref/commit vs "
+                        "that pipeline at %s (status %s)" % (HOST, status)))
+        state["read"] += 1
+
+        # 2 - the WHOLE table, stage and status included, not only the names.
+        # This is the comparison the nine-day staleness of 2026-09-20 walked
+        # past: the names had not changed, so a name-only check saw nothing.
+        jobs, why = fetch_json(
+            curl, "%s/api/v4/projects/%s/pipelines/%s/jobs?per_page=100"
+            % (HOST, api, pipeline_id))
+        if jobs is None:
+            for item in items[1:]:
+                records.append(("NOT_READ", item,
+                                "the job list of pipeline %s: %s"
+                                % (pipeline_id, why)))
+                state["not_read"] += 1
+            continue
+        if not jobs:
+            for item in items[1:]:
+                records.append(("NOT_READ", item,
+                                "pipeline %s returned an EMPTY job list. "
+                                "`jobs: 0` is a failure and not an empty "
+                                "result (D-023(5)), and it is certainly not an "
+                                "agreement" % pipeline_id))
+                state["not_read"] += 1
+            continue
+
+        live = sorted((str(job.get("name")), str(job.get("stage")),
+                       str(job.get("status")),
+                       "true" if job.get("allow_failure") else "false")
+                      for job in jobs)
+        table = sorted(tuple(row) for row in rows)
+        records.append(("ONLINE", "%s_job_rows" % key,
+                        "OK" if table == live else "MISMATCH",
+                        " / ".join(" ".join(r) for r in table),
+                        " / ".join(" ".join(r) for r in live),
+                        "CLAUDE.md's %d-row table vs the %d jobs pipeline %s "
+                        "really ran - name, stage, status and allow_failure"
+                        % (len(table), len(live), pipeline_id)))
+        state["read"] += 1
+
+        by_name = {}
+        for job in jobs:
+            by_name.setdefault(str(job.get("name")), job)
+
+        # 3 - one comparison per claimed figure, read from that job's own log.
+        traces = {}
+        for job_name, figure in figures:
+            item = "%s_trace[%s: %s]" % (key, job_name, figure)
+            job = by_name.get(job_name)
+            if job is None:
+                # A disagreement, not a third state: the answer WAS available.
+                records.append(("ONLINE", item, "MISMATCH",
+                                "%s printed it" % job_name,
+                                "pipeline %s ran no job named %s"
+                                % (pipeline_id, job_name),
+                                "the trace-figures table names a job that "
+                                "pipeline %s did not run" % pipeline_id))
+                state["read"] += 1
+                continue
+            job_id = job.get("id")
+            if job_id not in traces:
+                trace_url = "%s/%s/-/jobs/%s/raw" % (HOST, web, job_id)
+                got, body, why = fetch(curl, trace_url)
+                if got is None:
+                    traces[job_id] = (None, why)
+                elif got != 200:
+                    traces[job_id] = (None,
+                                      "%s answered HTTP %d (%d bytes). Without "
+                                      "-L the 302 is 622 bytes and looks like a "
+                                      "log with nothing in it"
+                                      % (trace_url, got, len(body)))
+                elif not body.strip():
+                    traces[job_id] = (None, "%s answered 200 with an EMPTY body"
+                                            % trace_url)
+                else:
+                    traces[job_id] = (body, "")
+            trace, why = traces[job_id]
+            if trace is None:
+                records.append(("NOT_READ", item,
+                                "job %s (%s): %s" % (job_id, job_name, why)))
+                state["not_read"] += 1
+                continue
+            value, why = measure(trace, figure)
+            if value is None:
+                records.append(("ONLINE", item, "MISMATCH", figure,
+                                "NOT PRINTED - " + why,
+                                "job %s of pipeline %s, %d characters of log"
+                                % (job_id, pipeline_id, len(trace))))
+                state["read"] += 1
+                continue
+            records.append(("ONLINE", item, "OK" if value == figure else "MISMATCH",
+                            figure, value,
+                            "CLAUDE.md vs the trace of job %s (%s) in pipeline %s"
+                            % (job_id, job_name, pipeline_id)))
+            state["read"] += 1
+
+
 def main():
+    want_online = "--online" in sys.argv[1:]
+    for argument in sys.argv[1:]:
+        if argument != "--online":
+            sys.stderr.write("unknown argument: %s\n" % argument)
+            return 2
+
     records = []
     claims = {}
     sources = {}
+    state = {"items": 0, "read": 0, "not_read": 0,
+             "headers": {}, "rows": {}, "figures": {}}
 
     claude = read(CLAUDE, records)
     wave1 = read(WAVE1, records)
     wave3 = read(WAVE3, records)
     watch = read(WATCH, records)
     if claude is None or wave1 is None or wave3 is None or watch is None:
-        return emit(records, 0, 0)
+        return emit(records, 0, 0, 0, state, want_online)
 
     # ------------------------------------------------- claims, from CLAUDE.md --
     claims["wave1_checks"] = one(
@@ -258,11 +660,45 @@ def main():
     else:
         claims["floor"] = str(max(int(f) for f in floors))
 
-    claims["template_jobs"] = job_table(
-        claude, "**Observed inventory — the site template.**",
-        "template_jobs", records)
-    claims["theme_jobs"] = job_table(
-        claude, "**Observed inventory — the theme.**", "theme_jobs", records)
+    # Each observation bullet yields three things: the pipeline it names, the
+    # job table under it, and the trace-figures table under that.
+    figure_total = 0
+    for key, label, obs_anchor, fig_anchor, _api, _web in OBSERVED:
+        header = observation_header(claude, obs_anchor,
+                                    "%s_pipeline" % key, records)
+        state["headers"][key] = header
+        if header is not None:
+            claims["%s_pipeline" % key] = "%s @ %s %s" % header
+
+        rows = table_after(claude, obs_anchor, "%s_jobs" % key, records, 4)
+        state["rows"][key] = rows
+        if rows is not None:
+            claims["%s_jobs" % key] = sorted(row[0] for row in rows)
+
+        figures = table_after(claude, fig_anchor, "%s_figures" % key,
+                              records, 2, window=20)
+        if figures is not None:
+            state["figures"][key] = figures
+            figure_total += len(figures)
+            claims["%s_figures" % key] = sorted(
+                "%s: %s" % (job, fig) for job, fig in figures)
+            # THE TRACE TABLE MAY NOT NAME A JOB THE OBSERVED TABLE DOES NOT.
+            # Offline, prose against prose, and worth the row: a figure
+            # attributed to a job that does not exist is unreadable online and
+            # would otherwise surface only as a network-only failure, on the one
+            # run in a hundred that passes --online. `<key>_job_rows` asks the
+            # same question of the live pipeline, and only with --online.
+            #
+            # A subset test written as an equality, deliberately: the claimed
+            # side is the jobs the figures name, the source side is those of
+            # them the job table also knows. They are equal exactly when the
+            # first is a subset of the second, and a mismatch then PRINTS both
+            # lists, which `all(x in y)` could not.
+            if rows is not None:
+                named = set(job for job, _fig in figures)
+                claims["%s_trace_jobs" % key] = sorted(named)
+                sources["%s_trace_jobs" % key] = sorted(
+                    named & set(row[0] for row in rows))
 
     # ------------------------------------------------ sources, from the repo --
     wave1_marker = marker(wave1, WAVE1, "wave1_marker", records)
@@ -290,12 +726,12 @@ def main():
         sources["invariants"] = str(wave1_marker["invariants"]
                                     + wave3_marker["invariants"])
 
-    # THE ONE STRUCTURAL SOURCE ON THIS PAGE, and the only comparison here that
-    # reads a fact rather than a second piece of prose. Every invariant in the
-    # wave-3 runner opens a `group 'GN - ...'`; G0 is the preflight and is not an
-    # invariant, so the count starts at G1. If a group is added and the marker is
-    # not updated, this disagrees with it - which is the direction prose-only
-    # checking cannot see.
+    # THE ONE STRUCTURAL SOURCE ON THIS PAGE, and the only offline comparison
+    # here that reads a fact rather than a second piece of prose. Every invariant
+    # in the wave-3 runner opens a `group 'GN - ...'`; G0 is the preflight and is
+    # not an invariant, so the count starts at G1. If a group is added and the
+    # marker is not updated, this disagrees with it - which is the direction
+    # prose-only checking cannot see.
     groups = re.findall(r"^group\s+'G([1-9]\d*)\s*-", wave3, re.M)
     if not groups:
         records.append(("FATAL",
@@ -305,16 +741,27 @@ def main():
     else:
         sources["structural_invariants"] = str(len(set(groups)))
 
-    sources["template_jobs"] = expected_list(
+    sources["template_watch_jobs"] = expected_list(
         watch, "EXPECTED_agora_transparency", records)
-    sources["theme_jobs"] = expected_list(watch, "EXPECTED_agora_theme", records)
+    sources["theme_watch_jobs"] = expected_list(watch, "EXPECTED_agora_theme",
+                                                records)
 
     sources["mirror_declared"] = mirror_declared(watch, records)
     sources["mirror_disk"] = mirror_on_disk(records)
 
-    if sources.get("template_jobs") and sources.get("theme_jobs"):
-        sources["floor"] = str(min(len(sources["template_jobs"]),
-                                   len(sources["theme_jobs"])))
+    if sources.get("template_watch_jobs") and sources.get("theme_watch_jobs"):
+        sources["floor"] = str(min(len(sources["template_watch_jobs"]),
+                                   len(sources["theme_watch_jobs"])))
+
+    # AN EMPTY FIGURES TABLE IS A FATAL, not "no figures to check". Deleting the
+    # two tables would leave --online with nothing to compare and this script
+    # printing `mismatches: 0` for a subject it had stopped having (I-028).
+    if figure_total == 0:
+        records.append(("FATAL",
+                        "trace figures: 0 rows across both tables in CLAUDE.md. "
+                        "The online half would then compare nothing and pass by "
+                        "construction. Restore the tables, or remove --online "
+                        "and this extractor together, deliberately."))
 
     # ------------------------------------------------------------- compare --
     extracted = sum(1 for value in claims.values() if value is not None)
@@ -344,11 +791,11 @@ def main():
                         "`group 'GN'` lines - source against fact, not prose "
                         "against prose")
     compared += compare("template_jobs", claims.get("template_jobs"),
-                        sources.get("template_jobs"),
+                        sources.get("template_watch_jobs"),
                         "CLAUDE.md's table vs EXPECTED_agora_transparency in "
                         + WATCH)
     compared += compare("theme_jobs", claims.get("theme_jobs"),
-                        sources.get("theme_jobs"),
+                        sources.get("theme_watch_jobs"),
                         "CLAUDE.md's table vs EXPECTED_agora_theme in " + WATCH)
     compared += compare("floor", claims.get("floor"), sources.get("floor"),
                         "the largest `jobs >= N` in CLAUDE.md vs the shorter of "
@@ -358,6 +805,17 @@ def main():
                         "the workflow files under .github/workflows/ vs "
                         "MIRROR_WORKFLOWS in " + WATCH + " - a directory "
                         "against a declaration, not prose against prose")
+    for key, label, _obs, _fig, _api, _web in OBSERVED:
+        compared += compare(
+            "%s_trace_jobs" % key,
+            claims.get("%s_trace_jobs" % key),
+            sources.get("%s_trace_jobs" % key),
+            "the jobs %s's trace-figures table names vs those of them its "
+            "observed job table also knows - offline, and it keeps a figure "
+            "from being attributed to a job that does not run" % label)
+
+    if want_online:
+        online(have_curl(), records, state)
 
     for name, value in sorted(claims.items()):
         if value is not None:
@@ -370,14 +828,33 @@ def main():
     for name, why in UNCHECKED:
         records.append(("UNCHECKED", name, why))
 
-    return emit(records, extracted, compared)
+    return emit(records, extracted, compared, figure_total, state, want_online)
 
 
-def emit(records, extracted, compared):
+def emit(records, extracted, compared, figures, state, want_online):
+    # STDOUT IS FORCED TO UTF-8, and it is a correctness fix rather than a
+    # cosmetic one. The theme's gate prints `35 checks — 0 failures` with an em
+    # dash; on a Windows console Python defaults to cp1252, where that character
+    # survives by luck. The next figure containing one that does NOT would raise
+    # UnicodeEncodeError halfway through the records, and a reader that died
+    # mid-print is a reader whose counts the wrapper cannot find - which the
+    # wrapper reports as an unreadable summary, correctly, but only after the
+    # failure has already been made to look like a tooling fault.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
     fatal_count = sum(1 for r in records if r[0] == "FATAL")
-    mismatches = sum(1 for r in records if r[0] == "CMP" and r[2] == "MISMATCH")
+    mismatches = sum(1 for r in records
+                     if r[0] in ("CMP", "ONLINE") and r[2] == "MISMATCH")
     records.append(("COUNT", "claims_extracted", str(extracted)))
     records.append(("COUNT", "comparisons", str(compared)))
+    records.append(("COUNT", "trace_figures", str(figures)))
+    records.append(("COUNT", "online_mode", "1" if want_online else "0"))
+    records.append(("COUNT", "online_items", str(state["items"])))
+    records.append(("COUNT", "online_read", str(state["read"])))
+    records.append(("COUNT", "online_not_read", str(state["not_read"])))
     records.append(("COUNT", "unchecked", str(len(UNCHECKED))))
     records.append(("COUNT", "mismatches", str(mismatches)))
     records.append(("COUNT", "fatal_count", str(fatal_count)))

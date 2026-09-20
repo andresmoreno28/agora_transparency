@@ -1577,3 +1577,91 @@ legitimately nests a second view container — *"exactly one" was false of a pag
 broken.* The wrong intermediate version is recorded in the code comment rather than deleted. **No
 weakened test, skipped test, silenced invariant, excluded axe rule or lowered threshold exists in
 this unit.**
+
+## Wave 23 — the guard stops saying it cannot read what it can read — [ejecutor] 2026-09-20
+
+**T-1205's audit, signed hours before this wave, names it as finding three of eight:** *"Four of
+the nine `NOT CHECKED` quantities are readable anonymously today and two of the stated reasons are
+false. This is the gap that let `20 / 2549` stand while the gate printed `21 / 2555`."* It assigns
+it to unit 006. Building it in unit 003 is a deliberate pull-forward, and **unit 006 must still
+carry the accounting** (I-105): the work moves, the budget entry does not.
+
+⚠️ **The two false reasons, measured rather than argued, on the day the audit was written:**
+
+```
+/api/v4/projects/<id>/jobs/<id>/trace      ->  HTTP 401, 30 bytes        (anonymously)
+/project/<name>/-/jobs/<id>/raw            ->  HTTP 302 -> 200, 33,859 bytes, the whole log
+```
+
+**The web route needs no credential at all**, so every figure this project's CI prints is readable
+by anybody — a marketplace reviewer included. `-L` is mandatory: without it the 302 is **622
+bytes** and looks exactly like a failure. The second false reason, *"needs Chrome and chromedriver
+to reproduce"*, confused **reproducing** an axe run with **reading** what one printed.
+
+⚠️ **The more instructive half of the gap is the one nobody had a reason for at all.** The site
+template's observed inventory stood **nine days and eight pipelines** stale and nothing caught it,
+because the offline half compares **job NAMES** and the names had not changed. **A stale
+observation of an unchanged list is invisible to a check that compares lists.** So the online half
+compares the ref, the commit, the stage, the status and the `allow_failure` flag as well — every
+column of the table, not the first one.
+
+⚠️ **Where it must NOT go, decided before it was written.** Not into the gate. This script lives in
+`gate-a-wave1.sh` because it is offline and finishes in under a second, and a gate that needs the
+network is a gate somebody makes permissive within the week — the exact outcome D-023(5) exists to
+refuse, arriving through the door marked "more rigour". `--online` is opt-in, the gate never passes
+it, and its absence prints a sentence that cannot be read as agreement.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1909 ✓ | · | **Teach `tests/bin/claims-match-sources` to read the CI job traces, and move the readable quantities out of `NOT CHECKED` into real comparisons.** Per repository: fetch the pipeline the observation bullet **names**, compare its ref and commit against the bullet's, compare its whole job list against all four columns of the table, and look for every row of a new **trace-figures table** in that job's own log. ⚠️ **Read the NAMED pipeline, never the newest** — this file's convention is that a table records a named, complete observation, and `CLAUDE.md` says in as many words that a job list read mid-pipeline is not the gate; a pipeline that has not reached a terminal state is NOT READ rather than failed. ⚠️ **Follow `tests/bin/watch-gate`'s shape** — `curl` for the transport, `python3` for the parse — so there is one proxy story and one thing to fix, and so "no curl" is a state this script can NAME. ⚠️ **Compare by SHAPE, not by presence**: searching a trace for the claimed string answers only "still there / not there", and "not there" is the same answer whether the figure moved, the job stopped printing it, or the log format changed. Generalising the digit runs finds what the trace prints NOW, so a mismatch can print `claimed 21/2555, measured 22/2600`. ⚠️ **The figures go in the trace-figures table ONCE.** The lesson `CLAUDE.md`'s own gate block draws from its page count drifting three times is *"stop making the second copy"*, not *"refresh both copies faithfully"* — and that lesson had been recommended for weeks while both copies went on being refreshed by hand | **`bash tests/bin/claims-match-sources` prints `comparisons: 10` (was 8), `trace figures claimed: 11`, `NOT CHECKED - 6 quantities` (was 9), `mismatches: 0`, exit 0** — and its online section reads `NOT ATTEMPTED`, naming the five kinds of figure it did not look at. With `--online` it adds **`read 15 of 15 items, NOT READ 0`** and ends `OK: 10 offline comparison(s) and 15 read from CI job traces all agree`. **Both runners print the totals their `GATE-CLAIM` lines declare**: `gate-a-wave1.sh` **68 checks · 0 failures** against a declared `checks=68 invariants=2` — was 67, because G9 grows a fourth check, `trace figures claimed > 0`, and no group is added so `invariants` does not move — and `gate-a-wave3.sh` **51 checks · 0 failures** against `checks=51 invariants=15`, untouched. `CLAUDE.md`'s `67 · 51 · 17` sentence moves to `68 · 51 · 17` in this same commit. `bash tests/bin/spellcheck` prints `457 tracked or stage-able files offered` · `Files checked: 416, Issues found: 0`. ⚠️ **All seventeen comparisons falsified in BOTH directions, each restored afterwards**, by mutating the claim in `CLAUDE.md` and reading the row: the two offline ones print `claimed: Drupal CMS, cspell-typo, …` against `source: Drupal CMS, …`; `template_pipeline` prints `pipeline 969327, ref 2.x, commit 0000000` against `pipeline 969327, ref 1.x, commit 434a0e2`, and `theme_pipeline` the same shape against `4f82307`; `template_job_rows` and `theme_job_rows` print all ten rows on each side with the one changed cell visible; and each of the eleven trace figures names the claimed value beside the value its job really printed — `OK (22 tests, 2555 assertions)` against `OK (21 tests, 2555 assertions)`, `36 checks — 0 failures` against `35 checks — 0 failures`, `heading-order reported on 8 of 9 pages` against the real line, and so on. **In every case the other sixteen rows stayed green**, which is what makes the mutation isolated rather than merely red. ⚠️ **And THREE third states falsified, because an absence of information reading as good news is the defect being closed**: with the network behind an unreachable proxy → `read 0 of 15 items, NOT READ 15`, every item named with `curl exited 7 … Could not connect to server`, `mismatches: 0` **and exit 1** under `FAILURE: --online was asked for and read 0 of 15 items … A run that measured nothing is not a run that found nothing wrong`; with the `curl` probe fault-injected to a binary that does not exist → the same shape reading `curl is not on PATH, so nothing here can reach https://git.drupalcode.org`; and with a pipeline id mutated to `999999999` → **a MISMATCH, not a third state**, reading `no such pipeline (HTTP 404)`, because a 404 is an ANSWER and the claim it answers is wrong, where a timeout is a measurement not taken. ⚠️ **The new WAVE-1 CHECK was falsified too, and it found a parser bug doing it.** Deleting every row of both trace-figures tables — the exact I-028 case the check exists to catch — did **not** produce `0 rows` on the first attempt: with nothing under its own label the scan ran on and collected the NEXT table in the file, so the figure count went **UP, 11 to 17**, and the guard read `yes`. The run failed anyway, on two mismatches against nonsense values, but it failed for the wrong reason and the denominator proved nothing. **A table placed directly under its own label now declares how far it may be looked for**, and the emptied state reads `trace figures claimed: 0` · `comparisons: 8` (the two trace-job rows vanish with their subject) · `yielded 0 rows within 20 lines of its label` · exit 1, with the runner printing **68 checks · 2 failures** and the new check reading `no | yes | FAIL`. Restored, it is `68 · 0` again. ⚠️ **Three invented record tags were RENAMED rather than added to the dictionary** — cspell flagged them **23 times across two files**, and D-024(3) wants a justification per word that invented jargon does not have. They are now `NOT_READ`, `not_read` and `ONLINE`, which cspell splits on the underscore and already knows | — |
+| T-1910 ✓ | · | **Refresh the two observations the new tooling immediately exposed as stale, and delete the duplicate copies rather than refreshing them.** ⚠️ **The theme's observed inventory was FOUR pipelines behind**, naming `969068`/`8909f76` while **T-1205's own audit, signed in this repository earlier the same day, had already read `969322`/`4f82307`** — so the file and its own audit disagreed about the theme, in writing, for hours. ⚠️ **A second copy of the theme's axe denominators had been HALF refreshed**: its job id and its figures were moved forward while its pipeline and commit were left at the previous observation, so it read as a dated measurement of a pipeline that never produced it. ⚠️ **The page count that `CLAUDE.md` itself calls "the clearest instance in the file" of a number written down twice is now written down once**, and the second copy is struck rather than corrected for a fourth time. ⚠️ **Two false `401` statements are corrected where they stand**, being two of the three places the file repeats that claim | **`--online` agrees with `969322` on all seven theme items**: `theme_job_rows` matches the ten rows the pipeline really ran, and the four figures read `10 pages scanned, 89-89 axe rules run per page, 0 violations`, `heading-order reported on 10 of 10 pages`, `774 total assertions` and `OK (203 tests, 959 assertions)` — **each identical to what T-1205's audit recorded independently**, which is the cross-check that this is a refresh and not a re-typing. `35 checks — 0 failures` from `gate-a-theme.sh` is the **first figure from the sibling repository that anything here has ever checked**; it was listed as unreachable because the script *"lives in the `agora_theme` repository"*, which is true of the script and false of the number its CI prints. ⚠️ **A property stated so nobody tries to fix it: a table can never name its own commit's pipeline.** The pipeline is produced BY the commit that carries the table, so every observation names an earlier one and is one commit behind by construction. What `--online` proves is that the observation is TRUE OF THE PIPELINE IT NAMES, not that it is the newest — and "is it the newest?" stays in `NOT CHECKED`, pointing at `tests/bin/watch-gate` | T-1909 |
+
+⚠️ **What stayed in `NOT CHECKED`, and why the list is still honest.** Six entries, every reason
+re-read rather than inherited: the **local** spellcheck denominators (running cspell here needs the
+network and pnpm — the CI job's own `Files checked` line **is** now read); `phpcs`, `phpstan`,
+`eslint` and `stylelint` (a container rig, and `tests/bin/preflight` needs Docker); whether a
+**lowered** gate floor is still consistent; the GitHub mirror's conclusion and streak
+(`tests/bin/watch-gate`); **the pipeline at the tip of `1.x`**, which is deliberate and is the
+counterpart of reading the named one; and **figures restated in the prose around each table**,
+which is measured rather than asserted — five of the eleven claimed figures still appear three
+times in `CLAUDE.md`, twice in narrative about earlier observations.
+
+⚠️ **What this still does not prove**, unchanged from before and stated so the new coverage is not
+read as more than it is: nothing asserts that a `# GATE-CLAIM:` line matches the total its own
+runner PRINTS. Five of the ten offline comparisons are prose against prose. Closing it is one line
+in each runner's summary and it still has no owner.
+
+🔴 **Three RED pipelines on `1.x` were found while measuring, none of them this wave's, and they
+are recorded rather than assumed away.** `969373` (`ecebf0f`, a documentation-only commit) failed
+in both test jobs for **two different infrastructure reasons**: `phpunit` died on `SQLSTATE[HY000]:
+General error: 2006 MySQL server has gone away` at `Tests: 21, Assertions: 852, Errors: 1,
+Failures: 8`, and `phpunit-pgsql` on `WebDriver\Exception\CurlExec: Failed to connect to selenium
+port 4444` at `Tests: 21, Assertions: 2391, Errors: 1` — where the green pipeline before it prints
+**2555 on both**. `969384` (`8e0dc41`) failed on a **real** `no-secrets` finding in a new research
+file; its author fixed it in the next commit, and `bash tests/bin/no-secrets` on the current tree
+prints `scanned: 459 files · suppressed: 2 · findings: 0`, exit 0. `969391` (`58d7526`) never
+reached the code at all: `remote: Retry later` · `HTTP 429` from drupalcode's own git, `exit code
+128`, with both test jobs cancelled behind it. **So the one red with a real cause is already fixed
+in the tree and unproven by CI, and drupalcode was rate-limiting while this wave was pushed.**
+
+⚠️ **Reserve accounting, fifteenth entry, 2026-09-20 — two rows.** T-1909 and T-1910 take the count
+from **73 to 75** against a ceiling of **34** by this file's own command
+(`grep -cE '^\| T-(9[0-9]{2}|1[0-9]{3}) ' specs/003-demo-content/tasks.md`), so the D-031 rider now
+names **forty-one** rows over the ceiling rather than thirty-nine. Stated, not asked about, per
+**D-044**: the budget counts and does not gate. ⚠️ **The ids stay inside the `T-19NN` block** for
+the reason waves 20 and 21 gave: `T-20NN` falls outside `1[0-9]{3}` and would break the counting
+command. ⚠️ **And the accounting home does not move with the code**: T-1205 assigned this work to
+unit 006, building it here is the pull-forward, and **unit 006 still carries the budget entry**
+(I-105) — the same shape as T-1006's note earlier in this file.
+
+**D-044's necessity test, applied honestly — and this one is closer to the line than wave 21's.**
+D-044 asks for work without which something already signed is broken, false, or impossible to
+ship. What was false: `CLAUDE.md`'s Gate A block states, as its own governing rule, that every
+figure in it is a dated measurement — and four of its stated reasons for not measuring were wrong,
+two of its figures were stale on the day the audit read them, and the observed inventory of the
+package itself stood nine days behind. **The process layer is what every dispatch is written
+from**, and a dispatch written from a false gate figure is how this wave's own predecessor
+described losing a day. ⚠️ **What would NOT have passed this test, named so the line means
+something:** making `--online` part of the gate. That is *tempting*, not necessary, and it would
+trade a fast offline guard for a network dependency inside `agora-invariants` — the precise
+exchange D-023(5) exists to refuse.

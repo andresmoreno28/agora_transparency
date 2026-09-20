@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # claims-match-sources - Agora - fails when a number CLAUDE.md states about the
-# gate disagrees with the thing in THIS repository that the number is about.
+# gate disagrees with the thing the number is about: in this repository always,
+# and - with --online - in the CI job trace that produced it.
 #
 # WHY IT EXISTS. CLAUDE.md's Gate A block warns, in its own words, that "a
 # number written down twice is a number that goes stale in one place first",
@@ -12,17 +13,26 @@
 # which is false and had been hiding real findings on both branches. Six stale
 # claims, all in a block whose own rule is that every figure is a dated
 # measurement. Prose cannot keep that promise on its own; this is the machine
-# that keeps the checkable half of it.
+# that keeps it.
 #
 # THE NAME IS NOT THE ONE THE TASK PROPOSED, and the difference is the point.
 # `claims-match-reality` would claim more than it can deliver, in exactly the
-# way the file it guards did: this script never reaches reality. It reaches the
-# repository. It cannot see a pipeline, a job trace, an assertion count or an
-# axe run, and it says so by name on every run rather than letting a green imply
-# coverage it does not have.
+# way the file it guards did. The original reasoning ran: "this script never
+# reaches reality. It reaches the repository. It cannot see a pipeline, a job
+# trace, an assertion count or an axe run, and it says so by name on every run
+# rather than letting a green imply coverage it does not have."
+#
+# ⚠️ SUPERSEDED IN ITS FACTS ON 2026-09-20 AND KEPT FOR ITS ARGUMENT, which is
+# the more useful half and which survives intact. With --online this script DOES
+# see a pipeline, a job trace, an assertion count and an axe run - because the
+# sentence claiming it could not was never measured. It was reasoned from the
+# API endpoint answering 401, and nobody tried the web route that answers 200 to
+# anybody. So the name is still right and the modesty was still correct as a
+# policy: the list of what a guard cannot reach has to be re-read, not
+# inherited, or it becomes a list of what nobody has tried lately.
 #
 # ---------------------------------------------------------------------------
-# WHAT IS CHECKED - eight comparisons, all offline, all in under a second:
+# WHAT IS CHECKED OFFLINE - ten comparisons, all in under a second:
 #
 #   wave1_checks           CLAUDE.md          vs  the GATE-CLAIM line in gate-a-wave1.sh
 #   wave3_checks           CLAUDE.md          vs  the GATE-CLAIM line in gate-a-wave3.sh
@@ -32,28 +42,62 @@
 #   theme_jobs             CLAUDE.md's table  vs  EXPECTED_agora_theme in watch-gate
 #   floor                  CLAUDE.md          vs  the shorter of those two lists
 #   mirror_workflows       .github/workflows/ vs  MIRROR_WORKFLOWS in watch-gate
+#   template_trace_jobs    the jobs the trace-figures table names vs the job table
+#   theme_trace_jobs       the same, for the theme
 #
-# FIVE OF THE EIGHT COMPARE PROSE AGAINST PROSE, and pretending otherwise would
-# be the same defect one layer up. A GATE-CLAIM line is a declaration a human
-# writes; it is not the runner's output. What makes the chain worth having is
-# that the declaration sits in the file it describes, three lines from the
-# arithmetic that derives it, so the commit that moves a count has to walk past
-# it - whereas CLAUDE.md is a different file that nobody re-opens. Three of the
-# eight are stronger than that: `invariants_structural` counts the runner's
-# actual group declarations, `mirror_workflows` lists a real directory, and the
-# two job-list comparisons read the array `watch-gate` executes against the live
-# API.
+# WHAT IS CHECKED WITH --online - fifteen more, read from the CI job traces
+# themselves, and never during a gate run. Per repository: the pipeline the
+# table NAMES is fetched and its ref and commit compared against the bullet's;
+# its whole job table - name, stage, status, allow_failure - is compared against
+# the four columns CLAUDE.md prints; and every row of the trace-figures table is
+# looked for in that job's own log.
 #
+# ---------------------------------------------------------------------------
+# WHY THE ONLINE HALF EXISTS, dated 2026-09-20, and it is a correction rather
+# than an addition. This script used to print NINE quantities as unreachable.
+# TWO OF THOSE REASONS WERE FALSE, and had been for weeks:
+#
+#   /api/v4/projects/<id>/jobs/<id>/trace   ->  401, 30 bytes, anonymously
+#   /project/<name>/-/jobs/<id>/raw         ->  302 -> 200, the WHOLE log
+#
+# The web route needs no credential at all. `-L` is mandatory: without it the
+# 302 is 622 bytes and looks exactly like a failure. So "only in a CI job trace"
+# was true and "therefore unreadable" was not, and "needs Chrome to reproduce"
+# confused REPRODUCING an axe run with READING what one printed.
+#
+# It cost real staleness twice on the day it was found, both caught by a human
+# reading rather than by a gate: CLAUDE.md stated `OK (20 tests, 2549
+# assertions)` where the gate printed 21/2555, and the site template's observed
+# inventory stood NINE DAYS and eight pipelines behind. The second one is the
+# instructive one: the offline half compares job NAMES, the names had not
+# changed, and so A STALE OBSERVATION OF AN UNCHANGED LIST WAS INVISIBLE TO A
+# CHECK THAT COMPARES LISTS. `--online` compares the stage, the status, the
+# allow_failure flag, the ref, the commit and the figures, which do move.
+#
+# --online IS OPT-IN AND THE GATE NEVER PASSES IT. This script is wired into
+# gate-a-wave1.sh precisely because it is offline and fast; a gate that needs
+# the network is a gate somebody makes permissive within the week - the exact
+# shape D-023(5) exists to refuse, arriving through the door marked "more
+# rigour". Its absence is therefore a THIRD STATE, printed by name for every
+# item it covers, and it can never read as agreement.
+#
+# WHICH PIPELINE IS READ: the one each table NAMES, never "the newest".
+# CLAUDE.md's own convention is that a table records a named, complete
+# observation, and the file says in as many words that "a job list read
+# mid-pipeline is not the gate". Reading the tip would compare today's prose
+# against something nobody observed. A pipeline that has not reached a terminal
+# state is NOT READ, not a failure. The tip is tests/bin/watch-gate's subject
+# and is named in the NOT CHECKED list below.
+#
+# ---------------------------------------------------------------------------
 # WHY A GITHUB ROW APPEARS IN A FILE THAT CANNOT REACH GITHUB, 2026-09-19. The
 # mirror's only workflow had failed on nine consecutive runs over three weeks
 # with nothing in this repository reading it, and this script's NOT CHECKED list
 # named eight quantities of which NONE was GitHub - so the mirror was absent from
 # the covered half and from the named-uncovered half at once, which is the worst
-# of the three places a subject can be. The conclusion itself needs the network
-# and is read by tests/bin/watch-gate; what is checkable offline is that every
-# workflow on the mirror is one watch-gate has been told to read, and that is the
-# row above. The conclusion is now in the NOT CHECKED list by name, pointing at
-# the tool that does read it.
+# of the three places a subject can be. The conclusion itself is read by
+# tests/bin/watch-gate; what is checkable here is that every workflow on the
+# mirror is one watch-gate has been told to read, and that is the row above.
 #
 # THE GAP THAT REMAINS, stated rather than left to be discovered: nothing here
 # proves a GATE-CLAIM line matches what its runner PRINTS. Closing it needs the
@@ -73,24 +117,28 @@
 # copies of a number is the precondition for the drift this file exists to
 # catch. The gate floor is the one deliberate exception - the file quotes
 # D-023(5) verbatim and strikes two superseded amendments - and its rule is
-# stated in the extractor that applies it.
+# stated in the extractor that applies it. The same rule holds over a TRACE: a
+# log printing two different values of one figure's shape is an ambiguous
+# measurement, and an ambiguous measurement is not a measurement.
 #
 # A missing pattern is likewise a FATAL and never a pass: a regex that matches
 # nothing prints "0 findings" exactly like a clean tree (I-028).
 #
 # Contract:
 #   claims extracted:  <N>   - numbers and lists read out of CLAUDE.md
-#   comparisons:       <N>   - must be > 0
-#   NOT CHECKED:       <N>   - each named, with why
-#   mismatches:        <M>
-#   exit 0 iff M == 0 and no FATAL
+#   comparisons:       <N>   - offline; must be > 0
+#   trace figures:     <N>   - rows in the two trace-figures tables; must be > 0
+#   online:            read <N> of <M>, NOT READ <K>   (only with --online)
+#   NOT CHECKED:       <N>   - each named, with why; must be > 0
+#   mismatches:        <M>   - offline and online together
+#   exit 0 iff M == 0, no FATAL, and --online (if given) read at least one item
 #
 # House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
 # value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
 # error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block
 # lives in the header of tests/bin/no-ci-allow-dev.
 #
-# Usage: tests/bin/claims-match-sources   (run from anywhere; it cd's to root)
+# Usage: tests/bin/claims-match-sources [--online]   (run from anywhere)
 
 set -u
 # No `set -e`: a mismatch must be recorded and counted, not abort the run.
@@ -108,6 +156,15 @@ if [ -t 1 ]; then
 fi
 
 fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
+
+ONLINE=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --online) ONLINE=1 ;;
+    *) fatal "unknown argument: $1 (usage: claims-match-sources [--online])" ;;
+  esac
+  shift
+done
 
 # ---------------------------------------------------------------- preflight --
 command -v python3 >/dev/null 2>&1 || fatal "required tool not found: python3"
@@ -130,7 +187,11 @@ trap 'rm -f "$OUT_FILE"' EXIT
 # The reader's exit status is read, not inferred from its output: an extractor
 # that did not run is not an extractor that found nothing (I-027).
 READ_RC=0
-python3 "$READER" > "$OUT_FILE" 2>&1 || READ_RC=$?
+if [ "$ONLINE" -eq 1 ]; then
+  python3 "$READER" --online > "$OUT_FILE" 2>&1 || READ_RC=$?
+else
+  python3 "$READER" > "$OUT_FILE" 2>&1 || READ_RC=$?
+fi
 
 printf '\nclaims-match-sources - CLAUDE.md against the sources in this repository\n\n'
 
@@ -154,11 +215,17 @@ count_of() {
 FATAL_COUNT=$(count_of fatal_count)
 EXTRACTED=$(count_of claims_extracted)
 COMPARED=$(count_of comparisons)
+FIGURES=$(count_of trace_figures)
+ONLINE_ITEMS=$(count_of online_items)
+ONLINE_READ=$(count_of online_read)
+ONLINE_NOT_READ=$(count_of online_not_read)
 UNCHECKED=$(count_of unchecked)
 MISMATCHES=$(count_of mismatches)
 
 for pair in "fatal_count:$FATAL_COUNT" "claims_extracted:$EXTRACTED" \
-            "comparisons:$COMPARED" "unchecked:$UNCHECKED" \
+            "comparisons:$COMPARED" "trace_figures:$FIGURES" \
+            "online_items:$ONLINE_ITEMS" "online_read:$ONLINE_READ" \
+            "online_not_read:$ONLINE_NOT_READ" "unchecked:$UNCHECKED" \
             "mismatches:$MISMATCHES"; do
   case "${pair#*:}" in
     '') fatal "the reader printed no ${pair%%:*} count - its summary is unreadable (exit $READ_RC)" ;;
@@ -167,25 +234,62 @@ done
 
 # ------------------------------------------------------------------ report --
 printf 'scope:      CLAUDE.md, against gate-a-wave1.sh, gate-a-wave3.sh and watch-gate\n'
+if [ "$ONLINE" -eq 1 ]; then
+  printf '            plus, with --online, the CI job traces the two tables name\n'
+fi
 printf 'claims extracted from CLAUDE.md: %s\n' "$EXTRACTED"
-printf 'comparisons: %s\n' "$COMPARED"
+printf 'trace figures claimed:           %s\n' "$FIGURES"
+printf 'comparisons: %s  (offline)\n' "$COMPARED"
 
-records CMP | while IFS=$(printf '\t') read -r _tag name verdict claimed source note; do
-  if [ "$verdict" = OK ]; then
-    printf '  %-24s %-8s %s\n' "$name" "$verdict" "$note"
-  else
-    printf '  %s%-24s %-8s %s%s\n' "$C_BAD" "$name" "$verdict" "$note" "$C_OFF"
-    # Neutral labels, not "CLAUDE.md says". Six of the seven comparisons do have
-    # CLAUDE.md on the left, but `invariants_structural` has a GATE-CLAIM line
-    # there - and a mismatch report that names the wrong file sends the reader to
-    # edit the wrong one. Which two things were compared is in the note above.
-    printf '      claimed: %s\n' "$claimed"
-    printf '      source:  %s\n' "$source"
+show_comparisons() {
+  records "$1" | while IFS=$(printf '\t') read -r _tag name verdict claimed source note; do
+    if [ "$verdict" = OK ]; then
+      printf '  %-26s %-8s %s\n' "$name" "$verdict" "$note"
+    else
+      printf '  %s%-26s %-8s %s%s\n' "$C_BAD" "$name" "$verdict" "$note" "$C_OFF"
+      # Neutral labels, not "CLAUDE.md says". Most comparisons do have CLAUDE.md
+      # on the left, but `invariants_structural` and `mirror_workflows` do not -
+      # and a mismatch report that names the wrong file sends the reader to edit
+      # the wrong one. Which two things were compared is in the note above.
+      printf '      claimed: %s\n' "$claimed"
+      printf '      source:  %s\n' "$source"
+    fi
+  done
+}
+
+show_comparisons CMP
+
+# ------------------------------------------------------------ the online half --
+# The THIRD STATE lives here. Not asked for, asked for and unreachable, asked for
+# and the pipeline is still running: each says so in its own words. None of them
+# may read as "the figures agree", because an absence of information reading as
+# good news for three weeks is the defect this whole section was built after.
+printf '\nonline (CI job traces) - '
+if [ "$ONLINE" -eq 1 ]; then
+  printf 'read %s of %s items, NOT READ %s\n' \
+    "$ONLINE_READ" "$ONLINE_ITEMS" "$ONLINE_NOT_READ"
+  show_comparisons ONLINE
+  if [ "${ONLINE_NOT_READ:-0}" -gt 0 ]; then
+    printf '\n  NOT READ - asked for over the network and not obtained. This is\n'
+    printf '  neither an agreement nor a disagreement, and it is never a pass:\n'
+    records NOT_READ | while IFS=$(printf '\t') read -r _tag name why; do
+      printf '    %s- %s%s\n' "$C_DIM" "$name" "$C_OFF"
+      printf '      %s%s%s\n' "$C_DIM" "$why" "$C_OFF"
+    done
   fi
-done
+else
+  printf 'NOT ATTEMPTED.\n'
+  printf '  This run passed no --online, so the figures CLAUDE.md quotes from CI job\n'
+  printf '  traces - assertion totals, the axe denominators, the install smoke and the\n'
+  printf '  version it resolves, the sibling gate'"'"'s check count - were compared against\n'
+  printf '  NOTHING. That is not "the figures are fine"; it is "nothing here looked".\n'
+  printf '  The gate runs it this way on purpose: this script is in gate-a-wave1.sh\n'
+  printf '  because it is offline and fast. Read them with:\n'
+  printf '      bash tests/bin/claims-match-sources --online\n'
+fi
 
-printf '\nNOT CHECKED - %s quantities CLAUDE.md states that nothing in this\n' "$UNCHECKED"
-printf 'repository can confirm. Named every run, because a guard that covers\n'
+printf '\nNOT CHECKED - %s quantities CLAUDE.md states that nothing here can confirm,\n' "$UNCHECKED"
+printf 'with or without the network. Named every run, because a guard that covers\n'
 printf 'half its subject in silence reads exactly like one that covers all of it:\n'
 records UNCHECKED | while IFS=$(printf '\t') read -r _tag name why; do
   printf '  %s- %s%s\n' "$C_DIM" "$name" "$C_OFF"
@@ -194,16 +298,24 @@ done
 
 printf '\nmismatches: %s\n' "$MISMATCHES"
 
-# I-028, applied to this script's own denominators: zero comparisons or zero
-# named exclusions would print "mismatches: 0" and pass by construction. Both
-# are asserted before any verdict is reported.
+# I-028, applied to this script's own denominators: zero comparisons, zero trace
+# figures or zero named exclusions would each print "mismatches: 0" and pass by
+# construction. All three are asserted before any verdict is reported.
 if [ "${COMPARED:-0}" -eq 0 ]; then
   printf '\nFAILURE: 0 comparisons were made - an empty scope proves nothing (I-007).\n'
   exit 1
 fi
+if [ "${FIGURES:-0}" -eq 0 ]; then
+  printf '\nFAILURE: the trace-figures tables in CLAUDE.md hold 0 rows between them.\n'
+  printf 'Deleting them would leave --online comparing nothing and reporting it as\n'
+  printf 'agreement, which is I-028 exactly. Restore them, or retire --online and\n'
+  printf 'this check together and deliberately.\n'
+  exit 1
+fi
 if [ "${UNCHECKED:-0}" -eq 0 ]; then
-  printf '\nFAILURE: the NOT CHECKED list is empty. This script cannot reach a CI\n'
-  printf 'trace, so an empty list is a deleted list, not full coverage (I-028).\n'
+  printf '\nFAILURE: the NOT CHECKED list is empty. Some of this block still lives\n'
+  printf 'in a container rig this script cannot start, so an empty list is a\n'
+  printf 'deleted list, not full coverage (I-028).\n'
   exit 1
 fi
 
@@ -220,15 +332,37 @@ fi
 
 if [ "${MISMATCHES:-0}" -gt 0 ]; then
   printf '\nFAILURE: %s comparison(s) disagree.\n' "$MISMATCHES"
-  printf 'SIX of the eight have CLAUDE.md on the left, and for those the remedy is to\n'
-  printf 're-measure and update CLAUDE.md in the commit that moved the number - never\n'
-  printf 'to change the source to match the prose. The other two do NOT:\n'
-  printf '`invariants_structural` compares a GATE-CLAIM line against its own runner,\n'
-  printf 'and `mirror_workflows` compares a directory against a declaration. The note\n'
-  printf 'beside each row names the two things it compared, because a message that\n'
-  printf 'sends the reader to edit the wrong file is this whole script in miniature.\n'
+  printf 'MOST have CLAUDE.md on the left, and for those the remedy is to re-measure\n'
+  printf 'and update CLAUDE.md in the commit that moved the number - never to change\n'
+  printf 'the source to match the prose. TWO do NOT: `invariants_structural` compares\n'
+  printf 'a GATE-CLAIM line against its own runner, and `mirror_workflows` compares a\n'
+  printf 'directory against a declaration. The note beside each row names the two\n'
+  printf 'things it compared, because a message that sends the reader to edit the\n'
+  printf 'wrong file is this whole script in miniature.\n'
   exit 1
 fi
 
-printf '\nOK: every checkable number in CLAUDE.md agrees with its source here.\n'
+# Asked for the network and got nothing out of it. Not a pass: --online was a
+# request to measure, and zero measurements is the shape of green this project
+# refuses everywhere else (I-007, I-028). Offline runs are unaffected.
+if [ "$ONLINE" -eq 1 ] && [ "${ONLINE_READ:-0}" -eq 0 ]; then
+  printf '\nFAILURE: --online was asked for and read 0 of %s items. Every one is\n' "$ONLINE_ITEMS"
+  printf 'named above with why. A run that measured nothing is not a run that found\n'
+  printf 'nothing wrong.\n'
+  exit 1
+fi
+
+if [ "$ONLINE" -eq 1 ]; then
+  printf '\nOK: %s offline comparison(s) and %s read from CI job traces all agree' \
+    "$COMPARED" "$ONLINE_READ"
+  if [ "${ONLINE_NOT_READ:-0}" -gt 0 ]; then
+    printf ';\n%s online item(s) were NOT READ and are named above.\n' "$ONLINE_NOT_READ"
+  else
+    printf '.\n'
+  fi
+  exit 0
+fi
+
+printf '\nOK: every number in CLAUDE.md that this repository can check agrees with its\n'
+printf 'source here. The CI-trace figures were NOT looked at - see the online section.\n'
 exit 0
