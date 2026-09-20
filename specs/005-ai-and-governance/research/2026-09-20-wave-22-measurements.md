@@ -221,6 +221,48 @@ covered stable contrib release is itself covered.* The literal text of the contr
 excludes it nor names it. **This is the acceptable finding the row anticipated, and it is not
 upgraded into an answer.**
 
+### The second audit: what Ágora installs TODAY
+
+⚠️ **Added after the first draft of this file, which named this as a gap with no owner. It was a
+bounded job and leaving it open would have been the defect this project keeps writing down.** The
+audit above covers the four *candidate* projects. It says nothing about whether the package Ágora
+**already ships** carries a non-stable module — and that question decides whether T-0513 would be
+red on the day it is written, which is a different and more urgent thing.
+
+The closure was resolved by reading the `install:` list of every recipe Ágora applies
+(`drupal_cms_admin_ui` 2.1.4, `drupal_cms_anti_spam` 2.1.2, `drupal_cms_authentication` 2.1.2,
+`drupal_cms_media` 2.1.2, `drupal_cms_privacy_basic` 2.1.2, `drupal_cms_seo_basic` 2.1.2,
+`drupal_cms_helper` 2.1.4, `easy_email_express` 1.0.4) plus Ágora's own, then walking every
+`.info.yml` in each resulting project at its newest stable tag.
+
+```
+CONTRIB PROJECTS WALKED:            32
+CONTRIB .info.yml FILES EXAMINED:  106   (test fixtures excluded)
+CORE MODULES EXAMINED:              19
+OUR OWN THEME EXAMINED:              1   (agora_theme - no lifecycle key, stable by default)
+
+NON-STABLE FOUND, CONTRIB:           2
+NON-STABLE FOUND, CORE:              0
+```
+
+| project | tag | module | `lifecycle` | **is it in any `install:` list?** |
+|---|---|---|---|---|
+| `automatic_updates` | 4.1.0 | `automatic_updates_extensions` | **obsolete** | **NO** |
+| `eca` | 3.1.8 | `eca_node_access` | **experimental** | **NO** |
+
+✅ **Neither is installed.** `drupal_cms_admin_ui` installs `automatic_updates`, not its extensions
+submodule; the four recipes that use ECA install `eca_base`, `eca_misc`, `eca_user`, `eca_ui`,
+`eca_config`, `eca_render` and `eca_content`, not `eca_node_access`.
+
+**So T-0513 over the real `install:` list returns 0 today, and that is now a measurement rather
+than a hope.** It also gives the invariant a decision to make that the scaffold did not consider:
+**`obsolete` is a fourth value, and core refuses to install an obsolete module at all**
+(`ExtensionLifecycle`: *"Extension is obsolete and installation will be prevented."*). An invariant
+that only looks for `experimental` and `deprecated` would miss it. **Both findings are present in
+the shipped dependency tree and absent from `install:`** — which is precisely the distinction
+T-0513 must encode, because scanning the tree and scanning the install list give different answers
+and only one of them is the question.
+
 ### The finding about our own gate, re-verified
 
 ```
@@ -762,10 +804,14 @@ predicted failure**, because the whole argument above rests on a prediction the 
 
 - **No runtime behaviour was observed at all.** Every "it fails" above is a statement about source.
 - **R10, R15, R16, R17 are untouched** beyond the commands written for them.
-- **The lifecycle audit covers the four unit-005 candidate projects, not the modules Ágora installs
-  today.** Ágora's `install:` list and the `drupal_cms_*` recipes it applies were **not** walked for
-  `lifecycle:` keys. **So this audit does not tell you whether the package already ships a
-  deprecated module**, and that question is open. It is a bounded job: resolve the recipes' install
-  lists and re-run the same walk.
+- ~~**The lifecycle audit covers the four unit-005 candidate projects, not the modules Ágora
+  installs today.**~~ **CLOSED in this same file before it was committed — see "The second audit"
+  above.** 32 contrib projects, 106 `.info.yml` files, 19 core modules and our own theme walked:
+  **2 non-stable, neither in any `install:` list.** The struck sentence is kept because the gap was
+  real when it was written, and because a "gap with no owner" that stays in a file for six days is
+  a failure mode this project has already paid for.
+- **Nothing was checked about the modules those two recipes' own dependencies pull in
+  transitively** beyond the `install:` lists — a project present in `composer.lock` but installed by
+  nobody is outside this walk.
 - **The deep-chat bundle's upstream version is unknown** and cannot be recovered from the package.
 - **`no-secrets` was not re-run against these findings**; nothing in this wave wrote code.
