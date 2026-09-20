@@ -18,7 +18,10 @@ that installs Drupal with the template applied.
   consent, anti-spam, authentication tweaks and HTML email.
 * Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
   this template requires at `^1.0` — and makes it the site's default theme.
-* Sets a Canvas landing page as the home page, carrying four blocks from the template's own views.
+* Sets a Canvas landing page as the home page, carrying **five** blocks from the template's own
+  views. (It read *four* until 2026-09-20 and was already wrong: the page carried six, and
+  T-1310 moved the service-area cards off it to `/publications`, beside the register they
+  filter. A hand-written count in prose is a number nothing checks.)
 * Ships the demonstration corpus described in the next section: six registers of invented records
   for a fictional Spanish municipality, with 34 generated PDFs and 5 CSV distributions.
 

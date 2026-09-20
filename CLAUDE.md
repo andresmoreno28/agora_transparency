@@ -289,7 +289,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
   says so in its own status cell.** `phpunit-pgsql` was added under D-040(2), and it is now
   **observed**: pipeline **`937841`**, ref `1.x`, commit **`47b2a99`**, job `11799334`, read from
   the API with the maintainer's token because **the `/trace` endpoint returns `401` to anonymous
-  requests** — a limitation worth knowing before someone plans a verification around reading a log.
+  requests**
+  ⚠️ **AMENDED 2026-09-20, and the amendment matters in both directions.** The sentence is true of
+  the **API** endpoint and was verified again today: `/api/v4/projects/<id>/jobs/<id>/trace`
+  answers **`401`, 30 bytes**, anonymously. **It is false as a statement about traces.** The web
+  route `https://git.drupalcode.org/project/<name>/-/jobs/<id>/raw` serves the **whole log with
+  no credential at all** — measured the same minute, **HTTP 200, 123,480 bytes**, carrying the
+  axe summary line. So no verification here ever needed the maintainer's token, and **anyone,
+  a marketplace reviewer included, can read every trace this project produces.** The same
+  correction applies to the two other places this file repeats the `401` claim. — a limitation worth knowing before someone plans a verification around reading a log.
 
   ⚠️ **What the trace prints is the whole argument of D-040(2), on two consecutive lines:**
 
@@ -324,8 +332,23 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `968335`, ref `1.x`, commit `35038cc`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/968335/jobs` on 2026-09-19.
+- **Observed inventory — the theme.** Pipeline `969068`, ref `1.x`, commit `8909f76`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/969068/jobs` on 2026-09-20.
+  ⚠️ **The axe gate moved again: EIGHT pages became NINE** (T-1307), and it now scans the
+  composed front page. `nightwatch` job `12319513` prints `agora_theme axe gate: 9 pages scanned,
+  89-89 axe rules run per page, 0 violations, heading-order reported on 9 of 9 pages` and
+  **`677 total assertions`** (was `576` over 8, `489` over 7). `phpunit` job `12319514` prints
+  **`OK (156 tests, 797 assertions)`**, unchanged, correct for a change that adds no PHP test.
+  ⚠️ **The rules-run range held at 89-89 across BOTH moves**, and that is the figure that makes
+  the rise meaningful: a new page scanning fewer rules raises the assertion total while covering
+  less. ⚠️ **The ninth page had to BE the site's front page, not merely look like one.** The hero
+  band exists only where Drupal's front-page flag is set, and about thirty rules in the theme's
+  stylesheet key on the class that flag produces — so a look-alike would have been scanned with
+  the hero on the wrong ground and no section tints at all. **Contrast is a fact about the
+  ground.** A side-effect worth knowing: core ships `/user/login` as the front page, so until
+  T-1307 the **sign-in fixture was the front page** and carried a hero no real Ágora puts there;
+  nothing asserted it, so nothing was red. Measured before and after: 89 rules, 0 violations, one
+  `<h1>`, identical.
   ⚠️ **The axe gate moved for the first time since 2026-09-06: SEVEN pages became EIGHT**, and
   the figures below are the new ones. `nightwatch` job `12308877` prints `agora_theme axe gate:
   8 pages scanned, 89-89 axe rules run per page, 0 violations, heading-order reported on 8 of 8
@@ -343,7 +366,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   unchanged across the two tooling commits, then +29 tests and +77 assertions on the one that
   added behaviour, which is exactly the shape to want and was predicted before it was read.
   `nightwatch` printed **7 pages … `489 total assertions`** on all three — correctly, because
-  none of them added a scanned page.
+  none of them added a scanned page. (**7 → 8 → 9** since; see the bullet above.)
   ✅ ~~⚠️ 🔴 **AND THAT LAST SENTENCE IS THE GAP, not a reassurance.**~~ **CLOSED the same day it
   was opened, by `e79c265`.** What it said, and it was right: the change that moved `phpunit`
   added a views empty-region message and an exposed-form button row to every register page, and
@@ -431,10 +454,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   and no `Drupal CMS`. So a per-repository floor of nine would be satisfied by two different sets,
   and *"both are at nine"* is not the same statement as *"both run what they need to run"*. The
   **denominators** are the part that carries meaning: on pipeline `967950`, commit `7d7e791`,
-  job `12303707`, read 2026-09-19, `nightwatch` printed `agora_theme axe gate: 7 pages scanned,
-  89-89 axe rules run per page, 0 violations, heading-order reported on 7 of 7 pages` and
-  **`489 total assertions`** — **the rule count held at 89 and the page count held at 7 while the
-  assertions went 476 → 489**, which is the shape to want on a commit that added no surface: the
+  job `12319513`, read 2026-09-20, `nightwatch` printed `agora_theme axe gate: 9 pages scanned,
+  89-89 axe rules run per page, 0 violations, heading-order reported on 9 of 9 pages` and
+  **`677 total assertions`** — ~~**the rule count held at 89 and the page count held at 7 while the
+  assertions went 476 → 489**~~ **the rule count has now held at 89 across 7 → 8 → 9 pages and
+  489 → 576 → 677 assertions**, which is the shape to want on a commit that added no surface: the
   same seven pages asserted about more, not a seventh page counted twice. ⚠️ **`6` and `362` stood
   in this line until 2026-09-06 and `476` until today**, read from pipeline `943602`, commit
   `c5b0f68`, then from `950212`; the line before those read `297` and was four commits stale.
@@ -899,7 +923,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   Repository"*). With no demo content until unit 003, the only pages a screenshot could capture are
   four synthetic fixtures. **Prerequisite: [andres] creates the mirror.**
 - axe (a11y) with no violations on the demo pages. **Running in the theme, not here**, as the
-  blocking `nightwatch` job — **8** pages, 89 rules per page, 0 violations; see the theme's table.
+  blocking `nightwatch` job — **9** pages, 89 rules per page, 0 violations; see the theme's table.
   ⚠️ This line said **4** until 2026-08-26 and **5** until 2026-09-06, while the table above said
   6 and then 7: the same gate block carries the figure twice and only one copy is ever refreshed.
   **A number written down twice is a number that goes stale in one place first — and this is the
@@ -910,8 +934,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   ⚠️ **Both copies were re-read against job `12024567` on 2026-09-12 and BOTH said 7**, and
   again against job `12303707` on 2026-09-19 — still 7, still 89, still `489 total assertions`,
   which is what a commit that adds no surface should do to them.
-  ⚠️ **BOTH COPIES MOVED TO 8 on 2026-09-19 (job `12308877`), in the same commit**, which is the
-  first time this pair has been refreshed together rather than one of them going stale first.
+  ⚠️ **BOTH COPIES MOVED TO 8 on 2026-09-19 (job `12308877`), and to 9 on 2026-09-20 (job
+  `12319513`), each time in the same commit** — twice in a row now, where every earlier refresh
+  moved one copy and left the other stale.
   The 2026-09-12 note follows: which is
   the first time this pair has been checked and found to agree. **The assertion total is
   deliberately NOT repeated here** — it lives once, in the table above. The lesson of the drift is
