@@ -982,8 +982,8 @@ display:
         filters: false
       css_class: agora-area-cards
       group_by: true
-      display_description: 'How many records each service area has published, largest first, as placed on the home page.'
-      use_more: true
+      display_description: 'How many records each service area has published, largest first, as placed above the register at /publications.'
+      use_more: false
       use_more_always: true
       use_more_text: 'Browse every record by service area'
       link_display: page_1

@@ -521,13 +521,13 @@ moving the working copy a session is running in, on the day wave 5 starts.
   which matches the eight-job table above rather than the quote. ~~**Read `9`.**~~ **Read `10`.**
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **455** tracked files to cspell, which **checks 414** and
-  finds 0 issues (re-measured 2026-09-19; **this commit adds four files and moved the denominator
-  by exactly four**, which is the shape to want — it read **451/410** on 2026-09-12, **448/407**
+  `bash tests/bin/spellcheck` offers **456** tracked files to cspell, which **checks 415** and
+  finds 0 issues (re-measured 2026-09-20; **this commit adds one file — `config/block.block.agora_base_service_areas.yml`, T-1310 — and moved the denominator
+  by exactly one**, which is the shape to want — it read **455/414** on 2026-09-19, **451/410** on 2026-09-12, **448/407**
   on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before
   that).
-  ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** Four markdown
-  files were added and cspell opened all four: 455 − 414 = 41, the same 37 binaries and 4 globs
+  ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** One YAML file
+  was added and cspell opened it: 456 − 415 = 41, the same 37 binaries and 4 globs
   accounted for below. **A denominator that rises while the gap also rises would mean a new file
   went unopened**, which reads exactly like a clean measurement and is not one. The CI job's own count runs two higher — it also opens two files the runner
   generates and this repository does not track. The 36-versus-63 gap **T-222** opened is closed and
@@ -537,7 +537,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   enumeration, and the shortfall this paragraph used to admit is closed.** **37** are binaries
   cspell does not read — **34 PDF, 2 WebP and 1 PNG** — and **4** are matched by the upstream
   ignore globs (`.eslintrc.json` by `**/.*.json`, `.gitignore` by `.*ignore`, `LICENSE.txt` and
-  `composer.json` by name). **37 + 4 = 41**, and 451 − 41 = **410**, the number cspell prints.
+  `composer.json` by name). **37 + 4 = 41**, and 456 − 41 = **415**, the number cspell prints.
+  ⚠️ **This arithmetic said `451 − 41 = 410` until 2026-09-20 while the bullet four paragraphs
+  above already said 455/414 — the same figure written twice and refreshed in one copy only**,
+  which is the defect that bullet is itself about, committed inside it. Both copies moved in the
+  commit that moved the denominator this time.
   ⚠️ **The missing file was `logo.png`, which landed on 2026-09-02 — so the shortfall was not an
   unknown, it was an ARRIVAL nobody subtracted.** The accounting was written when the binaries
   were 36, the file was added a month later, and the sentence saying *"the remaining one is not
@@ -546,7 +550,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   ⚠️ **How it was closed is the reusable part: not by reasoning about globs, but by running cspell
   over the two sets and reading its own counts.** The 41 predicted-skipped files, handed to cspell
   as a file list, produce **no `Files checked` line at all**; their complement produces
-  `Files checked: 410`. **Falsified in both directions, per file**: `logo.png`, `screenshot.webp`,
+  `Files checked: 415` (it printed `410` when the experiment was first run — the skipped set is
+  what held at 41, not the complement). **Falsified in both directions, per file**: `logo.png`, `screenshot.webp`,
   `.eslintrc.json`, `.gitignore`, `LICENSE.txt` and `composer.json` are each opened **0** times
   alone, while `.claude/settings.json`, `.gitattributes` and `README.md` are each opened **1** —
   the first of those being the one a glob-reading argument gets wrong, because `**/.*.json` matches
@@ -756,7 +761,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
   gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
   The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
-  prints `examined: 451 tracked file(s)` · `scripts: 30` · `findings: 0` today, re-run 2026-09-12.
+  prints `examined: 456 tracked file(s)` · `scripts: 30` · `findings: 0` today, re-run 2026-09-20
+  (it read `455` before T-1310 added one config file, and `451` on 2026-09-12).
   **A hand-written 28 stood beside a machine-printed 30 in the same paragraph, in the same commit,
   in three files, and nothing failed** — the denominator is 30, and the two files fixed that day
   were 2 of 30. `specs/003-demo-content/tasks.md` records the same correction against T-1501's own

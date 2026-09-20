@@ -92,13 +92,39 @@ grep -rniE "api[_-]?key|secret|token|passwd|password" config/ content/ | head
 # Added 2026-08-24 (D-032). The three greps above find what the exporter already removed;
 # these four find what nothing else does.
 find config -type f | wc -l          # must be printed, and must be > 0
-find content -type f | wc -l         # must not have grown
+bash tests/bin/media-licence         # RETIRED CHECK REPLACED HERE - read below
 git status --porcelain content/      # must be empty
 grep -n '^recipes:' recipe.yml       # the upstream recipe list must still be there
 grep -rn "/var/www\|/home/" config/ | head
 ```
 
 Any hit → **stop and clean**, do not commit "and I'll fix it later".
+
+### The fourth check is retired, and it is named rather than deleted
+
+⚠️ **`find content -type f | wc -l` still `1` is RETIRED (T-1203).** It was written when `content/`
+held one blank Canvas landing page and anything else in there was an accident. It stopped being
+true on 2026-08-26 in commit `17ac5fb`, which shipped `content/MEDIA-LICENCES.md` and
+`content/PEOPLE.md` and took the count from 1 to 3. `content/` holds **224** files today.
+
+**Its replacement asserts the tree against the manifest instead of against a number in prose.**
+`bash tests/bin/media-licence` enumerates `content/` in the working tree **and** in the packaged
+tree, is FATAL if either enumeration is zero — which is what the `1` was really guarding, that the
+enumeration happened at all — and checks every shipped binary against `content/MEDIA-LICENCES.md`
+in **both directions**: a file with no row is a finding, and a row naming no file is a finding too.
+It runs inside the blocking `agora-invariants` job, so it is a gate and not a habit.
+
+⚠️ **What the replacement does NOT cover, said plainly so it is not read as wider than it is.** A
+stray *entity export* — a `.yml` under `content/<entity_type>/` — has no manifest row to be missing
+and would pass. The two things that would notice are `ValidationTest`'s published-record count and
+`tests/bin/generate-demo-media.py`'s per-directory enumeration, and neither of them is a pre-commit
+check. That gap is real and has no owner.
+
+⚠️ **The retirement was recorded in `DECISIONS.md` on 2026-08-26 and never reached this page, which
+carried the dead check for 24 days.** D-032's own amendment retired it by name in the very commit
+that made it false — so the *decision* was amended and the *procedure people copy and paste* was
+not. This is the project's standing failure mode one level up from a stale number: a rule written
+in two places goes stale in the copy nobody has to open.
 
 ## Demo content
 

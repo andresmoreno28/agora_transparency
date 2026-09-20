@@ -2487,6 +2487,98 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
+   * The service-area cards sit beside the register, not on the landing page.
+   *
+   * T-1310. `block_6` was the fifth of SEVEN components on the Canvas front
+   * page. Every one of its six cards links to `/publications?area=<tid>`, so
+   * on the landing page each card was a link away from the thing it narrows;
+   * beside the register it is a facet.
+   *
+   * WHY THIS IS ASSERTED IN MARKUP RATHER THAN IN CONFIG, which is the row's
+   * own criterion. Config says what should happen; markup says what did. A
+   * block placed in a region the theme does not declare, or hidden behind a
+   * visibility condition that never matches, is correct config that renders
+   * nothing - and a config-level assertion passes in both cases.
+   *
+   * THE PLACEMENT IS A BLOCK, NOT AN ATTACHMENT DISPLAY, and a measurement
+   * decided that rather than a preference. `agora_theme` 1.1.0 declares
+   * three regions - `header`, `content`, `footer` - so `content` is the only
+   * body region there is; its own blocks in that region are weighted
+   * messages -30, breadcrumb -25, page title -20 and main content 0, so -10
+   * lands these cards under the `<h1>` and above the register. Read from the
+   * published release, which is what a clean install resolves. Keeping it a
+   * BLOCK display also keeps `block_6` the name this row's criterion uses,
+   * keeps its Canvas component valid, and keeps the heading, which is
+   * supplied by the placement and not by the view.
+   *
+   * THE THIRD GROUP OF ASSERTIONS LOOKS UNRELATED AND IS THE REASON THIS
+   * METHOD EXISTS. `block_2` carries D-041's frame sentence in its `header`
+   * area, and that sentence is the only place the served site declares
+   * itself fictional. Moving a neighbouring block is exactly how a sentence
+   * nobody re-reads disappears. It is read out of config and asserted on the
+   * rendered page, so deleting the sentence fails the read and deleting the
+   * block fails the page.
+   */
+  public function testServiceAreaCardsMoveToTheRegister(): void {
+    $this->applyRecipe(self::getRecipePath());
+    $this->drupalLogin($this->drupalCreateUser(['access content']));
+    $assert = $this->assertSession();
+
+    $view = View::load('agora_base_publications');
+    $this->assertNotNull($view, 'The publications view must have been imported by the recipe.');
+
+    // Read, never typed: the path, the page size, the two marker classes and
+    // the sentence all come out of the config this change edits, so a rename
+    // there fails here instead of quietly un-asserting the page.
+    $path = $view->getDisplay('page_1')['display_options']['path'];
+    $cards = $view->getDisplay('block_6')['display_options'];
+    $registers = $view->getDisplay('block_2')['display_options'];
+
+    $per_page = (int) $cards['pager']['options']['items_per_page'];
+    $this->assertGreaterThan(0, $per_page, 'block_6 must declare a page size, or the card count below holds vacuously.');
+    $this->assertNotSame('', (string) ($cards['css_class'] ?? ''), 'block_6 must carry a css_class, or the selector below matches every view on the page.');
+    $this->assertNotSame('', (string) ($registers['css_class'] ?? ''), 'block_2 must carry a css_class, or the front-page control below matches everything.');
+
+    $block = '#block-agora-base-service-areas';
+    $display = '.' . $cards['css_class'];
+    $control = '.' . $registers['css_class'];
+
+    // -- (1) It renders on the register ------------------------------------
+    $this->drupalGet($path);
+    $assert->statusCodeEquals(200);
+
+    // Two selectors, because they answer two questions: the first says the
+    // PLACEMENT exists, the second says what it placed is block_6's own
+    // display and not some other view that happens to sit there.
+    $assert->elementsCount('css', $block, 1);
+    $assert->elementsCount('css', $block . ' ' . $display, 1);
+
+    // The heading comes from the placement, not from the view - so it is the
+    // thing a move like this loses silently, and it is asserted by value.
+    $assert->elementTextEquals('css', $block . ' h2', 'Every record, by service area');
+
+    // Not "at least one row": a view whose result set is empty renders no
+    // rows at all, and every assertion above stays true about nothing
+    // (I-062). Six areas have records and the display shows six.
+    $assert->elementsCount('css', $block . ' .views-row', $per_page);
+
+    // -- (2) It is gone from the landing page -------------------------------
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $assert->elementNotExists('css', $block);
+    $assert->elementNotExists('css', $display);
+
+    // -- (3) The landing page still renders, and still says it is fiction ---
+    // The register cards are the positive control: without them, (2) passes
+    // just as well on a front page that rendered nothing at all.
+    $assert->elementsCount('css', $control, 1);
+
+    $frame = trim(strip_tags((string) ($registers['header']['area_text_custom']['content'] ?? '')));
+    $this->assertNotSame('', $frame, "block_2 must still carry D-041's frame sentence in its header area: it is the only place the served site declares itself fictional.");
+    $assert->pageTextContains($frame);
+  }
+
+  /**
    * Checks that the site template includes all Canvas components that it uses.
    */
   protected function assertCanvasComponentsAreIncluded(): void {
