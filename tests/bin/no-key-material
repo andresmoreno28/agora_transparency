@@ -1,0 +1,293 @@
+#!/usr/bin/env bash
+#
+# no-key-material - Agora - unit 005, T-0512 (plan.md 5.1).
+#
+# Fails if this package ships an API key, a `key.key.*` config entity, or any
+# configuration shaped to hold one.
+#
+# ⚠️ WHY THIS IS NOT tests/bin/no-secrets, AND THE DIFFERENCE IS NOT A MATTER OF
+# TASTE. `no-secrets` matches a VALUE of real length (I-018): it is looking for
+# something that looks like a credential. That is the right rule for its
+# subject and it is structurally blind to the defect this script exists to
+# catch, because
+#
+#     key_value: ''
+#
+# IS NOT A SECRET AND IS A DEFECT. An empty `key_value` means a `key.key.*`
+# entity was exported from a rig - and the next export, taken on a site whose
+# owner has entered a key, fills it in. The empty one is the warning; the full
+# one is the incident. A length rule can only ever see the second.
+#
+# It matters because upstream's own config action writes a provided API key into
+# a CONFIG ENTITY IN PLAINTEXT by default, so the mechanism that puts a key into
+# `config/` is not hypothetical and is not ours: it is one `drush site:export`
+# on a rig somebody configured.
+#
+# WHAT IS A FINDING, and each rule is listed with the door it closes:
+#   1  a config object NAMED `key.key.*`                 an exported key entity
+#   2  a `key_value:` assignment, WHATEVER its value     including '' and null
+#   3  a `key_provider:` / `key_provider_settings:` key  the provider half, whose
+#                                                        value is legitimately
+#                                                        short and which
+#                                                        no-secrets would miss
+#   4  an `api_key:` YAML key, hyphenated or        the plaintext door
+#      suffixed `_id`
+#   5  a `key.key.<name>` reference in any shipped YAML  recipe.yml's
+#                                                        config.import, a
+#                                                        dependency list, a
+#                                                        config action target
+#
+# Rules 1 and 5 are BOTH needed and they are not the same question. A config
+# object does not name itself, so a file called `key.key.openai.yml` can be
+# shipped whose content never contains the string - rule 1 reads names, rule 5
+# reads content.
+#
+# Contract (plan.md 5.1):
+#   scope:    <exact list of trees inspected>
+#   scanned:  <N> file(s)    - N must be > 0 or this script exits 1
+#   key entities found / key_value assignments / provider key configs, each
+#   NAMED, and the pattern count, which is FATAL at zero for the reason G7, G13
+#   and G14 give about their deny-lists: a rule list somebody empties reports
+#   "0 findings" exactly as a clean tree does (I-028).
+#   findings: <M>            - each printed as  path:line  reason
+#   exit 0 iff M == 0
+#
+# An empty scope, a missing tool or an unreadable file is a FAILURE, never a
+# skip (I-007).
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block,
+# with the reasoning and the I-031 asymmetry spelled out, lives in the header of
+# tests/bin/no-ci-allow-dev. Read it before adding a counter here.
+#
+# Usage: tests/bin/no-key-material   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# shellcheck disable=SC1007
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck disable=SC1007
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_BAD=""; C_OFF=""
+if [ -t 1 ]; then C_BAD=$(printf '\033[31m'); C_OFF=$(printf '\033[0m'); fi
+
+fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
+
+# ------------------------------------------------------- grep's third state --
+# T-316 / I-027. `grep` has THREE exit states: 0 = matched, 1 = no match,
+# >= 2 = grep itself FAILED. Inferring "no findings" from "no stdout" turns
+# every grep error into a green run, so every grep below has its status read.
+grep_failed() { # <rc> <pattern> <subject>
+  printf 'FATAL: grep failed (exit %s) on %s while matching: %s\n' "$1" "$3" "$2" >&2
+  printf 'grep exit %s on %s while matching: %s\n' "$1" "$3" "$2" >> "$GREP_ERR_FILE"
+}
+
+assert_grep_ok() {
+  [ -s "$GREP_ERR_FILE" ] || return 0
+  printf '\nFATAL: the scan did not complete - grep failed:\n' >&2
+  sed 's/^/  /' "$GREP_ERR_FILE" >&2
+  printf 'Nothing was scanned: this run has NO result, which is not a clean result. (T-316 / I-027)\n' >&2
+  exit 1
+}
+
+# ---------------------------------------------------------------- preflight --
+command -v grep >/dev/null 2>&1 || fatal "required tool not found: grep"
+command -v find >/dev/null 2>&1 || fatal "required tool not found: find"
+
+RECIPE="recipe.yml"
+[ -f "$RECIPE" ] || fatal "$RECIPE not found in $REPO_ROOT (empty scope)"
+[ -r "$RECIPE" ] || fatal "$RECIPE is not readable"
+[ -d config ] || fatal "config/ not found in $REPO_ROOT (empty scope)"
+[ -d content ] || fatal "content/ not found in $REPO_ROOT (empty scope)"
+
+FINDINGS_FILE=$(mktemp -t no-key-material.XXXXXX) || fatal "cannot create a temp file"
+GREP_ERR_FILE=$(mktemp -t no-key-material-grep.XXXXXX) || fatal "cannot create a temp file"
+FILE_LIST=$(mktemp -t no-key-material-files.XXXXXX) || fatal "cannot create a temp file"
+HITS=$(mktemp -t no-key-material-hits.XXXXXX) || fatal "cannot create a temp file"
+NAMED=$(mktemp -t no-key-material-named.XXXXXX) || fatal "cannot create a temp file"
+trap 'rm -f "$FINDINGS_FILE" "$GREP_ERR_FILE" "$FILE_LIST" "$HITS" "$NAMED"' EXIT
+
+finding() { # <file> <line> <reason>
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3" >> "$FINDINGS_FILE"
+}
+
+count_findings() {
+  wc -l < "$FINDINGS_FILE" | tr -d '[:space:]'
+}
+
+# ------------------------------------------------------------------- scope --
+# *.yml ONLY, and the exclusion is by CONSTRUCTION rather than by an allow-list:
+# key material is configuration, and configuration in this package is YAML. The
+# 42 non-YAML files under content/ are media, and tests/bin/no-secrets opens
+# those with a binary sweep of its own (T-906) precisely because this kind of
+# text scan cannot.
+find config content -type f -name '*.yml' 2>/dev/null > "$FILE_LIST" \
+  || fatal "the scan of config/ and content/ did not complete"
+printf '%s\n' "$RECIPE" >> "$FILE_LIST"
+LC_ALL=C sort -o "$FILE_LIST" "$FILE_LIST"
+
+SCANNED=$(wc -l < "$FILE_LIST" | tr -d '[:space:]')
+
+# ------------------------------------------- the rules, named and countable --
+# The list's own length is printed and asserted below. A rule list somebody
+# shortens passes by construction (I-028), which is the failure G7, G13 and G14
+# already guard against on their deny-lists.
+#
+# Each entry is `<id>|<extended regex>`. The regexes deliberately anchor on a
+# YAML KEY POSITION - start of line, or after a comma or brace in flow style -
+# so a word appearing inside a VALUE is not a finding (I-018: match the
+# definition, never the mention).
+RULES='key-value|(^|[[:space:],{])key_value[[:space:]]*:
+key-provider|(^|[[:space:],{])key_provider(_settings)?[[:space:]]*:
+api-key|(^|[[:space:],{])api[_-]?key(_id)?[[:space:]]*:
+key-entity-reference|key\.key\.[a-z0-9_]+'
+
+PATTERNS=$(printf '%s\n' "$RULES" | wc -l | tr -d '[:space:]')
+# +1 for the filename rule below, which is not a regex over content.
+PATTERNS=$((PATTERNS + 1))
+
+KEY_ENTITIES=0
+KEY_VALUES=0
+PROVIDER_CONFIGS=0
+COMMENTS_SKIPPED=0
+
+# ------------------------------------------ rule 1: config objects by NAME ---
+# A config object does not carry its own name, so this reads the file names and
+# nothing else. `FileStorage` derives the object name from the basename, which
+# is why the basename is the thing to test.
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "${f##*/}" in
+    key.key.*.yml)
+      KEY_ENTITIES=$((KEY_ENTITIES + 1))
+      printf 'key entity   %s\n' "$f" >> "$NAMED"
+      finding "$f" "0" \
+        "a key.key.* config entity is shipped; a site template must never carry one, whether or not it holds a value"
+      ;;
+  esac
+done < "$FILE_LIST"
+
+# --------------------------------------- rules 2-5: content, key positions ---
+# One `grep -r` per rule rather than one grep per file: 316 files x 4 rules is
+# 1264 processes, and a scan slow enough to be skipped is a scan nobody runs.
+while IFS= read -r rule; do
+  [ -n "$rule" ] || continue
+  rid=${rule%%|*}
+  pat=${rule#*|}
+
+  : > "$HITS"
+  grep -rnE --include='*.yml' -- "$pat" config content > "$HITS" 2>/dev/null
+  rc=$?
+  [ "$rc" -ge 2 ] && grep_failed "$rc" "$pat" "config/ and content/"
+
+  grep -nE -- "$pat" "$RECIPE" 2>/dev/null | sed "s|^|$RECIPE:|" >> "$HITS"
+  rc=$?
+  [ "$rc" -ge 2 ] && grep_failed "$rc" "$pat" "$RECIPE"
+
+  while IFS= read -r hit; do
+    [ -n "$hit" ] || continue
+    hit_file=${hit%%:*}
+    rest=${hit#*:}
+    hit_line=${rest%%:*}
+    hit_content=${rest#*:}
+
+    # ⚠️ A YAML COMMENT IS NOT CONFIGURATION, and this package documents its
+    # own config files heavily - `config/config_guardian.settings.yml` names
+    # the `key.key.*` exclusion pattern in prose, on purpose, as the reason the
+    # pattern exists. Counting that as key material would make the invariant
+    # fire on the file that explains it.
+    #
+    # The exclusion is COUNTED AND PRINTED rather than silent, because an
+    # exclusion nobody can see is an exclusion nobody can argue with. A secret
+    # hidden in a comment is a different subject and is tests/bin/no-secrets'.
+    case "$hit_content" in
+      [[:space:]]*'#'*)
+        _stripped=$(printf '%s' "$hit_content" | sed 's/^[[:space:]]*//')
+        case "$_stripped" in
+          '#'*) COMMENTS_SKIPPED=$((COMMENTS_SKIPPED + 1)); continue ;;
+        esac
+        ;;
+      '#'*)
+        COMMENTS_SKIPPED=$((COMMENTS_SKIPPED + 1)); continue ;;
+    esac
+
+    case "$rid" in
+      key-value)
+        KEY_VALUES=$((KEY_VALUES + 1))
+        printf 'key_value    %s:%s\n' "$hit_file" "$hit_line" >> "$NAMED"
+        finding "$hit_file" "$hit_line" \
+          "a key_value assignment is shipped. An EMPTY one is not a secret and IS a defect: it means a key entity was exported from a rig, and the next export fills it in"
+        ;;
+      key-provider)
+        PROVIDER_CONFIGS=$((PROVIDER_CONFIGS + 1))
+        printf 'provider cfg %s:%s\n' "$hit_file" "$hit_line" >> "$NAMED"
+        finding "$hit_file" "$hit_line" \
+          "a key_provider/key_provider_settings key is shipped; its value is legitimately short, so no-secrets cannot see it"
+        ;;
+      api-key)
+        PROVIDER_CONFIGS=$((PROVIDER_CONFIGS + 1))
+        printf 'provider cfg %s:%s\n' "$hit_file" "$hit_line" >> "$NAMED"
+        finding "$hit_file" "$hit_line" \
+          "an api_key key is shipped; upstream's own config action writes a provided API key into config in plaintext by default"
+        ;;
+      key-entity-reference)
+        KEY_ENTITIES=$((KEY_ENTITIES + 1))
+        printf 'key entity   %s:%s\n' "$hit_file" "$hit_line" >> "$NAMED"
+        finding "$hit_file" "$hit_line" \
+          "a key.key.<name> entity is referenced; this package must not depend on, import or act upon a key entity"
+        ;;
+    esac
+  done < "$HITS"
+done <<RULE_LINES
+$RULES
+RULE_LINES
+
+# ------------------------------------------------------------------ report --
+assert_grep_ok
+
+printf '\nno-key-material - API keys and key.key.* entities in the shipped package\n\n'
+printf 'scope:      config/**/*.yml, content/**/*.yml, %s\n' "$RECIPE"
+printf 'scanned:    %s file(s)\n' "$SCANNED"
+printf 'patterns:   %s rule(s) (4 content regexes + 1 filename rule)\n' "$PATTERNS"
+printf 'key entities found:      %s\n' "$KEY_ENTITIES"
+printf 'key_value assignments:   %s\n' "$KEY_VALUES"
+printf 'provider key configs:    %s\n' "$PROVIDER_CONFIGS"
+printf 'exclusions: YAML comment lines - %s line(s) skipped this run. A comment is\n' "$COMMENTS_SKIPPED"
+printf '            not configuration, and this package documents its config files\n'
+printf '            heavily. A secret hidden in a comment is no-secrets(T-906) work.\n'
+printf '            Non-YAML files are out of scope BY CONSTRUCTION, not excluded:\n'
+printf '            key material is configuration, and configuration here is YAML.\n'
+
+if [ -s "$NAMED" ]; then
+  printf '\nnamed:\n'
+  sed 's/^/  /' "$NAMED"
+fi
+
+# T-321(b): defaulted because zero means FAIL here - the safe direction of I-031.
+if [ "${SCANNED:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: 0 files scanned - an empty scope proves nothing (I-007).\n'
+  exit 1
+fi
+if [ "${PATTERNS:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: 0 rules - a rule list somebody emptied reports "0 findings" exactly as a clean tree does (I-028).\n'
+  exit 1
+fi
+
+M=$(count_findings)
+printf 'findings:   %s\n' "$M"
+
+if [ "$M" -gt 0 ]; then
+  printf '\n'
+  cat "$FINDINGS_FILE"
+  printf '\nFAILURE: %s key-material finding(s).\n' "$M"
+  exit 1
+fi
+
+printf '\nOK: no key entity, no key_value assignment, no provider key configuration.\n'
+exit 0

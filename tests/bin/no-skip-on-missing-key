@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+#
+# no-skip-on-missing-key - Agora - unit 005, T-0514 (plan.md 5.3).
+#
+# Fails if any test in this package disables itself when a key, token,
+# credential or provider is absent.
+#
+# THE RULE IN ONE SENTENCE, and it is the unit's own:
+#
+#     Either a test needs no key, or it is not a test - it is a signed manual
+#     protocol.
+#
+# A skipped test is indistinguishable, in every summary line anyone reads, from
+# a test that passed. This project has shipped an inert blocking gate twice in
+# one month (I-007, I-032, and the `--fail-on-empty-test-suite` bullet in
+# CLAUDE.md), and unit 005 is the unit where the temptation is strongest: the
+# generative half genuinely needs an API key, and `markTestSkipped` is one line
+# away from making the whole of it optional in a way no job list would show.
+#
+# The honest alternatives, both used by this unit, are: stub the provider (plan
+# 4 - `CitationRenderTest` runs with no key and no network), or write the thing
+# down as a MANUAL protocol that is recorded as a measurement and counted as
+# coverage by nobody (plan 6, T-0529).
+#
+# ⚠️ `0 skips` IS PRINTED, NOT SILENTLY ABSENT, and that is the row's own
+# emphasis. A repository with no skips and a parser that found nothing produce
+# byte-identical silence; only a printed zero distinguishes them (I-028).
+#
+# WHAT COUNTS AS A SKIP CONSTRUCT, and what turns one into a FINDING:
+#   * every construct in SKIP_CONSTRUCTS below is located and PRINTED with its
+#     condition - the matched line plus the three lines above it, which is where
+#     a PHP `if (...)` guard lives;
+#   * a construct becomes a FINDING when that condition mentions any term in
+#     CREDENTIAL_TERMS. A skip for an unrelated reason is visible but is not
+#     this invariant's business.
+# Both lists have their length printed and asserted positive, because a
+# deny-list somebody empties reports "0 findings" exactly as a clean tree does
+# (I-028) - the guard G7, G13 and G14 already put on theirs.
+#
+# SCOPE, and the one exclusion, stated rather than quietly applied:
+#   IN   everything under tests/, recursively
+#   OUT  tests/bin/ - it holds invariant scripts and gate runners, not tests.
+#        Their own contract already forbids skipping ("a check that CANNOT be
+#        evaluated is a FAIL, never a skip"), and THIS FILE would otherwise be
+#        its own first finding: it necessarily contains every construct it
+#        searches for. The excluded file count is printed on every run.
+#   OUT  __pycache__/ and *.pyc - compiled bytecode, not source.
+#
+# Contract:
+#   scope:    tests/ minus the exclusions above
+#   scanned:  <N> file(s)  - N must be > 0 or this script exits 1
+#   skip constructs found: <S>, each with its condition. S may legitimately be
+#             0 and is printed either way.
+#   findings: <M>          - each printed as  path:line  reason
+#   exit 0 iff M == 0
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block
+# lives in the header of tests/bin/no-ci-allow-dev.
+#
+# Usage: tests/bin/no-skip-on-missing-key   (run from anywhere; it cd's to root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# shellcheck disable=SC1007
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck disable=SC1007
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_BAD=""; C_OFF=""
+if [ -t 1 ]; then C_BAD=$(printf '\033[31m'); C_OFF=$(printf '\033[0m'); fi
+
+fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
+
+grep_failed() { # <rc> <pattern> <subject>
+  printf 'FATAL: grep failed (exit %s) on %s while matching: %s\n' "$1" "$3" "$2" >&2
+  printf 'grep exit %s on %s while matching: %s\n' "$1" "$3" "$2" >> "$GREP_ERR_FILE"
+}
+
+assert_grep_ok() {
+  [ -s "$GREP_ERR_FILE" ] || return 0
+  printf '\nFATAL: the scan did not complete - grep failed:\n' >&2
+  sed 's/^/  /' "$GREP_ERR_FILE" >&2
+  printf 'Nothing was scanned: this run has NO result, which is not a clean result. (T-316 / I-027)\n' >&2
+  exit 1
+}
+
+# ---------------------------------------------------------------- preflight --
+command -v grep >/dev/null 2>&1 || fatal "required tool not found: grep"
+command -v sed  >/dev/null 2>&1 || fatal "required tool not found: sed"
+command -v find >/dev/null 2>&1 || fatal "required tool not found: find"
+
+[ -d tests ] || fatal "tests/ not found in $REPO_ROOT (empty scope)"
+
+FINDINGS_FILE=$(mktemp -t no-skip.XXXXXX)      || fatal "cannot create a temp file"
+GREP_ERR_FILE=$(mktemp -t no-skip-grep.XXXXXX) || fatal "cannot create a temp file"
+FILE_LIST=$(mktemp -t no-skip-files.XXXXXX)    || fatal "cannot create a temp file"
+SKIPS=$(mktemp -t no-skip-hits.XXXXXX)         || fatal "cannot create a temp file"
+trap 'rm -f "$FINDINGS_FILE" "$GREP_ERR_FILE" "$FILE_LIST" "$SKIPS"' EXIT
+
+finding() { # <file> <line> <reason>
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3" >> "$FINDINGS_FILE"
+}
+
+count_findings() {
+  wc -l < "$FINDINGS_FILE" | tr -d '[:space:]'
+}
+
+# ---------------------------------------------------------- the deny-lists ---
+# One extended regex per line. Anchored so that a word inside a longer
+# identifier is not a match: `xit(` must not fire on `sys.exit(`, which it does
+# without the leading class - measured, not guessed (I-018).
+SKIP_CONSTRUCTS='markTestSkipped
+markTestIncomplete
+#\[Requires
+(^|[^A-Za-z0-9_$>])@requires[[:space:]]
+(^|[^A-Za-z0-9_])(test|it|describe|context)\.skip[[:space:]]*\(
+(^|[^A-Za-z0-9_])x(it|describe|context)[[:space:]]*\(
+->skipTest[[:space:]]*\('
+
+# What makes a skip this invariant's business. Matched case-insensitively
+# against the CONDITION window, never against the whole file.
+CREDENTIAL_TERMS='api[_ -]?key
+secret
+token
+credential
+passphrase
+getenv
+\$_ENV
+\$_SERVER
+[[:<:]]key[[:>:]]
+provider
+openai
+anthropic
+amazee'
+
+# `[[:<:]]` is not portable; the portable spelling is built here so the list
+# above stays readable and the regex stays correct on GNU grep.
+CREDENTIAL_TERMS=$(printf '%s\n' "$CREDENTIAL_TERMS" \
+  | sed 's/\[\[:<:\]\]/(^|[^A-Za-z0-9_])/; s/\[\[:>:\]\]/([^A-Za-z0-9_]|$)/')
+
+SKIP_PATTERNS=$(printf '%s\n' "$SKIP_CONSTRUCTS" | wc -l | tr -d '[:space:]')
+CRED_TERMS=$(printf '%s\n' "$CREDENTIAL_TERMS" | wc -l | tr -d '[:space:]')
+
+# ------------------------------------------------------------------- scope --
+find tests -type f \
+  ! -path 'tests/bin/*' \
+  ! -path '*/__pycache__/*' \
+  ! -name '*.pyc' \
+  2>/dev/null > "$FILE_LIST" \
+  || fatal "the scan of tests/ did not complete"
+LC_ALL=C sort -o "$FILE_LIST" "$FILE_LIST"
+
+SCANNED=$(wc -l < "$FILE_LIST" | tr -d '[:space:]')
+
+EXCLUDED=$(find tests -type f \( -path 'tests/bin/*' -o -path '*/__pycache__/*' -o -name '*.pyc' \) 2>/dev/null | wc -l | tr -d '[:space:]')
+
+# ------------------------------------------------------------- the scanner ---
+SKIPS_FOUND=0
+: > "$SKIPS"
+
+while IFS= read -r pat; do
+  [ -n "$pat" ] || continue
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    [ -r "$f" ] || { finding "$f" "0" "file is not readable; a file that cannot be scanned is not a file that is clean"; continue; }
+    hits=$(grep -nE -- "$pat" "$f" 2>/dev/null)
+    rc=$?
+    [ "$rc" -ge 2 ] && grep_failed "$rc" "$pat" "$f"
+    [ "$rc" -eq 0 ] || continue
+
+    while IFS= read -r hit; do
+      [ -n "$hit" ] || continue
+      lnum=${hit%%:*}
+      SKIPS_FOUND=$((SKIPS_FOUND + 1))
+
+      # THE CONDITION WINDOW. A PHP skip guard is written as
+      #     if (!getenv('OPENAI_API_KEY')) {
+      #       $this->markTestSkipped('No key.');
+      #     }
+      # so the deciding expression is ABOVE the construct, not on its line.
+      # Three lines back covers the common shapes without swallowing the
+      # previous statement; the window's size is stated here rather than
+      # left as a magic number.
+      start=$((lnum - 3))
+      [ "$start" -lt 1 ] && start=1
+      condition=$(sed -n "${start},${lnum}p" "$f" 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]][[:space:]]*/ /g; s/^ //; s/ $//')
+
+      printf '%s:%s  %s\n' "$f" "$lnum" "$condition" >> "$SKIPS"
+
+      matched=""
+      while IFS= read -r term; do
+        [ -n "$term" ] || continue
+        printf '%s\n' "$condition" | grep -qiE -- "$term" 2>/dev/null
+        rc2=$?
+        [ "$rc2" -ge 2 ] && grep_failed "$rc2" "$term" "the condition window at $f:$lnum"
+        if [ "$rc2" -eq 0 ]; then
+          matched="$term"
+          break
+        fi
+      done <<TERMS
+$CREDENTIAL_TERMS
+TERMS
+
+      if [ -n "$matched" ]; then
+        finding "$f" "$lnum" \
+          "a skip construct whose condition mentions a credential (matched: $matched). Either a test needs no key, or it is not a test - it is a signed manual protocol. Condition: $condition"
+      fi
+    done <<HITS
+$hits
+HITS
+  done < "$FILE_LIST"
+done <<PATTERNS
+$SKIP_CONSTRUCTS
+PATTERNS
+
+# ------------------------------------------------------------------ report --
+assert_grep_ok
+
+printf '\nno-skip-on-missing-key - tests that disable themselves without a key\n\n'
+printf 'scope:      tests/, recursively\n'
+printf 'scanned:    %s file(s)\n' "$SCANNED"
+printf 'excluded:   %s file(s) - tests/bin/ (invariants and gate runners, not\n' "$EXCLUDED"
+printf '            tests; and this file necessarily contains every construct it\n'
+printf '            searches for), __pycache__/ and *.pyc\n'
+printf 'skip constructs searched for: %s\n' "$SKIP_PATTERNS"
+printf 'credential terms:             %s\n' "$CRED_TERMS"
+printf 'skip constructs found:        %s\n' "$SKIPS_FOUND"
+
+# PRINTED EITHER WAY. The zero is the whole point of the row: a repository with
+# no skips and a parser that found nothing look identical unless the number is
+# on the page.
+if [ "${SKIPS_FOUND:-0}" -gt 0 ]; then
+  printf '\nskip constructs, each with its condition (the matched line and the three above it):\n'
+  sed 's/^/  /' "$SKIPS"
+else
+  printf '            (none - no test in this package disables itself for any reason)\n'
+fi
+
+# T-321(b): defaulted because zero means FAIL here - the safe direction of I-031.
+if [ "${SCANNED:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: 0 files scanned - an empty scope proves nothing (I-007).\n'
+  exit 1
+fi
+if [ "${SKIP_PATTERNS:-0}" -eq 0 ] || [ "${CRED_TERMS:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: an empty deny-list - it would report "0 findings" over any tree at all (I-028).\n'
+  exit 1
+fi
+
+M=$(count_findings)
+printf 'findings:   %s\n' "$M"
+
+if [ "$M" -gt 0 ]; then
+  printf '\n'
+  cat "$FINDINGS_FILE"
+  printf '\nFAILURE: %s test(s) disable themselves on a missing credential.\n' "$M"
+  exit 1
+fi
+
+printf '\nOK: %s file(s) scanned, %s skip construct(s) found, none conditioned on a credential.\n' \
+  "$SCANNED" "$SKIPS_FOUND"
+exit 0

@@ -1991,7 +1991,15 @@ class ValidationTest extends BrowserTestBase {
     $this->assertSame($expected, $offenders, 'The `^administer ` grants on this site must be exactly the inherited exceptions T-602 recorded, on exactly the roles it named.');
 
     // The roles this recipe creates are, by construction, not among them.
-    foreach (['agora_base_editor', 'agora_base_reviewer'] as $id) {
+    //
+    // ⚠️ `agora_governance_auditor` (T-0511) is here for a second reason, and
+    // it is the more important one. The kernel test reads the YAML on disk,
+    // which proves the file is right and NOT that Drupal ever created the
+    // entity. A `user.role.*` is a config ENTITY, and a recipe that fails to
+    // bring one in fails silently — I-086, and the same defect that left this
+    // theme with no page furniture for a fortnight. This line is what turns
+    // that silence into a red job.
+    foreach (['agora_base_editor', 'agora_base_reviewer', 'agora_governance_auditor'] as $id) {
       $this->assertArrayHasKey($id, $roles, "$id must have been imported by the recipe.");
       $this->assertArrayNotHasKey($id, $offenders, "$id is a role this recipe creates and must hold no ^administer permission.");
     }

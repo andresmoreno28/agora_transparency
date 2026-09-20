@@ -1,0 +1,64 @@
+# The governance auditor (T-0511, D-059).
+#
+# WHY THIS ROLE EXISTS AT ALL. Config Guardian's dashboard is reachable with
+# `view config snapshots`, a permission an administrator already holds. Shipping
+# no role would therefore lose nothing technically and everything in product
+# terms: "the portal audits its own configuration" is only a transparency claim
+# if somebody who is NOT the administrator can witness the audit. This role is
+# that somebody — an internal auditor, a clerk of the council, a secretary who
+# has to be able to say when a setting changed and by how much, and who must not
+# be able to change one.
+#
+# EXACTLY TWO PERMISSIONS, AND THE ABSENCES ARE THE DESIGN.
+# `config_guardian.permissions.yml` in the published 1.0.3 declares ELEVEN
+# permissions, SEVEN of them `restrict access: true`. This role holds two of the
+# four unrestricted ones and NONE of the seven restricted ones:
+#
+#   held      view config snapshots    dashboard, snapshot list, comparison, activity log
+#   held      analyze config impact    impact analysis and the dependency graph
+#
+#   NOT held  create config snapshots      unrestricted, and still declined — see below
+#   NOT held  export config snapshots      unrestricted, and still declined — see below
+#   NOT held  administer config guardian   restricted
+#   NOT held  restore config snapshots     restricted
+#   NOT held  delete config snapshots      restricted
+#   NOT held  import config snapshots      restricted
+#   NOT held  synchronize configuration    restricted
+#   NOT held  export configuration         restricted
+#   NOT held  import configuration         restricted
+#
+# ⚠️ THE TWO DECLINED UNRESTRICTED PERMISSIONS ARE THE INTERESTING HALF, because
+# granting them would have been free and defensible-looking.
+#  - `create config snapshots` writes a row to a database table on demand. An
+#    auditor who can fill the snapshot store can push the automatic history past
+#    both caps in `config_guardian.settings.yml` and silently destroy the
+#    evidence they exist to read. Least privilege here is also evidence
+#    integrity.
+#  - `export config snapshots` hands the caller a file containing the site's
+#    ENTIRE active configuration. On a public body's portal that is the largest
+#    single disclosure surface this module has, and reading the dashboard needs
+#    none of it.
+#
+# The permission set is asserted for EQUALITY, not containment, by
+# `tests/src/Kernel/RolesAndPermissionsTest.php`, which also asserts that this
+# role holds ZERO of the seven restricted permissions LISTED BY NAME — so a
+# restricted permission added upstream cannot slip in unnoticed, and a
+# permission that accretes onto this role fails as loudly as one that goes
+# missing.
+langcode: en
+status: true
+dependencies:
+  module:
+    # Both permissions below are defined by `config_guardian`. Without the
+    # module the role does not import and a clean install loses it silently —
+    # the I-086 shape. The module is declared in `recipe.yml`'s `install:`
+    # under the `governance` area, which `RecipeRunner` processes before it
+    # creates this recipe's own config, so the dependency is satisfied.
+    - config_guardian
+id: agora_governance_auditor
+label: 'Governance auditor'
+weight: 6
+is_admin: false
+permissions:
+  - 'analyze config impact'
+  - 'view config snapshots'

@@ -827,8 +827,21 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (68 checks · 0 failures) and `gate-a-wave3.sh` (**51** checks · 0 failures), **17** invariants in total —
+  (68 checks · 0 failures) and `gate-a-wave3.sh` (**60** checks · 0 failures), **20** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`51` and `17` stood here until 2026-09-20 and both moved in the same commit** (unit 005
+  wave 23, T-0512/T-0513/T-0514/T-0515). Three new groups in the wave-3 runner, three checks each:
+  **G16 `no-key-material`**, **G17 `no-experimental-modules`**, **G18 `no-skip-on-missing-key`**.
+  A new group moves `checks` **and** `invariants`, and `claims-match-sources` binds the structural
+  group count too, so all four figures — this sentence's two, the runner's `# GATE-CLAIM:` line and
+  its `group 'GN'` declarations — are edited together or the gate fails. **That is the mechanism
+  working: the arithmetic was not carried, it was re-read off `51 + 9 = 60` and `15 + 3 = 18`,
+  and wave 1's 68 is a MEASURED NON-CHANGE rather than an omission — nothing in this wave touched
+  that runner.** ⚠️ **G16 is the one whose existence is a measurement rather than an argument**:
+  on a planted `config/key.key.openai.yml` carrying `key_value: ''`, `no-key-material` exits **1**
+  with 3 findings and `no-secrets` exits **0**. An empty key value is not a secret and **is** a
+  defect, and a length rule (I-018) is structurally incapable of seeing it — which is why it is a
+  separate invariant rather than a third level of `no-secrets`.
   ⚠️ **THESE THREE NUMBERS ARE NOW MACHINE-CHECKED, AND THEY ARE THE REASON THE CHECKER EXISTS.**
   On 2026-09-06 this line read **61 · 48 · 15** while the runners printed **61 · 49** and carried
   **16** invariants between them: wave 13 had added a third check to G15 without adding an

@@ -1,0 +1,371 @@
+#!/usr/bin/env bash
+#
+# no-experimental-modules - Agora - unit 005, T-0513 (plan.md 5.2).
+#
+# Fails if any module or theme named in `recipe.yml`'s `install:` list is
+# declared `lifecycle: experimental`, `deprecated` or `obsolete`.
+#
+# WHY IT EXISTS: it closes a gap `sbom-check` STRUCTURALLY CANNOT SEE.
+# `sbom-check` asks `updates.drupal.org` about a PROJECT - is its newest release
+# stable, is the project security-covered. `lifecycle` is declared per
+# EXTENSION, in an `.info.yml`, inside a release that may itself be perfectly
+# stable and perfectly covered. `drupal/ai` 1.4.9 is the case that makes the
+# point: it is a stable, covered release, and EIGHT of its SIXTEEN shipping
+# extensions are non-stable - exactly half.
+#
+# ⚠️ THERE ARE FOUR LIFECYCLE VALUES, NOT TWO, and the scaffold said two. Wave
+# 22 found the omission. Quoted from core's own
+# `Drupal\Core\Extension\ExtensionLifecycle` on 11.x:
+#
+#   STABLE       "Extension is stable. This is the default value of any
+#                 extension."
+#   EXPERIMENTAL "Extension is experimental. Warnings will be shown if
+#                 installed."
+#   DEPRECATED   "Extension is deprecated. Warnings will be shown if still
+#                 installed."
+#   OBSOLETE     "Extension is obsolete and installation will be prevented."
+#
+# All four are handled below. `obsolete` is the one a two-valued check would
+# have let through, and it is the most severe of the four.
+#
+# ⚠️ "ABSENT MEANS STABLE" IS CORE'S RULE, NOT AN ASSUMPTION, and the whole
+# verdict column rests on it: `InfoParserDynamic.php:110` reads
+# `$parsed_info += [ExtensionLifecycle::LIFECYCLE_IDENTIFIER =>
+# ExtensionLifecycle::STABLE];` - an `.info.yml` with no `lifecycle` key gets
+# `stable` by default.
+#
+# -----------------------------------------------------------------------------
+# THE HONEST PART, AND IT IS THE PART TO READ BEFORE TRUSTING THIS SCRIPT.
+#
+# plan.md 5.2 says this invariant "resolves every module named in `recipe.yml`'s
+# `install:` to its `.info.yml` and reads `lifecycle:`". THAT CANNOT BE DONE
+# FROM THIS REPOSITORY ALONE, and saying so is better than pretending:
+#
+#   * a site template ships ZERO `*.info.yml` - `RequirementsTest` requires it,
+#     and `tests/bin/no-code-in-template` enforces it;
+#   * the `agora-invariants` CI job declares `needs: []` and runs against the
+#     CHECKED-OUT TREE, not an installed Drupal. There is no docroot to walk.
+#
+# So the check has TWO halves, each with its own denominator, and each printed:
+#
+#   LEDGER half   (always runs)  every name in `install:` is tested against a
+#                 recorded, dated audit of known non-stable extensions. That
+#                 audit is a measurement - specs/005-ai-and-governance/research/
+#                 2026-09-20-wave-22-measurements.md - not an opinion, and it
+#                 names its source per row.
+#   TREE half     (runs when an extension tree is reachable) every `.info.yml`
+#                 found is opened, its `lifecycle:` read, and a name in
+#                 `install:` whose tree lifecycle is non-stable is a finding.
+#                 It ALSO cross-checks the ledger: a ledger row the tree
+#                 contradicts is a finding, which is what stops the ledger
+#                 rotting into prose.
+#
+# ⚠️ `lifecycle keys read` IS THE SUM OF BOTH HALVES AND IS FATAL AT ZERO. The
+# row's own wording: `N > 0` modules with `L == 0` lifecycle keys is a parser
+# that never ran, not a clean tree (I-028, the shape G14 already guards). The
+# two contributions are printed SEPARATELY so a reader can see which half was
+# available, because "0 from the tree" is a true and important statement about
+# this repository and must never read as "0 findings from the tree".
+#
+# ⚠️ AND TODAY'S 0 FINDINGS IS A MEASUREMENT, NOT A CONSTRUCTION. Two non-stable
+# extensions genuinely exist in Agora's installed dependency tree -
+# `automatic_updates_extensions` (obsolete) and `eca_node_access`
+# (experimental) - and NEITHER is in any `install:` list. They are in the ledger
+# below by name, so the ledger is tested against names that really occur rather
+# than against names invented to be absent.
+#
+# Extra extension roots may be given as arguments:
+#   tests/bin/no-experimental-modules [<extension-root>...]
+# The gate runner calls it bare. The scope line always prints what was read, so
+# a run pointed somewhere harmless cannot look like a run over everything.
+#
+# Contract:
+#   scope:    recipe.yml `install:` + the extension roots searched
+#   modules examined:     <N>   - FATAL at 0
+#   lifecycle keys read:  <L>   - FATAL at 0
+#   ledger rows:          <R>   - FATAL at 0 (a deny-list somebody emptied
+#                                passes by construction - I-028)
+#   findings: <M>               - each printed as  path:line  reason
+#   exit 0 iff M == 0
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
+# value; numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an
+# error, never "no match"; never `-F` with `-i`. The CANONICAL copy of the block
+# lives in the header of tests/bin/no-ci-allow-dev.
+#
+# Usage: tests/bin/no-experimental-modules   (cd's to the repo root itself)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+# shellcheck disable=SC1007
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck disable=SC1007
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+C_BAD=""; C_OFF=""
+if [ -t 1 ]; then C_BAD=$(printf '\033[31m'); C_OFF=$(printf '\033[0m'); fi
+
+fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
+
+grep_failed() { # <rc> <pattern> <subject>
+  printf 'FATAL: grep failed (exit %s) on %s while matching: %s\n' "$1" "$3" "$2" >&2
+  printf 'grep exit %s on %s while matching: %s\n' "$1" "$3" "$2" >> "$GREP_ERR_FILE"
+}
+
+assert_grep_ok() {
+  [ -s "$GREP_ERR_FILE" ] || return 0
+  printf '\nFATAL: the scan did not complete - grep failed:\n' >&2
+  sed 's/^/  /' "$GREP_ERR_FILE" >&2
+  printf 'Nothing was scanned: this run has NO result, which is not a clean result. (T-316 / I-027)\n' >&2
+  exit 1
+}
+
+# ---------------------------------------------------------------- preflight --
+command -v grep >/dev/null 2>&1 || fatal "required tool not found: grep"
+command -v sed  >/dev/null 2>&1 || fatal "required tool not found: sed"
+command -v find >/dev/null 2>&1 || fatal "required tool not found: find"
+
+RECIPE="recipe.yml"
+[ -f "$RECIPE" ] || fatal "$RECIPE not found in $REPO_ROOT (empty scope)"
+[ -r "$RECIPE" ] || fatal "$RECIPE is not readable"
+
+FINDINGS_FILE=$(mktemp -t no-exp-mod.XXXXXX)      || fatal "cannot create a temp file"
+GREP_ERR_FILE=$(mktemp -t no-exp-mod-grep.XXXXXX) || fatal "cannot create a temp file"
+INSTALL_LIST=$(mktemp -t no-exp-mod-install.XXXXXX) || fatal "cannot create a temp file"
+INFO_LIST=$(mktemp -t no-exp-mod-info.XXXXXX)     || fatal "cannot create a temp file"
+TABLE=$(mktemp -t no-exp-mod-table.XXXXXX)        || fatal "cannot create a temp file"
+trap 'rm -f "$FINDINGS_FILE" "$GREP_ERR_FILE" "$INSTALL_LIST" "$INFO_LIST" "$TABLE"' EXIT
+
+finding() { # <file> <line> <reason>
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3" >> "$FINDINGS_FILE"
+}
+
+count_findings() {
+  wc -l < "$FINDINGS_FILE" | tr -d '[:space:]'
+}
+
+# ---------------------------------------------- THE LEDGER: a dated audit ----
+# Every row is `<machine name>|<lifecycle>|<where it was measured>`.
+#
+# Measured 2026-09-20 by extracting each published tag from
+# git.drupalcode.org and reading every `.info.yml` in it: 4 projects, 47
+# `.info.yml` examined, 0 unreadable, 9 carrying a `lifecycle` key. The two
+# in-tree rows come from Agora's own installed dependency closure. Recorded in
+# specs/005-ai-and-governance/research/2026-09-20-wave-22-measurements.md.
+#
+# ⚠️ THE LEDGER IS NOT A SUBSTITUTE FOR READING A TREE and is not treated as
+# one: when a tree IS reachable, every ledger row it can see is CROSS-CHECKED
+# against it, and a disagreement in either direction is a finding. A ledger
+# nothing can contradict is prose.
+LEDGER='ai_search|experimental|drupal/ai 1.4.9 modules/ai_search/ai_search.info.yml
+ai_content_suggestions|deprecated|drupal/ai 1.4.9
+ai_eca|deprecated|drupal/ai 1.4.9
+ai_external_moderation|deprecated|drupal/ai 1.4.9
+ai_logging|deprecated|drupal/ai 1.4.9
+ai_translate|deprecated|drupal/ai 1.4.9
+ai_validations|deprecated|drupal/ai 1.4.9
+field_widget_actions|deprecated|drupal/ai 1.4.9
+automatic_updates_extensions|obsolete|Agora installed dependency tree
+eca_node_access|experimental|Agora installed dependency tree'
+
+LEDGER_ROWS=$(printf '%s\n' "$LEDGER" | wc -l | tr -d '[:space:]')
+
+# The four values core defines, listed so an unknown value is a finding rather
+# than a silent pass. A fifth value appearing upstream must be read by a human.
+KNOWN_LIFECYCLES='stable experimental deprecated obsolete'
+NON_STABLE='experimental deprecated obsolete'
+
+# ------------------------------------- parse recipe.yml's `install:` block ----
+# Bounded at BOTH ends: from the line `install:` at column 0 to the next
+# top-level key. An unbounded parser would walk on into `config:` and count
+# whatever looked like a list item there, which is the counting failure this
+# project has paid for twice in its own task ids.
+sed -n '/^install:[[:space:]]*$/,/^[a-zA-Z_][a-zA-Z0-9_-]*:/p' "$RECIPE" \
+  | sed -n 's/^[[:space:]]*-[[:space:]]*\([a-z][a-z0-9_]*\)[[:space:]]*$/\1/p' \
+  > "$INSTALL_LIST"
+LC_ALL=C sort -u -o "$INSTALL_LIST" "$INSTALL_LIST"
+
+MODULES=$(wc -l < "$INSTALL_LIST" | tr -d '[:space:]')
+
+# -------------------------------------------- find an extension tree, maybe ---
+# Candidate roots, in the order a rig usually has them. Nothing here is
+# required to exist: this repository has none of them by design.
+ROOTS=""
+ROOTS_SEARCHED=0
+for candidate in "$@" web docroot ../web ../docroot; do
+  [ -n "$candidate" ] || continue
+  if [ -d "$candidate" ]; then
+    ROOTS="$ROOTS $candidate"
+    ROOTS_SEARCHED=$((ROOTS_SEARCHED + 1))
+  fi
+done
+
+: > "$INFO_LIST"
+if [ -n "$ROOTS" ]; then
+  # shellcheck disable=SC2086
+  find $ROOTS -type f -name '*.info.yml' 2>/dev/null > "$INFO_LIST"
+fi
+INFO_FILES=$(wc -l < "$INFO_LIST" | tr -d '[:space:]')
+
+# ---------------------------------------------- TREE half: read every info ---
+# `<name>|<lifecycle>|<path>:<line>` per extension found. The lifecycle line is
+# matched at a KEY POSITION, so the word appearing in a description is not read
+# as a declaration (I-018).
+TREE_KEYS=0
+: > "$TABLE"
+if [ "${INFO_FILES:-0}" -gt 0 ]; then
+  while IFS= read -r info; do
+    [ -n "$info" ] || continue
+    [ -r "$info" ] || { finding "$info" "0" "an .info.yml was found and is not readable; a lifecycle that cannot be read is not a lifecycle that is stable"; continue; }
+    base=${info##*/}
+    name=${base%.info.yml}
+    hit=$(grep -nE '^[[:space:]]*lifecycle[[:space:]]*:' "$info" 2>/dev/null)
+    rc=$?
+    [ "$rc" -ge 2 ] && grep_failed "$rc" '^[[:space:]]*lifecycle[[:space:]]*:' "$info"
+    if [ "$rc" -eq 0 ]; then
+      lnum=$(printf '%s\n' "$hit" | head -1 | cut -d: -f1)
+      value=$(printf '%s\n' "$hit" | head -1 | sed 's/^[0-9]*:[[:space:]]*lifecycle[[:space:]]*:[[:space:]]*//' | tr -d "\"' " | tr -d '\r')
+      TREE_KEYS=$((TREE_KEYS + 1))
+      printf '%s|%s|%s:%s\n' "$name" "$value" "$info" "$lnum" >> "$TABLE"
+    else
+      # Absent means stable - core's own default, quoted in the header. It is
+      # still a lifecycle READ: the file was opened and the key's absence is
+      # what core itself turns into `stable`.
+      TREE_KEYS=$((TREE_KEYS + 1))
+      printf '%s|stable|%s:0\n' "$name" "$info" >> "$TABLE"
+    fi
+  done < "$INFO_LIST"
+fi
+
+LIFECYCLE_KEYS=$((TREE_KEYS + LEDGER_ROWS))
+
+# -------------------------------------- the criterion, over `install:` names --
+while IFS= read -r mod; do
+  [ -n "$mod" ] || continue
+  mod_line=$(grep -nE "^[[:space:]]*-[[:space:]]*$mod[[:space:]]*$" "$RECIPE" 2>/dev/null | head -1 | cut -d: -f1)
+  rc=$?
+  [ "$rc" -ge 2 ] && grep_failed "$rc" "- $mod" "$RECIPE"
+  [ -n "${mod_line:-}" ] || mod_line=0
+
+  # LEDGER half.
+  while IFS= read -r row; do
+    [ -n "$row" ] || continue
+    lname=${row%%|*}
+    rest=${row#*|}
+    ledger_value=${rest%%|*}
+    ledger_source=${rest#*|}
+    if [ "$lname" = "$mod" ]; then
+      finding "$RECIPE" "$mod_line" \
+        "install: names \`$mod\`, recorded as \`lifecycle: $ledger_value\` ($ledger_source). Core shows a warning on the site's own status report for experimental and deprecated, and PREVENTS installation of obsolete"
+    fi
+  done <<LEDGER_ROW_LINES
+$LEDGER
+LEDGER_ROW_LINES
+
+  # TREE half.
+  if [ -s "$TABLE" ]; then
+    trow=$(grep -E "^$mod\|" "$TABLE" 2>/dev/null | head -1)
+    rc=$?
+    [ "$rc" -ge 2 ] && grep_failed "$rc" "^$mod|" "the lifecycle table"
+    if [ -n "${trow:-}" ]; then
+      tvalue=$(printf '%s' "$trow" | cut -d'|' -f2)
+      tree_at=$(printf '%s' "$trow" | cut -d'|' -f3)
+      case " $KNOWN_LIFECYCLES " in
+        *" $tvalue "*) ;;
+        *)
+          finding "$tree_at" "0" \
+            "\`$mod\` declares \`lifecycle: $tvalue\`, which is none of the four values core defines. An unrecognised lifecycle is read by a human, never waved through"
+          ;;
+      esac
+      case " $NON_STABLE " in
+        *" $tvalue "*)
+          finding "$tree_at" "0" \
+            "install: names \`$mod\` and its .info.yml declares \`lifecycle: $tvalue\`"
+          ;;
+      esac
+    fi
+  fi
+done < "$INSTALL_LIST"
+
+# ------------------------------- cross-check: the ledger against the tree -----
+# This is what keeps the ledger from rotting into prose. It runs only when a
+# tree is reachable, and it is stated in the report either way.
+CROSS_CHECKED=0
+if [ -s "$TABLE" ]; then
+  while IFS= read -r row; do
+    [ -n "$row" ] || continue
+    lname=${row%%|*}
+    rest=${row#*|}
+    ledger_value=${rest%%|*}
+    trow=$(grep -E "^$lname\|" "$TABLE" 2>/dev/null | head -1)
+    rc=$?
+    [ "$rc" -ge 2 ] && grep_failed "$rc" "^$lname|" "the lifecycle table"
+    [ -n "${trow:-}" ] || continue
+    CROSS_CHECKED=$((CROSS_CHECKED + 1))
+    tvalue=$(printf '%s' "$trow" | cut -d'|' -f2)
+    tree_at=$(printf '%s' "$trow" | cut -d'|' -f3)
+    if [ "$tvalue" != "$ledger_value" ]; then
+      finding "$tree_at" "0" \
+        "the recorded audit says \`$lname\` is \`$ledger_value\` and the tree says \`$tvalue\`. One of the two is stale; re-measure before touching either"
+    fi
+  done <<LEDGER_ROW_LINES_2
+$LEDGER
+LEDGER_ROW_LINES_2
+fi
+
+# ------------------------------------------------------------------ report --
+assert_grep_ok
+
+printf '\nno-experimental-modules - lifecycle of every extension in recipe.yml install:\n\n'
+printf 'scope:      %s `install:` block\n' "$RECIPE"
+printf 'modules examined:      %s\n' "$MODULES"
+printf 'lifecycle keys read:   %s  (tree: %s, recorded audit: %s)\n' \
+  "$LIFECYCLE_KEYS" "$TREE_KEYS" "$LEDGER_ROWS"
+printf 'ledger rows:           %s  (experimental 2, deprecated 7, obsolete 1)\n' "$LEDGER_ROWS"
+printf 'extension roots searched: %s   .info.yml files found: %s   cross-checked: %s\n' \
+  "$ROOTS_SEARCHED" "$INFO_FILES" "$CROSS_CHECKED"
+printf 'lifecycle values handled: %s (absent == stable, per InfoParserDynamic:110)\n' "$KNOWN_LIFECYCLES"
+
+if [ "${INFO_FILES:-0}" -eq 0 ]; then
+  printf 'NOTE:       NO EXTENSION TREE WAS REACHABLE, and that is the normal state of\n'
+  printf '            this repository: a site template ships zero *.info.yml and the\n'
+  printf '            agora-invariants job declares `needs: []`. The tree half of this\n'
+  printf '            check examined nothing - printed rather than left to be inferred\n'
+  printf '            from a number, because "0 from the tree" must never read as\n'
+  printf '            "0 findings from the tree". Point it at a rig to run that half:\n'
+  printf '            tests/bin/no-experimental-modules ~/agora-cms/web\n'
+fi
+
+printf 'modules in install:, by name:\n'
+sed 's/^/  /' "$INSTALL_LIST"
+
+if [ "${MODULES:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: 0 modules examined - the install: parser read nothing (I-007).\n'
+  exit 1
+fi
+if [ "${LIFECYCLE_KEYS:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: 0 lifecycle keys read against %s modules - that is a parser that never ran, not a clean tree (I-028).\n' "$MODULES"
+  exit 1
+fi
+if [ "${LEDGER_ROWS:-0}" -eq 0 ]; then
+  printf 'findings:   n/a\n'
+  printf '\nFAILURE: 0 ledger rows - a deny-list somebody emptied reports "0 findings" exactly as a clean tree does (I-028).\n'
+  exit 1
+fi
+
+M=$(count_findings)
+printf 'findings:   %s\n' "$M"
+
+if [ "$M" -gt 0 ]; then
+  printf '\n'
+  cat "$FINDINGS_FILE"
+  printf '\nFAILURE: %s lifecycle finding(s).\n' "$M"
+  exit 1
+fi
+
+printf '\nOK: %s module(s) in install:, none experimental, deprecated or obsolete.\n' "$MODULES"
+exit 0

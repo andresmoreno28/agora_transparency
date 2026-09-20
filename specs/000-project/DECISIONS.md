@@ -4531,3 +4531,84 @@ anything.
 
 **Recorded by [ejecutor], 2026-09-19. No signature is sought: this corrects a count inside a
 signed record without changing what the record decided.**
+
+
+---
+
+## D-059 · `drupal/config_guardian` enters the SBOM — the governance half of unit 005 — [ejecutor] 2026-09-20
+
+**Context in one line.** D-018 rider (a) closed the baseline SBOM and named the dependencies that
+*are* a choice — *"ECA, AI, **Config Guardian**, Webform, Charts — each get their own D-NNN when
+they arrive."* This is Config Guardian arriving, under unit 005 plan §3 and task T-0509.
+
+| Decision | Package | Constraint | Verified stable | Coverage | Maintenance on drupal.org | What it contributes |
+|---|---|---|---|---|---|---|
+| `D-059` | `drupal/config_guardian` | `^1.0` | 1.0.3 | `covered="1"` | Actively maintained · core `^10.5 \|\| ^11 \|\| ^12` | Configuration snapshots, rollback and impact analysis: the mechanism behind *"the portal audits its own configuration"* |
+
+**Method, so it can be re-derived rather than trusted.** `updates.drupal.org/release-history/
+config_guardian/current`, fetched anonymously and **re-read on 2026-09-20, the day of the commit**,
+because a release status is a claim with an expiry date and rule 1 is about today. **4 releases;
+newest `1.0.3`; newest STABLE `1.0.3`; `<security covered="1">`.** There is no `-alpha`, `-beta`,
+`-rc` or `-dev` release in the project at all, so rule 1 is satisfied without a preference being
+exercised. Licence `GPL-2.0-or-later`, read from the package's own `composer.json`.
+
+### Why this is the cheapest thing in unit 005, stated as a measurement
+
+Read at source inside the published `1.0.3` tarball, not inferred from the project page:
+
+- **`dependencies: [drupal:config, drupal:file]`** in `config_guardian.info.yml`. **Zero contrib.**
+  Both are core modules already present on every Drupal CMS install, so the SBOM grows by exactly
+  **one** package and by **zero** transitive packages. That is the whole argument for shipping the
+  governance half first: it costs one line and needs no ruling.
+- `composer.json` `require` is **`{"php": ">=8.1"}`** — no PHP library, so nothing enters `vendor/`
+  either.
+- **No web-accessible snapshot directory exists to secure.** Snapshots are a gzip-compressed blob
+  in a database table (`SnapshotManagerService::compressData()`), not files under `public://`.
+  The question was asked before the dependency was added because a transparency portal that
+  published its own configuration dump would be a disclosure incident wearing a feature's clothes.
+
+### What is configured, and the two settings that carry a reason rather than a default
+
+Shipped in `config/config_guardian.settings.yml`, complete rather than partial — see that file's
+own header for why a partial object would silently disable automatic snapshots. The two the task
+row singles out:
+
+- **`retention_days: 400`** against the module's default of 90. A transparency portal's own
+  configuration history is evidence about the portal: *"the register was public on the day the
+  law required it"* is a statement about a financial year, and 90 days cannot answer it. 400 is
+  a year plus the five weeks it takes to notice that a year has passed. ⚠️ **Two caps apply and
+  the tighter wins** — `cleanupOldSnapshots()` deletes by age first and by count second — so the
+  interval drops to **`weekly`** and `max_snapshots` to **60**, which makes the 400-day age cap
+  the operative one at about 57 snapshots and states which cap is doing the work. `daily` would
+  have produced ~365 near-identical blobs a year on a site whose configuration did not change.
+- **`exclude_patterns`** keeps the module's own two (`system.cron`, `core.extension`) and adds
+  exactly one: **`key.key.*`**. Patterns match config **object names** with glob semantics, and
+  the same list also filters what a **rollback** may write back
+  (`RollbackEngineService::filterExcludedConfigs()`) — which is what makes it a security boundary
+  rather than housekeeping. A snapshot is a database blob an export turns into a file; the `key`
+  module stores an API key's provider settings, and with the default provider the key itself, in
+  a `key.key.*` entity. Ágora ships none — asserted by `tests/bin/no-key-material` (T-0512) — but
+  a site owner who later configures a provider will have one, and **it must not enter a store
+  this package told their site to create.** The cost is stated rather than hidden: such a
+  snapshot cannot show that a key was rotated. Not leaking one beats noticing one.
+
+### The role, and why it is a role rather than a permission handed to an administrator
+
+`config/user.role.agora_governance_auditor.yml` holds **exactly two** permissions —
+`view config snapshots` and `analyze config impact` — and **none** of the module's **7**
+`restrict access: true` permissions. Counted at source in `config_guardian.permissions.yml`:
+**11 permissions, 7 restricted.** The role is what makes *"the portal audits itself"* something a
+non-administrator can witness, which is the difference between a feature and a claim.
+
+### Scope of this decision, stated so it is not read as more than it is
+
+This approves **one package, for the governance area, at `^1.0`**. It approves nothing about
+`drupal/ai`, `drupal/search_api` or a third package: those are **D-057**, **D-056** and **D-054**,
+they are unsigned, and **nothing in this decision or in wave 23 depends on any of them**.
+
+🟡 **Recorded by [ejecutor] under the standing delegation, and open to countersignature.** The
+basis for not escalating: `CLAUDE.md` rule 1 already names Config Guardian as **IN** *("stable,
+with security coverage")*, D-018 rider (a) already names it as a dependency that will get its own
+D-NNN, and unit 005 plan §3 lists it under **IN** with no open question attached. The three items
+`open-questions.md` reserves for [andres] are D-054, D-055 and D-057; this is none of them. If he
+wants this countersigned rather than delegated, the line to sign is the table row above.

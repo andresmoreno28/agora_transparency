@@ -80,6 +80,31 @@
 #          claims-match-sources binds the structural group count too - so the
 #          checks land in the EXISTING group and only `checks` moves.  49 -> 51
 #
+# UNIT 005 WAVE 23 (2026-09-20) takes it from 51 to 60, and from FIFTEEN
+# invariants to EIGHTEEN. Three new groups, three checks each, written out term
+# by term so the total is stated rather than inferred:
+#   T-0512 G16 no-key-material, 3 checks - exit, files scanned, and the RULE
+#          LIST's own length. The third is the G7/G13/G14 guard arriving in a
+#          new place: a rule list somebody empties reports "0 findings" over any
+#          tree at all (I-028).                                        51 -> 54
+#   T-0513 G17 no-experimental-modules, 3 checks - exit, MODULES EXAMINED, and
+#          LIFECYCLE KEYS READ. The last two are G14's views-and-displays
+#          argument exactly: the first comes from the `install:` parser and the
+#          second from the lifecycle resolver, so "8 modules, 0 findings" from a
+#          resolver that read nothing is refused here too.             54 -> 57
+#   T-0514 G18 no-skip-on-missing-key, 3 checks - exit, files scanned, and the
+#          SKIP-CONSTRUCT DENY-LIST's length. Deliberately NOT `skip constructs
+#          found`, which is legitimately 0 today: pinning that positive would
+#          invert the invariant. The credential-term list's length is a FATAL
+#          inside the script, the G14 way, so the count moves by 3 not 4.
+#                                                                      57 -> 60
+#
+# All three were watched FAILING before they were trusted, and G16's falsifying
+# run is the one worth quoting: on a planted `config/key.key.openai.yml` holding
+# `key_value: ''`, no-key-material exits 1 with 3 findings and `no-secrets`
+# exits 0. That is the reason G16 is a separate invariant and not an extension
+# of G3, measured rather than argued.
+#
 # THE LINE BELOW IS MACHINE-READ, and it exists because the arithmetic above did
 # not survive being prose. tests/bin/claims-match-sources compares it against the
 # figure CLAUDE.md's Gate A block states for this runner, and against the number
@@ -88,10 +113,10 @@
 # runner printed 49 and this header said so - the two files that agreed were the
 # two nobody had to open.
 #
-# `invariants=15` is G1..G15; G0 is the preflight and is not an invariant. The
-# total CLAUDE.md quotes is across BOTH runners, so it is this 15 plus wave 1's.
+# `invariants=18` is G1..G18; G0 is the preflight and is not an invariant. The
+# total CLAUDE.md quotes is across BOTH runners, so it is this 18 plus wave 1's.
 #
-# GATE-CLAIM: checks=51 invariants=15
+# GATE-CLAIM: checks=60 invariants=18
 #
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
@@ -642,6 +667,115 @@ else
   check 'generate-demo-media present'         "$(trunc "$GEN" 24)" 'present'
   check_positive 'generate-demo-media (files verified)' ''
   check_positive 'generate-demo-media (carried, digest-verified)' ''
+fi
+
+# ----------------------------------------------- G16 - no-key-material (T-0512) --
+# Unit 005's first invariant, and the one whose subject is a defect tests/bin/
+# no-secrets STRUCTURALLY CANNOT SEE. Measured rather than argued, on the same
+# planted file - `config/key.key.openai.yml` carrying `key_value: ''`:
+#   no-key-material  exit 1, 3 findings
+#   no-secrets       exit 0
+# `no-secrets` matches a value of REAL LENGTH (I-018), and an empty key_value is
+# not a secret and IS a defect: it means a key entity was exported from a rig,
+# and the next export on a keyed site fills it in.
+#
+# THREE checks. The third is the rule-list length, for the reason G7, G13 and
+# G14 give about their deny-lists: a rule list somebody empties reports
+# "0 findings" over any tree at all (I-028). Watched failing in five directions
+# before it was trusted - a real-shaped key, an EMPTY key_value, a key.key.*
+# with no key_value at all, a key.key.<name> reference in recipe.yml, and the
+# same text commented out (skipped, counted, and printed as skipped).
+group 'G16 - no-key-material'
+INV=tests/bin/no-key-material
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary lines: "scanned: N file(s)" and "patterns: N rule(s)".
+  CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  PAT_CNT=$(extract_count "$INV_OUT" 'patterns:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scope|scanned|patterns|key entities|key_value|provider key|findings):' | tr '\n' ' ')"
+  check 'no-key-material (exit)'           "$INV_RC" '0'
+  check_positive 'no-key-material (files scanned)' "$CNT"
+  check_positive 'no-key-material (rules)' "$PAT_CNT"
+else
+  check 'no-key-material present'          "$(trunc "$INV" 24)" 'present'
+  check_positive 'no-key-material (files scanned)' ''
+  check_positive 'no-key-material (rules)' ''
+fi
+
+# --------------------------------------- G17 - no-experimental-modules (T-0513) --
+# Closes a gap `sbom-check` cannot reach: it asks updates.drupal.org about a
+# PROJECT, and `lifecycle` is declared per EXTENSION inside a release that may
+# itself be stable and covered. `drupal/ai` 1.4.9 is the case - a stable,
+# covered release in which 8 of 16 shipping extensions are non-stable.
+#
+# ⚠️ THE TWO DENOMINATORS ARE NOT ONE QUESTION ASKED TWICE, which is the same
+# argument G14 makes about views and displays. `modules examined` comes from
+# the `install:` parser; `lifecycle keys read` comes from the lifecycle
+# resolver. N > 0 with L == 0 is a resolver that never ran, not a clean tree
+# (I-028), and it is exactly the shape of green this group refuses.
+#
+# ⚠️ AND L IS THE SUM OF TWO HALVES, printed apart by the invariant itself. The
+# tree half needs an extension tree, which this repository does not have and
+# must not have (zero *.info.yml, `needs: []`), so it contributes 0 here and
+# says so in words rather than leaving a reader to infer it from a digit. The
+# recorded-audit half always runs and is cross-checked against a tree whenever
+# one is reachable - watched failing on a tree that CONTRADICTED the audit,
+# which is what stops that half rotting into prose.
+#
+# `ledger rows` is asserted as a FATAL inside the invariant rather than as a
+# fourth check here, exactly as G14 does with its deny-list, so the count moves
+# by 3 and not by 4.
+group 'G17 - no-experimental-modules'
+INV=tests/bin/no-experimental-modules
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary lines: "modules examined: N" and "lifecycle keys read: N".
+  MOD_CNT=$(extract_count "$INV_OUT" 'modules examined:[[:space:]]*[0-9]+')
+  LIFE_CNT=$(extract_count "$INV_OUT" 'lifecycle keys read:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scope|modules examined|lifecycle keys read|ledger rows|extension roots|findings):' | tr '\n' ' ')"
+  check 'no-experimental-modules (exit)'   "$INV_RC" '0'
+  check_positive 'no-experimental-modules (modules examined)' "$MOD_CNT"
+  check_positive 'no-experimental-modules (lifecycle keys read)' "$LIFE_CNT"
+else
+  check 'no-experimental-modules present'  "$(trunc "$INV" 24)" 'present'
+  check_positive 'no-experimental-modules (modules examined)' ''
+  check_positive 'no-experimental-modules (lifecycle keys read)' ''
+fi
+
+# -------------------------------------- G18 - no-skip-on-missing-key (T-0514) --
+# Either a test needs no key, or it is not a test - it is a signed manual
+# protocol. A skipped test is indistinguishable from a passing one in every
+# summary line anyone reads, and unit 005 is the unit where the temptation is
+# strongest.
+#
+# ⚠️ THE INVARIANT PRINTS `skip constructs found: 0` RATHER THAN OMITTING IT,
+# and that is the row's own emphasis: a repository with no skips and a parser
+# that found nothing produce byte-identical silence. The number checked HERE is
+# the deny-list length instead, because THAT is the one whose emptying would
+# make the zero meaningless - `skip constructs found` is legitimately 0 today
+# and pinning it positive would invert the invariant.
+#
+# The credential-term list's length is a FATAL inside the invariant, the G14
+# way, so the count moves by 3 and not by 4. Watched failing on a
+# `markTestSkipped` guarded by `getenv('AGORA_AI_API_KEY')`, and watched STAYING
+# GREEN on a `markTestSkipped` guarded by `PHP_INT_SIZE` - it discriminates,
+# rather than banning every skip, which is what plan.md 5.3 asked for.
+group 'G18 - no-skip-on-missing-key'
+INV=tests/bin/no-skip-on-missing-key
+if [ -x "$INV" ]; then
+  run_invariant "$INV"
+  # own summary lines: "scanned: N file(s)" and
+  # "skip constructs searched for: N".
+  CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  SKIP_PAT=$(extract_count "$INV_OUT" 'skip constructs searched for:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scope|scanned|excluded|skip constructs|credential terms|findings):' | tr '\n' ' ')"
+  check 'no-skip-on-missing-key (exit)'    "$INV_RC" '0'
+  check_positive 'no-skip-on-missing-key (files scanned)' "$CNT"
+  check_positive 'no-skip-on-missing-key (skip constructs searched for)' "$SKIP_PAT"
+else
+  check 'no-skip-on-missing-key present'   "$(trunc "$INV" 24)" 'present'
+  check_positive 'no-skip-on-missing-key (files scanned)' ''
+  check_positive 'no-skip-on-missing-key (skip constructs searched for)' ''
 fi
 
 # ----------------------------------------------------------------- summary ---

@@ -154,6 +154,67 @@ final class RolesAndPermissionsTest extends KernelTestBase {
         'view any unpublished content',
       ],
     ],
+    // T-0511, D-059. The third role, and the first belonging to an area other
+    // than `base`. It exists so that "the portal audits its own configuration"
+    // is something a NON-administrator can witness: an administrator already
+    // holds `view config snapshots` implicitly, so a product claim resting on
+    // that alone would be a claim about the administrator, not about the
+    // portal. See config/user.role.agora_governance_auditor.yml for why the
+    // two unrestricted permissions it does NOT hold were declined.
+    'agora_governance_auditor' => [
+      'label' => 'Governance auditor',
+      'permissions' => [
+        'analyze config impact',
+        'view config snapshots',
+      ],
+    ],
+  ];
+
+  /**
+   * The seven `restrict access: true` permissions Config Guardian declares.
+   *
+   * COUNTED AT SOURCE, in `config_guardian.permissions.yml` inside the
+   * published 1.0.3 tarball, on 2026-09-20: ELEVEN permissions, SEVEN of them
+   * carrying `restrict access: true`. They are listed here BY NAME rather than
+   * as a number for the reason T-0511's criterion gives in as many words — a
+   * count would still pass if upstream renamed one, and a role that quietly
+   * acquired a renamed restricted permission is exactly the drift this guard
+   * exists to refuse.
+   *
+   * ⚠️ THE LIST'S OWN LENGTH IS ASSERTED BELOW, because a deny-list somebody
+   * shortens passes by construction: zero restricted permissions checked
+   * against a role reports "0 held" precisely as seven do (I-028). That is the
+   * same guard `tests/bin/no-boilerplate`, `no-real-people` and
+   * `no-varchar-aggregate` put on their own deny-lists, arriving in PHP.
+   */
+  private const CONFIG_GUARDIAN_RESTRICTED = [
+    'administer config guardian',
+    'delete config snapshots',
+    'export configuration',
+    'import config snapshots',
+    'import configuration',
+    'restore config snapshots',
+    'synchronize configuration',
+  ];
+
+  /**
+   * The two unrestricted Config Guardian permissions deliberately declined.
+   *
+   * These are the interesting half: granting either would have been free, and
+   * neither is restricted, so nothing upstream would have objected.
+   *  - `create config snapshots` lets its holder fill the snapshot store on
+   *    demand, and both caps in `config_guardian.settings.yml` delete the
+   *    OLDEST automatic snapshots first — so an auditor with this permission
+   *    can push the history they exist to read off the end of the table.
+   *  - `export config snapshots` returns a file containing the site's entire
+   *    active configuration, which is the largest single disclosure surface
+   *    this module has. Reading the dashboard needs none of it.
+   * Asserted as an ABSENCE, because least privilege is only real when what was
+   * left out is checked for.
+   */
+  private const CONFIG_GUARDIAN_DECLINED = [
+    'create config snapshots',
+    'export config snapshots',
   ];
 
   /**
@@ -320,9 +381,103 @@ final class RolesAndPermissionsTest extends KernelTestBase {
     // Asserted, not printed, for the reason the class docblock gives. The
     // matching PRINTED figures come from tests/bin/config-inventory, so the two
     // sides can be compared by a human reading a CI log.
-    $this->assertSame(2, $roles_inspected, 'This template creates exactly two roles; see the docblock for why publisher is not the third.');
+    // ⚠️ THREE SINCE 2026-09-20, NOT TWO, and the docblock above still explains
+    // why `publisher` is not among them — that argument is untouched. The third
+    // role belongs to the `governance` area rather than to `base`:
+    // `agora_governance_auditor` (T-0511, D-059). 39 + 2 = 41.
+    $this->assertSame(3, $roles_inspected, 'This template creates exactly three roles: two for the base content model and one for governance.');
     $assertions++;
-    $this->assertSame(39, $permissions_inspected, 'The two shipped roles grant 39 permissions between them.');
+    $this->assertSame(41, $permissions_inspected, 'The three shipped roles grant 41 permissions between them.');
+    $assertions++;
+
+    $this->assertGreaterThan(0, $assertions, 'This method must actually assert something.');
+  }
+
+  /**
+   * Tests the governance auditor against Config Guardian's own permission list.
+   *
+   * T-0511. The equality half of the criterion is already carried by the method
+   * above, which asserts every shipped role's permission set in BOTH
+   * directions. What this adds is the half equality cannot express: that the
+   * role holds NONE of the seven permissions Config Guardian declares
+   * `restrict access: true`, **listed by name**, so a restricted permission
+   * that upstream renames or adds cannot slip onto this role unnoticed.
+   *
+   * ⚠️ WHY A NAMED LIST AND NOT A COUNT. A count passes unchanged if upstream
+   * renames `restore config snapshots`; the role would then be checked against
+   * a permission that no longer exists while the one that does goes unexamined.
+   * The seven names are read out of `config_guardian.permissions.yml` in the
+   * published 1.0.3 and re-checked when the constraint moves.
+   *
+   * ⚠️ AND THE LIST'S OWN LENGTH IS ASSERTED FIRST. A deny-list emptied by an
+   * edit reports "0 restricted permissions held" exactly as a correct one does
+   * (I-028), so the denominator is checked before it is used — the same shape
+   * the shell invariants put on their deny-lists, and the same shape the method
+   * above puts on `$shipped`.
+   */
+  public function testGovernanceAuditorHoldsNoRestrictedPermission(): void {
+    $storage = new FileStorage(dirname(__FILE__, 4) . '/config');
+    $assertions = 0;
+
+    // -- The denominators, before anything is concluded from them ------------
+    $this->assertCount(7, self::CONFIG_GUARDIAN_RESTRICTED, 'Config Guardian 1.0.3 declares seven `restrict access: true` permissions; a shorter list here would check less and still report "0 held".');
+    $assertions++;
+    $this->assertCount(2, self::CONFIG_GUARDIAN_DECLINED, 'Two unrestricted Config Guardian permissions are deliberately declined; an empty list would assert nothing.');
+    $assertions++;
+    $this->assertSame(
+      self::CONFIG_GUARDIAN_RESTRICTED,
+      array_values(array_unique(self::CONFIG_GUARDIAN_RESTRICTED)),
+      'The restricted list must hold seven DISTINCT names; a duplicate would inflate the count while narrowing the check.',
+    );
+    $assertions++;
+
+    $data = $storage->read('user.role.agora_governance_auditor');
+    $this->assertIsArray($data, 'user.role.agora_governance_auditor must be shipped in config/; a role nobody ships cannot be audited.');
+    $assertions++;
+
+    $permissions = $data['permissions'];
+    $this->assertNotEmpty($permissions, 'The auditor must hold at least one permission; a role granting nothing witnesses nothing.');
+    $assertions++;
+
+    // -- The criterion: equality, then zero of the seven, by name ------------
+    $expected = self::ROLES['agora_governance_auditor']['permissions'];
+    sort($expected);
+    $actual = $permissions;
+    sort($actual);
+    $this->assertSame($expected, $actual, 'The auditor must grant exactly `analyze config impact` and `view config snapshots`, compared by equality rather than containment.');
+    $assertions++;
+
+    $held_restricted = [];
+    foreach (self::CONFIG_GUARDIAN_RESTRICTED as $permission) {
+      $this->assertNotContains(
+        $permission,
+        $permissions,
+        "The auditor must not hold `$permission`, which Config Guardian declares `restrict access: true`. An auditor who can restore, delete, import or synchronise configuration is not auditing it.",
+      );
+      $assertions++;
+      if (in_array($permission, $permissions, TRUE)) {
+        $held_restricted[] = $permission;
+      }
+    }
+    $this->assertSame([], $held_restricted, 'The auditor holds zero of the seven restricted permissions.');
+    $assertions++;
+
+    // -- The two unrestricted ones declined on purpose, asserted as absences --
+    foreach (self::CONFIG_GUARDIAN_DECLINED as $permission) {
+      $this->assertNotContains(
+        $permission,
+        $permissions,
+        "The auditor must not hold `$permission`: it is unrestricted, so nothing upstream forbids it, and it is declined here for the reason recorded beside the constant.",
+      );
+      $assertions++;
+    }
+
+    // -- And the role must be what it says it is -----------------------------
+    $this->assertSame('agora_governance_auditor', $data['id'], 'The role must declare its own machine name.');
+    $assertions++;
+    $this->assertFalse($data['is_admin'], 'The auditor must not be an admin role; an is_admin role holds everything implicitly and the list above would prove nothing.');
+    $assertions++;
+    $this->assertSame(['config_guardian'], $data['dependencies']['module'], 'The role must depend on config_guardian, or it imports into a site where its two permissions do not exist and disappears in silence (I-086).');
     $assertions++;
 
     $this->assertGreaterThan(0, $assertions, 'This method must actually assert something.');

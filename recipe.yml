@@ -81,7 +81,11 @@ recipes:
   # -- area: ai -----------------------------------------------------------------
   # (empty in v1; filled by unit 005 — cited assistant, degrades without an API key)
   # -- area: governance ---------------------------------------------------------
-  # (empty in v1; filled by unit 005 — Config Guardian)
+  # STAYS EMPTY, and that is a measurement rather than an omission. Config Guardian
+  # ships no recipe of its own — the published 1.0.3 tarball contains no
+  # `recipe.yml` at any path — so there is nothing to apply here. The module is
+  # declared in `install:` below and configured in `config/`. The label is kept
+  # because `recipes:` is where a future governance sub-recipe would go.
 
 # A list of modules and themes to install.
 install:
@@ -152,7 +156,38 @@ install:
   # -- area: ai -----------------------------------------------------------------
   # (empty in v1; filled by unit 005)
   # -- area: governance ---------------------------------------------------------
-  # (empty in v1; filled by unit 005)
+  # Config Guardian: configuration snapshots, rollback and impact analysis.
+  # THE MECHANISM BEHIND THE PRODUCT CLAIM "the portal audits its own
+  # configuration", which is why it is a dependency rather than a suggestion.
+  #
+  # Declared in `composer.json` as `drupal/config_guardian: ^1.0` with its SBOM
+  # line at D-059 (CLAUDE.md rule 2). Verified at source on the day it was
+  # added: 4 releases, newest STABLE 1.0.3, `<security covered="1">`, core
+  # `^10.5 || ^11 || ^12`, licence GPL-2.0-or-later. Its `info.yml` declares
+  # `dependencies: [drupal:config, drupal:file]` — two CORE modules — so this
+  # line grows the SBOM by one package and by zero transitive packages. That is
+  # the whole reason the governance half of unit 005 ships before the half that
+  # needs a key, a provider and a ruling.
+  #
+  # ⚠️ THIS LINE IS WHAT MAKES `config/user.role.agora_governance_auditor.yml`
+  # IMPORTABLE, and the ordering is load-bearing rather than incidental.
+  # `RecipeRunner::processRecipe()` runs `processInstall()` (line 56 on 11.x)
+  # before `processConfiguration()` (line 57), so the module — and therefore the
+  # two permissions the role names — exist by the time this recipe's own config
+  # is created. A role naming a permission whose module is absent does not fail
+  # loudly; it fails to import and the install looks clean (I-086).
+  #
+  # ⚠️ AND IT IS WHAT MAKES `config/config_guardian.settings.yml` TAKE EFFECT.
+  # `processInstall()` is handed this recipe's config storage wrapped in a
+  # `RecipeOverrideConfigStorage`, whose documented job is to "allow the recipe
+  # to override simple configuration from the modules" — so our settings object
+  # replaces the module's `config/install` copy AT install time, in one state
+  # rather than two. Read at source in core 11.x, not inferred from the key
+  # names.
+  #
+  # No `?` prefix and no optionality anywhere: the module is in `require`, so a
+  # site that cannot install it is a site whose Composer install already failed.
+  - config_guardian
 
 config:
   # Ensures that this recipe will not conflict with any existing configuration. In
@@ -668,7 +703,21 @@ config:
     # -- area: ai ---------------------------------------------------------------
     # (empty in v1; filled by unit 005)
     # -- area: governance -------------------------------------------------------
-    # (empty in v1; filled by unit 005)
+    # STAYS EMPTY DELIBERATELY, and the alternative was real enough to be worth
+    # a sentence. Config Guardian's settings could have been set here with
+    # `simpleConfigUpdate`, the way `klaro.texts` above is. They are not,
+    # because an action runs AFTER the module has already created its own
+    # defaults — so the site would carry the module's 90-day retention for the
+    # length of one request and Ágora's for every request afterwards. Shipping
+    # `config/config_guardian.settings.yml` instead makes the override happen
+    # during module install, in one state rather than two.
+    #
+    # `klaro.texts` is not the same case and the difference is the rule: that
+    # object is created by a recipe listed in `recipes:` above, which has
+    # already run, so an override at install time was never available to it.
+    # An action is the right tool for configuration somebody ELSE created; a
+    # file in `config/` is the right tool for configuration that arrives with a
+    # module this recipe installs.
 
 extra:
   recipe_installer_kit:
