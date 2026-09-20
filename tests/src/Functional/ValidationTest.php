@@ -190,6 +190,33 @@ class ValidationTest extends BrowserTestBase {
   private const VIEW_CONTAINER = 'div[class*="js-view-dom-id-"]';
 
   /**
+   * The view that IS the page, as opposed to any view this template PLACES.
+   *
+   * ⚠️ `VIEW_CONTAINER` ALONE WAS ONLY EVER UNAMBIGUOUS BY ACCIDENT, and
+   * T-1310 is what revealed it. Views writes `js-view-dom-id-…` on every view
+   * it renders, so the bare selector means "the view on this page" only while
+   * a page carries exactly one. `/publications` now carries TWO - the
+   * register, and the service-area cards placed beside it - and Mink's text
+   * assertions take the FIRST match, which after a `weight: -10` placement is
+   * the cards.
+   *
+   * IT WAS WATCHED FAILING RATHER THAN REASONED ABOUT. Pipeline `969078`,
+   * commit `7836bc3`: `ElementTextException: The text "Nothing has been
+   * published yet." was not found in the text of the element matching css
+   * "div[class*=js-view-dom-id-]"`, at `::assertEmptyState()`, with the other
+   * eight jobs green and both phpunit jobs red on the same assertion. That is
+   * NOT the MySQL-gone-away shape (which reds one database and not the
+   * other); it was this package's own defect, found where it should be.
+   *
+   * The anchor is the main content block because that is a statement rather
+   * than a workaround: the view that IS the page renders inside it, and a
+   * view this template places beside the page does not. `recipe.yml` imports
+   * `block.block.agora_theme_content` by name, so the id exists on every
+   * clean install and not merely on a developer's rig.
+   */
+  private const PAGE_VIEW = '#block-agora-theme-content ' . self::VIEW_CONTAINER;
+
+  /**
    * The class the art. 8.1.a) breakdown declares on its own table (T-1103).
    *
    * It is a DECLARATION, not a style hook, in the same sense as the theme's
@@ -1682,9 +1709,12 @@ class ValidationTest extends BrowserTestBase {
     $assert = $this->assertSession();
     $this->drupalGet($path, $options);
     $assert->statusCodeEquals(200);
-    $assert->elementExists('css', self::VIEW_CONTAINER);
-    $assert->elementTextContains('css', self::VIEW_CONTAINER, $empty_text);
-    $assert->elementNotExists('css', self::VIEW_CONTAINER . ' ' . self::REGISTER_TABLE);
+    // EXACTLY ONE, not "at least one": this is the assertion T-1310 broke,
+    // and a count is what turns the ambiguity it exposed into a failure
+    // instead of a silently wrong first match. See PAGE_VIEW.
+    $assert->elementsCount('css', self::PAGE_VIEW, 1);
+    $assert->elementTextContains('css', self::PAGE_VIEW, $empty_text);
+    $assert->elementNotExists('css', self::PAGE_VIEW . ' ' . self::REGISTER_TABLE);
   }
 
   /**
