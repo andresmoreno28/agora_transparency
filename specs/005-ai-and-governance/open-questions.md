@@ -128,3 +128,84 @@ units — which is why it can be signed under standing delegation.
 **[ejecutor] may sign under standing delegation:** D-058 now; D-056 once T-0502 has measured it;
 and **wave 22 in full**, because it is measurement only and its entire purpose is to put numbers
 in front of decisions 1-3.
+
+---
+
+## Amendment · what wave 22 measured, and what it removes from [andres]'s list — 2026-09-20
+
+Measurements: `research/2026-09-20-wave-22-measurements.md`. Read it before these options; three
+of them are repriced and one **signature item disappears entirely**.
+
+### 🔴 `project_browser` is NOT beta, and D-057 option C was mispriced on that error
+
+**Measured at source 2026-09-20**: `project_browser` has **33 releases, newest `2.1.4`, newest
+STABLE `2.1.4`, `security covered="1"`**, six stable releases deep — and **both published site
+templates require it at `^2.1.3`**. The claim that it is `^2.1-beta3` came from the starter kit
+and was never re-read.
+
+**Consequences, and the second is the one that matters to [andres]:**
+1. **Option C's only stated cost is gone.** It was *"the recommendation mechanism is itself
+   unstable"*. It is not. With that removed, C is **what the ecosystem actually does, at zero SBOM
+   growth**.
+2. ⚠️ **Item 5 of the signature list above names two rule-1 exception candidates. `project_browser`
+   is NOT one of them — no signature is needed for it.** `ai_search` still is, and the audit
+   sharpens what that exception would mean: it is the gateway to a backend requiring an alpha or
+   beta vector-database provider, so **an exception for `ai_search` is an exception for the whole
+   unstable chain**, not for one module.
+
+### D-054 — the middle path is gone, and that is the real change
+
+The recommendation stays **B**, but its argument is now harder and its alternative is now better
+evidenced, which is worth stating in the same breath.
+
+**Harder, for B:** `RagAction` **cannot work over `search_api_db`** — read at source, and it fails
+in two different ways. `search_api` 8.x-1.41 contains `drupal_entity_id` **zero times** and never
+sets an item key named `content`; the sole producer of both is `ai_search`'s own backend, which
+requires a VDB provider, and **every VDB provider has no stable release at all**. ⚠️ **The two
+modes fail differently and the silent one is the dangerous one**: `rendered` raises, while
+**`chunks` fails silently** — it appends separators and zero retrieved text and hands that to the
+model as context. **That is the fabrication path plan §4 exists to prevent, arriving by default.**
+So option A is no longer *"lose a differentiator"*; it is **the option under which nothing in the
+box prevents an ungrounded answer.**
+
+**Better, for A:** both published site templates ship **no AI configuration at all** — 0 of 613
+and 0 of 559 config objects. That is the strongest evidence A has ever had, and it is precedent
+rather than permission.
+
+⚠️ **What the measurements remove is the middle path.** *"Use the stock RAG action and skip the
+module"* is not available. The choice is between **normal** and **differentiated**, and it stays
+[andres]'s.
+
+### D-056 — moves substantially, and is now coupled to D-054
+
+The recommendation was *"B, conditional on T-0502 — if `RagAction` breaks over `search_api_db`,
+B's main argument evaporates."* **At source it breaks.** B does not fall, because a better
+argument arrived: both published templates ship `search_api` + `search_api_db` with an enabled
+index, and `haven`'s enables **`entity_status`** — the stock mechanism for T-0516's published-only
+boundary — and **`rendered_item`**, which is what makes D-055's option B reachable **from
+retrieval rather than from the model**. So A and B now cost the same in retrieval code, and B buys
+ranking, a stock filter and precedent for one SBOM line.
+
+⚠️ **But D-056 is now coupled to D-054: with no module there is nowhere to put retrieval code
+either.** And ⚠️ **do not sign D-056 until a rig confirms the predicted failure** — the whole
+argument rests on a prediction a run can falsify, and this project has been wrong twice about
+exactly this kind of reasoning-from-source.
+
+### The lifecycle audit is four times worse than yesterday's note, and it was a denominator problem
+
+**8 of `drupal/ai` 1.4.9's 16 shipping extensions are non-stable — exactly half** (7 deprecated,
+1 experimental), over **47 `.info.yml` examined, 0 unreadable, 9 carrying a `lifecycle` key**.
+Yesterday's note said two. ⚠️ **The other six were not wrong, they were UNLOOKED-FOR: a targeted
+read cannot produce a denominator**, which is this project's own I-045 arriving in a new place.
+
+**R13 is an ABSENCE and it was not upgraded into an answer.** The contrib security-advisory policy
+contains the word *"experimental"* **zero times** — its unit of coverage is the **release**. Core's
+experimental policy does state an inheritance principle, but it is about core and sits under a
+heading with no counterpart in the four-valued contrib `lifecycle` key. Both quoted with URLs in
+the measurements file. **"I could not find a clause" is the finding.**
+
+⚠️ **And T-0513's scope was wrong in the scaffold: `lifecycle` has a FOURTH value, `obsolete`.**
+Ágora installs 32 contrib projects today; **2 non-stable exist in the tree** —
+`automatic_updates_extensions` (**obsolete**) and `eca_node_access` (experimental) — and
+**neither is in any `install:` list**, so the invariant returns 0 today as a measurement rather
+than by construction.
