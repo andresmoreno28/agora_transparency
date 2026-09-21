@@ -449,7 +449,290 @@ if noisy:
   fi
   return "$_rc"
 }
-trap report_mirror EXIT
+
+# ------------------------------------------------------------------ THE TAGS --
+#
+# WHY A SCRIPT ABOUT HEAD ALSO READS PIPELINES THAT ARE NOT ON A BRANCH.
+#
+# Every place this file derived a ref took the BRANCH: the mirror section above and
+# the supersession check below both call `git rev-parse --abbrev-ref HEAD`, and
+# tests/bin/mirror-streak is branch-scoped too. So a pipeline whose ref is a TAG was
+# read by NOTHING in either repository, and that is a property of the tooling rather
+# than a property of tags.
+#
+# WHAT IT COST, measured from the API and not imagined. agora_theme pipeline 969368,
+# ref 1.2.0, sha 4f82307: four of its ten jobs - cspell, nightwatch, phpcs, stylelint
+# - died on `error: 429` and `exit code 128` within four seconds, having never
+# cloned, so nothing was measured. It stayed RED FOR 23 HOURS while the IDENTICAL
+# COMMIT was green on the branch: pipeline 969322, ref 1.x, same sha 4f82307. Same
+# bytes, two refs, two answers. What ended it was a person going to look before
+# writing release notes, not anything reporting it.
+#
+# WHY A TAG RED IS WORSE THAN A BRANCH RED. A tag pipeline is what sits beside a
+# PUBLISHED RELEASE on drupal.org, which is the one page a marketplace reviewer
+# opens. A branch red is seen by the people who push; a tag red is seen by strangers.
+#
+# THE TAG ANALOGUE OF THE STREAK IS THE AGE, and it is a different question from the
+# one T-0623 answered. The mirror needed a streak because nine reds on nine commits
+# were each individually unremarkable and nobody ever held the number nine. A tag has
+# exactly ONE pipeline, so there is no streak to count. What nobody held during those
+# 23 hours was HOW LONG IT HAD BEEN RED, and whether it was the NEWEST tag. Both are
+# printed, and only for a tag that is not green, because a duration beside a pass is
+# noise.
+#
+# IT DOES NOT TOUCH THE EXIT STATUS, for the mirror reason with a sharper edge: the
+# remedy for a red tag pipeline is a RETRY, which is a human action on a ref the
+# current commit is not even on. Failing the gate on it would be an unfixable red,
+# exactly what D-023(5) refuses. Falsified in both directions rather than asserted -
+# a red tag still exits 0 over a green branch pipeline, and a green tag still exits 1
+# over a branch pipeline that measured nothing.
+#
+# THE DECLARED JOB LIST IS DELIBERATELY NOT APPLIED TO TAGS, and that is a
+# measurement rather than a preference. Of the 11 tags agora_theme carries, EIGHT ran
+# NINE jobs and three ran ten: `phpunit` joined that project on 2026-09-02 and tags
+# 1.0.0 through 1.0.7 predate it. Comparing a historical tag against the list
+# declared TODAY would report MISSING JOB: phpunit on eight of eleven tags - every
+# one correct history, not one of them fixable by anybody. A section that prints
+# eight findings nobody can act on is a section people learn to skip, which is the
+# defect this whole file exists to close. So a tag pipeline gets the REST of
+# D-023(5) - read from the API, jobs above zero, at or above the floor, every job
+# success, every job blocking - and the job COUNT is printed so a reader can see that
+# history rather than be alarmed by it.
+#
+# THE BOUND IS A CONSTANT AND NOT AN OPTION, unlike --mirror-page above, and the
+# asymmetry is the reason. Widening the mirror page only ever shows MORE runs, so it
+# is safe on a command line; a tag bound works the other way, and a `--tag-limit 1`
+# would be a one-word way to make an older red tag vanish from the output of the tool
+# written to find it. Lowering it has to be an edit to a versioned file that a
+# reviewer can see. FIVE is defensible rather than arbitrary: it is more than one, so
+# a red tag is not hidden behind a newer green one, and it bounds the work at 1 + 2N
+# requests however many releases a project accumulates. Every tag it does NOT open is
+# named, because a bound that is silent about what it skipped reads as coverage.
+TAG_LIMIT=5
+TAGS_REPORTED=0
+
+report_tags() {
+  [ "$TAGS_REPORTED" -eq 1 ] && return 0
+  TAGS_REPORTED=1
+
+  printf '\ntags (drupalcode) - INFORMATIVE. It does not affect the exit status: the verdict\n'
+  printf 'above is computed from the job list for HEAD and nothing else. The remedy for a\n'
+  printf 'red tag pipeline is a retry, which no commit can perform.\n'
+
+  if ! command -v python3 >/dev/null 2>&1; then
+    printf '  NOT READ - python3 is not on PATH, so the tag reader cannot run. That is not\n'
+    printf '             "the tags are fine"; it is "nothing here looked".\n'
+    return 0
+  fi
+
+  # Anonymous on purpose. The job LIST needs no credential - only /jobs/<id>/trace
+  # answers 401 - so nothing here wires a token into anything.
+  TAG_API="$API" TAG_PROJECT="$PROJECT" TAG_LIMIT="$TAG_LIMIT" \
+  TAG_FLOOR="$FLOOR" TAG_EXPECTED="$EXPECTED" python3 -c '
+import datetime, json, os, sys, urllib.error, urllib.parse, urllib.request
+# cspell:ignore fromisoformat isinstance urlopen
+
+PAD = " " * 19    # detail under a tag row, aligned past the sha column
+SUB = " " * 14    # continuation under NOT EXAMINED:
+NOTE = " " * 6    # continuation under note:
+
+def out(line):
+    sys.stdout.write("  " + line + "\n")
+
+API = os.environ["TAG_API"]
+PROJECT = os.environ["TAG_PROJECT"]
+LIMIT = int(os.environ["TAG_LIMIT"])
+FLOOR = int(os.environ["TAG_FLOOR"])
+DECLARED = len([n for n in os.environ.get("TAG_EXPECTED", "").split(chr(10)) if n])
+
+# Same list the verdict body uses. `canceling` is in it because GitLab cancellation
+# is a two-step state and treating the first step as terminal is a known defect.
+NOT_TERMINAL = ("running", "pending", "created", "waiting_for_resource",
+               "preparing", "canceling")
+
+def get(path):
+    url = API + "/" + PROJECT + path
+    try:
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status != 200:
+                return None, "HTTP %s" % resp.status
+            return json.load(resp), None
+    except urllib.error.HTTPError as exc:
+        return None, "HTTP %s" % exc.code
+    except Exception as exc:
+        return None, "%s: %s" % (type(exc).__name__, exc)
+
+NOW = datetime.datetime.now(datetime.timezone.utc)
+
+def aged(stamp):
+    text = (stamp or "").strip()
+    if not text:
+        return "(no timestamp recorded)"
+    try:
+        when = datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except Exception:
+        return text
+    hours = (NOW - when).total_seconds() / 3600.0
+    if hours < 48:
+        return "%s (%.0f hours ago)" % (text, hours)
+    return "%s (%.0f days ago)" % (text, hours / 24.0)
+
+tags, why = get("/repository/tags?per_page=100&order_by=updated&sort=desc")
+if tags is None:
+    out("NOT READ - the tags endpoint could not be read (%s). An unread tag list" % why)
+    out("           is a third state: neither a pass nor a failure.")
+    raise SystemExit(0)
+if not isinstance(tags, list):
+    out("NOT READ - the tags endpoint answered something that is not a list, so")
+    out("           nothing was examined.")
+    raise SystemExit(0)
+
+total = len(tags)
+more = " (at least - the page came back full)" if total >= 100 else ""
+if total == 0:
+    out("tags in this project: 0 - none has ever been cut here. That is a FACT about")
+    out("the repository and not a failure: there is no tag pipeline going unread.")
+    raise SystemExit(0)
+
+examined = tags[:LIMIT]
+skipped = tags[LIMIT:]
+out("tags in this project: %d%s   examined: %d, newest first, bounded by TAG_LIMIT=%d"
+    % (total, more, len(examined), LIMIT))
+out("newest is by COMMIT DATE (order_by=updated): GitLab exposes no tag creation")
+out("date, so a tag cut today onto an old commit sorts as old. Named, not hidden.")
+
+read = 0
+green = 0
+counts = []
+noisy = False
+
+for index, tag in enumerate(examined):
+    name = tag.get("name") or "?"
+    sha = ((tag.get("commit") or {}).get("id") or "")[:7]
+    label = "%-10s %-7s" % (name[:10], sha)
+    newest = (index == 0)
+
+    pipes, why = get("/pipelines?ref=" + urllib.parse.quote(name, safe="") + "&per_page=1")
+    if pipes is None:
+        noisy = True
+        out("%s NOT READ - the pipelines endpoint failed (%s)" % (label, why))
+        continue
+    if not isinstance(pipes, list) or not pipes:
+        out("%s NO PIPELINE - drupalcode started none for this tag. A third state:" % label)
+        out(PAD + "neither a pass nor a failure.")
+        continue
+
+    pipe = pipes[0]
+    pid = pipe.get("id")
+    status = pipe.get("status") or "?"
+    head = "%s pipeline %-7s" % (label, pid)
+
+    if status in NOT_TERMINAL:
+        noisy = True
+        out("%s %s - it has concluded NOTHING yet" % (head, status))
+        continue
+
+    jobs, why = get("/pipelines/%s/jobs?per_page=100" % pid)
+    if jobs is None:
+        noisy = True
+        out("%s NOT READ - the jobs endpoint failed (%s)" % (head, why))
+        continue
+    read += 1
+    if not isinstance(jobs, list) or not jobs:
+        noisy = True
+        out("%s jobs: 0 - that is a FAILURE, not an empty result (D-023(5))" % head)
+        continue
+
+    counts.append(len(jobs))
+    failed = sorted(j.get("name") or "?" for j in jobs if j.get("status") != "success")
+    loose = sorted(j.get("name") or "?" for j in jobs if j.get("allow_failure"))
+    below = len(jobs) < FLOOR
+
+    if not failed and not loose and not below:
+        green += 1
+        out("%s jobs %-3d GREEN" % (head, len(jobs)))
+        continue
+
+    noisy = True
+    out("%s jobs %-3d NOT GREEN" % (head, len(jobs)))
+    if failed:
+        out(PAD + "not success: " + ", ".join(failed))
+    if loose:
+        out(PAD + "allow_failure=true, needs a dated exception: " + ", ".join(loose))
+    if below:
+        out(PAD + "BELOW THE FLOOR: %d jobs, floor is %d" % (len(jobs), FLOOR))
+    if status == "success":
+        out(PAD + "the pipeline status field says success. It is not the evidence")
+        out(PAD + "either way - this project has seen that exact lie (I-043).")
+    out(PAD + "non-green since " + aged(pipe.get("updated_at")))
+    out(PAD + "that duration is the quantity nobody held the last time this")
+    out(PAD + "happened, and it is why the age is printed rather than the state.")
+    if newest:
+        out(PAD + "THIS IS THE NEWEST TAG: it is what sits beside the current")
+        out(PAD + "release on drupal.org, where a reviewer looks.")
+    out(PAD + "look at it: https://git.drupalcode.org/"
+        + urllib.parse.unquote(PROJECT) + "/-/pipelines/" + str(pid))
+
+if skipped:
+    names = [t.get("name") or "?" for t in skipped]
+    shown = ", ".join(names[:8])
+    if len(names) > 8:
+        shown += " and %d more" % (len(names) - 8)
+    out("NOT EXAMINED: %d older tag(s) - %s" % (len(names), shown))
+    out(SUB + "TAG_LIMIT bounds the requests, not the risk. This is not a clean")
+    out(SUB + "bill of health for the tags it did not open.")
+
+if DECLARED and counts and min(counts) < DECLARED:
+    fewer = len([c for c in counts if c < DECLARED])
+    out("note: %d of the %d pipelines read ran FEWER jobs than the %d declared for"
+        % (fewer, read, DECLARED))
+    out(NOTE + "this project. That is HISTORY, not drift: a tag pipeline measures")
+    out(NOTE + "the gate as it WAS. The declared-name comparison is deliberately")
+    out(NOTE + "not applied to tags - see the block above this section.")
+
+out("examined: %d - pipelines read: %d - green by the job-list test: %d"
+    % (len(examined), read, green))
+if read == 0:
+    out("PIPELINES READ: 0 across %d tag(s) examined. NOTHING WAS MEASURED here,"
+        % len(examined))
+    out("which is not the same as nothing being wrong (I-028).")
+elif noisy:
+    out("a tag above is not green. The remedy is a RETRY on that pipeline, which is")
+    out("a human action: this section reports it and deliberately does not gate on it.")
+'
+  _tag_status=$?
+  if [ "$_tag_status" -ne 0 ]; then
+    printf '  NOT READ - the tag reader itself failed (exit %s). A reader that did not\n' "$_tag_status"
+    printf '             run is not a set of tags that is fine (I-027).\n'
+  fi
+  return 0
+}
+
+# ONE EXIT TRAP, TWO SECTIONS, and the wrapper is a requirement rather than tidiness.
+# bash installs a SINGLE EXIT trap, so a bare `trap report_tags EXIT` would have
+# REPLACED the mirror trap and silently deleted the section T-1907 added - a section
+# removed by an unrelated change being exactly how the mirror came to be unread the
+# first time.
+#
+# The subshell on the first line restores $? for report_mirror, whose own header
+# promises it captures $? first and returns it. Called from inside this wrapper it
+# would otherwise capture the status of the assignment above it - zero, always - and
+# that promise would quietly become false while still reading true. Measured, not
+# reasoned: with the restore in place report_mirror sees 3 for a body that exits 3 and
+# 0 for a body that exits 0.
+#
+# The script exit status is preserved by bash itself - an EXIT trap that does not call
+# `exit` cannot change it, which was falsified both ways before this was trusted - and
+# the explicit return says so to a reader who should not have to know that.
+report_exit() {
+  _exit_rc=$?
+  ( exit "$_exit_rc" )
+  report_mirror
+  report_tags
+  return "$_exit_rc"
+}
+trap report_exit EXIT
 
 attempt=0
 while : ; do
