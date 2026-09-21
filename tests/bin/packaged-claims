@@ -1,0 +1,1055 @@
+#!/usr/bin/env bash
+#
+# packaged-claims - Agora - fails when a number the PACKAGED, USER-FACING prose of this site
+# template states disagrees with the thing the number is about, and fails when the same figure is
+# stated in two packaged files at once.
+#
+# WHAT "PACKAGED" MEANS HERE, because it is the whole scope and it is not a matter of taste.
+# `git archive` applies the `export-ignore` rules in .gitattributes, and that is exactly what
+# Drupal.org's packaging and a Composer release apply. A file this guard reads must be in that
+# archive, and every declared subject is checked to be, so that `export-ignore`ing README.md one
+# day cannot leave this script quietly guarding a file no end user receives. `CLAUDE.md`,
+# `specs/` and `tests/` are NOT packaged - their prose is tests/bin/claims-match-sources' subject,
+# not this one's. The two guards have deliberately disjoint subjects and overlapping technique.
+#
+# WHY IT EXISTS, and it is a measurement rather than a worry. The packaged prose of this package
+# was audited against disk on 2026-09-21 and SIX figures were wrong at once, in three files. Five
+# of them are bound by a comparison below and each was watched firing on its own old value; the
+# sixth is named in NOT CHECKED, because nothing offline can produce it:
+#
+#   * README.md said the package ships "131 config objects". It ships 133.        [config_objects]
+#   * README.md quoted the two gate runners as "67 checks" and "49 checks". Their
+#     own GATE-CLAIM lines read 71 and 66 that morning - one four checks stale,
+#     the other seventeen.                                      [wave1_checks, wave3_checks]
+#   * content/MEDIA-LICENCES.md said "Thirty-nine of the forty rows" in a file
+#     whose table had held 42 rows since the amendment two paragraphs above it
+#     added the two files at the package root.                              [manifest_rows]
+#   * README.md opened its packaging section with "thirteen top-level entries"
+#     and corrected itself to eleven four paragraphs later - a reader who stops
+#     at the first sentence is told a number that was false when they read it.
+#                                                                       [top_level_entries]
+#   * README.md gave the spell-check denominators as "451 ... 410". They were
+#     467 and 426. NOT BOUND: both come from tests/bin/spellcheck's own filter,
+#     which needs inputs it fetches from the CI job's configuration. What IS
+#     compared here is the SUBTRACTION between them, which the same paragraph
+#     states as 37 + 4 = 41.                                     [cspell_gap, cspell_split]
+#
+# And the case this guard's cross-file rule is shaped around is not hypothetical either. From
+# 2026-09-20 17:56 until the following morning README.md stated the THEME's axe gate as "nine
+# fixture pages ... 9 of 9". It was written in the commit whose own subject was that this package
+# contradicted itself about accessibility; the theme took that gate from nine pages to ten the
+# same evening; and nothing in either repository could see it, because the figure lived in one
+# file here and in another file there. It was removed by hand. The rule below is what makes
+# removing it by hand unnecessary next time.
+#
+# -----------------------------------------------------------------------------------------------
+# THE ONE-COPY RULE (T-0609) IS THE PART THAT IS NOT IN THE SIBLING GUARD.
+#
+# tests/bin/claims-match-readme in `agora_theme` refuses a figure stated twice IN ONE FILE. That
+# is necessary and it is not sufficient here, because this package's prose is spread over six
+# files that no reader opens together. So every registered figure declares a HOME, and the
+# detector for it is run over ALL the packaged files:
+#
+#   home is a packaged file  ->  exactly that one file may state the figure
+#   home is EXTERNAL         ->  NO packaged file may state it; it belongs to another project's
+#                                public job log, and a copy here is a copy that goes stale
+#
+# A detector matching two files is FATAL and names both, in the wording claims-match-sources.py's
+# one() helper already uses: the same number written in more than one place is the drift this
+# guard exists to refuse.
+#
+# THERE IS A THIRD OPTION BESIDE "DELETE IT" AND "REFRESH BOTH", and it is used twice below.
+# Where a duplicate cannot be removed without costing a reader something - `recipe.yml` and
+# `composer.json` must each carry the package description, and the installer and Packagist read
+# different ones - the second copy is BOUND to the first, so a machine compares them. Binding is
+# for duplicates that have to exist. Deleting is for the rest, and it is the default.
+#
+# -----------------------------------------------------------------------------------------------
+# WHAT IS CHECKED OFFLINE - the comparisons are counted and printed; the list below is what they
+# are about, grouped by the file whose claim is being read:
+#
+#   README.md
+#     content_files      the corpus size          vs  git ls-files content/
+#     config_objects     the config object count  vs  git ls-files config/*.yml
+#     demo_records       the record count         vs  git ls-files content/node/*.yml
+#     registers          the register count       vs  the distinct agora_base_* node bundles
+#     theme_constraint   the theme version range  vs  composer.json's own require entry
+#     front_blocks       the home page's blocks   vs  the views_block components in that page
+#     top_level_entries  the packaged root        vs  git archive | tar -t, first path segment
+#     archive_entries    the packaged file count  vs  git archive | tar -t
+#     wave1_checks       the wave-1 runner total  vs  its GATE-CLAIM line
+#     wave3_checks       the wave-3 runner total  vs  its GATE-CLAIM line
+#     recipes_applied    the recipe table rows    vs  the `recipes:` list in recipe.yml
+#     job_names          the CI job table         vs  EXPECTED_agora_transparency in watch-gate
+#     jobs_total         "Ten jobs"               vs  the rows of its own table
+#     cspell_gap         offered minus checked    vs  the 37 + 4 the same section states
+#     cspell_binaries    that 37                  vs  the binaries cspell cannot open
+#
+#   content/MEDIA-LICENCES.md
+#     pdf_count          the PDF count            vs  git ls-files content/file/*.pdf
+#     csv_count          the CSV count            vs  git ls-files content/file/*.csv
+#     manifest_rows      the manifest row count   vs  the data rows of its own table
+#     manifest_generated the generated subset     vs  the rows naming the generator script
+#     logo_bytes         logo.png's size          vs  git cat-file -s
+#     logo_sha           logo.png's digest        vs  sha256 of the committed blob
+#     shot_bytes         screenshot.webp's size   vs  git cat-file -s
+#     shot_sha           screenshot.webp's digest vs  sha256 of the committed blob
+#
+#   the accessibility statement (content/node/<uuid>.yml, rendered at /accessibility-statement)
+#     a11y_pages         the scanned page count   vs  the pages AccessibilityTest declares
+#     canvas_pages       the landing page count   vs  git ls-files content/canvas_page/*.yml
+#     listing_total      the listing route count  vs  git ls-files config/views.view.agora_base_*
+#     listing_scanned    the scanned subset       vs  VIEW_PAGES in AccessibilityTest
+#
+#   recipe.yml / composer.json / recommended.yml
+#     description_match  the two descriptions     vs  each other (a bound duplicate, see above)
+#     recommended_empty  "intentionally empty"    vs  the non-comment lines of that file
+#
+# WHAT IS CHECKED WITH --online - five figures that exist only in another project's CI log. The
+# accessibility statement this package ships describes the THEME's gate in a paragraph of its
+# own, and says in as many words that its figures are "those reported by the most recent run".
+# So the most recent run is what --online reads: the newest TERMINAL, SUCCESSFUL pipeline on
+# `agora_theme`'s 1.x, its `nightwatch` trace for the axe summary and its `agora-invariants`
+# trace for the contrast summary. A pipeline still running, or a red one, is NOT READ and never a
+# pass.
+#
+# THE TRACES NEED NO CREDENTIAL. /api/v4/projects/<id>/jobs/<id>/trace answers 401 to an
+# anonymous request; /project/agora_theme/-/jobs/<id>/raw answers 200 to anybody. The -L is
+# MANDATORY: without it the 302 is a few hundred bytes and looks exactly like a failure.
+#
+# --online IS OPT-IN AND THE GATE NEVER PASSES IT. This script is wired into gate-a-wave1.sh
+# because it is offline and fast. A gate that needs a network round trip is a gate somebody makes
+# permissive within the week, arriving through the door marked "more rigour".
+#
+# -----------------------------------------------------------------------------------------------
+# WHAT IS NOT CHECKED is printed by name on every run with a reason, and the length of that list
+# is asserted non-empty. A guard that silently covers half its subject reads exactly like one
+# that covers all of it.
+#
+# THE REASONS IN THAT LIST MUST BE TRUE. The sibling guard in `agora_theme` carried TWO FALSE
+# reasons for weeks - it said a job trace could not be read anonymously, inferred from an API
+# endpoint's 401 and never tested against the web route that answers 200 - and while they stood,
+# figures it could have been reading went stale. A list of what a guard cannot reach decays into
+# a list of what nobody has tried lately unless it is re-read rather than inherited. Three
+# entries below say "readable and deliberately not bound", which is a true reason and a weaker
+# one; they are written that way rather than dressed up as impossibilities.
+#
+# AMBIGUITY IS A FAILURE, NOT A TIE-BREAK. Every claim must match its pattern EXACTLY ONCE in its
+# own file. A pattern that matches NOTHING is likewise fatal: a regex matching nothing prints "0
+# findings" exactly like a clean file (I-028).
+#
+# WHAT THIS BUYS IS NARROWER THAN "THE PACKAGED PROSE IS TRUE". Each comparison binds ONE
+# canonical sentence, and the cross-file rule covers a REGISTERED set of figures rather than
+# every number in six files. Both boundaries are in the NOT CHECKED list.
+#
+# Contract:
+#   files opened:     <N>   - packaged files read; each verified present in `git archive`
+#   claims extracted: <N>   - numbers and lists read out of them; must be > 0
+#   comparisons:      <N>   - offline; must be > 0
+#   one-copy checks:  <N>   - registered figures whose home was verified; must be > 0
+#   not checked:      <N>   - named exclusions; must be > 0
+#   findings:         <N>   - disagreements; the exit code is 0 only when this is 0
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared value; numeric
+# guards defaulted ONLY where zero means FAIL; `grep` rc >= 2 is an error, never "no match";
+# never `-F` with `-i`. The canonical copy of that block lives in tests/bin/no-ci-allow-dev.
+#
+# Usage: tests/bin/packaged-claims [--online]   (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 2; }
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+ONLINE=0
+for _arg in "$@"; do
+  case "$_arg" in
+    --online) ONLINE=1 ;;
+    -h|--help)
+      printf 'usage: %s [--online]\n' "$(basename -- "$0")"
+      printf '  (no flag)  offline comparisons against this repository. No network.\n'
+      printf '  --online   also re-reads five figures from the theme CI traces the shipped\n'
+      printf '             accessibility statement describes. The gate never passes this.\n'
+      exit 0 ;;
+    *) printf 'FATAL: unknown argument "%s". Try --help.\n' "$_arg" >&2; exit 2 ;;
+  esac
+done
+
+# ------------------------------------------------------------------- the packaged subjects --
+# Declared, not discovered. A discovered set would silently shrink to nothing the day a glob
+# stopped matching, and report the silence as agreement.
+README='README.md'
+MANIFEST='content/MEDIA-LICENCES.md'
+STATEMENT='content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml'
+RECIPE='recipe.yml'
+COMPOSER='composer.json'
+RECOMMENDED='recommended.yml'
+PACKAGED_FILES="$README $MANIFEST $STATEMENT $RECIPE $COMPOSER $RECOMMENDED"
+
+# Sources that are NOT packaged and are read only as the measured side.
+RUNNER1='tests/bin/gate-a-wave1.sh'
+RUNNER3='tests/bin/gate-a-wave3.sh'
+WATCH='tests/bin/watch-gate'
+A11Y_TEST='tests/src/FunctionalJavascript/AccessibilityTest.php'
+
+FILES_OPENED=0
+CLAIMS=0
+COMPARISONS=0
+ONE_COPY=0
+FINDINGS=0
+UNREAD=0
+
+fatal() { # <reason> - prints NO summary line: a run with no result is not a clean result (I-029)
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run produced NO verdict, which is not the same as a clean one.\n'
+  exit 2
+}
+
+grep_fatal() { # <rc> <where>
+  fatal "grep exited $1 while reading $2. A grep exit code of 2 or more is an error, never 'no match', and treating it as one would turn a broken read into a clean run."
+}
+
+command -v git >/dev/null 2>&1 || fatal "git is not on PATH. The measured side of this guard asks 'what does this package actually contain', and git ls-files plus git archive is how that is asked: the TRACKED and PACKAGED sets, not the working tree."
+git rev-parse --git-dir >/dev/null 2>&1 || fatal "$REPO_ROOT is not a git working tree."
+
+# ------------------------------------------------------------------------------ number words --
+# Prose reads better with "eleven" than with "11", so the extractor accepts either. An unmapped
+# word yields an empty string, which compare() reports as an EMPTY SIDE finding rather than as
+# agreement - so a count that outgrows this table fails loudly instead of quietly.
+to_num() { # <word-or-numeral> -> integer on stdout, nothing on failure
+  local w head tail hv tv
+  w=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d ',')
+  case "$w" in
+    ''|*[!0-9]*) : ;;
+    *) printf '%s' "$w"; return 0 ;;
+  esac
+  case "$w" in
+    *-*)
+      head=${w%%-*}; tail=${w#*-}
+      hv=$(to_num_word "$head"); tv=$(to_num_word "$tail")
+      if [ -n "$hv" ] && [ -n "$tv" ] && [ "$hv" -ge 20 ] && [ "$tv" -lt 10 ]; then
+        printf '%s' "$((hv + tv))"
+      fi
+      return 0 ;;
+  esac
+  to_num_word "$w"
+}
+
+to_num_word() { # <single word> -> integer on stdout, nothing on failure
+  case "$1" in
+    zero) printf '0' ;;      one) printf '1' ;;        two) printf '2' ;;
+    three) printf '3' ;;     four) printf '4' ;;       five) printf '5' ;;
+    six) printf '6' ;;       seven) printf '7' ;;      eight) printf '8' ;;
+    nine) printf '9' ;;      ten) printf '10' ;;       eleven) printf '11' ;;
+    twelve) printf '12' ;;   thirteen) printf '13' ;;  fourteen) printf '14' ;;
+    fifteen) printf '15' ;;  sixteen) printf '16' ;;   seventeen) printf '17' ;;
+    eighteen) printf '18' ;; nineteen) printf '19' ;;  twenty) printf '20' ;;
+    thirty) printf '30' ;;   forty) printf '40' ;;     fifty) printf '50' ;;
+    sixty) printf '60' ;;    seventy) printf '70' ;;   eighty) printf '80' ;;
+    ninety) printf '90' ;;
+    *) : ;;
+  esac
+}
+
+# --------------------------------------------------------------- reading the packaged files --
+# The packaged set is verified against `git archive`, which applies .gitattributes the way
+# Drupal.org's packaging does. A subject that is not in the archive is not packaged prose, and
+# guarding it would be guarding something no end user receives.
+ARCHIVE_LIST=$(git archive --worktree-attributes HEAD 2>/dev/null | tar -t 2>/dev/null)
+[ -n "$ARCHIVE_LIST" ] || fatal "git archive produced no listing at all. Nothing below could be shown to be packaged, and a guard over an empty set reports 'no findings' exactly like a clean one (I-028)."
+ARCHIVE_N=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '^$' | wc -l | tr -d '[:space:]')
+
+# Every subject's text, CR-stripped once, keyed by a shell-safe name. This checkout may hold LF
+# or CRLF depending on how a file was written; the CI runner holds LF. A pattern anchored on a
+# line end would otherwise match in one place and not the other, which is a difference between
+# environments and not between claims.
+TEXT_README=''; TEXT_MANIFEST=''; TEXT_STATEMENT=''
+TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''
+# A SECOND, FLOWED VARIANT OF EVERY SUBJECT, and it is not a convenience. README.md is hard-
+# wrapped at 100 columns, so almost every sentence carrying a figure is split across two lines -
+# and `grep` reads a line at a time. A pattern written for the sentence would therefore match
+# NOTHING, which claim_once treats as fatal, but the failure mode that matters is the opposite
+# one: a one-copy DETECTOR that silently fails to match a wrapped restatement would report "no
+# second copy" for a second copy that is right there. Claims and detectors run over the flowed
+# text; the two places that genuinely need line anchors - the markdown table rows - read the raw
+# text directly and say so.
+FLOW_README=''; FLOW_MANIFEST=''; FLOW_STATEMENT=''
+FLOW_RECIPE=''; FLOW_COMPOSER=''; FLOW_RECOMMENDED=''
+
+load_packaged() { # <var-suffix> <path>
+  local path="$2" body flow
+  [ -r "$path" ] || fatal "$path is not readable from $REPO_ROOT."
+  printf '%s\n' "$ARCHIVE_LIST" | grep -qxF -- "$path"
+  case $? in
+    0) : ;;
+    1) fatal "$path is NOT in \`git archive\` output, so it is not packaged. Either an export-ignore rule now removes it - in which case it is no longer this guard's subject and the declaration above moves with the rule, in the same commit - or the path is wrong." ;;
+    *) grep_fatal "$?" "the git archive listing" ;;
+  esac
+  body=$(tr -d '\r' < "$path")
+  [ -n "$body" ] || fatal "$path read as empty."
+  flow=$(printf '%s' "$body" | tr '\n' ' ' | tr -s ' ')
+  eval "TEXT_$1=\$body"
+  eval "FLOW_$1=\$flow"
+  FILES_OPENED=$((FILES_OPENED + 1))
+}
+
+load_packaged README      "$README"
+load_packaged MANIFEST    "$MANIFEST"
+load_packaged STATEMENT   "$STATEMENT"
+load_packaged RECIPE      "$RECIPE"
+load_packaged COMPOSER    "$COMPOSER"
+load_packaged RECOMMENDED "$RECOMMENDED"
+
+text_of() { # <var-suffix> -> that file's CR-stripped text, line structure intact
+  eval "printf '%s' \"\$TEXT_$1\""
+}
+flow_of() { # <var-suffix> -> the same text with every newline turned into a space
+  eval "printf '%s' \"\$FLOW_$1\""
+}
+path_of() { # <var-suffix> -> that file's path
+  case "$1" in
+    README) printf '%s' "$README" ;;
+    MANIFEST) printf '%s' "$MANIFEST" ;;
+    STATEMENT) printf '%s' "$STATEMENT" ;;
+    RECIPE) printf '%s' "$RECIPE" ;;
+    COMPOSER) printf '%s' "$COMPOSER" ;;
+    RECOMMENDED) printf '%s' "$RECOMMENDED" ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+CLAIM=""
+# WHERE THE LAST CLAIM WAS READ. A finding that names a value and not a place sends the reader
+# grepping through six files for a number that appears in several of them; the line is what makes
+# the output actionable. It is derived from the RAW text - the flowed variant has one line by
+# construction - by looking for a literal prefix of the matched claim, which is why it can come
+# back as `?`: a claim whose first characters are themselves split across a wrap has no single
+# line to name, and saying so is better than naming the wrong one.
+CLAIM_FILE=''
+CLAIM_AT=''
+claim_once() { # <label> <var-suffix> <ERE> - sets CLAIM; FATAL on 0 matches or on 2+
+  local label="$1" who="$2" ere="$3" out rc n path prefix
+  path=$(path_of "$who")
+  out=$(flow_of "$who" | grep -oE "$ere")
+  rc=$?
+  [ "$rc" -ge 2 ] && grep_fatal "$rc" "$path while extracting '$label'"
+  if [ "$rc" -ne 0 ]; then
+    fatal "no sentence in $path matches the pattern for '$label': /$ere/
+  A pattern that matches nothing reports zero disagreements exactly like a clean file does, so an
+  unmatched claim is a failure and never a pass. Either the sentence was reworded - in which case
+  this pattern moves with it, in the same commit - or the claim was deleted, and so should this
+  comparison be."
+  fi
+  n=$(printf '%s\n' "$out" | wc -l | tr -d '[:space:]')
+  if [ "${n:-0}" -ne 1 ]; then
+    printf '\n%sAMBIGUOUS:%s %s matches %s times in %s:\n' "$C_BAD" "$C_OFF" "$label" "$n" "$path"
+    printf '%s\n' "$out" | sed 's/^/    /'
+    fatal "a figure stated twice is the precondition for the drift this file exists to catch, so a second copy is refused here rather than silently preferred over the first. Delete one copy, or make it a cross-reference with no number in it."
+  fi
+  CLAIM="$out"
+  CLAIM_FILE="$path"
+  # Decreasing prefixes, because the claim was matched in the FLOWED text and the raw file is
+  # hard-wrapped: a 24-character prefix of a sentence that wraps after twelve is on no single
+  # line at all. Falsified on the first dirty run, which printed `?` for a claim sitting on a
+  # line anyone could see. Eight characters is the floor: below that the match stops being about
+  # this claim.
+  CLAIM_AT=''
+  for prefix in 40 32 24 16 12 8; do
+    CLAIM_AT=$(text_of "$who" | grep -nF -- "$(printf '%s' "$out" | cut -c1-"$prefix")" 2>/dev/null \
+      | head -1 | cut -d: -f1)
+    [ -n "$CLAIM_AT" ] && break
+  done
+  [ -n "$CLAIM_AT" ] || CLAIM_AT='?'
+  CLAIMS=$((CLAIMS + 1))
+}
+
+# The substitution delimiter is # and not /, because some patterns read a capture out of a path.
+field() { printf '%s' "$CLAIM" | sed -nE "s#$2#\\$1#p"; }
+
+compare() { # <label> <claimed> <measured> <source>
+  local label="$1" claimed="$2" measured="$3" src="$4"
+  COMPARISONS=$((COMPARISONS + 1))
+  if [ -z "$claimed" ] || [ -z "$measured" ]; then
+    FINDINGS=$((FINDINGS + 1))
+    printf '  %s%-20s claimed [%s]  ??  %s [%s]  EMPTY SIDE%s\n' \
+      "$C_BAD" "$label" "$claimed" "$src" "$measured" "$C_OFF"
+    printf '      %s:%s  An empty side is never agreement: one of the two was not read at all.\n' \
+      "${CLAIM_FILE:-?}" "${CLAIM_AT:-?}"
+    return
+  fi
+  if [ "$claimed" = "$measured" ]; then
+    printf '  %s%-20s%s [%s]  =  %s [%s]  %sOK%s\n' \
+      "$C_DIM" "$label" "$C_OFF" "$claimed" "$src" "$measured" "$C_OK" "$C_OFF"
+  else
+    FINDINGS=$((FINDINGS + 1))
+    printf '  %s%-20s [%s]  !=  %s [%s]  MISMATCH%s\n' \
+      "$C_BAD" "$label" "$claimed" "$src" "$measured" "$C_OFF"
+    printf '      %s:%s  claims %s; the measurement says %s\n' \
+      "${CLAIM_FILE:-?}" "${CLAIM_AT:-?}" "$claimed" "$measured"
+  fi
+}
+
+# ------------------------------------------------------------------------- the one-copy rule --
+# T-0609. Every registered figure declares a home and a detector; the detector is run over all
+# six packaged files and the set of files it matches must be exactly the home.
+#
+# A HOME IS ONE OF THREE THINGS, and the third is the one worth explaining.
+#   <FILE>            exactly that packaged file may state the figure
+#   EXTERNAL          NO packaged file may state it - it belongs to another project's public log
+#   <FILE> <FILE>     a DELIBERATELY BOUND duplicate: both copies exist, both are compared
+#                     against the same measured source above, so neither can drift alone
+#
+# The third exists because deletion is not always the right fix. "six registers" reads naturally
+# in README's status paragraph and in the shipped statement's scope sentence, and a reader of
+# either would be worse off for a cross-reference. What makes two copies safe is not discipline,
+# it is that BOTH are bound - and the register below records which ones are, so that a third copy
+# arriving later is still refused.
+one_home() { # <label> <home-list-or-EXTERNAL> <detector ERE> <why the home is the home>
+  local label="$1" home="$2" ere="$3" why="$4" hits='' who path rc expect n want
+  ONE_COPY=$((ONE_COPY + 1))
+  for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED; do
+    flow_of "$who" | grep -qE "$ere"
+    rc=$?
+    case $rc in
+      0) hits="$hits $who" ;;
+      1) : ;;
+      *) grep_fatal "$rc" "$(path_of "$who") while applying the one-copy detector for '$label'" ;;
+    esac
+  done
+  hits=${hits# }
+  n=$(printf '%s\n' "$hits" | tr ' ' '\n' | grep -v '^$' | wc -l | tr -d '[:space:]')
+  if [ "$home" = 'EXTERNAL' ]; then
+    expect=0
+    want=''
+  else
+    # The declared homes, in the same fixed order the scan visits them, so the two lists are
+    # comparable as strings rather than as sets.
+    want=''
+    for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED; do
+      case " $home " in *" $who "*) want="$want $who" ;; esac
+    done
+    want=${want# }
+    expect=$(printf '%s\n' "$want" | tr ' ' '\n' | grep -v '^$' | wc -l | tr -d '[:space:]')
+    [ "${expect:-0}" -gt 0 ] || fatal "the one-copy register declares '$label' with a home of '$home', which names no packaged subject. A home nothing resolves to would make every count compare equal to zero."
+  fi
+  if [ "${n:-0}" -gt "$expect" ]; then
+    printf '\n%sTWO COPIES:%s %s is stated in %s packaged files:\n' "$C_BAD" "$C_OFF" "$label" "$n"
+    for who in $hits; do
+      printf '    %s\n' "$(path_of "$who")"
+      flow_of "$who" | grep -oE "$ere" | sed 's/^/        /' | cut -c1-200
+    done
+    fatal "the same number is written in more than one place, which is the drift this guard exists to refuse. $why
+  Three ways out, in order of preference: DELETE the copy that is not the home and leave a
+  cross-reference with no number in it; or BIND the second copy to the first with a comparison
+  here, if it genuinely cannot be removed; or move the home, in which case the declaration above
+  moves with it in the same commit. Refreshing both copies faithfully is the one that does not
+  work - it is what was being done, carefully, on each of the days a figure here went stale."
+  fi
+  if [ "${n:-0}" -lt "$expect" ]; then
+    FINDINGS=$((FINDINGS + 1))
+    printf '  %s%-20s declared home %s, but %s packaged file(s) state it  MISSING HOME%s\n' \
+      "$C_BAD" "$label" "$want" "$n" "$C_OFF"
+    printf '      A detector that matches nothing cannot tell a deleted claim from a reworded\n'
+    printf '      one, and it reports "no second copy" for both.\n'
+    return
+  fi
+  if [ "$expect" -gt 0 ] && [ "$hits" != "$want" ]; then
+    FINDINGS=$((FINDINGS + 1))
+    printf '  %s%-20s stated in [%s], declared home [%s]  WRONG HOME%s\n' \
+      "$C_BAD" "$label" "$hits" "$want" "$C_OFF"
+    return
+  fi
+  if [ "$expect" -eq 0 ]; then
+    printf "  %s%-20s%s no packaged copy; it lives in another project's public job log  %sOK%s\n" \
+      "$C_DIM" "$label" "$C_OFF" "$C_OK" "$C_OFF"
+  elif [ "$expect" -eq 1 ]; then
+    printf '  %s%-20s%s one copy, in %s  %sOK%s\n' \
+      "$C_DIM" "$label" "$C_OFF" "$(path_of "$hits")" "$C_OK" "$C_OFF"
+  else
+    printf '  %s%-20s%s %s bound copies, in [%s]  %sOK%s\n' \
+      "$C_DIM" "$label" "$C_OFF" "$n" "$hits" "$C_OK" "$C_OFF"
+  fi
+}
+
+count_tracked() { git ls-files -- "$@" 2>/dev/null | wc -l | tr -d '[:space:]'; }
+
+# A NUMBER, SPELLED EITHER WAY, for the one-copy detectors. It exists because a detector written
+# as `[a-z]+ PDFs` matches "generated PDFs" - a phrase with no number in it at all - and would
+# then report a cross-reference as a second copy. The alternation is deliberately finite: a count
+# that outgrows it stops being detected, which is why every figure it guards is ALSO compared
+# against disk above, where an unmapped word surfaces as an EMPTY SIDE finding.
+# cspell:disable
+# The case-folded classes below are a REGEX and not prose: cspell splits `[Tt]wenty` at the
+# bracket and reports `wenty` as a misspelling, nineteen times. Scoped here rather than fed into
+# the project word list, which is the rule D-024(3) states for a verbatim pattern.
+NUM='([0-9][0-9,]*|[Tt]wenty-[a-z]+|[Tt]hirty-[a-z]+|[Ff]orty-[a-z]+|[Ff]ifty-[a-z]+|[Oo]ne|[Tt]wo|[Tt]hree|[Ff]our|[Ff]ive|[Ss]ix|[Ss]even|[Ee]ight|[Nn]ine|[Tt]en|[Ee]leven|[Tt]welve|[Tt]hirteen|[Ff]ourteen|[Ff]ifteen|[Ss]ixteen|[Ss]eventeen|[Ee]ighteen|[Nn]ineteen|[Tt]wenty|[Tt]hirty|[Ff]orty|[Ff]ifty|[Ss]ixty)'
+# cspell:enable
+
+# The em dash and the middle dot this project's prose uses are MULTI-BYTE in UTF-8, and this
+# host runs with LANG unset - a C locale, where `.` matches one BYTE. A pattern writing `.` for
+# one of them therefore matches here and not on the CI runner, or the other way round. `[^ ]+`
+# matches whatever the separator is, in either locale, and is used for every one of them below.
+DASH='[^ ]+'
+
+# sha256 with the three implementations this project's hosts actually provide. macOS ships no
+# sha256sum; it ships shasum. A drift detector that quietly changes which program computes its
+# hashes is worse than one that is noisy, so the choice is printed in the summary.
+SHA_IMPL=''
+if command -v sha256sum >/dev/null 2>&1; then SHA_IMPL='sha256sum'
+elif command -v shasum >/dev/null 2>&1; then SHA_IMPL='shasum -a 256'
+elif command -v openssl >/dev/null 2>&1; then SHA_IMPL='openssl dgst -sha256'
+fi
+blob_sha() { # <path> -> sha256 of the COMMITTED blob, or nothing
+  local obj
+  [ -n "$SHA_IMPL" ] || return 0
+  obj=$(git rev-parse "HEAD:$1" 2>/dev/null) || return 0
+  [ -n "$obj" ] || return 0
+  git cat-file blob "$obj" 2>/dev/null | $SHA_IMPL 2>/dev/null | grep -oE '[0-9a-f]{64}' | head -1
+}
+blob_size() { # <path> -> byte size of the COMMITTED blob, or nothing
+  local obj
+  obj=$(git rev-parse "HEAD:$1" 2>/dev/null) || return 0
+  [ -n "$obj" ] || return 0
+  git cat-file -s "$obj" 2>/dev/null | tr -d '[:space:]'
+}
+
+printf '=========================================================================================================\n'
+printf 'packaged-claims - Agora - the figures in the packaged prose against the things that produce them\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+if [ "$ONLINE" -eq 1 ]; then
+  printf 'mode: offline + --online (agora_theme CI job traces)\n'
+else
+  printf 'mode: offline only (no network; --online is opt-in and the gate never passes it)\n'
+fi
+printf 'subjects: %s packaged file(s), each verified present in `git archive` (%s entries)\n' \
+  "$FILES_OPENED" "$ARCHIVE_N"
+printf '=========================================================================================================\n'
+
+# ============================================================== README.md vs the repository ==
+printf '\nREADME.md - what the package says it ships, against what it ships\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+claim_once 'corpus size' README \
+  "\\*\\*[0-9]+ records across [a-z]+ registers\\*\\* $DASH [0-9]+ files in \`content/\`, [0-9]+ config objects"
+R_RECORDS=$(field 1 '.*\*\*([0-9]+) records.*')
+R_REGISTERS=$(to_num "$(field 1 '.*records across ([a-z]+) registers.*')")
+R_CONTENT=$(field 1 '.* ([0-9]+) files in .content/..*')
+R_CONFIG=$(field 1 '.*, ([0-9]+) config objects.*')
+compare 'demo_records' "$R_RECORDS" "$(count_tracked 'content/node/*.yml')" 'git ls-files content/node/*.yml'
+REGISTER_BUNDLES=$(grep -hoE '^  bundle: agora_base_[a-z_]+' content/node/*.yml 2>/dev/null \
+  | sort -u | wc -l | tr -d '[:space:]')
+compare 'registers' "$R_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_base_* node bundles'
+compare 'content_files' "$R_CONTENT" "$(count_tracked 'content/')" 'git ls-files content/'
+compare 'config_objects' "$R_CONFIG" "$(count_tracked 'config/*.yml')" 'git ls-files config/*.yml'
+
+claim_once 'theme constraint' README 'this template requires at `\^[0-9]+\.[0-9]+`'
+R_THEME=$(field 1 '.*requires at .(\^[0-9]+\.[0-9]+).*')
+C_THEME=$(text_of COMPOSER | sed -nE 's/.*"drupal\/agora_theme": "([^"]+)".*/\1/p')
+compare 'theme_constraint' "$R_THEME" "$C_THEME" 'composer.json require'
+
+# The home page is the Canvas page whose alias is the one recipe.yml points `page.front` at, so
+# neither the file name nor the block count is typed here.
+claim_once 'front blocks' README 'as the home page, carrying \*\*[a-z]+\*\* blocks'
+R_FRONT=$(to_num "$(field 1 '.*carrying \*\*([a-z]+)\*\* blocks.*')")
+FRONT_ALIAS=$(text_of RECIPE | sed -nE "s/^ +page\.front: '([^']+)'.*/\1/p" | head -1)
+FRONT_FILE=''
+if [ -n "$FRONT_ALIAS" ]; then
+  FRONT_FILE=$(grep -lE "^ +alias: ${FRONT_ALIAS}\$" content/canvas_page/*.yml 2>/dev/null | head -1)
+fi
+if [ -n "$FRONT_FILE" ]; then
+  FRONT_BLOCKS=$(grep -oE 'views_block\.[a-z_0-9-]+' "$FRONT_FILE" | wc -l | tr -d '[:space:]')
+else
+  FRONT_BLOCKS=''
+fi
+compare 'front_blocks' "$R_FRONT" "$FRONT_BLOCKS" "views_block components in the ${FRONT_ALIAS:-?} page"
+
+claim_once 'packaged root' README 'holds \*\*[a-z]+\*\* top-level entries'
+ARCH_TOP=$(printf '%s\n' "$ARCHIVE_LIST" | sed 's#/.*#/#' | sort -u | grep -v '^$' | wc -l | tr -d '[:space:]')
+compare 'top_level_entries' "$(to_num "$(field 1 '.*\*\*([a-z]+)\*\* top-level.*')")" \
+  "$ARCH_TOP" 'git archive | tar -t, first path segment'
+
+claim_once 'archive size' README 'the whole tarball is \*\*[0-9]+ entries\*\*'
+compare 'archive_entries' "$(field 1 '.*\*\*([0-9]+) entries\*\*.*')" "$ARCHIVE_N" 'git archive | tar -t'
+
+# -- the two gate runners, quoted in the macOS certification steps --------------------------
+gate_claim_field() { # <runner> <field>
+  local line rc n
+  line=$(grep -E '^#[[:space:]]*GATE-CLAIM:' "$1")
+  rc=$?
+  [ "$rc" -ge 2 ] && grep_fatal "$rc" "$1"
+  [ "$rc" -eq 0 ] || fatal "$1 carries no GATE-CLAIM line, so the figure README states about it has nothing to be compared against."
+  n=$(printf '%s\n' "$line" | wc -l | tr -d '[:space:]')
+  [ "${n:-0}" -eq 1 ] || fatal "$1 carries $n GATE-CLAIM lines, expected exactly 1."
+  printf '%s' "$line" | sed -nE "s/.*$2=([0-9]+).*/\1/p"
+}
+[ -r "$RUNNER1" ] || fatal "$RUNNER1 is not readable; the check total README quotes has no source."
+[ -r "$RUNNER3" ] || fatal "$RUNNER3 is not readable; the check total README quotes has no source."
+
+claim_once 'runner totals' README \
+  "\\*\\*[0-9]+ checks $DASH 0 failures\\*\\* and \\*\\*[0-9]+ checks $DASH 0 failures\\*\\*"
+# The `^` is load-bearing and was put there by getting it wrong: sed's `.*` is greedy, so
+# `.*\*\*([0-9]+) checks` reads the SECOND figure in this sentence and silently compares the
+# wave-3 number against the wave-1 runner. It printed OK for the wrong reason on the first run.
+compare 'wave1_checks' "$(field 1 '^\*\*([0-9]+) checks.*')" "$(gate_claim_field "$RUNNER1" checks)" \
+  "$RUNNER1 GATE-CLAIM"
+compare 'wave3_checks' "$(field 1 '.*and \*\*([0-9]+) checks.*')" "$(gate_claim_field "$RUNNER3" checks)" \
+  "$RUNNER3 GATE-CLAIM"
+
+# -- the recipes README tabulates, against the list recipe.yml applies -----------------------
+# The rows are taken from the table that FOLLOWS the recipes anchor, not from every table row in
+# the file that happens to look like one. Found by falsifying: a bare row pattern also collected
+# `grep` and `sed` out of the toolchain-floor table twenty screens further down, and reported a
+# twelve-recipe README. Collection stops at the first non-table line after at least one row, so a
+# later table can never be absorbed into this one.
+README_RECIPES=$(text_of README | awk '
+  /^Recipes, in the order/ { seen = 1; next }
+  seen && /^\| `/ { line = $0; sub(/^\| `/, "", line); sub(/`.*$/, "", line); print line; rows = 1; next }
+  seen && /^\|/ { next }
+  seen && rows && !/^\|/ { exit }
+' | LC_ALL=C sort -u)
+RECIPE_RECIPES=$(text_of RECIPE | awk '
+  /^recipes:[[:space:]]*$/ { in_list = 1; next }
+  in_list && /^[[:space:]]*- / { sub(/^[[:space:]]*- /, ""); sub(/[[:space:]]*#.*$/, ""); print; next }
+  in_list && /^[^[:space:]#]/ { in_list = 0 }
+' | LC_ALL=C sort -u)
+R_REC_N=$(printf '%s\n' "$README_RECIPES" | grep -v '^$' | wc -l | tr -d '[:space:]')
+Y_REC_N=$(printf '%s\n' "$RECIPE_RECIPES" | grep -v '^$' | wc -l | tr -d '[:space:]')
+if [ "${R_REC_N:-0}" -eq 0 ] || [ "${Y_REC_N:-0}" -eq 0 ]; then
+  fatal "one of the two recipe lists came back EMPTY (README $R_REC_N, recipe.yml $Y_REC_N). Two empty lists compare equal, which is the degenerate agreement I-028 names, so this is refused before the comparison rather than after it."
+fi
+COMPARISONS=$((COMPARISONS + 1))
+if [ "$README_RECIPES" = "$RECIPE_RECIPES" ]; then
+  printf '  %s%-20s%s [%s recipes]  =  recipe.yml [%s recipes]  %sOK%s\n' \
+    "$C_DIM" 'recipes_applied' "$C_OFF" "$R_REC_N" "$Y_REC_N" "$C_OK" "$C_OFF"
+else
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%-20s README [%s]  !=  recipe.yml [%s]  MISMATCH%s\n' \
+    "$C_BAD" 'recipes_applied' "$R_REC_N" "$Y_REC_N" "$C_OFF"
+  printf '      only in README:     %s\n' "$(comm -23 <(printf '%s\n' "$README_RECIPES") <(printf '%s\n' "$RECIPE_RECIPES") | tr '\n' ' ')"
+  printf '      only in recipe.yml: %s\n' "$(comm -13 <(printf '%s\n' "$README_RECIPES") <(printf '%s\n' "$RECIPE_RECIPES") | tr '\n' ' ')"
+fi
+
+# -- the CI job table -----------------------------------------------------------------------
+[ -r "$WATCH" ] || fatal "$WATCH is not readable; the job table README prints has nothing to be compared against."
+README_JOBS=$(text_of README \
+  | sed -nE 's/^\| `([A-Za-z -]+)` \| [a-z]+ \| [a-z]+ \| (true|false) \|$/\1/p' | LC_ALL=C sort)
+WG_JOBS=$(sed -n "/^EXPECTED_agora_transparency='/,/'\$/p" "$WATCH" \
+  | sed "s/^EXPECTED_agora_transparency='//; s/'\$//" | LC_ALL=C sort)
+R_JOB_N=$(printf '%s\n' "$README_JOBS" | grep -v '^$' | wc -l | tr -d '[:space:]')
+W_JOB_N=$(printf '%s\n' "$WG_JOBS" | grep -v '^$' | wc -l | tr -d '[:space:]')
+if [ "${R_JOB_N:-0}" -eq 0 ] || [ "${W_JOB_N:-0}" -eq 0 ]; then
+  fatal "one of the two job lists came back EMPTY (README $R_JOB_N, watch-gate $W_JOB_N). Two empty lists compare equal, which is the degenerate agreement I-028 names."
+fi
+COMPARISONS=$((COMPARISONS + 1))
+if [ "$README_JOBS" = "$WG_JOBS" ]; then
+  printf '  %s%-20s%s [%s jobs]  =  watch-gate [%s jobs]  %sOK%s\n' \
+    "$C_DIM" 'job_names' "$C_OFF" "$R_JOB_N" "$W_JOB_N" "$C_OK" "$C_OFF"
+else
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%-20s README [%s jobs]  !=  watch-gate [%s jobs]  MISMATCH%s\n' \
+    "$C_BAD" 'job_names' "$R_JOB_N" "$W_JOB_N" "$C_OFF"
+  printf '      only in README:     %s\n' "$(comm -23 <(printf '%s\n' "$README_JOBS") <(printf '%s\n' "$WG_JOBS") | tr '\n' ' ')"
+  printf '      only in watch-gate: %s\n' "$(comm -13 <(printf '%s\n' "$README_JOBS") <(printf '%s\n' "$WG_JOBS") | tr '\n' ' ')"
+fi
+
+claim_once 'jobs total' README "\\*\\*[A-Za-z]+ jobs $DASH all blocking"
+compare 'jobs_total' "$(to_num "$(field 1 '.*\*\*([A-Za-z]+) jobs.*')")" "$R_JOB_N" 'README job table rows'
+
+# -- the spell-check accounting, checked as arithmetic rather than as a denominator ----------
+# The two absolute figures come from tests/bin/spellcheck's own filter and need its fetched
+# inputs, so they are named in NOT CHECKED. What IS checkable here is that the section's own
+# subtraction holds, and that the 37 it attributes to binaries is the number of binaries cspell
+# cannot open.
+claim_once 'cspell totals' README '\*\*[0-9]+ tracked or stage-able files offered to cspell, [0-9]+ checked'
+S_OFFERED=$(field 1 '.*\*\*([0-9]+) tracked.*')
+S_CHECKED=$(field 1 '.*cspell, ([0-9]+) checked.*')
+claim_once 'cspell split' README '[0-9]+ \+ [0-9]+ = [0-9]+, and the list was derived'
+S_BIN=$(field 1 '([0-9]+) \+ [0-9]+ = [0-9]+.*')
+S_GLOB=$(field 1 '[0-9]+ \+ ([0-9]+) = [0-9]+.*')
+S_SUM=$(field 1 '[0-9]+ \+ [0-9]+ = ([0-9]+).*')
+if [ -n "$S_OFFERED" ] && [ -n "$S_CHECKED" ]; then
+  compare 'cspell_gap' "$S_SUM" "$((S_OFFERED - S_CHECKED))" 'offered minus checked, in README itself'
+else
+  compare 'cspell_gap' "$S_SUM" '' 'offered minus checked, in README itself'
+fi
+if [ -n "$S_BIN" ] && [ -n "$S_GLOB" ]; then
+  compare 'cspell_split' "$S_SUM" "$((S_BIN + S_GLOB))" 'README binaries + globbed'
+else
+  compare 'cspell_split' "$S_SUM" '' 'README binaries + globbed'
+fi
+# Binaries cspell cannot open: every file under content/file/ that is not a *.yml entity export
+# and not one of the CSVs it reads happily, plus the two binaries at the package root.
+CONTENT_BIN=$(git ls-files 'content/file/*' 2>/dev/null | grep -vE '\.(yml|csv)$' | wc -l | tr -d '[:space:]')
+ROOT_BIN=$(git ls-files 'logo.png' 'screenshot.webp' 2>/dev/null | wc -l | tr -d '[:space:]')
+compare 'cspell_binaries' "$S_BIN" "$((CONTENT_BIN + ROOT_BIN))" 'unreadable binaries in the tracked set'
+
+# ========================================== content/MEDIA-LICENCES.md vs the media it lists ==
+printf '\ncontent/MEDIA-LICENCES.md - the licence manifest against the files it is about\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+MANIFEST_ROWS=$(text_of MANIFEST | grep -E '^\| [A-Za-z0-9_./-]+ \| .* \| .* \| .* \| .* \| [0-9]{4}-[0-9]{2}-[0-9]{2} \|$' \
+  | wc -l | tr -d '[:space:]')
+[ "${MANIFEST_ROWS:-0}" -gt 0 ] || fatal "the manifest table in $MANIFEST yielded 0 data rows. A table read as empty compares equal to an empty claim, which is the degenerate agreement I-028 names."
+MANIFEST_GEN=$(text_of MANIFEST | grep -E '^\| [A-Za-z0-9_./-]+ \|.*\| generated by tests/bin/generate-demo-media\.py \|' \
+  | wc -l | tr -d '[:space:]')
+
+claim_once 'manifest rows' MANIFEST '\*\*[A-Za-z-]+ of the [a-z-]+ rows\*\* point at'
+compare 'manifest_generated' "$(to_num "$(field 1 '.*\*\*([A-Za-z-]+) of the.*')")" \
+  "$MANIFEST_GEN" 'rows naming generate-demo-media.py'
+compare 'manifest_rows' "$(to_num "$(field 1 '.*of the ([a-z-]+) rows\*\*.*')")" \
+  "$MANIFEST_ROWS" 'data rows of its own table'
+
+claim_once 'pdf count' MANIFEST 'The [a-z-]+ PDFs are \*\*derived\*\*'
+compare 'pdf_count' "$(to_num "$(field 1 'The ([a-z-]+) PDFs.*')")" \
+  "$(count_tracked 'content/file/*.pdf')" 'git ls-files content/file/*.pdf'
+
+claim_once 'csv count' MANIFEST 'The [a-z-]+ CSVs are \*\*not\*\* derivable'
+compare 'csv_count' "$(to_num "$(field 1 'The ([a-z-]+) CSVs.*')")" \
+  "$(count_tracked 'content/file/*.csv')" 'git ls-files content/file/*.csv'
+
+claim_once 'logo file' MANIFEST \
+  "### \`logo\\.png\` $DASH 512x512, [0-9,]+ bytes, sha256 \`[0-9a-f]{64}\`"
+compare 'logo_bytes' "$(field 1 '.*, ([0-9,]+) bytes.*' | tr -d ',')" "$(blob_size logo.png)" \
+  'git cat-file -s HEAD:logo.png'
+compare 'logo_sha' "$(field 1 '.*sha256 .([0-9a-f]{64}).*')" "$(blob_sha logo.png)" \
+  "${SHA_IMPL:-no sha256 implementation} of the committed blob"
+
+claim_once 'screenshot file' MANIFEST \
+  "### \`screenshot\\.webp\` $DASH 500x400, [0-9,]+ bytes, sha256 \`[0-9a-f]{64}\`"
+compare 'shot_bytes' "$(field 1 '.*, ([0-9,]+) bytes.*' | tr -d ',')" "$(blob_size screenshot.webp)" \
+  'git cat-file -s HEAD:screenshot.webp'
+compare 'shot_sha' "$(field 1 '.*sha256 .([0-9a-f]{64}).*')" "$(blob_sha screenshot.webp)" \
+  "${SHA_IMPL:-no sha256 implementation} of the committed blob"
+
+# ========================== the shipped accessibility statement vs the gate it describes ==
+printf '\nthe accessibility statement (/accessibility-statement) - against the gate it describes\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+[ -r "$A11Y_TEST" ] || fatal "$A11Y_TEST is not readable; the page count the statement gives has nothing to be compared against."
+
+claim_once 'a11y scope' STATEMENT 'axe-core runs over [a-z]+ pages of the site as it is installed: the [a-z]+ composed landing pages'
+A_PAGES=$(to_num "$(field 1 '.*over ([a-z]+) pages.*')")
+A_CANVAS=$(to_num "$(field 1 '.*the ([a-z]+) composed landing pages.*')")
+claim_once 'a11y listings' STATEMENT '[a-z]+ of the [a-z]+ listing routes \(two of the [a-z]+ registers'
+A_SCANNED=$(to_num "$(field 1 '([a-z]+) of the [a-z]+ listing.*')")
+A_LISTINGS=$(to_num "$(field 1 '[a-z]+ of the ([a-z]+) listing.*')")
+A_REGISTERS=$(to_num "$(field 1 '.*two of the ([a-z]+) registers.*')")
+
+CANVAS_N=$(count_tracked 'content/canvas_page/*.yml')
+VIEW_N=$(sed -n "/private const VIEW_PAGES = \[/,/\];/p" "$A11Y_TEST" \
+  | grep -E "^ +'agora_base_[a-z_]+'," | wc -l | tr -d '[:space:]')
+# The three surfaces AccessibilityTest declares individually rather than in a loop: the front
+# page, the one published record and the not-found screen. Counted from the PHP rather than
+# written here as a 3, so that deleting one moves this figure instead of leaving it asserting a
+# total nothing produces.
+SINGLE_N=$(grep -E "^ +'name' => '(front|not-found|node:)" "$A11Y_TEST" | wc -l | tr -d '[:space:]')
+[ "${VIEW_N:-0}" -gt 0 ] || fatal "VIEW_PAGES in $A11Y_TEST yielded 0 entries. The scanned-route figure would then be compared against a total assembled from nothing."
+[ "${SINGLE_N:-0}" -gt 0 ] || fatal "no single-surface page declarations found in $A11Y_TEST. The page total would be short by the front page, the record and the 404, and would still be a number."
+
+compare 'canvas_pages' "$A_CANVAS" "$CANVAS_N" 'git ls-files content/canvas_page/*.yml'
+compare 'listing_scanned' "$A_SCANNED" "$VIEW_N" "VIEW_PAGES in $A11Y_TEST"
+compare 'a11y_pages' "$A_PAGES" "$((CANVAS_N + VIEW_N + SINGLE_N))" \
+  'the pages AccessibilityTest declares'
+
+compare 'listing_total' "$A_LISTINGS" "$(count_tracked 'config/views.view.agora_base_*.yml')" \
+  'git ls-files config/views.view.agora_base_*.yml'
+# The second of the two bound copies of the register count - README carries the other, and both
+# are read against the same measured source, which is what makes the duplicate safe.
+compare 'registers_stated' "$A_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_base_* node bundles'
+
+# ================================= recipe.yml, composer.json, recommended.yml ==
+printf '\nrecipe.yml / composer.json / recommended.yml\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+# A BOUND DUPLICATE, and the clearest example of why binding exists. The installer reads
+# recipe.yml's description and Packagist reads composer.json's; neither can be deleted, and a
+# package that describes itself differently in the two places is one a reviewer notices.
+RECIPE_DESC=$(text_of RECIPE | sed -nE "s/^description: '(.*)'\$/\1/p")
+COMPOSER_DESC=$(text_of COMPOSER | sed -nE 's/^ +"description": "(.*)",?$/\1/p')
+[ -n "$RECIPE_DESC" ] || fatal "recipe.yml carries no single-quoted description: line, so the two descriptions cannot be compared and their agreement would be asserted over nothing."
+[ -n "$COMPOSER_DESC" ] || fatal "composer.json carries no description key in the shape this reads, so the two descriptions cannot be compared."
+CLAIMS=$((CLAIMS + 1))
+COMPARISONS=$((COMPARISONS + 1))
+if [ "$RECIPE_DESC" = "$COMPOSER_DESC" ]; then
+  printf '  %s%-20s%s recipe.yml  =  composer.json  (%s chars)  %sOK%s\n' \
+    "$C_DIM" 'description_match' "$C_OFF" "${#RECIPE_DESC}" "$C_OK" "$C_OFF"
+else
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%-20s recipe.yml != composer.json  MISMATCH%s\n' "$C_BAD" 'description_match' "$C_OFF"
+  printf '      recipe.yml:    %s\n' "$RECIPE_DESC"
+  printf '      composer.json: %s\n' "$COMPOSER_DESC"
+fi
+
+claim_once 'recommended empty' RECOMMENDED 'intentionally empty for now'
+REC_ENTRIES=$(text_of RECOMMENDED | grep -E '^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*:' | wc -l | tr -d '[:space:]')
+compare 'recommended_empty' '0' "$REC_ENTRIES" 'uncommented package keys in recommended.yml'
+
+# ======================================================================= THE ONE-COPY RULE ==
+printf '\nONE COPY - every registered figure has exactly one home in the packaged set (T-0609)\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+one_home 'site_axe_pages' STATEMENT \
+  "($NUM pages of the site|$NUM pages are scanned|axe-core runs over $NUM pages)" \
+  'The number of pages this package scans belongs in the document a visitor is actually served, which has to be readable on its own; README points at it rather than restating it.'
+
+one_home 'listing_scanned' STATEMENT \
+  "$NUM of the $NUM listing routes" \
+  'The scanned-subset figure belongs beside the list of what is NOT covered, which is in the statement.'
+
+one_home 'theme_axe_gate' STATEMENT \
+  "(axe-core runs there over $NUM pages|$NUM fixture pages|$NUM of $NUM fixture)" \
+  'The theme is a separate project whose gate moves on its own schedule. The statement keeps ONE description of it, in the paragraph that also says those pages are fixtures and not pages of this site; anywhere else it is a copy that goes stale within hours, which is exactly what happened on 2026-09-20.'
+
+one_home 'pdf_count' MANIFEST \
+  "$NUM (generated )?PDFs" \
+  'The licence manifest is the document about the media, so the media counts live there.'
+
+one_home 'csv_count' MANIFEST \
+  "$NUM CSVs?( distributions?)?[ ,.]" \
+  'Same: the manifest is the document about the media.'
+
+one_home 'top_level_entries' README \
+  "$NUM(\\*\\*)? top-level entries" \
+  'What the tarball contains is a fact about the package, and README is the file a Drupal.org visitor opens to find out what they are installing.'
+
+one_home 'ci_job_table' README \
+  '\| `[A-Za-z -]+` \| [a-z]+ \| [a-z]+ \| (true|false) \|' \
+  'The CI job list is a developer-facing observation; it belongs in README and nowhere in the shipped content.'
+
+# THE ONE DELIBERATELY BOUND DUPLICATE, and the reason the third home kind exists. Deleting
+# either of these would cost a reader something: README's status paragraph and the statement's
+# scope sentence are read by different people, neither of whom has the other file open. Both
+# copies are compared against the same measured source above - `registers` and
+# `registers_stated` - so a change to the content model fails BOTH, and neither can drift alone.
+one_home 'registers' 'README STATEMENT' \
+  "$NUM registers" \
+  'Bound rather than deleted: both copies are compared against the distinct agora_base_* node bundles, above, in the same run.'
+
+# ============================================================================== ONLINE ==
+ONLINE_FIGURES='theme_axe_pages theme_axe_rules theme_axe_violations theme_contrast_pairs theme_contrast_below'
+THEME_PROJECT='agora_theme'
+
+printf '\nONLINE - the theme figures the statement quotes, re-read from the theme CI traces\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+not_read() { # <reason> - every online figure is unreachable for this one reason
+  local f
+  for f in $ONLINE_FIGURES; do
+    UNREAD=$((UNREAD + 1))
+    printf '  %sNOT READ%s  %-22s %s\n' "$C_BAD" "$C_OFF" "$f" "$1"
+  done
+  printf '\n  That is NOT "the figures are fine"; it is "nothing here could see them". An absence of\n'
+  printf '  information is not good news, and it is never counted as a comparison.\n'
+}
+
+# The claims are extracted whether or not --online runs, so the offline pass still refuses a
+# figure stated twice and a reader of the offline output can see what --online would fetch.
+claim_once 'theme axe' STATEMENT 'axe-core runs there over [a-z]+ pages'
+T_PAGES=$(to_num "$(field 1 '.*over ([a-z]+) pages.*')")
+claim_once 'theme axe result' STATEMENT '<strong>[0-9]+ rules applied per page, [0-9]+ violations</strong>'
+T_RULES=$(field 1 '.*<strong>([0-9]+) rules.*')
+T_VIOL=$(field 1 '.*per page, ([0-9]+) violations.*')
+claim_once 'theme contrast' STATEMENT '<strong>[0-9]+ pairs checked, [0-9]+ below threshold</strong>'
+T_PAIRS=$(field 1 '.*<strong>([0-9]+) pairs.*')
+T_BELOW=$(field 1 '.*checked, ([0-9]+) below.*')
+
+if [ "$ONLINE" -ne 1 ]; then
+  not_read 'not requested. Pass --online to re-read it; the gate deliberately does not.'
+elif ! command -v curl >/dev/null 2>&1; then
+  not_read 'curl is not on PATH, so no trace can be fetched from this shell.'
+elif ! command -v python3 >/dev/null 2>&1; then
+  not_read 'python3 is not on PATH, so the pipeline JSON cannot be parsed.'
+else
+  API="https://git.drupalcode.org/api/v4/projects/project%2F$THEME_PROJECT"
+  RAW="https://git.drupalcode.org/project/$THEME_PROJECT/-/jobs"
+  PJ=$(curl -sSL --max-time 40 "$API/pipelines?ref=1.x&per_page=20" 2>/dev/null)
+  if [ -z "$PJ" ]; then
+    not_read "the GitLab API returned nothing for $THEME_PROJECT's pipelines. No network, or the host is unreachable from here."
+  else
+    PICK=$(PJ="$PJ" python3 -c '
+import json, os
+# cspell:ignore isinstance
+try:
+    ps = json.loads(os.environ["PJ"])
+except Exception as exc:
+    print("ERR the API answered something that is not JSON: %s" % exc); raise SystemExit
+if not isinstance(ps, list) or not ps:
+    print("ERR the pipelines endpoint returned no list at all, which is a failure and not an empty result."); raise SystemExit
+for p in ps:
+    if p.get("status") == "success":
+        print("PIPE %s %s" % (p.get("id"), (p.get("sha") or "")[:8])); raise SystemExit
+print("ERR none of the %d most recent 1.x pipelines is a SUCCESSFUL, terminal one. The statement says its figures are those of the most recent run; a red or running pipeline is not one." % len(ps))
+' 2>/dev/null)
+    if [ -z "$PICK" ] || [ "${PICK#ERR }" != "$PICK" ]; then
+      not_read "${PICK#ERR }"
+    else
+      T_PIPE=$(printf '%s' "$PICK" | sed -nE 's/^PIPE ([0-9]+) .*/\1/p')
+      T_SHA=$(printf '%s' "$PICK" | sed -nE 's/^PIPE [0-9]+ (.*)/\1/p')
+      JJ=$(curl -sSL --max-time 40 "$API/pipelines/$T_PIPE/jobs?per_page=100" 2>/dev/null)
+      JOBS=$(JJ="$JJ" python3 -c '
+import json, os
+# cspell:ignore isinstance
+try:
+    js = json.loads(os.environ["JJ"])
+except Exception as exc:
+    print("ERR the jobs endpoint answered something that is not JSON: %s" % exc); raise SystemExit
+if not isinstance(js, list) or not js:
+    print("ERR the jobs endpoint returned no job list at all."); raise SystemExit
+want = {"nightwatch": None, "agora-invariants": None}
+for j in js:
+    if j.get("name") in want and j.get("status") == "success":
+        want[j["name"]] = j.get("id")
+missing = [k for k, v in want.items() if not v]
+if missing:
+    print("ERR the pipeline has no successful %s job." % " and no successful ".join(missing)); raise SystemExit
+print("NW %s" % want["nightwatch"])
+print("INV %s" % want["agora-invariants"])
+' 2>/dev/null)
+      if [ -z "$JOBS" ] || [ "${JOBS#ERR }" != "$JOBS" ]; then
+        not_read "${JOBS#ERR } (pipeline $T_PIPE)"
+      else
+        NW_ID=$(printf '%s\n' "$JOBS" | sed -n 's/^NW //p')
+        INV_ID=$(printf '%s\n' "$JOBS" | sed -n 's/^INV //p')
+        printf '  %s' "$C_DIM"
+        printf 'read from %s pipeline %s, commit %s: nightwatch job %s, agora-invariants job %s%s\n' \
+          "$THEME_PROJECT" "$T_PIPE" "$T_SHA" "$NW_ID" "$INV_ID" "$C_OFF"
+
+        # -L is MANDATORY. Without it the 302 is a few hundred bytes and looks exactly like a
+        # failure, which is an absence of information dressed as a measurement.
+        NW=$(curl -sSL --max-time 60 "$RAW/$NW_ID/raw" 2>/dev/null | tr -d '\r')
+        NW_BYTES=$(printf '%s' "$NW" | wc -c | tr -d '[:space:]')
+        if [ "${NW_BYTES:-0}" -lt 2000 ]; then
+          for f in theme_axe_pages theme_axe_rules theme_axe_violations; do
+            UNREAD=$((UNREAD + 1))
+            printf '  %sNOT READ%s  %-22s job %s returned %s bytes, which is a redirect or an error, not a log.\n' \
+              "$C_BAD" "$C_OFF" "$f" "$NW_ID" "$NW_BYTES"
+          done
+        else
+          AXE_LINE=$(printf '%s\n' "$NW" | grep -oE 'axe gate: [0-9]+ pages scanned, [0-9]+-[0-9]+ axe rules run per page, [0-9]+ violations' | sort -u)
+          _n=$(printf '%s\n' "$AXE_LINE" | grep -v '^$' | wc -l | tr -d '[:space:]')
+          if [ "${_n:-0}" -ne 1 ]; then
+            for f in theme_axe_pages theme_axe_rules theme_axe_violations; do
+              UNREAD=$((UNREAD + 1))
+              printf '  %sNOT READ%s  %-22s the trace printed %s axe summary lines, expected 1. A log stating one figure twice is an ambiguous measurement, and an ambiguous measurement is not a measurement.\n' \
+                "$C_BAD" "$C_OFF" "$f" "$_n"
+            done
+          else
+            compare 'theme_axe_pages' "$T_PAGES" \
+              "$(printf '%s' "$AXE_LINE" | sed -nE 's/.*gate: ([0-9]+) pages.*/\1/p')" "job $NW_ID"
+            compare 'theme_axe_rules' "$T_RULES" \
+              "$(printf '%s' "$AXE_LINE" | sed -nE 's/.*, ([0-9]+)-[0-9]+ axe rules.*/\1/p')" "job $NW_ID"
+            compare 'theme_axe_violations' "$T_VIOL" \
+              "$(printf '%s' "$AXE_LINE" | sed -nE 's/.*page, ([0-9]+) violations.*/\1/p')" "job $NW_ID"
+          fi
+        fi
+
+        INVT=$(curl -sSL --max-time 60 "$RAW/$INV_ID/raw" 2>/dev/null | tr -d '\r')
+        INV_BYTES=$(printf '%s' "$INVT" | wc -c | tr -d '[:space:]')
+        if [ "${INV_BYTES:-0}" -lt 2000 ]; then
+          for f in theme_contrast_pairs theme_contrast_below; do
+            UNREAD=$((UNREAD + 1))
+            printf '  %sNOT READ%s  %-22s job %s returned %s bytes, which is a redirect or an error, not a log.\n' \
+              "$C_BAD" "$C_OFF" "$f" "$INV_ID" "$INV_BYTES"
+          done
+        else
+          CT_LINE=$(printf '%s\n' "$INVT" | grep -oE 'pairs parsed: +[0-9]+ structural findings: +[0-9]+ pairs below threshold: +[0-9]+' | sort -u)
+          _n=$(printf '%s\n' "$CT_LINE" | grep -v '^$' | wc -l | tr -d '[:space:]')
+          if [ "${_n:-0}" -ne 1 ]; then
+            for f in theme_contrast_pairs theme_contrast_below; do
+              UNREAD=$((UNREAD + 1))
+              printf '  %sNOT READ%s  %-22s the trace printed %s contrast summary lines, expected 1.\n' \
+                "$C_BAD" "$C_OFF" "$f" "$_n"
+            done
+          else
+            compare 'theme_contrast_pairs' "$T_PAIRS" \
+              "$(printf '%s' "$CT_LINE" | sed -nE 's/.*pairs parsed: +([0-9]+).*/\1/p')" "job $INV_ID"
+            compare 'theme_contrast_below' "$T_BELOW" \
+              "$(printf '%s' "$CT_LINE" | sed -nE 's/.*pairs below threshold: +([0-9]+).*/\1/p')" "job $INV_ID"
+          fi
+        fi
+      fi
+    fi
+  fi
+fi
+
+# ======================================================================= NOT CHECKED ==
+# Named with a reason that is TRUE, and the length of this list is asserted non-empty below.
+NOT_CHECKED=(
+"The two absolute cspell denominators - files offered and files checked. They come from tests/bin/spellcheck's own filter, which needs the three inputs it fetches from the CI job's own configuration, so no offline read here can produce them. The script prints both on every run, and the SUBTRACTION between them is compared above."
+"The template's own axe result - nine pages, 0 violations. It is an assertion MESSAGE in tests/src/FunctionalJavascript/AccessibilityTest.php, so PHPUnit emits it only when the assertion FAILS: 'pages scanned' appears 0 times in a green trace. There is nothing to read, in any log, on a passing run. That is T-0613's subject and it is a real gap, not a limitation of this script."
+"The 78 steps, 58 non-core modules and 'Tests: 3, Assertions: 38' of the 2026-08-23 clean install. README marks them as predating the theme swap and says a dated measurement is replaced only by another measurement. A guard that refreshed them would destroy the record they exist to be."
+"Historical and superseded figures throughout the packaged prose - the eight-entry and thirteen-entry packaging counts, the four-then-five-then-six axe page counts, every struck value. Same reason: these are frozen records of past measurements, and rule 8 keeps them."
+"AGENTS.md and LICENSE.txt, both packaged and both outside the declared subject set. LICENSE.txt is the verbatim GPL-2.0 text and carries no figure about this package. AGENTS.md is product prose with claims of its own and is READABLE AND DELIBERATELY NOT BOUND in this pass - a weaker reason than the ones above, and written as one."
+"The legal notice and the privacy notice, content/node/*.yml alongside the accessibility statement. Packaged, user-facing, and readable; they carry no figure about the package today. READABLE AND DELIBERATELY NOT BOUND, and the entry exists so the next figure written into one of them is a decision rather than an oversight."
+"Whether a figure stated in DIFFERENT WORDS somewhere in the packaged set is the same figure. Every comparison above binds ONE canonical sentence by a tight pattern, and the one-copy rule covers a REGISTERED set of detectors rather than every number in six files. The change this script arrived with deleted the restatements it found rather than trying to match them all, so this entry is about the NEXT one somebody writes."
+"The WCAG criterion identifiers - 2.4.7, 2.5.8, 1.4.10, 2.4.1 - which appear in both README.md and the statement. They are names, not measurements: two documents naming the same criterion are not two copies of a figure, and binding them would be binding a citation. READABLE AND DELIBERATELY NOT BOUND."
+"screenshot.webp's pixel dimensions and logo.png's, quoted in the manifest headings. Reading them needs a WebP and PNG header parser; the BYTE SIZE and the SHA-256 of both are compared above, and a file whose digest matches has not changed its dimensions either."
+)
+
+printf '\nNOT CHECKED - named, with a reason, because a guard that silently covers half its subject\n'
+printf 'reads exactly like one that covers all of it\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+for _e in "${NOT_CHECKED[@]}"; do
+  printf '  %s*%s %s\n' "$C_DIM" "$C_OFF" "$_e"
+done
+
+# ============================================================================ SUMMARY ==
+NC=${#NOT_CHECKED[@]}
+printf '\n=========================================================================================================\n'
+printf 'files opened:     %d\n' "$FILES_OPENED"
+printf 'claims extracted: %d\n' "$CLAIMS"
+printf 'comparisons:      %d\n' "$COMPARISONS"
+printf 'one-copy checks:  %d\n' "$ONE_COPY"
+printf 'not checked:      %d\n' "$NC"
+printf 'online unread:    %d\n' "$UNREAD"
+printf 'findings:         %d\n' "$FINDINGS"
+printf 'sha256 via:       %s\n' "${SHA_IMPL:-none available}"
+printf '=========================================================================================================\n'
+
+RC=0
+if [ "$FILES_OPENED" -eq 0 ]; then
+  printf '%sFAIL:%s no packaged file was opened. A run that read nothing found nothing.\n' "$C_BAD" "$C_OFF"
+  RC=1
+fi
+if [ "$CLAIMS" -eq 0 ]; then
+  printf '%sFAIL:%s no claim was extracted from the packaged prose at all. An extractor that\n' "$C_BAD" "$C_OFF"
+  printf '      matches nothing passes by construction, which is I-028 exactly.\n'
+  RC=1
+fi
+if [ "$COMPARISONS" -eq 0 ]; then
+  printf '%sFAIL:%s no comparison was made. Zero comparisons and zero findings is the degenerate\n' "$C_BAD" "$C_OFF"
+  printf '      agreement I-028 names: it prints exactly like a clean file.\n'
+  RC=1
+fi
+if [ "$ONE_COPY" -eq 0 ]; then
+  printf '%sFAIL:%s the one-copy register is empty, so no figure had its home verified. An empty\n' "$C_BAD" "$C_OFF"
+  printf '      register refuses nothing and reports it as agreement.\n'
+  RC=1
+fi
+if [ "$NC" -eq 0 ]; then
+  printf '%sFAIL:%s the NOT CHECKED list is empty. An empty exclusion list passes by construction,\n' "$C_BAD" "$C_OFF"
+  printf '      and it is the shape somebody deletes an entry into rather than answering it.\n'
+  RC=1
+fi
+if [ "$FINDINGS" -ne 0 ]; then
+  printf '%sFAIL:%s %d figure(s) in the packaged prose disagree with the thing they are about.\n' "$C_BAD" "$C_OFF" "$FINDINGS"
+  printf '      Each line above names the claim, the claimed value and the measured one. Fix the\n'
+  printf '      PROSE if the measurement is right; fix the PACKAGE if the prose was the promise.\n'
+  RC=1
+fi
+if [ "$ONLINE" -eq 1 ] && [ "$UNREAD" -ne 0 ]; then
+  printf '%sFAIL:%s --online was requested and %d figure(s) could not be read.\n' "$C_BAD" "$C_OFF" "$UNREAD"
+  printf '      This exits non-zero ON PURPOSE. A request to verify something, answered with\n'
+  printf '      silence, must not leave behind an exit code that means "verified".\n'
+  RC=1
+fi
+[ "$RC" -eq 0 ] && printf '%s%s%s\n' "$C_OK" 'packaged-claims: clean' "$C_OFF"
+exit "$RC"

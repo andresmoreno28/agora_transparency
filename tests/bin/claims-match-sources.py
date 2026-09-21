@@ -94,6 +94,26 @@ WATCH = "tests/bin/watch-gate"
 
 HOST = "https://git.drupalcode.org"
 
+# THE FIVE NON-CANONICAL `jobs >= N` MENTIONS IN CLAUDE.md, frozen (T-0611).
+#
+# This looks like the hand-maintained second copy this whole script exists to
+# refuse, and the difference is worth one paragraph rather than being left to
+# look like an exception.
+#
+# A figure goes stale because the thing it describes MOVES. These five describe
+# things that cannot: a verbatim blockquote of D-023(5) as first written (7),
+# the struck-through amendment immediately before the canonical marker (9), and
+# the three values quoted in the sentence after it out of D-020's amendment
+# (7, 8, 9). Rule 8 makes all five immutable - a signed record is amended or
+# superseded, never edited - so a change to any of them is a rule-8 violation
+# and is exactly what this list is here to catch. The live floor, the one that
+# does move, is NOT in here: it is derived from `len()` of a declared job list.
+#
+# Together they close the one hole the old `max()` reading left open: six
+# numbers lowered TOGETHER used to pass, because the maximum of the lowered set
+# is what the prose then said.
+FROZEN_FLOOR_MENTIONS = [7, 7, 8, 9, 9]
+
 # The two observed inventories, each with the anchors its four extractors use.
 # `api` is the URL-encoded project path the API wants; `web` is the plain path
 # the raw-log route wants. They differ, and passing one where the other belongs
@@ -134,8 +154,18 @@ UNCHECKED = [
     ("phpcs, phpstan, eslint and stylelint findings and denominators",
      "need a container rig with the project's PHP and JS toolchains; "
      "tests/bin/preflight runs them and needs Docker"),
-    ("whether a LOWERED gate floor is still consistent",
-     "the floor is read as the maximum of six mentions - see the header"),
+    # THIS ENTRY REPLACES A REASON THAT STOPPED BEING TRUE, rather than being
+    # deleted with the gap it named. The old one read "the floor is read as the
+    # maximum of six mentions"; T-0611 made the floor derived, so that sentence
+    # would now be a false reason sitting in a list whose whole value is that
+    # its reasons are true. What is left uncovered is narrower and is stated as
+    # what it is.
+    ("whether the five frozen `jobs >= N` mentions are still in struck or "
+     "quoted CONTEXTS",
+     "their VALUES are asserted as a multiset, so none can be edited without "
+     "failing the gate - but nothing here reads the markdown around them, so a "
+     "frozen record moved out of its blockquote keeps its value and loses its "
+     "framing. Rule 8 is what governs that, and rule 8 is read by people"),
     ("the GitHub mirror's conclusion, and how long it has been red",
      "network; tests/bin/watch-gate reads it live beside the gate and prints "
      "the streak, the last success and how many runs it examined"),
@@ -643,22 +673,53 @@ def main():
     claims["invariants"] = one(
         claude, r"\*\*(\d+)\*\*\s*invariants in total", "invariants", records)
 
-    # THE FLOOR IS THE ONE PLURAL CLAIM, and its rule is stated where it is
-    # applied rather than left to be inferred. CLAUDE.md mentions `jobs >= N`
-    # six times on purpose: D-023(5) is quoted verbatim at its original 7, two
-    # amendments are struck through at 8 and 9, and the operative value is the
-    # largest. Reading the maximum is therefore right for every direction the
-    # gate has ever moved - EXCEPT a deliberate lowering, which a struck-through
-    # higher number would mask. That gap is named in UNCHECKED rather than
-    # papered over.
-    floors = re.findall(r"`jobs\s*>=\s*(\d+)`", claude)
-    if not floors:
+    # THE FLOOR IS DERIVED, NOT MAXIMISED (T-0611, 2026-09-21).
+    #
+    # It used to be read as `max()` of all six `jobs >= N` mentions in CLAUDE.md:
+    # D-023(5) quoted verbatim at its original 7, two amendments struck through
+    # at 8 and 9, and the operative value the largest. That is right for every
+    # direction the gate has ever moved except one, and the exception is not
+    # exotic - SIX NUMBERS LOWERED TOGETHER PASS, because the maximum of the
+    # lowered set is exactly what the prose then says. The old code named that
+    # gap in its own NOT CHECKED list, which is the honest thing to do with a
+    # hole and is not the same as closing it.
+    #
+    # What replaces it has two halves, and neither works alone:
+    #
+    #   1. ONE canonical mention, marked in the prose so it can be found by
+    #      shape rather than by size, compared against `len()` of the shorter
+    #      declared job list. Lower it and it stops matching the lists; shorten
+    #      a list and the derived side moves out from under it. There is no
+    #      longer any value a human can type here that agrees with a job list it
+    #      does not describe.
+    #   2. The other five are FROZEN RECORDS under rule 8 - a verbatim
+    #      blockquote, a struck-through amendment and three values quoted inside
+    #      a sentence about what the amendment said. Their multiset is asserted,
+    #      so "lower all six" now fails on the five as well as on the one, and
+    #      an edit to a frozen record is caught as the rule-8 violation it is.
+    #
+    # The canonical mention is found by its marker and not by its position: a
+    # pattern anchored on "the largest" or "the last" would start agreeing with
+    # whatever somebody appends next.
+    canonical_re = r"\*\*THE FLOOR, canonical and stated once: `jobs >= (\d+)`\*\*"
+    claims["floor"] = one(claude, canonical_re, "floor", records)
+
+    mentions = list(re.finditer(r"`jobs\s*>=\s*(\d+)`", claude))
+    if not mentions:
         records.append(("FATAL",
                         "floor: no `jobs >= N` mention in CLAUDE.md at all - "
                         "the gate's own minimum is unstated"))
-        claims["floor"] = None
     else:
-        claims["floor"] = str(max(int(f) for f in floors))
+        canonical = re.search(canonical_re, claude)
+        rest = []
+        for mention in mentions:
+            if canonical is not None and \
+                    canonical.start() <= mention.start() < canonical.end():
+                continue
+            rest.append(int(mention.group(1)))
+        claims["floor_history"] = ", ".join(str(n) for n in sorted(rest))
+        sources["floor_history"] = ", ".join(
+            str(n) for n in sorted(FROZEN_FLOOR_MENTIONS))
 
     # Each observation bullet yields three things: the pipeline it names, the
     # job table under it, and the trace-figures table under that.
@@ -798,8 +859,15 @@ def main():
                         sources.get("theme_watch_jobs"),
                         "CLAUDE.md's table vs EXPECTED_agora_theme in " + WATCH)
     compared += compare("floor", claims.get("floor"), sources.get("floor"),
-                        "the largest `jobs >= N` in CLAUDE.md vs the shorter of "
-                        "the two declared job lists")
+                        "the ONE canonical `jobs >= N` in CLAUDE.md vs len() of "
+                        "the shorter of the two declared job lists - derived, "
+                        "not maximised (T-0611)")
+    compared += compare("floor_history", claims.get("floor_history"),
+                        sources.get("floor_history"),
+                        "the five NON-canonical `jobs >= N` mentions vs the "
+                        "frozen multiset they are - all five are rule-8 records "
+                        "of what the floor used to be, so any change to one is "
+                        "an edit to a signed record and not a measurement")
     compared += compare("mirror_workflows", sources.get("mirror_disk"),
                         sources.get("mirror_declared"),
                         "the workflow files under .github/workflows/ vs "

@@ -10,7 +10,7 @@ that has to publish what it decides, what it spends and who works for it.
 
 Ágora is being built in the open and is **not finished**, but it is no longer only a skeleton: the
 recipe composes Drupal CMS, installs the theme, and ships a demonstration corpus of **60 records
-across six registers** — 224 files in `content/`, 131 config objects — which a clean install
+across six registers** — 224 files in `content/`, 133 config objects — which a clean install
 renders as a working portal.
 
 ⚠️ **This paragraph described a skeleton until 2026-09-20, months after that stopped being true,
@@ -28,7 +28,9 @@ section is the first thing a reader believes and the last thing anyone re-reads.
   T-1310 moved the service-area cards off it to `/publications`, beside the register they
   filter. A hand-written count in prose is a number nothing checks.)
 * Ships the demonstration corpus described in the next section: six registers of invented records
-  for a fictional Spanish municipality, with 34 generated PDFs and 5 CSV distributions.
+  for a fictional Spanish municipality, with generated PDFs and CSV distributions. Their counts,
+  their provenance and their licences are stated once, in
+  [`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md), which ships inside the package.
 
 **What does not exist yet**, and is therefore not offered by this template — this is the plan, not a
 feature list:
@@ -73,26 +75,29 @@ product.
 What actually runs, and what it covers:
 
 * **In this repository**, `tests/src/FunctionalJavascript/AccessibilityTest.php` runs axe-core over
-  **nine pages of the site as the template installs it** — the two composed landing pages, the
-  front page as a visitor meets it, four listing routes, one published record, and the
-  page-not-found screen — **anonymously**, as a member of the public meets them. It is **blocking**
-  in both PHPUnit jobs. Result: **0 violations**.
-* **In `drupal/agora_theme`**, a `nightwatch` job runs axe over its fixture pages. **That figure
-  is deliberately not repeated here.** It moves whenever the theme adds a surface, it is printed by
-  the job itself, and the job's log is **public and readable without an account** — so the number
-  belongs where a reader can check it rather than in a second copy that goes stale.
-  ⚠️ **This paragraph stated "nine fixture pages … 9 of 9" from 2026-09-20 17:56 until 2026-09-21,
-  and it was wrong within hours of being written.** It was written in the commit whose own subject
-  was *"the package contradicted itself about accessibility on its own front page"*; the theme took
-  the gate from nine pages to ten the same evening, and nothing here knew. **A number written in
-  two places goes stale in one of them first**, and the fix is to stop making the second copy.
+  the pages of the site as the template installs it — the composed landing pages, the front page as
+  a visitor meets it, several listing routes, a published record and the page-not-found screen —
+  **anonymously**, as a member of the public meets them. It is **blocking** in both PHPUnit jobs.
+  **The count, the breakdown and the result are stated once**, in the accessibility statement this
+  package ships at `/accessibility-statement`: that is the document a visitor is actually served,
+  and it has to be readable on its own.
+* **In `drupal/agora_theme`**, a `nightwatch` job runs axe over its fixture pages. **That figure is
+  not repeated anywhere in this package.** It moves whenever the theme adds a surface, it is
+  printed by the job itself, and the job's log is **public and readable without an account** — so
+  the number belongs where a reader can check it rather than in a second copy that goes stale. The
+  one place this package describes that gate is the shipped accessibility statement, in the
+  paragraph that also says those pages are fixtures and not pages of this site.
+  ⚠️ **A copy of that figure stood in this file for a day in September 2026 and was false within
+  hours of being written**, because the theme's gate moved the same evening and nothing here could
+  see it. `tests/bin/packaged-claims` now refuses a figure stated in two packaged files at once,
+  and its header records the case.
 
 **What neither gate covers, stated because a gate's silence is not a pass:** anything behind a
-login; four of the eight listing routes, the prose pages — including this statement's own page —
-and 59 of the 60 record pages; and the three AA criteria axe cannot decide — **2.4.7 Focus
-Visible, 2.5.8 Target Size (Minimum) and 1.4.10 Reflow** — plus 2.4.1 Bypass Blocks *in use*.
+login; the listing routes that are not scanned, the prose pages — including this statement's own
+page — and every record page but the one; and the three AA criteria axe cannot decide — **2.4.7
+Focus Visible, 2.5.8 Target Size (Minimum) and 1.4.10 Reflow** — plus 2.4.1 Bypass Blocks *in use*.
 **No conformance with any WCAG level is claimed.** The shipped accessibility statement carries the
-full account.
+full account, with the denominators.
 
 ## Requirements
 
@@ -238,28 +243,27 @@ before you run them.
 
 ## What it ships
 
-The packaged release holds **thirteen** top-level entries. They are not transcribed by hand here,
-because that is how the previous version of this paragraph went wrong — they are derived, and the
-derivation is one command anybody reading this can re-run:
+The packaged release holds **eleven** top-level entries, and the whole tarball is **374 entries**.
+They are not transcribed by hand here, because that is how two earlier versions of this paragraph
+went wrong — they are derived, and the derivation is one command anybody reading this can re-run:
 
 ```shell
 git archive HEAD | tar -t | sed 's#/.*#/#' | sort -u
 ```
 
-Measured 2026-09-12 at commit `6559813`, it prints, in that order: `.gitattributes`, `.gitignore`,
-`.mailmap`, `AGENTS.md`, `LICENSE.txt`, `README.md`, `composer.json`, `config/`, `content/`,
-`logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`.
+Measured 2026-09-21, it prints, in that order: `.gitattributes`, `AGENTS.md`, `LICENSE.txt`,
+`README.md`, `composer.json`, `config/`, `content/`, `logo.png`, `recipe.yml`, `recommended.yml`,
+`screenshot.webp`. Both figures above are now read out of `git archive` by
+`tests/bin/packaged-claims` on every push, so the commit that changes what the tarball holds is the
+commit that fails until this paragraph is changed with it.
 
-⚠️ **Re-measured 2026-09-21 and it is now ELEVEN, because two of the thirteen were taken out of
-the package deliberately.** `.gitignore` and `.mailmap` are `export-ignore`d as of that date: both
-are git's files rather than the product's, and neither does anything once the package is extracted
-into `recipes/agora_transparency/` — a tarball has no history for a `.mailmap` to canonicalise, and
-a `.gitignore` there names `/web/`, `/vendor/` and `/.ddev/` relative to a directory in which none
-of them exists. The whole tarball goes from **376 entries to 374**. The list is now:
-`.gitattributes`, `AGENTS.md`, `LICENSE.txt`, `README.md`, `composer.json`, `config/`, `content/`,
-`logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. Two checks in
-`tests/bin/gate-a-wave1.sh` G8 hold the exclusion, so undoing it turns the gate red rather than
-quietly restoring the noise.
+⚠️ **Two entries left the package on 2026-09-21, and this paragraph went on leading with the old
+count for the rest of that day.** `.gitignore` and `.mailmap` are `export-ignore`d as of that date:
+both are git's files rather than the product's, and neither does anything once the package is
+extracted into `recipes/agora_transparency/` — a tarball has no history for a `.mailmap` to
+canonicalise, and a `.gitignore` there names `/web/`, `/vendor/` and `/.ddev/` relative to a
+directory in which none of them exists. Two checks in `tests/bin/gate-a-wave1.sh` G8 hold the
+exclusion, so undoing it turns the gate red rather than quietly restoring the noise.
 
 `git archive` applies the `export-ignore` rules in [`.gitattributes`](.gitattributes), which is what
 Drupal.org's packaging and a Composer release apply too — so the command answers the question
@@ -386,12 +390,14 @@ program computes its hashes is worse than one that is noisy.
 1. Run `bash tests/bin/toolchain-floor` on the Mac and paste the whole output back. That fills the
    empty column above and is the only step that needs a Mac in front of a human.
 2. Run `bash tests/bin/doctor` there; it must reach `READY`.
-3. Run both wave runners and reproduce the counts this repository quotes — **67 checks · 0
-   failures** and **49 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
-   It read `61` and `37` until 2026-09-12, which is two invariants and twelve checks behind: the
-   runners grew and the sentence did not. The figures above were read from
-   `bash tests/bin/gate-a-wave1.sh` and `bash tests/bin/gate-a-wave3.sh` on 2026-09-12, and each
-   runner prints its own total on its last line, which is the number to compare against.
+3. Run both wave runners and reproduce the counts this repository quotes — **77 checks · 0
+   failures** and **66 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
+   It read `61` and `37` until 2026-09-12 and `67` and `49` until 2026-09-21, which was six
+   invariants and twenty-seven checks behind by the end: the runners grew and the sentence did not,
+   twice. Both figures are now compared against each runner's own `GATE-CLAIM` header line by
+   `tests/bin/packaged-claims`, which runs in the blocking `agora-invariants` job — so this is the
+   last time that drift can happen silently. Each runner also prints its own total on its last
+   line, which is the number to compare against.
 4. Re-run the dirty-case matrix (T-312): 12 injections, each reverted, each seen to fail. A
    platform where no invariant has been watched *failing* has not been shown to have working
    invariants at all — that is what certification means here, and it is the step that separates
@@ -519,8 +525,8 @@ jobs"* until 2026-09-12, two jobs after it stopped being true — which is the s
 table it summarises, one sentence further from the measurement.
 
 **What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
-stayed closed across four changes of denominator. Measured 2026-09-12 by
-`bash tests/bin/spellcheck`: **451 tracked or stage-able files offered to cspell, 410 checked,
+stayed closed across five changes of denominator. Measured 2026-09-21 by
+`bash tests/bin/spellcheck`: **467 tracked or stage-able files offered to cspell, 426 checked,
 `Issues found: 0`** — plus two the CI runner generates and this repository does not track
 (`.editorconfig`, `gitlab_templates_version.txt`), which is why the job's own count reads two
 higher. The script prints both numbers every time it runs, so this paragraph is checkable rather
@@ -532,8 +538,10 @@ that does not add up to its own denominator reads as an explanation — that exa
 `CLAUDE.md` across three re-measurements, where five named files were offered against a gap of
 thirty-nine, and nobody did the subtraction.
 
-* **37 are binaries `cspell` does not open** — 34 PDF and one WebP under `content/file/`, plus
-  `screenshot.webp` and `logo.png` at the root.
+* **37 are binaries `cspell` does not open** — every file under `content/file/` that is neither a
+  `*.yml` entity export nor one of the CSV distributions it reads happily, plus `screenshot.webp`
+  and `logo.png` at the root. The per-format counts are stated once, in
+  [`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md), and this bullet does not restate them.
 * **4 are matched by the upstream `.cspell.json` defaults, not by omission** — `.eslintrc.json` and
   `.gitignore` match its dotfile and `*ignore` patterns; `LICENSE.txt` and `composer.json` match its
   case-insensitive filename list regardless of extension.

@@ -638,11 +638,30 @@ moving the working copy a session is running in, on the day wave 5 starts.
   The exception list in `.gitlab-ci.yml` is **empty** as of 2026-08-23 (T-226). A `success` pipeline
   containing a failed permissive job is a **failed** gate (I-043).
 
-  ~~**The floor is now `jobs >= 9`**~~ **`jobs >= 10` as of 2026-08-27 (D-040(2)).** (Amendment to D-020, 2026-08-24, T-511.) D-023(5) is quoted above
+  ~~**The floor is now `jobs >= 9`**~~ **THE FLOOR, canonical and stated once: `jobs >= 10`** — as
+  of 2026-08-27 (D-040(2)). (Amendment to D-020, 2026-08-24, T-511.) D-023(5) is quoted above
   verbatim and its other three conditions are untouched; only the minimum count moves, and it moves
   because the job list moves. ⚠️ The quoted `jobs >= 7` is D-023(5) as first written, when seven
   jobs were observed; the amendment states the floor as rising *"from `jobs >= 8` to `jobs >= 9`"*,
   which matches the eight-job table above rather than the quote. ~~**Read `9`.**~~ **Read `10`.**
+
+  ⚠️ **THAT SENTENCE IS THE ONLY LIVE FLOOR IN THIS FILE, AND `10` IS NOT WRITTEN DOWN AS A
+  JUDGEMENT ANY MORE — IT IS DERIVED (T-0611, 2026-09-21).** `tests/bin/claims-match-sources`
+  reads the number out of the marked sentence above and compares it against **`len()` of the
+  shorter of the two job lists `tests/bin/watch-gate` declares**. Shorten a declared list by one
+  and the floor moves under the claim, which fails; the job-list comparison fails in the same run.
+  **The five other `jobs >= N` in this file are references, not floors**, and they are now named
+  rather than inferred: the **`7`** inside the D-023(5) blockquote above, the struck **`9`**
+  immediately before the marker, and the **`7`**, **`8`** and **`9`** quoted in the sentence after
+  it. All five are frozen records under rule 8, so the guard asserts that the multiset of
+  non-canonical mentions is still exactly **{7, 7, 8, 9, 9}** — an edit to any one of them is a
+  rule-8 violation and fails the gate.
+  ⚠️ **What this replaces, and why it was weak enough to be worth a task row:** until today the
+  floor was read as the **maximum of all six mentions**. That is right for every direction the
+  gate has ever moved except one — a set of six numbers lowered **together** passes, because the
+  maximum of the lowered set is exactly what the prose now says. The old code named that gap in
+  its own `NOT CHECKED` list, which is the honest thing to do with a hole and is not the same as
+  closing it. It is closed.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
   `bash tests/bin/spellcheck` offers **456** tracked files to cspell, which **checks 415** and
@@ -856,8 +875,17 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (71 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **20** invariants in total —
+  (77 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **21** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`71 · 20` became `77 · 21` on 2026-09-21 (unit 006 wave 2), and this is the case where
+  `invariants` DOES move**, which is worth one line beside the three notes below saying it did
+  not: **T-0608** adds a new GROUP, wave 1's G11, running a new script — `tests/bin/packaged-claims`,
+  six checks. The three notes below are about checks landing in groups that already existed; the
+  rule they illustrate is the same one, seen from the other side. **The reason it exists is the
+  uncomfortable half:** `claims-match-sources` has guarded this file for a fortnight, and this
+  file is `export-ignore`d. Nothing guarded the prose that actually ships, and an audit of it that
+  morning found **six wrong figures in three packaged files** — including the two check totals
+  `README.md` quotes about these very runners, four and seventeen behind.
   ⚠️ **`68 · 61` became `71 · 66` on 2026-09-21 (wave 28) and `20` did NOT MOVE for the third
   time running**, which is the arithmetic behaving rather than an omission: all eight new checks
   land in EXISTING groups — three in wave 1's G8, three across wave 3's G3/G5/G6 and two in its
@@ -899,9 +927,12 @@ moving the working copy a session is running in, on the day wave 5 starts.
   figures out of this sentence and fails the gate when they disagree with the `# GATE-CLAIM:` line
   each runner carries in its own header — along with the two job tables above, which it compares
   against `watch-gate`'s declared job lists, and the `jobs >= N` floor, which it compares against
-  the length of those lists. ~~**Seven comparisons**~~ ~~**EIGHT as of 2026-09-19**~~ **TEN as of
-  2026-09-20** — all offline, well under a second, which is why it is wired into wave 1 and not
-  into the runner that takes 35 minutes. The eighth reads `.github/workflows/` against the workflow
+  the length of those lists. ~~**Seven comparisons**~~ ~~**EIGHT as of 2026-09-19**~~ ~~**TEN as of
+  2026-09-20**~~ **ELEVEN as of 2026-09-21** — all offline, well under a second, which is why it is
+  wired into wave 1 and not into the runner that takes 35 minutes. The eleventh is `floor_history`
+  and it exists because the tenth was made stricter: T-0611 derives the floor from `len()` of a
+  declared job list instead of reading the largest of six prose mentions, and the eleventh asserts
+  that the other five mentions are still the frozen values rule 8 makes them. The eighth reads `.github/workflows/` against the workflow
   list `tests/bin/watch-gate` declares it reads, so a workflow appearing on the GitHub mirror that
   nothing has been told to watch fails the gate on the day it lands rather than on the day somebody
   notices. The ninth and tenth check that neither trace-figures table attributes a figure to a job

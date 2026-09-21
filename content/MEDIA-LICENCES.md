@@ -69,12 +69,13 @@ second is cheaper to defend and an order of magnitude lighter.
 
 ### The script the `source URL` column names
 
-**Thirty-nine of the forty rows** point at **`tests/bin/generate-demo-media.py`**,
+**Thirty-nine of the forty-two rows** point at **`tests/bin/generate-demo-media.py`**,
 and that is a real file in this project's repository. Run it and it re-derives
 those thirty-nine from the entity exports under `content/` and compares them,
-byte for byte, against what is on disk — and it checks the fortieth, the
-masthead photograph, against a recorded SHA-256 without claiming to have made
-it. That fortieth file has a section of its own further down this page:
+byte for byte, against what is on disk — and it checks one more, the masthead
+photograph, against a recorded SHA-256 without claiming to have made it. That
+file has a section of its own further down this page, and so do the two rows
+the script does not reach at all, which are the two files at the package root:
 
 ```
 python3 tests/bin/generate-demo-media.py          # compares; writes nothing
@@ -132,7 +133,11 @@ next reader does not re-derive a wrong reason for a right decision.
 
 **It is still covered, and by the same invariant.** The script knows the file by
 name, holds its **SHA-256**, and reports a finding if the bytes on disk differ
-by one — so `--check` is an equality test for all forty. What it cannot do, and
+by one — so `--check` is an equality test for all forty files the script knows.
+⚠️ **Those forty are not the forty-two rows of the table**: the two files at the
+package root are outside the script's reach and are covered by
+`tests/bin/media-licence` instead, which is the invariant that counts rows.
+What it cannot do, and
 says so on every run, is **re-create** this one under `--write`: a digest
 restores nothing. That limitation is the whole of what is different, and it is
 printed rather than left to be discovered.

@@ -72,7 +72,15 @@
 #           provenance row, and this check is what stops it being deleted by
 #           somebody who finds it referenced by nothing.               70 -> 71
 #
-# GATE-CLAIM: checks=71 invariants=2
+# UNIT 006 WAVE 2 (2026-09-21) takes it from 71 to 77 and `invariants` from 2 to
+# 3, because G11 IS a new group running a new script: tests/bin/packaged-claims
+# (T-0608). Six checks - exit plus five denominators - and the denominators are
+# the point rather than padding. G9 guards CLAUDE.md, which is process and is
+# `export-ignore`d; nothing guarded the prose that actually SHIPS, and an audit
+# of it the same morning found six wrong figures in three packaged files,
+# including the two check totals README quotes about these very runners.
+#
+# GATE-CLAIM: checks=77 invariants=3
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -599,6 +607,56 @@ else
   check 'executable-bit present'               "$(trunc "$INV" 28)" 'present'
   check 'executable-bit (files examined > 0)'  'not run' 'yes'
   check 'executable-bit (shebang scripts > 0)' 'not run' 'yes'
+fi
+
+# ------------------------------------- G11 - packaged-claims (T-0608, 2026-09-21) --
+# The figures the PACKAGED prose states, against the things that produce them. G9
+# above is the same technique aimed at CLAUDE.md, which is process and does not
+# ship; this one is aimed at README.md, the licence manifest, the shipped
+# accessibility statement, recipe.yml, composer.json and recommended.yml, which do.
+# The two subjects are deliberately disjoint, so neither guard's green says anything
+# about the other's file set.
+#
+# It is in this runner and not wave 3 because it is pure git plus grep: no network,
+# no container, no database, well under a second.
+#
+# FIVE DENOMINATORS AND NOT ONE, for the reason I-028 gives and which this family of
+# checks keeps rediscovering. Each of these would print "findings: 0" and pass by
+# construction: an extractor whose patterns stopped matching, a run that opened no
+# file, a run that compared nothing, a one-copy register somebody emptied, and a
+# NOT CHECKED list somebody deleted an entry into rather than answering. The exit
+# status alone distinguishes none of them from a clean package.
+group 'G11 - packaged-claims (the packaged prose against what it describes)'
+INV=tests/bin/packaged-claims
+if [ -r "$INV" ]; then
+  INV_OUT=$(bash "$INV" 2>&1); INV_RC=$?
+  PC_FILES=$(printf '%s\n' "$INV_OUT" | grep -oE '^files opened: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PC_CLAIMS=$(printf '%s\n' "$INV_OUT" | grep -oE '^claims extracted: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PC_CMP=$(printf '%s\n' "$INV_OUT" | grep -oE '^comparisons: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PC_ONE=$(printf '%s\n' "$INV_OUT" | grep -oE '^one-copy checks: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PC_NC=$(printf '%s\n' "$INV_OUT" | grep -oE '^not checked: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  note "$(printf '%s\n' "$INV_OUT" | grep -E '^(files opened|claims extracted|comparisons|one-copy checks|findings):' | tr -s ' ' | tr '\n' ' ')"
+  check 'packaged-claims (exit)'                      "$INV_RC" '0'
+  check 'packaged-claims (files opened > 0)' \
+    "$([ "${PC_FILES:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'packaged-claims (claims extracted > 0)' \
+    "$([ "${PC_CLAIMS:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'packaged-claims (comparisons > 0)' \
+    "$([ "${PC_CMP:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'packaged-claims (one-copy checks > 0)' \
+    "$([ "${PC_ONE:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'packaged-claims (unchecked named > 0)' \
+    "$([ "${PC_NC:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  if [ "$INV_RC" -ne 0 ]; then
+    printf '%s\n' "$INV_OUT" | grep -E 'MISMATCH|EMPTY SIDE|WRONG HOME|MISSING HOME|TWO COPIES|FATAL' | sed 's/^/  /'
+  fi
+else
+  check 'packaged-claims present'                 "$(trunc "$INV" 28)" 'present'
+  check 'packaged-claims (files opened > 0)'      'not run' 'yes'
+  check 'packaged-claims (claims extracted > 0)'  'not run' 'yes'
+  check 'packaged-claims (comparisons > 0)'       'not run' 'yes'
+  check 'packaged-claims (one-copy checks > 0)'   'not run' 'yes'
+  check 'packaged-claims (unchecked named > 0)'   'not run' 'yes'
 fi
 
 # ----------------------------------------------------------------- summary ---
