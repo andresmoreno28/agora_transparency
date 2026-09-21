@@ -109,7 +109,7 @@ wave-23 row and remains open), and every file in `agora_theme`.
 
 ---
 
-## Wave 24 · The retrieval surface and its gates
+## Wave 25 · The retrieval surface and its gates
 
 | # | Repo | Task | Success criterion (falsifiable) | Blocked by |
 |---|---|---|---|---|
@@ -122,7 +122,7 @@ wave-23 row and remains open), and every file in `agora_theme`.
 
 ---
 
-## Wave 25 · The generative half — every row conditional on the module ruling
+## Wave 26 · The generative half — every row conditional on the module ruling
 
 | # | Repo | Task | Success criterion (falsifiable) | Blocked by |
 |---|---|---|---|---|
@@ -136,7 +136,7 @@ wave-23 row and remains open), and every file in `agora_theme`.
 
 ---
 
-## Wave 26 · Gates, audit, closure
+## Wave 27 · Gates, audit, closure
 
 | # | Repo | Task | Success criterion (falsifiable) | Blocked by |
 |---|---|---|---|---|
@@ -144,3 +144,37 @@ wave-23 row and remains open), and every file in `agora_theme`.
 | T-0530 ⏸ | T | Full gate A with real counts | Both runners' totals printed and matching their `# GATE-CLAIM:` lines. Job list from the API with pipeline id, ref and commit quoted; every job `success`; every `allow_failure` false; `jobs >= 10`. **The pipeline's status field is never the evidence** (D-023(5)) | all |
 | T-0531 ⏸ | T | `orquestador` READ-ONLY audit: standards, SBOM, licences, publishability, accessibility, structure | Verdict delivered with no open 🔴. Every finding carries file:line, why, remedy, target unit | T-0530 |
 | T-0532 ⏸ 👤 | T | Closure: unit report, budget accounting in the same commit, HOLD | The count printed by the command at the head of this file. D-044's necessity test applied **row by row**, necessary and useful separated, the basis of each stated | T-0531 |
+
+---
+
+## ⚠️ The wave counter collided, and it is the same coupling this file already fixed once
+
+**Waves 22 and 23 were each executed TWICE on 2026-09-20 — once in unit 003 and once here.** Unit
+003 ran its waves 22, 23 and 24 the same night this unit ran its 22 and 23. Three collisions, and
+the third was caught only because an implementer noticed a heading it did not expect.
+
+**The unexecuted waves are renumbered 24 → 25, 25 → 26, 26 → 27**, highest first so no renumber
+collided mid-flight. ⚠️ **The two that already ran are NOT renumbered**: they happened, their
+commits and their CI pipelines name them, and rewriting executed history to tidy a counter would
+trade a visible collision for an invisible one.
+
+⚠️ **The defect is the coupling, not the numbers — and this file already fixed the same coupling
+once.** `plan.md` §7 says waves are *"numbered globally"*, but **nothing owns that counter**: it
+lives in prose in two task files that are edited in parallel by different sessions, so two units
+picking "the next one" pick the same one. That is exactly why D-058 decoupled **task ids** from
+wave numbers, and the argument transfers wholesale: **a shared counter with no mechanism is a
+number that goes wrong in one place first.**
+
+**Two ways out, neither taken here because it is a process decision and not a task:**
+
+- **A** · Unit-scoped wave numbers, the way task ids already are — unit 005 runs waves 1, 2, 3.
+  Collisions become impossible by construction, and a wave heading stops carrying information
+  about what else was happening in the project that week.
+- **B** · Keep global numbering and give the counter a home a machine can read — a single file, or
+  a check in `tests/bin/` that fails when two units claim one number. The information survives and
+  the collision becomes detectable.
+
+★ **A**, on the same reasoning D-058 already won: the cheapest fix for a counter nobody owns is
+not to share it. Left for whoever opens the next unit, with the cost of being wrong stated — under
+A, a reader can no longer tell from a heading whether two waves ran in the same week, which is
+information this project has used exactly once, in the paragraph above.
