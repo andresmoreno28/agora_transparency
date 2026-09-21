@@ -393,9 +393,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `969322`, ref `1.x`, commit `4f82307`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/969322/jobs` on 2026-09-20. **Ten jobs, every
-  one `success`, every one `allow_failure: false`.**
+- **Observed inventory — the theme.** Pipeline `970030`, ref `1.x`, commit `a3037ae`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/970030/jobs` on 2026-09-21. **Ten jobs, every
+  one `success`, every one `allow_failure: false`.** Figures read from the traces the same day:
+  `nightwatch` job `12334193` — **10 pages scanned, 89-89 axe rules per page, 0 violations,
+  heading-order reported on 10 of 10 pages, 774 total assertions**; `phpunit` job `12334194` —
+  **`OK (203 tests, 959 assertions)`**.
+  🔴 **THIS IS THE THIRD REFRESH OF THIS ROW IN TWENTY-FOUR HOURS, AND THE STALENESS IS THE
+  RECORD.** It stood at `969322`/`4f82307` when a drift detector in the theme found it; before
+  that at `969068`, and before that at `968026`. **Nothing catches it and the reason is structural:
+  `tests/bin/claims-match-sources` compares this table's job NAMES against `watch-gate`'s declared
+  list, and the names do not change when the pipeline does.** ⚠️ **`tests/bin/packaged-claims`
+  does not reach it either** — its subject is the *packaged, user-facing* set, and `CLAUDE.md` is
+  `export-ignore`d and therefore not in it. **A stale observation of an unchanged list is invisible
+  to every guard this project owns**, which is the one gap left after a week of closing them. The
+  fix is to bind the pipeline id itself, the way the theme's `claims-match-readme` binds one to a
+  re-runnable URL; it has **no owner and no task row**.
   🔴 **THIS ROW WAS FOUR PIPELINES STALE WHEN THE ONLINE CHECKER WAS BUILT, AND BUILDING THE
   CHECKER IS HOW THAT WAS FOUND.** It named `969068`/`8909f76` while **T-1205's own audit, signed
   in this repository earlier the same day, had already read `969322`/`4f82307`** — so the file
