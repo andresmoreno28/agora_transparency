@@ -1086,8 +1086,19 @@ moving the working copy a session is running in, on the day wave 5 starts.
   each runner carries in its own header — along with the two job tables above, which it compares
   against `watch-gate`'s declared job lists, and the `jobs >= N` floor, which it compares against
   the length of those lists. ~~**Seven comparisons**~~ ~~**EIGHT as of 2026-09-19**~~ ~~**TEN as of
-  2026-09-20**~~ **ELEVEN as of 2026-09-21** — all offline, well under a second, which is why it is
-  wired into wave 1 and not into the runner that takes 35 minutes. The eleventh is `floor_history`
+  2026-09-20**~~ ~~**ELEVEN as of 2026-09-21**~~ **FOURTEEN, re-read from the tool on 2026-09-22**
+  — all offline, well under a second, which is why it is
+  wired into wave 1 and not into the runner that takes 35 minutes.
+  🔴 **THIS COUNT IS THE LAST UNBOUND FIGURE IN THIS BULLET AND IT WENT STALE BY THREE.** The
+  script prints `comparisons: 14  (offline)`; this sentence said ELEVEN. T-0623 took it 13 → 14
+  and the prose did not move with it, which is the rule at the foot of the Gate A block being
+  broken inside the paragraph that describes the mechanism for catching exactly this.
+  ⚠️ **`claims-match-sources` cannot check its OWN comparison count**, and that is not an
+  oversight to fix casually: a guard that read its own total out of this file and compared it with
+  the total it just printed would be asserting a number against itself. It is the same circularity
+  that kept the runners' `GATE-CLAIM` self-check deliberately un-numbered. **So this figure is
+  structurally the hardest one in the file to bind**, and the honest handling is to say so here
+  rather than to leave a reader assuming the machinery covers it. The eleventh is `floor_history`
   and it exists because the tenth was made stricter: T-0611 derives the floor from `len()` of a
   declared job list instead of reading the largest of six prose mentions, and the eleventh asserts
   that the other five mentions are still the frozen values rule 8 makes them. The eighth reads `.github/workflows/` against the workflow
