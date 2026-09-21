@@ -785,7 +785,89 @@ if [ "$M" -eq 0 ]; then
 else
   printf '%s%d checks - %d failures%s\n' "$C_BAD" "$N" "$M" "$C_OFF"
 fi
-printf '=========================================================================================================\n'
+# -- the runner grades itself against its own header (T-1911) -----------------
+# CLAUDE.md carried this as an open gap with NO OWNER for weeks, in its own
+# words: "nothing yet asserts that a GATE-CLAIM line matches the total its own
+# runner PRINTS. Five of the ten offline comparisons are therefore prose against
+# prose." tests/bin/claims-match-sources reads the header line of this file and
+# the sentence in CLAUDE.md and compares those two - neither of which is the
+# arithmetic that just ran. The comparison below is the missing side of it: the
+# declaration against the count.
+#
+# WHY IT IS WORTH A GUARD RATHER THAN A HABIT. The declaration lives about three
+# lines from the arithmetic that derives it, which is why it has usually been
+# right; but "usually right" is the state every stale figure in this project was
+# in the day before it went stale, and this whole family of checks exists
+# because a number written in two places goes wrong in one place first.
+#
+# IT MUST NOT BE ABLE TO PASS BY NOT COUNTING. An unset or zero N agreeing with
+# an unset or zero declaration is exactly the I-028 shape - a comparison whose
+# degenerate value is "agreement" - so both sides must be positive integers
+# BEFORE they are compared, and every unreadable state below is a FAILURE and
+# never a skip (I-007).
+#
+# IT IS DELIBERATELY NOT A NUMBERED CHECK. A check counted by the very total it
+# verifies reads as circular, and keeping it out of N means the commit closing
+# this gap moves no GATE-CLAIM line and no figure in CLAUDE.md - so it can be
+# pushed, and watched failing, on its own.
+#
+# The pattern below is `^#[[:space:]]*GATE-CLAIM:` rather than `^# GATE-CLAIM:`
+# on purpose: it is the shape claims-match-sources.py already matches, and two
+# guards reading one line by two different patterns is a disagreement waiting to
+# happen.
+SELF="$SCRIPT_DIR/$(basename -- "$0")"
+SELF_FAIL=0
+SELF_WHY=""
+DECLARED=""
+CLAIM_LINES=$(grep -E '^#[[:space:]]*GATE-CLAIM:' "$SELF" 2>/dev/null)
+CLAIM_RC=$?
+if [ "$CLAIM_RC" -ge 2 ]; then
+  # I-027: grep has THREE exit states. rc >= 2 is grep itself failing - an
+  # unreadable file, a broken pattern - and must never read as "no match".
+  SELF_FAIL=1
+  SELF_WHY="grep exited $CLAIM_RC reading $SELF; the declaration was not read"
+elif [ "$CLAIM_RC" -ne 0 ]; then
+  SELF_FAIL=1
+  SELF_WHY="$SELF carries no GATE-CLAIM line at all"
+else
+  # `wc -l` over the matched lines and never `grep -c`: house rule T-321(a),
+  # and this value IS compared.
+  CLAIM_COUNT=$(printf '%s\n' "$CLAIM_LINES" | wc -l | tr -d '[:space:]')
+  DECLARED=$(printf '%s\n' "$CLAIM_LINES" \
+    | sed -n 's/.*checks=\([0-9][0-9]*\).*/\1/p' | tail -1)
+  if [ "${CLAIM_COUNT:-0}" -ne 1 ]; then
+    SELF_FAIL=1
+    SELF_WHY="$SELF carries $CLAIM_COUNT GATE-CLAIM lines, expected exactly 1"
+  elif [ -z "$DECLARED" ]; then
+    SELF_FAIL=1
+    SELF_WHY="the GATE-CLAIM line in $SELF has no checks=<number> field"
+  elif [ "$DECLARED" -eq 0 ] 2>/dev/null; then
+    SELF_FAIL=1
+    SELF_WHY="the GATE-CLAIM line declares checks=0, which no real run satisfies"
+  elif [ "${N:-0}" -eq 0 ] 2>/dev/null; then
+    SELF_FAIL=1
+    SELF_WHY="this run counted 0 checks; a run that counted nothing found nothing"
+  elif [ "$N" -ne "$DECLARED" ]; then
+    SELF_FAIL=1
+    SELF_WHY="printed $N check(s) and the header declares checks=$DECLARED"
+  fi
+fi
 
-[ "$M" -eq 0 ] && exit 0
+if [ "$SELF_FAIL" -eq 0 ]; then
+  printf '%sGATE-CLAIM self-check: printed %d = declared checks=%s%s\n' \
+    "$C_OK" "$N" "$DECLARED" "$C_OFF"
+else
+  printf '%sGATE-CLAIM self-check: FAIL - %s%s\n' "$C_BAD" "$SELF_WHY" "$C_OFF"
+fi
+printf '=========================================================================================================\n'
+if [ "$SELF_FAIL" -ne 0 ]; then
+  printf '\nFAILURE: this runner disagrees with its own GATE-CLAIM line.\n'
+  printf '  %s\n' "$SELF_WHY"
+  printf 'That line is a claim about the arithmetic in THIS file. The commit that\n'
+  printf 'moves a check count moves it in the same commit; then\n'
+  printf 'tests/bin/claims-match-sources binds CLAUDE.md to the line, and the\n'
+  printf 'check above binds the line to the count that actually ran.\n'
+fi
+
+[ "$M" -eq 0 ] && [ "$SELF_FAIL" -eq 0 ] && exit 0
 exit 1

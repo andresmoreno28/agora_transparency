@@ -1665,3 +1665,27 @@ described losing a day. ⚠️ **What would NOT have passed this test, named so 
 something:** making `--online` part of the gate. That is *tempting*, not necessary, and it would
 trade a fast offline guard for a network dependency inside `agora-invariants` — the precise
 exchange D-023(5) exists to refuse.
+
+---
+
+## Wave 24 — four numbers that were printed and never compared — [ejecutor] 2026-09-21
+
+**T-1205's closing audit assigns all four of these rows to unit 006. Building them here is a
+deliberate pull-forward, and unit 006 must still carry the accounting** (I-105): the work moves,
+the budget entry does not. Same shape as wave 23's own opening paragraph, and as T-1006's note
+earlier in this file.
+
+⚠️ **The four share one defect and it is worth naming before the rows: a number is PRINTED and
+nothing compares it to anything.** That is I-045 one level down — not "a green check over an
+unknown denominator", but a known denominator with no assertion behind it. Each row below turns one
+printed number into a compared one, and the first cost a real red.
+
+⚠️ **The wave number collides, and it is reported rather than resolved.** `specs/005-ai-and-governance/tasks.md`
+scaffolds waves 22 to 26 as the project's global continuation, and unit 003 has already executed
+waves 22 and 23 under those same numbers on the same days. This is the third collision, not the
+first; the convention on disk is that a wave may span units, and unit 005's wave 24 is a different
+lane carrying the same global number. **Nothing here renumbers a signed section** (rule 8).
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1911 ✓ | · | **Make each gate runner compare the total it PRINTS against the `# GATE-CLAIM:` line in its own header.** `CLAUDE.md` has carried this as an open gap **with no owner** for weeks, in its own words: *"nothing yet asserts that a `# GATE-CLAIM:` line matches the total its own runner PRINTS. Five of the ten offline comparisons are therefore prose against prose."* `tests/bin/claims-match-sources` reads the header line and the sentence in `CLAUDE.md` and compares **those two** — neither of which is the arithmetic that just ran. ⚠️ **A runner that grades itself must not be able to pass by NOT COUNTING**: an unset or zero total agreeing with an unset or zero declaration is the I-028 shape, so both sides are required to be positive integers before they are compared, and a missing, duplicated or unparseable declaration is a FAILURE and never a skip. ⚠️ **Deliberately NOT a numbered check**: a check counted by the very total it verifies reads as circular, and keeping it out of `N` means this row moves **no** `GATE-CLAIM` line and **no** figure in `CLAUDE.md`, so it can be pushed and watched failing on its own — which is what makes the sequencing of this wave possible at all | **Both runners print their declared totals and say so on their own last line.** `gate-a-wave1.sh` → `68 checks - 0 failures` and `GATE-CLAIM self-check: printed 68 = declared checks=68`; `gate-a-wave3.sh` → `60 checks - 0 failures` and `GATE-CLAIM self-check: printed 60 = declared checks=60`. ⚠️ **Watched FAILING five ways and passing once, each restored**: (1) the declaration mutated to `checks=999` → exit 1, `printed 68 check(s) and the header declares checks=999`; (2) the declaration removed → `carries no GATE-CLAIM line at all`; (3) `checks=0` → `the GATE-CLAIM line declares checks=0, which no real run satisfies`; (4) two declarations → `carries 2 GATE-CLAIM lines, expected exactly 1`; (5) **a run whose own total was 0** → `this run counted 0 checks; a run that counted nothing found nothing`, against the same block with `N=68` which prints `printed 68 = declared checks=68` and exits 0. Cases (4) and (5) ran against the block **lifted verbatim out of the runner by `sed`**, so the harness cannot drift from the code it claims to exercise. ⚠️ **Case (1) went red TWICE and that is the cross-check**: the same mutation also turned G9 `claims-match-sources` red from the other side, which is what makes the two guards complementary rather than one of them redundant — the runner printed `68 checks - 1 failures` there and `68 checks - 0 failures` in every other case. ⚠️ The pattern read is `^#[[:space:]]*GATE-CLAIM:`, the shape `claims-match-sources.py` already matches, because two guards reading one line by two different patterns is a disagreement waiting to happen | — |

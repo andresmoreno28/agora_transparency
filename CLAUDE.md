@@ -891,6 +891,23 @@ moving the working copy a session is running in, on the day wave 5 starts.
   the deny-list lengths in G7, G13 and G14 are: an empty list passes by construction (I-028). So is
   the trace-figures table itself: **0 rows would leave `--online` comparing nothing**, so 0 rows is
   a failure and not "no figures to check".
+  ✅ **CLOSED 2026-09-21 by T-1911, after standing in this file as an open gap with NO OWNER
+  for weeks.** Each runner now reads its own header at the END of its own run and compares the
+  declaration against the total it has just PRINTED, so the five prose-against-prose comparisons
+  have arithmetic at one end. ⚠️ **It cannot pass by not counting**: an unset or zero total
+  agreeing with an unset or zero declaration is the I-028 shape this family of guards exists to
+  refuse, so both sides must be positive integers BEFORE they are compared, and a missing,
+  duplicated or unparseable declaration is a FAILURE and never a skip. ⚠️ **It is deliberately
+  NOT a numbered check** — a check counted by the very total it verifies reads as circular — so it
+  moved no `# GATE-CLAIM:` line and no figure in this file on the day it landed, and could be
+  pushed on its own. **Watched failing five ways and passing once**, the block lifted verbatim out
+  of the runner by `sed` so the harness cannot drift from the code it exercises: a declaration of
+  999, no declaration at all, `checks=0`, two declarations, and a run whose own total was 0.
+  ⚠️ **The 999 case failed TWICE and that is the cross-check**: `claims-match-sources` reported
+  the same mutation independently, from the other side, which is what makes the two guards
+  complementary rather than one of them redundant.
+  ⚠️ **SUPERSEDED, and kept whole rather than deleted because its last sentence was right about
+  the fix. The superseded wording follows.**
   ⚠️ **What it still does not prove**, stated so it is not mistaken for full cover: nothing yet
   asserts that a `# GATE-CLAIM:` line matches the total its own runner PRINTS. Five of the
   ~~seven~~ ~~**eight**~~ **ten** offline comparisons are therefore prose against prose — better than prose against nothing, because the
