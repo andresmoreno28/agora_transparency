@@ -153,6 +153,30 @@
 # The record stays `adapted`, which it must: ported-copies fails a record whose status
 # contradicts its own two hashes, and these two were already 836 lines apart.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-21 (T-0629), the same one record, same four steps in order.
+#
+#   1. tests/bin/ported-drift FIRST, and it was run BEFORE the edit was decided rather than
+#      to justify it: 3 records compared, 3 read, 3 provenance verified, **0 behind** 1.x,
+#      oldest drift 0 days, 0 past the cap, 0 findings, network READ anonymously. So there
+#      was nothing upstream to take and no per-hunk decision to make.
+#   2. What changed HERE: ONE entry appended to packaged-claims' NOT CHECKED list - the two
+#      figures content/MEDIA-LICENCES.md states about `haven`, which are facts about another
+#      project at a version that will move and which no offline read can produce. Nothing
+#      came from agora_theme and no executable line moved; the list goes 10 -> 11.
+#   3. local_sha256 re-derived with `sha256sum` from the file on disk and substituted by
+#      command, never typed. source_sha256 and source_commit UNCHANGED and not retyped,
+#      because step 1 proved the source has not moved.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0.
+#
+# ⚠️ D-028 PERMITS THIS AND THE DISTINCTION IS WORTH RESTATING, because the wider version of
+# it was invented once and cost six days. What D-028's 2026-08-24 amendment forbids is
+# editing a copied invariant to make a red GO AWAY - weakening. It does not forbid editing
+# one; option B's own cost line contemplates "one manifest to regenerate whenever a shared
+# script legitimately changes", which is this. The edit here makes the guard say MORE about
+# what it does not cover, which is the opposite direction from weakening, and the G11 checks
+# assert that list is non-empty rather than asserting its length, so nothing was tuned to fit.
+#
 # script            role       status    local_sha256                                                     source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -210,7 +234,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   7aeaa900deead9dc7712b4a6f38bcceeb838a7f7a4f851e1c7f0000b2c850f61 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+packaged-claims    invariant  adapted   9e81f101003df97e130d1ac3c0ac8104fc2e590ebbbf6f8ee7f25fbfd3698eb7 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
 #
 # -----------------------------------------------------------------------------------------
 # TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

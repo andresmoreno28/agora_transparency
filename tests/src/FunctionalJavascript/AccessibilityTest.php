@@ -7,6 +7,7 @@ use Drupal\FunctionalTests\Core\Recipe\RecipeTestTrait;
 use Drupal\canvas\JsonSchemaDefinitionsStreamwrapper;
 use Drupal\node\NodeInterface;
 use Drupal\views\Entity\View;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Runs axe over the pages this site template actually installs.
@@ -38,7 +39,29 @@ use Drupal\views\Entity\View;
  * very first thing this test does is prove the file is readable, and fail with
  * a sentence naming the variable that controls it if it is not. A scan of
  * nothing must never be able to look like a pass (I-007, I-032).
+ *
+ * WHY THE CLASS CARRIES #[RunTestsInSeparateProcesses] (T-0628). Core raises
+ * E_USER_DEPRECATED, from BrowserTestBase::setUp(), for any Functional or
+ * FunctionalJavascript class that omits the attribute - "deprecated in
+ * drupal:11.3.0 and is throwing an exception in drupal:12.0.0", read at
+ * source on 2026-09-21 at core/tests/Drupal/Tests/BrowserTestBase.php:320-321
+ * on the 11.x branch. This was the ONLY test class in this package without
+ * it; the other five have carried it since they were written, so the omission
+ * was an oversight rather than a decision, and it would have become a fatal
+ * one on the first Drupal 12 run. Neither BrowserTestBase nor
+ * WebDriverTestBase declares it for us: PHP attributes are not inherited.
+ *
+ * IT IS NOT COSMETIC, AND THE HOOK BELOW IS WHY IT IS SAFE ANYWAY. The
+ * attribute decides whether tearDownAfterClass() is invoked once or twice -
+ * PHPUnit calls it from TestCase when inIsolation, and again from
+ * TestSuite::invokeMethodsAfterLastTest(). The guard in that hook keys on
+ * ob_get_level() rather than on the isolation mode for exactly this reason,
+ * and that was a measured choice, not a lucky one: 1 in the isolated child
+ * with the per-test output buffer still open (must not print), 0 in the
+ * parent after the last test (prints). So the summary prints once whichever
+ * way this class is scheduled. Read that docblock before touching either.
  */
+#[RunTestsInSeparateProcesses]
 class AccessibilityTest extends WebDriverTestBase {
 
   use RecipeTestTrait;

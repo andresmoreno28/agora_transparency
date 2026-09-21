@@ -19,9 +19,11 @@ the tarball alike, to be declared in the invariant either as root media — whic
 — or as root non-media. A new binary dropped at the root is a finding on the day it lands, rather
 than nineteen days later.
 
-Neither published Drupal CMS site template documents any media licence at all. `haven` ships 22
-Unsplash-named JPEGs and one GPL `LICENSE.txt` covering the code. A template whose subject is
-accountability cannot be the third, so this file exists before the media does.
+Neither published Drupal CMS site template documents any media licence at all. `haven` ships
+Unsplash-named JPEGs and one GPL `LICENSE.txt` covering the code; how many, and how heavy, is
+measured **once** further down this page, in the section that explains why this package ships its
+own work instead. A template whose subject is accountability cannot be the third, so this file
+exists before the media does.
 
 ## Columns
 
@@ -62,10 +64,42 @@ produced the file rather than a website, and the `date retrieved` column is the
 day it was generated.
 
 That is a deliberate choice and not a shortcut. `haven`, the published site
-template measured in this unit's research, ships 22 Unsplash photographs, 75 MB
-of them, and documents the licence of none. A template whose subject is
-accountability can either document somebody else's work or ship its own; the
-second is cheaper to defend and an order of magnitude lighter.
+template measured in this unit's research, ships **21** Unsplash-named JPEGs —
+**77,426,040 bytes** of them — and documents the licence of none. A template
+whose subject is accountability can either document somebody else's work or
+ship its own; the second is cheaper to defend and an order of magnitude
+lighter.
+
+⚠️ **AMENDED 2026-09-21 (T-0628): this page said 22, in two places, and 22 is
+not reproducible at any release `haven` has ever cut.** Re-measured at source
+on 2026-09-21 against the **release archive**, which is what a reviewer
+downloads: **21** at `1.0.3`, **21** at `1.0.2`, **21** at the `1.x` tip, by
+three spellings of the question — a path ending `-unsplash.jpg`, a path
+containing `-unsplash.`, and a case-insensitive `unsplash` anywhere in the
+path. All three return the same set, and every one of the 21 is under
+`content/file/`. The superseded 22 was taken once, on 2026-08-26, and then
+copied rather than re-derived; the two copies that were in this file are now
+one, and the two in `specs/` are dated records and stay where they are.
+
+⚠️ **A figure about somebody else's package earns its place here only if a
+reader can check it**, so this is the command that produces both numbers. It
+needs no account and takes about a second:
+
+```bash
+curl -sSL "https://git.drupalcode.org/api/v4/projects/project%2Fhaven/repository/archive.tar.gz?sha=1.0.3" \
+  | tar -tzv | awk '/unsplash/ { n++; b += $3 } END { print n " files, " b " bytes" }'
+```
+
+It prints `21 files, 77426040 bytes`. The byte total replaces a rounded
+*"75 MB"* that named no unit convention and no version, and could therefore
+have meant the photographs or the whole 748-file package, which are different
+numbers.
+
+⚠️ **And nothing in this repository keeps either figure true.** They are facts
+about another project at a version that will move, and no check here can
+notice when it does. They are therefore named in `tests/bin/packaged-claims`'
+NOT CHECKED list, with that reason, rather than left looking guarded — and
+stated **once on this page**, for the reason every other figure here is.
 
 ### The script the `source URL` column names
 
