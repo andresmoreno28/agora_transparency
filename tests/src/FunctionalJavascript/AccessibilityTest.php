@@ -46,12 +46,11 @@ class AccessibilityTest extends WebDriverTestBase {
   /**
    * The one-line report this gate produces, carried out of the test method.
    *
-   * WHY A STATIC PROPERTY AND NOT A RETURN VALUE. The report has to survive
-   * the end of the test method to be printed from ::tearDownAfterClass(),
-   * which is a static hook, and that is the whole mechanism - see the comment
-   * on that method. NULL means the run never reached the point where the
-   * totals are computed, which is a different thing from "the totals were
-   * zero" and is printed as such.
+   * It is the assertion message, and it is ALSO written to ::summaryPath()
+   * so that the reporting hook can print it from the parent process - see
+   * that hook's docblock, which is where the mechanism is explained. NULL
+   * means the run never reached the point where the totals are computed,
+   * which is a different thing from "the totals were zero".
    */
   private static ?string $summary = NULL;
 
@@ -187,6 +186,42 @@ class AccessibilityTest extends WebDriverTestBase {
   }
 
   /**
+   * Where the summary travels from the process that measures it to this one.
+   *
+   * A FILE, BECAUSE A STATIC PROPERTY DOES NOT CROSS A PROCESS BOUNDARY, and
+   * there is one here. Drupal runs functional tests in PROCESS ISOLATION: the
+   * test method executes in a child process, and ::tearDownAfterClass() is
+   * then called TWICE - once in that child, from `TestCase::run()`, and once
+   * in the parent, from `TestSuite::invokeMethodsAfterLastTest()`. The parent
+   * is where the printing has to happen, and the parent never saw the totals.
+   * So they are written to a file the child can write and the parent can
+   * read; it is removed again as soon as it has been read.
+   *
+   * @return string
+   *   The absolute path of the file carrying this run's summary line.
+   */
+  private static function summaryPath(): string {
+    return sys_get_temp_dir() . '/agora-transparency-axe-gate.txt';
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * REMOVES ANY SUMMARY LEFT BEHIND BY AN EARLIER RUN. Without this, a run
+   * that dies before it measures anything would print the PREVIOUS run's
+   * figures as if they were its own - a stale number wearing a fresh date,
+   * which is the exact defect this whole unit exists to remove. Watched: with
+   * a summary file planted by hand and the test made to fail early, the
+   * reporting hook prints NO SUMMARY rather than the planted line.
+   */
+  public static function setUpBeforeClass(): void {
+    parent::setUpBeforeClass();
+    if (file_exists(self::summaryPath())) {
+      @unlink(self::summaryPath());
+    }
+  }
+
+  /**
    * {@inheritdoc}
    *
    * PRINTS THE GATE'S OWN RESULT, ON A GREEN RUN (T-0613). Until this method
@@ -197,23 +232,45 @@ class AccessibilityTest extends WebDriverTestBase {
    * public source. The theme's equivalent figure has always been public in
    * its `nightwatch` job. A reviewer could check one claim and not the other.
    *
-   * WHY HERE AND NOT IN THE TEST METHOD, and this was MEASURED rather than
-   * reasoned about. Drupal core's `phpunit.xml.dist` sets
-   * `beStrictAboutOutputDuringTests="true"` with `failOnRisky="true"`, so
-   * output emitted DURING a test makes it risky and fails the run - that is
-   * what turned pipeline 934619 red with every assertion passing, and
-   * `RequirementsTest` records it. `tearDownAfterClass()` runs after the last
-   * test in the class, outside the per-test output buffer PHPUnit opens in
-   * `TestCase::runBare()`, so it is not covered by that rule.
+   * THE GUARD ON THE FIRST LINE IS THE WHOLE MECHANISM, and it is there
+   * because the obvious version of this method TURNED THE GATE RED. Pipeline
+   * 970421 reported `Risky: 1` - "Test code or tested code printed unexpected
+   * output" - with every assertion passing, and printed the summary twice:
+   * once with the figures and once saying there were none.
    *
-   * Falsified both ways against PHPUnit 11.5.56 - the version core requires -
-   * under exactly those settings, before this was written:
-   *   printing here          -> `OK (1 test, 1 assertion)`, exit 0, line in
-   *                             stdout;
-   *   printing in the test   -> `Risky: 1`, exit 1, "Test code or tested code
-   *                             printed unexpected output".
-   * The second is the control: without it, a green would not distinguish
-   * "output is allowed here" from "the strictness is off".
+   * WHY: THE HOOK IS CALLED TWICE, and only one of the two calls may print.
+   * PHPUnit 11 has exactly two call sites for it - `TestCase::run()`, guarded
+   * by `inIsolation`, and `TestSuite::invokeMethodsAfterLastTest()` - and the
+   * trace shows both firing. The first runs while the per-test output buffer
+   * PHPUnit opened in `runBare()` IS STILL OPEN, so what it prints is
+   * attributed to the test; core's `phpunit.xml.dist` sets
+   * `beStrictAboutOutputDuringTests` with `failOnRisky`, and the run fails.
+   * The second runs after the class is finished, with no buffer open, and
+   * that is the call that may print.
+   *
+   * ⚠️ THE PIPELINE'S COMMAND LINE CARRIES NO `--process-isolation`, so the
+   * isolation is decided by PHPUnit's per-class metadata rather than by a
+   * flag, and this comment deliberately does not claim to have located it.
+   * IT DOES NOT MATTER, and that is the point of keying the guard on the
+   * BUFFER rather than on the mode: `ob_get_level()` is right whichever way
+   * the second call arrives, and it is right in a single process too.
+   *
+   * `ob_get_level()` separates the two EXACTLY, and the numbers were measured
+   * against PHPUnit 11.5.56 rather than assumed:
+   *   child, inside the test buffer ......... 1  (must not print)
+   *   parent, after the last test ........... 0  (prints)
+   *   single process, no isolation .......... 0  (prints, once)
+   *
+   * ⚠️ AND THE SAME PROBE EXPLAINS THE RECORD `RequirementsTest` CITES.
+   * Writing to STDERR from the isolated child does not dodge the buffer - it
+   * raises `PHPUnit\Framework\Exception` outright, which is pipeline 934619's
+   * failure reproduced on a laptop in one command.
+   *
+   * ⚠️ THE FIRST ATTEMPT WAS "FALSIFIED" AGAINST A CONTROL THAT DID NOT
+   * REPRODUCE THE ENVIRONMENT, which is the lesson worth more than the fix: a
+   * plain `TestCase` with no isolation passed happily, twice, and said
+   * nothing about the only environment this code runs in. The probe that
+   * matters is the one that fails the same way production does.
    *
    * WHAT IT PRINTS WHEN THERE IS NOTHING TO PRINT. A sentence saying so. This
    * hook runs even when the test errored on its first line, and a summary
@@ -222,8 +279,20 @@ class AccessibilityTest extends WebDriverTestBase {
    */
   public static function tearDownAfterClass(): void {
     parent::tearDownAfterClass();
-    print "\n" . (self::$summary ?? 'agora_transparency axe gate: NO SUMMARY - the run did not reach the point where the totals are computed, so this pipeline has no page count, no rule count and no violation count. That is not a clean result; it is an absent one.') . "\n";
-    self::$summary = NULL;
+    // The isolated child, with the per-test output buffer still open. Printing
+    // here is what makes the test risky; the parent prints instead.
+    if (ob_get_level() !== 0) {
+      return;
+    }
+    $line = '';
+    if (is_readable(self::summaryPath())) {
+      $line = trim((string) file_get_contents(self::summaryPath()));
+      @unlink(self::summaryPath());
+    }
+    if ($line === '') {
+      $line = 'agora_transparency axe gate: NO SUMMARY - the run did not reach the point where the totals are computed, so this pipeline has no page count, no rule count and no violation count. That is not a clean result; it is an absent one.';
+    }
+    print "\n" . $line . "\n";
   }
 
   /**
@@ -365,6 +434,11 @@ class AccessibilityTest extends WebDriverTestBase {
       $heading_order_ran,
       $scanned_count,
     );
+    // Handed to the reporting hook through a file, for the reason its own
+    // docblock gives: this method runs in a child process and that hook prints
+    // from the parent. Writing a file emits no output, so it cannot make this
+    // test risky.
+    @file_put_contents(self::summaryPath(), self::$summary);
     $this->assertSame(array_column($pages, 'name'), $scanned, self::$summary);
 
     // A rule that did not run cannot have passed. axe files a rule it could
