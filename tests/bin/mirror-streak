@@ -114,12 +114,15 @@
 # guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an error, never "no match".
 #
 # Usage: tests/bin/mirror-streak [--slug <owner/repo>] [--branch <name>]
-#                                [--max-red-days <n>] [--page <n>]
+#                                [--max-red-days <n>] [--page <n>] [--api-host <url>]
 #        (run from anywhere; it cd's to the repo root)
 #
-# The four options exist so that every branch below can be falsified. The gate passes none of
-# them: gate-a-wave1.sh asserts the cap line reads `14 days (default)`, so the number cannot be
-# loosened from the call site without moving a check a human has to look at.
+# The five options exist so that every branch below can be falsified, and they were all used
+# before this file was committed: --api-host against a local fake API is how the red-streak and
+# the cap branches were watched firing, because the real mirror is green and cannot be made to
+# demonstrate them. The gate passes none of the five: gate-a-wave1.sh asserts the cap line reads
+# `14 days (default)`, so the number cannot be loosened from the call site without moving a check
+# a human has to look at.
 
 set -u
 # No `set -e`: a finding must be recorded and counted, not abort the run.
@@ -433,6 +436,7 @@ if [ -z "$UNREACHABLE" ]; then
   else
     STREAK_LINES=$(MS_DECLARED="$DECLARED_WORKFLOWS" python3 -c '
 import json, os, sys, datetime
+# cspell:ignore fromisoformat
 
 # The whole streak computation in one place, because doing it in shell would mean parsing ISO
 # timestamps with `date -d`, which is not portable to every runner this has to work on.
@@ -455,7 +459,7 @@ for p in sorted(seen_paths - declared):
 
 print("COMPLETED %d" % len(completed))
 if not completed:
-    print("NOSTREAK none of the runs examined has completed, so no conclusion can be counted")
+    print("NO_STREAK none of the runs examined has completed, so no conclusion can be counted")
     raise SystemExit
 
 now = datetime.datetime.now(datetime.timezone.utc)
@@ -477,8 +481,8 @@ for r in completed:
 
 print("STREAK %d" % streak)
 if streak:
-    concl = sorted({(r.get("conclusion") or "unknown") for r in completed[:streak]})
-    print("CONCLUSIONS %s" % ",".join(concl))
+    conclusion_set = sorted({(r.get("conclusion") or "unknown") for r in completed[:streak]})
+    print("CONCLUSIONS %s" % ",".join(conclusion_set))
     print("NEWEST %s" % (completed[0].get("head_sha") or ""))
     oldest = when(completed[streak - 1])
     if oldest is None:
@@ -494,7 +498,7 @@ if streak:
 if streak < len(completed):
     ok = completed[streak]
     w = when(ok)
-    print("LASTOK %s %s %s" % ((ok.get("head_sha") or "")[:8],
+    print("LAST_OK %s %s %s" % ((ok.get("head_sha") or "")[:8],
                                ok.get("updated_at") or "?",
                                (now - w).days if w else -1))
 else:
@@ -533,15 +537,16 @@ EOF
     UNREACHABLE='no runs'
   else
     note "$EXAMINED run(s) returned (page size $PAGE), $COMPLETED of them completed"
-    _nostreak=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^NOSTREAK //p' | head -1)
-    if [ -n "$_nostreak" ]; then
-      note "streak NOT COMPUTED - $_nostreak"
+    _no_streak=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^NO_STREAK //p' | head -1)
+    if [ -n "$_no_streak" ]; then
+      note "streak NOT COMPUTED - $_no_streak"
     elif [ "${STREAK:-0}" -eq 0 ]; then
-      _lastok=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^LASTOK //p' | head -1)
-      printf '  %sstreak: 0 - the newest completed run on %s succeeded (%s)%s\n' \
-        "$C_OK" "$BRANCH" "$_lastok" "$C_OFF"
+      _last_ok=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^LAST_OK //p' | head -1)
+      printf '  %s' "$C_OK"
+      printf 'streak: 0 - the newest completed run on %s succeeded (%s)%s\n' \
+        "$BRANCH" "$_last_ok" "$C_OFF"
     else
-      _concl=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^CONCLUSIONS //p' | head -1)
+      _conclusions=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^CONCLUSIONS //p' | head -1)
       _age=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^AGE //p' | head -1)
       _since=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^SINCE //p' | head -1)
       _newest=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^NEWEST //p' | head -1)
@@ -555,11 +560,15 @@ EOF
         printf '  %sRED STREAK: %s consecutive non-success completed run(s) on %s%s\n' \
           "$C_BAD" "$STREAK" "$BRANCH" "$C_OFF"
       fi
-      printf '  %sconclusions: %s - oldest of the streak: %s (%s day(s) ago)%s\n' \
-        "$C_BAD" "$_concl" "${_since:-unknown}" "$_age" "$C_OFF"
+      printf '  %s' "$C_BAD"
+      printf 'conclusions: %s - oldest of the streak: %s (%s day(s) ago)%s\n' \
+        "$_conclusions" "${_since:-unknown}" "$_age" "$C_OFF"
       printf '%s\n' "$STREAK_LINES" | sed -n 's/^RUN /    /p'
-      _lastok=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^LASTOK //p' | head -1)
-      [ -n "$_lastok" ] && printf '  %slast success: %s%s\n' "$C_DIM" "$_lastok" "$C_OFF"
+      _last_ok=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^LAST_OK //p' | head -1)
+      if [ -n "$_last_ok" ]; then
+        printf '  %s' "$C_DIM"
+        printf 'last success: %s%s\n' "$_last_ok" "$C_OFF"
+      fi
 
       # THE CAP. A streak is data; a streak nobody has answered for a fortnight is a finding.
       if [ "$_age" -lt 0 ] 2>/dev/null; then

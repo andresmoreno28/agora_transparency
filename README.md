@@ -390,11 +390,12 @@ program computes its hashes is worse than one that is noisy.
 1. Run `bash tests/bin/toolchain-floor` on the Mac and paste the whole output back. That fills the
    empty column above and is the only step that needs a Mac in front of a human.
 2. Run `bash tests/bin/doctor` there; it must reach `READY`.
-3. Run both wave runners and reproduce the counts this repository quotes — **88 checks · 0
+3. Run both wave runners and reproduce the counts this repository quotes — **95 checks · 0
    failures** and **66 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
    It read `61` and `37` until 2026-09-12 and `67` and `49` until 2026-09-21, which was six
    invariants and twenty-seven checks behind by the end: the runners grew and the sentence did not,
-   twice. Both figures are now compared against each runner's own `GATE-CLAIM` header line by
+   twice. It then read `88` for part of one day, and this time the guard below moved it — which is
+   what the last sentence of this item was written to make true. Both figures are now compared against each runner's own `GATE-CLAIM` header line by
    `tests/bin/packaged-claims`, which runs in the blocking `agora-invariants` job — so this is the
    last time that drift can happen silently. Each runner also prints its own total on its last
    line, which is the number to compare against.
@@ -526,7 +527,7 @@ table it summarises, one sentence further from the measurement.
 
 **What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
 stayed closed across five changes of denominator. Measured 2026-09-21 by
-`bash tests/bin/spellcheck`: **470 tracked or stage-able files offered to cspell, 429 checked,
+`bash tests/bin/spellcheck`: **472 tracked or stage-able files offered to cspell, 431 checked,
 `Issues found: 0`** — plus two the CI runner generates and this repository does not track
 (`.editorconfig`, `gitlab_templates_version.txt`), which is why the job's own count reads two
 higher. The script prints both numbers every time it runs, so this paragraph is checkable rather
@@ -617,8 +618,9 @@ it requires, the fonts (which ship in the theme and not here), the media and the
 assets, each with the invariant that keeps its figure honest. That file is where those numbers
 live; this section deliberately carries none of them.
 
-Neither published Drupal CMS site template ships such a manifest — measured 2026-09-21, 0 of
-748 files in `haven` 1.0.3 and 0 of 651 in `byte` 1.0.3 — so there was no shape to copy.
+Neither published Drupal CMS site template ships such a manifest. The measurement behind that
+sentence — which files were examined and how many matched — is stated once, in the manifest
+itself, and is not repeated here.
 
 ## Development process
 

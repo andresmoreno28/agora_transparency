@@ -210,7 +210,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   8e1639ec0f72c0ea14367156e9934254cbdbecec218273ee50f6d6a9dae3edae tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+packaged-claims    invariant  adapted   7aeaa900deead9dc7712b4a6f38bcceeb838a7f7a4f851e1c7f0000b2c850f61 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
 #
 # -----------------------------------------------------------------------------------------
 # TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

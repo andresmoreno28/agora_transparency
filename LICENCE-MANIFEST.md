@@ -13,9 +13,10 @@ asks for *"A license manifest: Drupal-derived components remain GPL; any non-GPL
 as default content and images) are listed"* — read at source on 2026-09-21 at
 `https://new.drupal.org/site-template/apply`. Measured the same day against the two published site
 templates: **`haven` 1.0.3 ships 0 of 748 files matching any licence manifest, and `byte` 1.0.3 ships
-0 of 651.** Both ship the GPL text and nothing else; `haven` ships 21 third-party photographs whose
-terms appear nowhere in its package. So there is no shape to copy here and being first is the
-situation.
+0 of 651.** Both ship the GPL text and nothing else, and `haven` ships third-party photography
+whose terms appear nowhere in its package — the count of those files is stated once, in
+[`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md), and is not repeated here. So there is no
+shape to copy, and being first is the situation.
 
 ⚠️ **And it is optional on the route this project has signed.** Ágora publishes through the
 community route, which states in its own words that there is *"no application to fill out, no fee,
@@ -39,6 +40,13 @@ Every count in that table is re-derived on every push by an invariant in the blo
 `agora-invariants` job. A number here that stops agreeing with the package turns the pipeline red
 rather than sitting on this page being wrong.
 
+⚠️ **The checks themselves are NOT in the tarball you are holding, and that is said here
+rather than left to be discovered.** Everything under `tests/` is `export-ignore`d, so a packaged
+release contains this page and not the scripts it names. They are public, in the repository, at
+`https://git.drupalcode.org/project/agora_transparency` — clone it and every command below runs.
+A manifest that pointed at evidence the reader cannot reach would be asking to be taken on
+trust, which is the opposite of what it is for.
+
 ---
 
 ## 1 · This package's own files — GPL-2.0-or-later
@@ -46,6 +54,12 @@ rather than sitting on this page being wrong.
 **325 files in the packaged release are covered by `GPL-2.0-or-later`.** That is every configuration
 object, every content export, every line of prose and every piece of packaging metadata: everything
 the tarball holds that is not a media file.
+
+⚠️ **`LICENSE.txt` is inside that count, and it is the one file the sentence above is loose
+about.** It is the GPL's own text rather than a component of this work; the GPL permits copying
+that text verbatim, and distributing it beside a GPL work is what it is for. It is counted rather
+than carved out because carving it out would produce a figure no command reproduces, and this
+page's rule is that every number on it is re-derivable.
 
 The configuration and content are **Drupal-derived** — they are exports produced by Drupal's own
 config and content systems, so they inherit Drupal's licence, which is the condition the review
@@ -138,7 +152,7 @@ different sets and are compared against each other. It runs in the blocking `ago
 
 The PDF documents and CSV distributions in `content/file/` were not downloaded from anywhere. They
 are generated from the package's own entity exports by `tests/bin/generate-demo-media.py`, which is
-in this repository and can be run by anyone: every string in a generated PDF is read out of
+in the repository — not in this tarball, see the note above — and can be run by anyone: every string in a generated PDF is read out of
 `content/node/*.yml` and the entities those nodes reference, and the figures in the CSVs are
 invented for a fictional municipality. Their per-format counts are stated once, in the media
 manifest, and are not repeated here.
@@ -175,7 +189,9 @@ Said plainly, because a manifest's silence is not a statement of freedom:
 ## Re-deriving every figure on this page
 
 Nothing above is transcribed by hand. Each command below answers one line of the table at the top,
-and the same answers are computed on every push by the invariants named beside them:
+and the same answers are computed on every push by the invariants named beside them. **They run in
+a clone of the repository, not in an extracted tarball**, for the reason given at the top of this
+page:
 
 ```shell
 # 1 - files under GPL-2.0-or-later: the packaged set minus the media set

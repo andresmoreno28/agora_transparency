@@ -91,6 +91,7 @@ CLAUDE = "CLAUDE.md"
 WAVE1 = "tests/bin/gate-a-wave1.sh"
 WAVE3 = "tests/bin/gate-a-wave3.sh"
 WATCH = "tests/bin/watch-gate"
+STREAK = "tests/bin/mirror-streak"
 
 HOST = "https://git.drupalcode.org"
 
@@ -166,9 +167,14 @@ UNCHECKED = [
      "failing the gate - but nothing here reads the markdown around them, so a "
      "frozen record moved out of its blockquote keeps its value and loses its "
      "framing. Rule 8 is what governs that, and rule 8 is read by people"),
-    ("the GitHub mirror's conclusion, and how long it has been red",
-     "network; tests/bin/watch-gate reads it live beside the gate and prints "
-     "the streak, the last success and how many runs it examined"),
+    ("the GitHub mirror's conclusion, and how long it has been red - by THIS "
+     "script, which is offline and reads only CLAUDE.md",
+     "narrowed 2026-09-21: it is no longer unwatched. tests/bin/mirror-streak "
+     "reads the runs API anonymously inside agora-invariants on every push and "
+     "prints the streak, its conclusions, the last success and how many runs it "
+     "examined; tests/bin/watch-gate still reads it live beside the gate. What "
+     "is still NOT checked anywhere is a sentence in CLAUDE.md ABOUT the mirror "
+     "- no figure about it is bound to either reader"),
     ("whether an observation names the NEWEST pipeline, i.e. whether the row is "
      "stale rather than merely self-consistent",
      "deliberate, and it is the one entry here that names a gap nobody intends "
@@ -374,6 +380,44 @@ def expected_list(text, variable, records):
                         % (variable, WATCH)))
         return None
     return sorted(names)
+
+
+def streak_declared(records):
+    """The workflow paths tests/bin/mirror-streak says it reads.
+
+    ⚠️ WHY THIS EXISTS, AND IT IS THIS UNIT'S OWN MECHANISM CATCHING ITS OWN
+    AUTHOR. T-0623 added tests/bin/mirror-streak, which declares the mirror's
+    workflow list for the second time - watch-gate already declared it. Two
+    declarations of one list is precisely the shape unit 006 exists to remove,
+    and it was written on the day the one-copy rule was being enforced on the
+    packaged prose. Neither copy can be deleted: watch-gate is run by a human
+    beside the gate and mirror-streak runs inside it, and each has to be
+    readable alone. So they are BOUND, which is the third option the one-copy
+    rule already names for a duplicate that has to exist.
+
+    The two spell the list differently on purpose - watch-gate holds bare file names
+    and mirror-streak holds repository-relative paths, because the GitHub API
+    answers with paths - so the comparison is made on those bare names.
+    """
+    text = read(STREAK, records)
+    if text is None:
+        return None
+    match = re.search(r"^DECLARED_WORKFLOWS='([^']*)'", text, re.M)
+    if not match:
+        records.append(("FATAL",
+                        "DECLARED_WORKFLOWS is not assigned in %s in the "
+                        "single-quoted shape this extractor reads - the "
+                        "invariant that reads the mirror inside CI has stopped "
+                        "saying what it reads" % STREAK))
+        return None
+    names = sorted(set(os.path.basename(n) for n in match.group(1).split()))
+    if not names:
+        records.append(("FATAL",
+                        "DECLARED_WORKFLOWS is assigned an EMPTY list in %s - "
+                        "every workflow on the mirror would then be undeclared "
+                        "and none would be named (I-028)" % STREAK))
+        return None
+    return names
 
 
 def mirror_declared(text, records):
@@ -862,6 +906,7 @@ def main():
 
     sources["mirror_declared"] = mirror_declared(watch, records)
     sources["mirror_disk"] = mirror_on_disk(records)
+    sources["mirror_streak"] = streak_declared(records)
 
     if sources.get("template_watch_jobs") and sources.get("theme_watch_jobs"):
         sources["floor"] = str(min(len(sources["template_watch_jobs"]),
@@ -926,6 +971,12 @@ def main():
                         "the workflow files under .github/workflows/ vs "
                         "MIRROR_WORKFLOWS in " + WATCH + " - a directory "
                         "against a declaration, not prose against prose")
+    compared += compare("mirror_workflows_ci", sources.get("mirror_disk"),
+                        sources.get("mirror_streak"),
+                        "the same directory vs DECLARED_WORKFLOWS in " + STREAK
+                        + " - the SECOND declaration of one list, bound here "
+                        "because neither copy can be deleted: one is read by a "
+                        "human beside the gate, the other runs inside it")
     # THE PIPELINE ID, BOUND TO THE URL THAT QUOTES IT. Offline, on every push.
     #
     # ⚠️ THE GAP THIS CLOSES, AND THE ONE IT DOES NOT. CLAUDE.md's theme row went

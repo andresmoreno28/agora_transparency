@@ -873,8 +873,8 @@ REQ_N=$(text_of COMPOSER | sed -n '/^ *"require": {/,/^ *},\{0,1\}$/p' \
 [ "${REQ_N:-0}" -gt 0 ] || fatal 'composer.json parsed to 0 require entries. A dependency count compared against nothing is not a check.'
 compare 'required_projects' "$L_REQ" "$REQ_N" 'the require entries in composer.json'
 
-claim_once 'font files' LICENCES 'This package ships \*\*[0-9]+ font files\*\*'
-L_FONTS=$(field 1 '.*\*\*([0-9]+) font files\*\*.*')
+claim_once 'font files' LICENCES '\*\*This package ships [0-9]+ font files\.\*\*'
+L_FONTS=$(field 1 '.*ships ([0-9]+) font files.*')
 PKG_FONTS=$(printf '%s\n' "$ARCHIVE_LIST" | grep -E '\.(woff2|woff|ttf|otf|eot)$' 2>/dev/null \
   | grep -v '^$' | wc -l | tr -d '[:space:]')
 compare 'font_files' "$L_FONTS" "$PKG_FONTS" 'font files in git archive'
