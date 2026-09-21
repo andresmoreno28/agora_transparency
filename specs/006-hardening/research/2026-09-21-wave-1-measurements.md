@@ -631,7 +631,7 @@ every one `success`, every one `allow_failure=false`.**
 | 7 | Performance: page weight and queries; no unnecessary heavy modules | `:223` | 🔴 **absent** | No measurement exists. T-0606, above — **NOT MEASURED** |
 | 8 | Public documentation in English: README, installation, post-install config | `:224-225` | 🟡 **green but stale in wording** | `README.md` ships (374-entry tarball, root entry). **Neither `haven` nor `byte` ships a README at all**, so this is already beyond precedent. **Stale**: `README.md:76` claims nine axe pages against a test floor of six and a log that prints it 0 times; `:475` states the job floor as *"the minimum of nine"* in a paragraph that is historical but reads as current against today's **ten**. T-0620, T-0611 |
 | 9 | Security response commitment: documented SLA | `:226` | 🔴 **absent** | `SECURITY.md` absent; no `support` key in `composer.json`. **And no precedent**: 0 of 748 in `haven`, 0 of 651 in `byte`. T-0618, D-064 |
-| 10 | Final sweep of invariants: `no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check` | `:227` | ✅ **green** | All four run in `agora-invariants` job **`12330734`**, `success`, blocking. It executes both gate runners — 17 invariants between them |
+| 10 | Final sweep of invariants: `no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check` | `:227` | ✅ **green** | All four run in `agora-invariants` job **`12330734`**, `success`, blocking. It executes both gate runners — **20** invariants between them, derived from their own `GATE-CLAIM` lines (`gate-a-wave1.sh:75` `invariants=2` + `gate-a-wave3.sh:152` `invariants=18`), not carried |
 
 **Tally: 3 green · 3 part-green (1, 4, 8) · 4 absent (2, 6, 7, 9).**
 
@@ -644,6 +644,19 @@ produce the figure quoted beside it.** Caught by re-running the command instead 
 sentence, which is the only way this class of defect is ever caught. **It is left visible rather
 than silently fixed**, because it is a live, first-person instance of exactly what unit 006 exists
 to remove: a claim whose source does not say what the claim says.
+
+⚠️ **AND IT HAPPENED A SECOND TIME IN THE SAME FILE, BY A DIFFERENT MECHANISM, WHICH IS THE MORE
+USEFUL HALF.** Point 10 first read *"17 invariants between them"*. The figure is **20**, and it
+derives from the runners themselves: `tests/bin/gate-a-wave1.sh:75` declares `invariants=2` and
+`tests/bin/gate-a-wave3.sh:152` declares `invariants=18`. **17 was not misread — it was carried**,
+out of a copy of `CLAUDE.md` that was one wave stale, and it was never compared against the runners
+that own it. (`CLAUDE.md:839-840` on disk says `71 · 66 · 20`; the copy this turn started from said
+`67 · 51 · 17`.) **The first error was a command that did not match its claim; this one is a claim
+with no command beside it at all**, and the second is the harder class, because nothing looks
+wrong — there is no failing check next to it, only a number. ⚠️ **`tests/bin/claims-match-sources`
+caught neither, and could not have**: its subject is `CLAUDE.md`, not this file. That is why the
+same two figures are safe in `CLAUDE.md` and were not safe here, and it is an argument about
+**scope** for whoever writes T-0608 — recorded, not proposed, because scope is wave 2's to decide.
 
 ⚠️ **This is not the scaffold's split and the difference is worth one line.** `plan.md:23-26` says
 *"four-tenths already continuously green … three stale in wording, and three genuinely absent"*.
