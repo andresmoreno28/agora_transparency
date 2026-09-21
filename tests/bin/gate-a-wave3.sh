@@ -562,7 +562,7 @@ if [ -x "$INV" ]; then
   # gate green. The PHP assertion is not redundant and this one is not a
   # duplicate: this one is the half that runs where the author is.
   BOUND=$(extract_count "$INV_OUT" 'non-ASCII bound declared:[[:space:]]*[0-9]+')
-  note "$(printf '%s' "$INV_OUT" | grep -E '^(scanned|config objects|nested files|zero-byte objects|objects carrying|non-ASCII bound declared|findings):' | tr '\n' ' ')"
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scanned|config objects|nested files|zero-byte objects|objects carrying a byte above 0x7F|non-ASCII bound declared|findings):' | tr '\n' ' ')"
   check 'config-inventory (exit)'          "$INV_RC" '0'
   check_positive 'config-inventory (scanned)' "$CNT"
   check_positive 'config-inventory (non-ASCII bound declared)' "$BOUND"
