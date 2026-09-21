@@ -4612,3 +4612,98 @@ with security coverage")*, D-018 rider (a) already names it as a dependency that
 D-NNN, and unit 005 plan §3 lists it under **IN** with no open question attached. The three items
 `open-questions.md` reserves for [andres] are D-054, D-055 and D-057; this is none of them. If he
 wants this countersigned rather than delegated, the line to sign is the table row above.
+
+---
+
+## D-062 · Wave numbers are unit-scoped — SIGNED by [ejecutor], 2026-09-21
+
+**Signed under [andres]'s standing delegation** of 2026-09-20 —
+<!-- cspell:disable -->*"si te digo que sigas y no pares mientras no sea yo estrictamente
+necesario… firma tú por mí a menos que haya algo impepinable que necesite ver"*<!-- cspell:enable -->
+("if I tell you to carry on and not stop unless I am strictly necessary, do that; sign for me
+unless there is something unavoidable I need to see" — translated, per rule 6). This is not that: nothing structural rides on it and being wrong costs a cosmetic
+inconsistency between units.
+
+**Waves are numbered per unit, not globally.** Unit 005 keeps the 22, 23, 25, 26, 27 it already
+executed or scaffolded; unit 006 runs waves 1 to 5; every unit after this starts at 1.
+
+⚠️ **The reason is measured rather than argued: the global counter collided THREE TIMES IN ONE
+NIGHT.** On 2026-09-20 unit 003 ran waves 22, 23 and 24 while unit 005 ran its own 22 and 23. Two
+numbers were each executed twice, in two units, on the same evening, and the third collision was
+caught only because an implementer noticed a heading it did not expect.
+
+⚠️ **The defect was never the numbers. It is that NOBODY OWNS THE COUNTER** — it lives in prose in
+two task files edited in parallel by different sessions, so two units picking "the next one" pick
+the same one. **This is precisely the coupling D-058 already broke for task ids**, and the argument
+transfers wholesale: a shared counter with no mechanism is a number that goes wrong in one place
+first. Option B — keep the counter and give it a home a machine reads — was rejected as buying a
+file and a check to maintain, for a counter.
+
+**What it costs to be wrong**: a reader can no longer tell from a heading whether two waves ran in
+the same week. **This project has used that information exactly once** — in the paragraph above,
+to describe the collision.
+
+**Executed waves are NOT renumbered.** They happened; their commits and their CI pipelines name
+them. Rewriting history to tidy a counter would trade a visible collision for an invisible one.
+
+---
+
+## D-063 · Upstream drift gets a mechanism — option B — SIGNED by [ejecutor], 2026-09-21
+
+**Signed under the same standing delegation, and only AFTER T-0604 measured it**, which was the
+condition the proposal set on itself.
+
+`tests/bin/shared-invariants` gains a mode that reads the source repository at each record's
+`source_commit` and prints the **per-record line delta**. Option A — *"stay a dated review, as
+D-028 wrote it"* — is rejected on its own record.
+
+⚠️ **The measurement that decided it: 28 days passed and 125 genuinely-absent lines accumulated in
+`identity-strings` while the detector printed CLEAN.** It compares a local copy against a recorded
+hash, so it is answering *"has this copy been edited here"* — truthfully, and about a different
+question than the one that matters. The last catch came from a human noticing a 300-line
+divergence, which is not a mechanism.
+
+**Three constraints ride with the signature, each from something already paid for:**
+1. ⚠️ **It needs the sibling checkout, so it is a PREFLIGHT and not a gate** — every invariant in
+   both repositories is offline and that property is worth more than this check. **And a preflight
+   nobody runs is the defect one level up**, so how it gets run is part of the deliverable.
+2. **A missing sibling is a THIRD STATE that can never read as a pass.** The standard already
+   exists in the theme: `watch-gate`'s mirror section prints *"NOT READ … That is not 'the mirror
+   is fine'; it is 'nothing here can see the mirror'."*
+3. **It prints a delta per record, not a verdict.** A number a reader can act on beats a boolean.
+
+⚠️ **And it is falsified against a known answer while one still exists** — run before the re-sync
+lands and confirm it reports the drift T-0604 measured, run after and confirm the number moves.
+**A detector first seen green is a claim.**
+
+**What it costs to be wrong:** one more script whose denominator has to be watched — this
+project's cheapest known failure mode, and the one every guard it has built this week is shaped
+to refuse. **Option C — make both copies `verbatim` and delete the `adapted` category — remains
+the target**, and is not free: both were adapted for reasons the manifest records.
+
+---
+
+## D-065 · The WCAG attestation is a packaged file at the package root — SIGNED by [ejecutor], 2026-09-21
+
+**Signed under the same standing delegation.** It decides a location, not a claim; what the
+attestation SAYS is T-0617's, and whether the admin surface is measured before it is written is
+D-061's, which is [andres]'s.
+
+A packaged document at the package root, referenced from `README.md`. **It is what a reviewer can
+open inside the tarball, which is where the review happens** — and it is the form the one-copy
+rule can police, because `tests/bin/packaged-claims` already reads the packaged, user-facing set
+and would bind its figures.
+
+Option B — a section of `README.md` — is rejected for a measured reason rather than a tidy one:
+**that file is 39 KB and six of its figures were found wrong on 2026-09-21**, four of them with a
+second copy elsewhere in the same package. An attestation living there would drift with
+everything else's. Option C — a page on drupal.org only — is invisible to anyone reading the
+package.
+
+⚠️ **The distinction this decision rests on is not in the ROADMAP and is worth stating**: the
+**accessibility statement** already shipping is demo content addressed to a **citizen**, to be
+completed by the body operating the site. The **WCAG attestation** is a statement by the template
+**author** about the **template**, addressed to a **reviewer**. Two documents, two audiences. One
+exists; one does not.
+
+**What it costs to be wrong:** one more file in a package of 374 entries.
