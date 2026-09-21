@@ -65,16 +65,33 @@ if [ -t 1 ]; then C_BAD=$(printf '\033[31m'); C_OFF=$(printf '\033[0m'); fi
 
 fatal() { printf 'FATAL: %s\n' "$1" >&2; exit 1; }
 
+# Two scratch paths for the comm probe in the preflight below. Plain paths
+# rather than mktemp output, because mktemp is itself one of the tools the
+# preflight has not exercised yet.
+PROBE_A="${TMPDIR:-/tmp}/config-inventory-probe-a.$$"
+PROBE_B="${TMPDIR:-/tmp}/config-inventory-probe-b.$$"
+
 # ---------------------------------------------------------------- preflight --
 # Located AND exercised: a tool that resolves but does not run turns every
 # count below into a silent zero (I-026).
-for tool in find wc sort mktemp; do
+for tool in find wc sort mktemp awk grep comm; do
   command -v "$tool" >/dev/null 2>&1 || fatal "required tool not found: $tool"
 done
 [ "$(printf 'a\nb\n' | wc -l | tr -d '[:space:]')" = "2" ] \
   || fatal "wc -l does not count lines on this host"
 [ "$(find . -maxdepth 0 -type d | wc -l | tr -d '[:space:]')" = "1" ] \
   || fatal "find does not report directories on this host"
+# T-1912 adds awk and comm, which read and compare the non-ASCII bound below.
+# A resolvable-but-broken awk would turn the DECLARED bound into an empty list,
+# and an empty bound is satisfied by anything - the silent zero this whole
+# script exists to refuse, arriving through the door marked "more rigour".
+[ "$(printf 'x y\n' | awk '{ print $2 }')" = "y" ] \
+  || fatal "awk does not print fields on this host"
+printf 'a\nb\n' > "$PROBE_A" || fatal "cannot write the comm probe file"
+printf 'b\nc\n' > "$PROBE_B" || fatal "cannot write the comm probe file"
+[ "$(comm -12 "$PROBE_A" "$PROBE_B")" = "b" ] \
+  || fatal "comm does not intersect sorted lists on this host"
+rm -f "$PROBE_A" "$PROBE_B"
 
 CONFIG_DIR="config"
 [ -d "$CONFIG_DIR" ] || fatal "$CONFIG_DIR/ not found in $REPO_ROOT (empty scope)"
@@ -82,7 +99,14 @@ CONFIG_DIR="config"
 
 FINDINGS_FILE=$(mktemp -t config-inventory.XXXXXX) || fatal "cannot create a temp file"
 FILE_LIST=$(mktemp -t config-inventory-files.XXXXXX) || fatal "cannot create a temp file"
-trap 'rm -f "$FINDINGS_FILE" "$FILE_LIST"' EXIT
+# T-1912: the non-ASCII bound is compared as two SORTED LISTS and not as two
+# totals, so each side needs a file of its own for `comm` to read. Two objects
+# swapping places keep the total at 8 while meaning something entirely
+# different, and a total is all this section printed for the month it was
+# unable to fail.
+DECLARED_LIST=$(mktemp -t config-inventory-declared.XXXXXX) || fatal "cannot create a temp file"
+MEASURED_LIST=$(mktemp -t config-inventory-measured.XXXXXX) || fatal "cannot create a temp file"
+trap 'rm -f "$FINDINGS_FILE" "$FILE_LIST" "$DECLARED_LIST" "$MEASURED_LIST"' EXIT
 
 # Findings are appended to a file and counted from it at report time, never
 # accumulated in a variable that a subshell could silently drop. One finding is
@@ -465,20 +489,128 @@ else
   finding "$RECIPE" "0" "not readable; the optional-key audit has an empty scope"
 fi
 
-# TWO decisions now put a byte above 0x7F into a shipped string, and the count
-# is only legible with both named. D-033 permits three legal citations, of
-# which only two are accented; D-047 puts a currency unit on seven money field
-# instances, one of which is also a citation. 2 + 7 - 1 = 8, and an object
-# outside that arithmetic is undeclared. Printed with the same byte RANGE the
-# audit uses - never a `[^\x00-\x7F]` bracket class, which GNU grep does not
-# read the way it looks and which returns a permanent false positive.
-# Informational here; ContentModelTest is what fails on a ninth, and it fails
-# on an unjustified byte inside a permitted object too, which this count
-# cannot see.
-NON_ASCII=$(LC_ALL=C grep -rlE "$(printf '[\200-\377]')" "$CONFIG_DIR" 2>/dev/null \
-  | wc -l | tr -d '[:space:]')
-printf 'objects carrying a byte above 0x7F: %s (D-033 signs 3 citations, only 2 of them accented; D-047 adds 7 currency units, 1 of them on a citation; 2 + 7 - 1 = 8, anything else is undeclared)\n' \
-  "${NON_ASCII:-0}"
+# TWO decisions put a byte above 0x7F into a shipped string, and until T-1912
+# this section only PRINTED how many objects carry one. D-033 permits three
+# legal citations, of which only two are accented; D-047 puts a currency unit on
+# seven money field instances, one of which is also a citation.
+#
+# WHY PRINTING IT WAS NOT ENOUGH, measured rather than argued. The assertion
+# lives in a PHPUnit kernel test, and NEITHER GATE RUNNER IN THIS REPOSITORY
+# EXECUTES PHPUNIT - gate-a-wave1.sh and gate-a-wave3.sh are shell invariants
+# only. So during wave 23 this line printed 10 against a declared 8, nothing
+# compared the two, and 1.x went red in CI on a commit whose author had run the
+# full local gate green. A number printed beside no comparison is the exact
+# shape of I-045, one level below the gate it belongs to.
+#
+# WHERE THE BOUND COMES FROM, AND WHY IT IS NOT RETYPED HERE. It is read out of
+# the two `private const` lists in the kernel test that already owns it, so
+# there is exactly ONE declaration in the repository. A second copy of the
+# number here would be the defect being closed - a bound written twice goes
+# stale in one copy first - wearing a fix's clothes.
+#
+# IT COMPARES NAMES, NOT TOTALS. Two objects swapping places leave the count at
+# 8 and mean something entirely different, so each side is sorted and `comm`
+# reports BOTH directions: an object carrying a byte nobody declared, and a
+# declared object that has stopped carrying one.
+#
+# WHAT THIS STILL CANNOT SEE, so the PHP assertion is not mistaken for
+# redundant: ContentModelTest also checks the RESIDUE - that every non-ASCII
+# byte inside a permitted object belongs to a legal citation D-033 permits or to
+# a currency unit read back out of the object itself. A fourth Spanish term
+# added to an object ALREADY on the list passes here and fails there.
+#
+# Scanned with the same byte RANGE the kernel test uses - never a
+# `[^\x00-\x7F]` bracket class, which GNU grep does not read the way it looks
+# and which returns a permanent false positive.
+BOUND_SOURCE="tests/src/Kernel/ContentModelTest.php"
+[ -r "$BOUND_SOURCE" ] \
+  || fatal "$BOUND_SOURCE is not readable; the non-ASCII bound has no source"
+
+# The entries of a `private const <NAME> = [ ... ];` list, one per line. The
+# single quote is passed IN as a variable rather than embedded, so the awk
+# program itself contains no quote to escape.
+#
+# TWO TERMINATORS, AND THE SECOND ONE IS NOT DEFENSIVE PROGRAMMING - IT WAS
+# FOUND BY FALSIFYING THIS FUNCTION. Emptying the constant to
+# `private const NON_ASCII_OBJECTS = [];` puts the opening bracket and the
+# closing `];` on ONE line. The first draft matched the opener, called `next`,
+# stepped straight over the closer and ran on into the NEXT constant - so the
+# emptied list reported the SEVEN entries of the constant below it, the I-028
+# guard was satisfied by the wrong list, and the run failed for an unrelated
+# reason. It is the same parser bug T-1909 hit reading a deleted table in
+# CLAUDE.md, in a different file, four weeks later.
+#
+# So: an opener whose own line also closes the list yields NOTHING, and any
+# `private const` met while inside ENDS the list. A scan that runs past its own
+# subject is worse than one that finds nothing, because it finds something.
+php_const_list() { # <file> <CONST_NAME>
+  awk -v q="'" -v c="$2" '
+    index($0, "private const " c " = [") > 0 {
+      # `= [];` on one line is an EMPTY list, not the start of one.
+      if (index($0, "];") > 0) { exit }
+      inside = 1
+      next
+    }
+    inside && $0 ~ /^[[:space:]]*\];[[:space:]]*$/ { exit }
+    inside && index($0, "private const ") > 0 { exit }
+    inside {
+      re = q "[^" q "]+" q
+      if (match($0, re)) { print substr($0, RSTART + 1, RLENGTH - 2) }
+    }
+  ' "$1"
+}
+
+BOUND_D033=$(php_const_list "$BOUND_SOURCE" NON_ASCII_OBJECTS)
+BOUND_D047=$(php_const_list "$BOUND_SOURCE" CURRENCY_UNIT_OBJECTS)
+
+# I-028: an extractor that matched nothing declares an EMPTY bound, and an empty
+# bound is met by a config/ with no accented byte in it at all - the state this
+# repository was in before T-613. A bound nobody could read is not a bound that
+# happens to be satisfied, so this is a FATAL and not a finding.
+count_lines() { # <newline-separated list, possibly empty>
+  if [ -z "$1" ]; then printf '0'; else printf '%s\n' "$1" | wc -l | tr -d '[:space:]'; fi
+}
+N_D033=$(count_lines "$BOUND_D033")
+N_D047=$(count_lines "$BOUND_D047")
+[ "${N_D033:-0}" -gt 0 ] \
+  || fatal "NON_ASCII_OBJECTS in $BOUND_SOURCE yielded 0 entries (empty bound)"
+[ "${N_D047:-0}" -gt 0 ] \
+  || fatal "CURRENCY_UNIT_OBJECTS in $BOUND_SOURCE yielded 0 entries (empty bound)"
+
+printf '%s\n%s\n' "$BOUND_D033" "$BOUND_D047" \
+  | grep -v '^$' | LC_ALL=C sort -u > "$DECLARED_LIST"
+
+# I-027: grep has THREE exit states. 1 is "no file matched", a real answer here;
+# anything >= 2 is grep itself failing and must never read as zero.
+NON_ASCII_RAW=$(LC_ALL=C grep -rlE "$(printf '[\200-\377]')" "$CONFIG_DIR" 2>/dev/null)
+NON_ASCII_RC=$?
+[ "$NON_ASCII_RC" -le 1 ] \
+  || fatal "grep exited $NON_ASCII_RC scanning $CONFIG_DIR/ for a byte above 0x7F"
+if [ -n "$NON_ASCII_RAW" ]; then
+  printf '%s\n' "$NON_ASCII_RAW" \
+    | sed "s|^$CONFIG_DIR/||; s|\.yml\$||" | LC_ALL=C sort > "$MEASURED_LIST"
+else
+  : > "$MEASURED_LIST"
+fi
+
+NON_ASCII=$(wc -l < "$MEASURED_LIST" | tr -d '[:space:]')
+DECLARED_N=$(wc -l < "$DECLARED_LIST" | tr -d '[:space:]')
+OVERLAP=$(( N_D033 + N_D047 - DECLARED_N ))
+
+printf 'objects carrying a byte above 0x7F: %s\n' "${NON_ASCII:-0}"
+printf 'non-ASCII bound declared: %s (NON_ASCII_OBJECTS %s + CURRENCY_UNIT_OBJECTS %s, %s named on both lists) read from %s\n' \
+  "${DECLARED_N:-0}" "$N_D033" "$N_D047" "$OVERLAP" "$BOUND_SOURCE"
+
+comm -23 "$MEASURED_LIST" "$DECLARED_LIST" | while IFS= read -r obj; do
+  [ -n "$obj" ] || continue
+  finding "$CONFIG_DIR/$obj.yml" "0" \
+    "carries a byte above 0x7F and is on neither NON_ASCII_OBJECTS (D-033) nor CURRENCY_UNIT_OBJECTS (D-047) in $BOUND_SOURCE"
+done
+comm -13 "$MEASURED_LIST" "$DECLARED_LIST" | while IFS= read -r obj; do
+  [ -n "$obj" ] || continue
+  finding "$BOUND_SOURCE" "0" \
+    "declares $obj as carrying a byte above 0x7F; $CONFIG_DIR/$obj.yml carries none, so the bound is wider than the config it bounds"
+done
 
 # T-321(b): defaulted because zero means FAIL here - the safe direction of
 # I-031. Do not copy the `:-0` to a guard where zero means PASS.

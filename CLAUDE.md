@@ -837,8 +837,21 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (68 checks · 0 failures) and `gate-a-wave3.sh` (**60** checks · 0 failures), **20** invariants in total —
+  (68 checks · 0 failures) and `gate-a-wave3.sh` (**61** checks · 0 failures), **20** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`60` became `61` on 2026-09-21 (T-1912) and `20` did NOT MOVE, which is the arithmetic
+  behaving rather than an omission**: the third check lands in the EXISTING G11 group, and only a
+  new group moves `invariants`. ⚠️ **The defect it closes is the most expensive kind this file
+  records, because it cost a red on a branch whose author had run the full local gate green.**
+  `config/` objects are bounded in how many may carry a byte above `0x7F` (D-033 plus D-047), the
+  assertion lives in a **PHPUnit kernel test**, and **neither runner executes PHPUnit** — both are
+  shell invariants. `config-inventory` PRINTED `objects carrying a byte above 0x7F: 10` against a
+  declared 8 and nothing compared them. The count is now compared, **by name and not by total**
+  (two objects swapping places keep the total at 8 and mean something else), against the bound read
+  out of the two `private const` lists in `tests/src/Kernel/ContentModelTest.php` — **read, never
+  retyped**, because a bound written in two places is the defect one level up from the one being
+  fixed. An unreadable or empty declared list is a FATAL, not a finding: a bound nobody can read is
+  not a bound that happens to be met (I-028).
   ⚠️ **`51` and `17` stood here until 2026-09-20 and both moved in the same commit** (unit 005
   wave 23, T-0512/T-0513/T-0514/T-0515). Three new groups in the wave-3 runner, three checks each:
   **G16 `no-key-material`**, **G17 `no-experimental-modules`**, **G18 `no-skip-on-missing-key`**.

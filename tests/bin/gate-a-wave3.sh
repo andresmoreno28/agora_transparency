@@ -99,6 +99,16 @@
 #          inside the script, the G14 way, so the count moves by 3 not 4.
 #                                                                      57 -> 60
 #
+# UNIT 003 WAVE 24 (2026-09-21) takes it from 60 to 61, and `invariants` does
+# NOT move, because no group was added:
+#   T-1912 G11 config-inventory grows a THIRD check - the length of the
+#          non-ASCII bound it now reads out of ContentModelTest's two
+#          `private const` lists. The bound itself is asserted INSIDE the
+#          invariant, so a mismatch arrives as a finding and fails the exit
+#          check; what is checked here is that the bound was READ AT ALL. An
+#          extractor that matched nothing would declare an empty bound, and an
+#          empty bound is met by any config/ whatsoever (I-028).       60 -> 61
+#
 # All three were watched FAILING before they were trusted, and G16's falsifying
 # run is the one worth quoting: on a planted `config/key.key.openai.yml` holding
 # `key_value: ''`, no-key-material exits 1 with 3 findings and `no-secrets`
@@ -116,7 +126,7 @@
 # `invariants=18` is G1..G18; G0 is the preflight and is not an invariant. The
 # total CLAUDE.md quotes is across BOTH runners, so it is this 18 plus wave 1's.
 #
-# GATE-CLAIM: checks=60 invariants=18
+# GATE-CLAIM: checks=61 invariants=18
 #
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
@@ -534,12 +544,32 @@ if [ -x "$INV" ]; then
   # exists (I-045). The object count is not pinned to a number here: T-612
   # through T-615 grow config/ legitimately, and only "> 0" is an invariant.
   CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
-  note "$(printf '%s' "$INV_OUT" | grep -E '^(scanned|config objects|nested files|zero-byte objects|findings):' | tr '\n' ' ')"
+  # T-1912. The second denominator is the length of the non-ASCII BOUND, read
+  # by the invariant out of the two `private const` lists in
+  # tests/src/Kernel/ContentModelTest.php. The bound is ASSERTED inside the
+  # invariant - a config object carrying a byte above 0x7F that nothing declares
+  # is a finding there, and arrives here as a failing exit check. What this
+  # checks is that the bound was READ AT ALL: an extractor that matched nothing
+  # declares an EMPTY bound, and an empty bound is satisfied by any config/
+  # whatsoever, printing "0 findings" exactly as a clean tree does (I-028).
+  #
+  # WHY THE CHECK IS HERE AND NOT IN PHP. The assertion also exists in
+  # ContentModelTest, where it is stricter - it checks the RESIDUE, that every
+  # non-ASCII byte inside a permitted object belongs to a string the test can
+  # name. But NEITHER RUNNER IN THIS REPOSITORY EXECUTES PHPUNIT, so during
+  # wave 23 the inventory printed 10 against a declared 8, nothing compared
+  # them, and 1.x went red in CI on a commit whose author had run the full local
+  # gate green. The PHP assertion is not redundant and this one is not a
+  # duplicate: this one is the half that runs where the author is.
+  BOUND=$(extract_count "$INV_OUT" 'non-ASCII bound declared:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scanned|config objects|nested files|zero-byte objects|objects carrying|non-ASCII bound declared|findings):' | tr '\n' ' ')"
   check 'config-inventory (exit)'          "$INV_RC" '0'
   check_positive 'config-inventory (scanned)' "$CNT"
+  check_positive 'config-inventory (non-ASCII bound declared)' "$BOUND"
 else
   check 'config-inventory present'         "$(trunc "$INV" 24)" 'present'
   check_positive 'config-inventory (scanned)' ''
+  check_positive 'config-inventory (non-ASCII bound declared)' ''
 fi
 
 # ---------------------------------------------------- G12 - media-licence (T-904) --
