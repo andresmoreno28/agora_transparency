@@ -1741,3 +1741,83 @@ passed this test, named so the line means something:** making a gate runner exec
 That is the thorough answer to T-1912 and it is not the necessary one — it trades a
 sub-second shell check for a database dependency inside `agora-invariants`, which is the
 exchange D-023(5) exists to refuse.
+
+---
+
+## Wave 28 — three denominators that were properties of the machine, the package and nobody — [ejecutor] 2026-09-21
+
+**T-1205's closing audit assigns all three of these rows to unit 006. Building them here is a
+deliberate pull-forward, and unit 006 must still carry the accounting** (I-105): the work moves,
+the budget entry does not. Same shape as waves 23 and 24.
+
+⚠️ **The wave number is 28 and it is NOT 25, which is the next free number in this file's own
+sequence.** `specs/005-ai-and-governance/tasks.md` holds waves **22, 23, 25, 26 and 27** — 22 and
+23 executed on 2026-09-20, the other three scaffolded and unexecuted after that file renumbered
+them. Taking 25 here would have been the **fourth** collision in two days, and the first one on a
+number somebody is still going to execute. **28 is the first integer free in both sequences.**
+
+⚠️ **This is a stopgap and it is named as one.** Unit 005's own closing note sets out the real
+fix — option **A**, unit-scoped wave numbers, on D-058's reasoning that the cheapest fix for a
+counter nobody owns is not to share it — and marks it ★. That is a process decision and **nobody
+has signed it**, so this wave does not adopt it unilaterally; it picks a number that cannot
+collide and says why. **Whoever opens the next unit should take A or B rather than repeat this
+paragraph.**
+
+⚠️ **What the three rows share: a number that was PRINTED and was not a measurement of what a
+reader thought it measured.** That is one notch past wave 24's defect. Wave 24 found numbers
+printed and never compared; these were compared, and the thing on the other side of the
+comparison was not the same thing.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-1915 ✓ | · | **An invariant's denominator must not be a property of whose machine ran it.** Three invariants walk the FILESYSTEM on purpose — `no-secrets`, `no-code-in-template` scope 2 and `no-ci-allow-dev` — because `git grep` cannot see an offender that was written and never `git add`ed (I-018). The filesystem, however, belongs to the machine and not to the commit, so one commit reported **472** files on this checkout and **462** in CI: ten local files no clone has — `.claude/settings.local.json`, five `.cspell-cache/*` and four `tests/bin/__pycache__/*.pyc`. ⚠️ **The invariants that read the git INDEX agree across both environments and always did** — `executable-bit`, and `no-code-in-template`'s own scope 1 — which is what makes this a property of the METHOD rather than of the repository. ⚠️ **The fix is NOT to narrow the scans to tracked files:** that deletes the one thing those scopes exist for. Each PARTITIONS its own walk instead and prints both halves. ⚠️ **The two labels may not nest:** the gate extracts a figure with an ERE and takes the LAST match, and `tracked:` is a substring of `untracked:`, so the plain word would have handed the gate the untracked count — the same trap `no-secrets` already carries one scar of, in its "binaries opened, never binaries scanned" note | **`bash tests/bin/no-ci-allow-dev` → `scanned: 472 files - git-tracked: 462 - untracked: 10 - mentions in scope: 11 - definitions: 0 - findings: 0`. `bash tests/bin/no-code-in-template` → `packaged: 376 entries - working: 472 files - git-tracked: 462 - untracked: 10 - *.info.yml: 0 - forbidden dirs: 0 - findings: 0`. `bash tests/bin/no-secrets` → `scanned: 464 files ... git-tracked: 462 - untracked: 10 - binaries opened: 88 ... findings: 0`, and the binary half split too: `working tree: 46 binary file(s) - git-tracked 42, untracked 4 · packaged tree: 42`.** ⚠️ **The reconciliation is exact against the audit's own CI figures, which is the point of the row**: 462 is the tracked half on both sides; 42 tracked working binaries + 42 packaged = **84**, the figure CI printed, against 88 here. Each of the ten untracked files is NAMED on its own line, not merely counted. ⚠️ **Three guards, each in the safe direction of I-031**: `tracked == 0` is a finding (a broken split reports the whole tree as untracked, which is a figure that looks like a measurement); `tracked + untracked != scanned` is a finding (a collation mismatch between `comm` and `find` would leave both halves looking plausible); `git ls-files` failing is FATAL, never "0 tracked". **Watched moving**: with one extra file planted in `config/`, the same run printed `untracked: 11` and named it | — |
+| T-1916 ✓ | T | **`logo.png` was packaged, referenced by nothing, and outside every licence check this package owns.** 2,251 bytes at the root of all 376 tarball entries, named by no recipe, no config and no content — only by prose in three files — and **outside `content/`, so `tests/bin/media-licence` did not cover it and it had no provenance row anywhere.** ⚠️ **Decided, not tidied. It HAS a job and the job is not ours to perform**: Drupal.org renders a project's icon from the GitLab project avatar, and on drupalcode that avatar is unreachable from both directions — a `PUT` to `/api/v4/projects` redirects to `www.drupal.org/git-error`, and a project's General settings redirect to `/-/settings/repository`, so there is no field to fill. The supported route is a 512x512 PNG named `logo.png` at the root of the default branch, and it is also the card image Project Browser shows, which for a **site template** is the picture a site builder looks at while choosing what to install. Verified on `agora_theme` first (`fd14b6d`), then added here (`a754611`). **So it stays, and it gets a row like every other binary this package ships** — which meant extending the invariant, because a row nothing checks is the prose that let this happen | **`bash tests/bin/media-licence` → `root files: 15 (working) · 11 (packaged) · root media declared: 2 · root non-media declared: 13` and `42 binaries (working) · 42 binaries (packaged) · 42 manifest rows · 5 allow-listed licences · 0 findings`, exit 0** — 40 content media plus the two root files, and rule 4 reporting `all 15 top-level file(s) classified: 2 media, 13 non-media`. The root is a **CLOSED** world: every top-level file in either scope is declared as root media (obliging a manifest row) or as root non-media, by exact path, never by extension. ⚠️ **Rule 4 found four files the first draft of its own list had missed** — `.cspell-project-words.txt`, `.eslintrc.json`, `.gitlab-ci.yml` and `CLAUDE.md`, all `export-ignore`d and therefore in scope 1 only, which is exactly what a list written by reading the tarball misses. The list was corrected from the invariant's output, not from memory. ⚠️ **Falsified four ways, each restored, none committed**: (a) an undeclared root file → exit 1, `probe-root.bin:0 a top-level file of this package is on neither root list`; (b) `logo.png`'s row deleted → exit 1, `logo.png:0 shipped at the root of the package with no row` — and the wording is path-aware because the first draft said *"shipped under content/"* about a file at the root, which sends the next reader to the wrong directory; (c) a declared root media path that exists in neither scope → exit 1, `[gone.png] ... the declaration has outlived its file`; (d) the root media list emptied → `FATAL: a root classification list is empty` (I-028). **Packaged entries: 376 → 374**, because `.gitignore` and `.mailmap` are now `export-ignore`d — measured with `git archive --worktree-attributes` before the change was made, and the packaged root goes from eleven entries to nine. Two G8 checks hold the exclusion and one holds `logo.png`'s presence, so neither can be undone quietly | — |
+| T-1917 ✓ | · | **Read `no-key-material` and say plainly whether `specs/005-ai-and-governance/plan.md` §5.4 is already covered by it — and if it is, record a finding rather than building a second script to satisfy a sentence.** §5.4 asks for an extension of `no-secrets` level 2 to learn the `key_provider_settings` shape *"whose value can legitimately be short and which today's length rule would miss"*. No wave row carries it in either unit | **COVERED, and measured rather than argued.** A `config/key.key.probe.yml` was planted carrying `key_provider: config` and `key_provider_settings:` with `key_value: sk-ab12` — a short token prefix, §5.4's own case. `bash tests/bin/no-key-material` → **4 findings, exit 1**, `key entities found: 1`, `key_value assignments: 1`, `provider key configs: 2`, over `scanned: 317 file(s)` and `patterns: 5 rule(s)`. `bash tests/bin/no-secrets` over the **same tree** → `findings: 0`, `no-secrets: clean`. Probe removed; `git status config/` empty. Its rules match a YAML **key position** whatever the value, which is STRONGER than §5.4 asked for — a length rule can never see `key_value: ''`, and an empty one is the warning that precedes the incident. ⚠️ **§5.4's stated REASON is wrong in a way worth correcting, because it misdirects the fix**: the length rule is not why `no-secrets` misses this shape. `key_value` and `key_provider` are **not in level 2's keyword list at all**, so it misses them at *every* length, a full-length real key included. Relaxing the threshold would have changed nothing. 🔴 **And the extension cannot be made where §5.4 puts it.** Simulated exactly — level 2's pattern with the two keywords added, level 2's placeholder suppression applied to the isolated value, over the whole tree: **2 findings, both on this repository's own prose**, `specs/005-ai-and-governance/research/2026-09-19-ai-and-governance-state-of-the-art.md:62` and `specs/005-ai-and-governance/research/2026-09-20-wave-22-measurements.md:661`, neither a credential and neither suppressed. That is I-018 verbatim — the header of `no-secrets` spends four paragraphs refusing exactly this — so §5.4 is not merely redundant, it is **unimplementable in the file it names** without weakening the invariant it names. ⚠️ **One residual is left OPEN and is named rather than closed**: outside `config/`, `content/` and `recipe.yml` a `key_value:` carrying a real key that matches no level-1 issued shape is caught by nothing. It is narrow, it is real, and closing it is a **scope** decision on `no-key-material` that belongs to unit 005, where §5.4 lives. Recorded at the end of that unit's task file so the person who executes wave 25 meets it | — |
+
+### What this change did not touch
+
+**No pattern in `tests/bin/no-secrets` changed.** T-1917's whole finding is that the change §5.4
+asks for turns that invariant red on this project's own documentation. Level 1, level 2 and level
+3 match exactly what they matched yesterday; what was added is the scope partition, which changes
+no verdict on any file.
+
+**`tests/bin/no-key-material` was read and not edited.** Widening its scope to the repository's CI
+YAML is the shape the residual would take, and it is unit 005's decision to make, not a side
+effect of an audit close here.
+
+**No config object and no content entity changed**, so `tests/bin/config-inventory` still reads
+`133 config object(s)` and `objects carrying a byte above 0x7F: 8` against a declared bound of 8.
+The only file under `content/` that moved is `MEDIA-LICENCES.md`, which is declared non-media.
+
+**No tag was cut and no version moved**, by dispatch.
+
+**`agora_theme` was read and never written.** `logo.png` there was compared byte for byte with the
+copy here — they are identical — and `logo.svg` was read to confirm the raster is the same mark.
+Nothing in that checkout changed.
+
+⚠️ **Reserve accounting, seventeenth entry, 2026-09-21 — three rows.** T-1915 to T-1917 take the
+count from **79 to 82** against a ceiling of **34** by this file's own command
+(`grep -cE '^\| T-(9[0-9]{2}|1[0-9]{3}) ' specs/003-demo-content/tasks.md`), so the D-031 rider
+now names **forty-eight** rows over the ceiling rather than forty-five. Stated, not asked about,
+per **D-044**: the budget counts and does not gate. ⚠️ **The ids stay inside the `T-19NN` block**
+for the reason waves 20 to 24 gave: `T-20NN` falls outside `1[0-9]{3}` and would break the
+counting command. ⚠️ **And the accounting home does not move with the code**: T-1205's audit
+assigns all three rows to unit 006, building them here is the pull-forward, and **unit 006 still
+carries the budget entry** (I-105).
+
+**D-044's necessity test, applied honestly: one of the three passes it and two do not.**
+D-044 asks for work without which something already signed is broken, false or impossible to
+ship.
+
+- **Necessary — T-1916.** A binary with no licence row, in a package whose thesis is
+  accountability and whose destination is a marketplace review, is a **false** state rather than
+  an improvable one: `content/MEDIA-LICENCES.md` opens by claiming every non-entity file this
+  package ships has a row, and one did not. The document was wrong about itself.
+- **Useful, not necessary — T-1915.** Nothing signed is broken by two environments printing two
+  totals; the scans were correct in both. What it buys is that a figure quoted in a task row
+  means the same thing wherever it was produced, which is a precondition for this project's whole
+  method and not a thing the method already asserts.
+- **Neither — T-1917.** It is a measurement and a finding. It ships no behaviour at all, and its
+  entire output is that a planned item should not be built. Recorded as a row because the
+  decision needs a home and because *"we looked and decided not to"* is the kind of answer that
+  otherwise disappears.

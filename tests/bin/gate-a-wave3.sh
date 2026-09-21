@@ -126,7 +126,30 @@
 # `invariants=18` is G1..G18; G0 is the preflight and is not an invariant. The
 # total CLAUDE.md quotes is across BOTH runners, so it is this 18 plus wave 1's.
 #
-# GATE-CLAIM: checks=61 invariants=18
+# UNIT 003 WAVE 28 (2026-09-21) takes it from 61 to 66, and `invariants` does
+# NOT move: all five checks land in EXISTING groups, for the reason T-1904's
+# entry above gives - claims-match-sources binds the structural group count as
+# well as this line, so a new group would have to move both.
+#   T-1915  G3, G5 and G6 each gain a `git-tracked` check, one apiece. The
+#           three invariants behind them walk the FILESYSTEM on purpose, and
+#           the filesystem is a property of the machine: the same commit gave
+#           472 files on a maintainer's desk and 462 here, because a desk
+#           carries .cspell-cache/, __pycache__/ and a local settings file
+#           that no clone has. The scans are unchanged - narrowing them to
+#           tracked files would delete the one thing that scope exists for -
+#           and each now PARTITIONS its own walk, so the half that is a
+#           property of the COMMIT is printed beside the half that is not.
+#           Asserted rather than printed because a broken split reports the
+#           whole tree as untracked and this figure as zero (I-028).  61 -> 64
+#   T-1916  G12 media-licence gains TWO: `root files` and `root media
+#           declared`. Not one question asked twice, and the separation is
+#           G14's: the first comes from the two ENUMERATIONS of the package
+#           root, the second from the invariant's own DECLARATION list. An
+#           emptied declaration with a healthy enumeration would print
+#           "15 top-level files classified" over a rule that can no longer
+#           classify anything.                                        64 -> 66
+#
+# GATE-CLAIM: checks=66 invariants=18
 #
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
@@ -362,13 +385,27 @@ if [ -x "$INV" ]; then
   # this group's denominator from the text scan to the binary sweep and nobody
   # would see it happen.
   BIN_CNT=$(extract_count "$INV_OUT" 'binaries opened:[[:space:]]*[0-9]+')
+  # T-1915. The half of the scope that is a property of the COMMIT rather than
+  # of the machine. `scanned` above is a filesystem walk, so it legitimately
+  # differs between this runner and a maintainer's desk; `git-tracked` does
+  # not, which is what makes the two runs comparable at all. It is asserted
+  # rather than merely printed because a broken split reports the whole tree as
+  # untracked and this figure as zero - a number that looks like a measurement
+  # and is the absence of one (I-028).
+  #
+  # The label is `git-tracked:` and not `tracked:` on purpose: extract_count
+  # takes the LAST match of its ERE, and `tracked:` is a substring of
+  # `untracked:`, so the plain word would hand this check the wrong number.
+  TRACKED_CNT=$(extract_count "$INV_OUT" 'git-tracked:[[:space:]]*[0-9]+')
   note "$(printf '%s' "$INV_OUT" | grep -E '^scanned:' | tail -1)"
   check 'no-secrets (exit)'                "$INV_RC" '0'
   check_positive 'no-secrets (scanned)'    "$CNT"
+  check_positive 'no-secrets (git-tracked)' "$TRACKED_CNT"
   check_positive 'no-secrets (binaries opened)' "$BIN_CNT"
 else
   check 'no-secrets present'               "$(trunc "$INV" 24)" 'present'
   check_positive 'no-secrets (scanned)'    ''
+  check_positive 'no-secrets (git-tracked)' ''
   check_positive 'no-secrets (binaries opened)' ''
 fi
 
@@ -400,12 +437,17 @@ if [ -x "$INV" ]; then
   # (this script never prints the word "scanned"; its scope metric is the
   # packaged-tree entry count from `git archive`, its authoritative scope 1)
   CNT=$(extract_count "$INV_OUT" 'packaged:[[:space:]]*[0-9]+')
+  # T-1915: the working scope's commit-stable half. See the same check in G3
+  # for why the label carries the `git-` prefix.
+  TRACKED_CNT=$(extract_count "$INV_OUT" 'git-tracked:[[:space:]]*[0-9]+')
   note "$(printf '%s' "$INV_OUT" | grep -E '^packaged:' | tail -1)"
   check 'no-code-in-template (exit)'       "$INV_RC" '0'
   check_positive 'no-code-in-template (packaged)' "$CNT"
+  check_positive 'no-code-in-template (git-tracked)' "$TRACKED_CNT"
 else
   check 'no-code-in-template present'      "$(trunc "$INV" 24)" 'present'
   check_positive 'no-code-in-template (packaged)' ''
+  check_positive 'no-code-in-template (git-tracked)' ''
 fi
 
 # ------------------------------------------------------ G6 - no-ci-allow-dev (T-308ish) --
@@ -415,12 +457,17 @@ if [ -x "$INV" ]; then
   run_invariant "$INV"
   # own summary line: "scanned: N files - mentions in scope: N - definitions: N - findings: N"
   CNT=$(extract_count "$INV_OUT" 'scanned:[[:space:]]*[0-9]+')
+  # T-1915: the scan's commit-stable half. See the same check in G3 for why the
+  # label carries the `git-` prefix.
+  TRACKED_CNT=$(extract_count "$INV_OUT" 'git-tracked:[[:space:]]*[0-9]+')
   note "$(printf '%s' "$INV_OUT" | grep -E '^scanned:' | tail -1)"
   check 'no-ci-allow-dev (exit)'           "$INV_RC" '0'
   check_positive 'no-ci-allow-dev (scanned)' "$CNT"
+  check_positive 'no-ci-allow-dev (git-tracked)' "$TRACKED_CNT"
 else
   check 'no-ci-allow-dev present'          "$(trunc "$INV" 24)" 'present'
   check_positive 'no-ci-allow-dev (scanned)' ''
+  check_positive 'no-ci-allow-dev (git-tracked)' ''
 fi
 
 # ------------------------------------------------------------ G7 - no-boilerplate (T-309) --
@@ -593,12 +640,32 @@ if [ -x "$INV" ]; then
   # parenthesis before the colon, so the ERE below matches only the summary
   # line - one match, not three.
   CNT=$(extract_count "$INV_OUT" 'content entries:[[:space:]]*[0-9]+')
-  note "$(printf '%s' "$INV_OUT" | grep -E '^(content entries|[0-9]+ binaries)' | tr '\n' ' ')"
+  # T-1916. TWO MORE DENOMINATORS, and they are not one question asked twice -
+  # the same separation G14 makes between a count `find` produced and a count
+  # the parser produced.
+  #
+  # `root files` comes from the two ENUMERATIONS, so it is positive whenever
+  # the walk and the archive listing reached the top level at all. `root media
+  # declared` comes from the invariant's own DECLARATION list, so it is
+  # positive only if the classification the closed world runs against still
+  # exists. An emptied list with a healthy enumeration prints "15 top-level
+  # files classified" over a rule that can no longer classify anything, which
+  # is the I-028 shape this pair refuses.
+  #
+  # The two labels do not nest: `root files:` is not a substring of `root
+  # media declared:`, so `tail -1` inside extract_count cannot cross them.
+  ROOT_CNT=$(extract_count "$INV_OUT" 'root files:[[:space:]]*[0-9]+')
+  ROOT_DECL=$(extract_count "$INV_OUT" 'root media declared:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(content entries|root files|[0-9]+ binaries)' | tr '\n' ' ')"
   check 'media-licence (exit)'             "$INV_RC" '0'
   check_positive 'media-licence (content entries)' "$CNT"
+  check_positive 'media-licence (root files)' "$ROOT_CNT"
+  check_positive 'media-licence (root media declared)' "$ROOT_DECL"
 else
   check 'media-licence present'            "$(trunc "$INV" 24)" 'present'
   check_positive 'media-licence (content entries)' ''
+  check_positive 'media-licence (root files)' ''
+  check_positive 'media-licence (root media declared)' ''
 fi
 
 # --------------------------------------------------- G13 - no-real-people (T-905) --

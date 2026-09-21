@@ -123,6 +123,60 @@ MANIFEST='content/MEDIA-LICENCES.md'
 NON_MEDIA_DECLARED='content/MEDIA-LICENCES.md
 content/PEOPLE.md'
 
+# ------------------------------------------------------ the packaged ROOT ----
+# T-1916. THIS SCRIPT USED TO STOP AT content/, AND THE PACKAGE DOES NOT.
+# `logo.png` sat at the repository root for nineteen days: 2,251 bytes, shipped
+# in every tarball, referenced by no recipe, no config and no content, covered
+# by this invariant not at all, and carrying no provenance row anywhere. The
+# sentence that stood in the manifest instead - "Nothing else in this package
+# is a photograph" - was true and was prose: nothing could check it, and it did
+# not mention the file.
+#
+# A binary with no licence row in a package heading for a marketplace review is
+# the kind of thing a reviewer asks about, and "it was there already" is not an
+# answer. So the closed world now covers the top level of the package too, and
+# it is a CLOSED world rather than a list of two names: every file at the root,
+# in either scope, must be on exactly one of the two lists below, or it is a
+# finding. A new root binary therefore fires on the day it lands.
+#
+# BOTH LISTS ARE BY EXACT PATH, never by extension - the same rule the
+# non-media list above follows, and for the same reason. `*.md` would silently
+# adopt the next Markdown file somebody drops in, and adopting a file is a
+# decision somebody makes on purpose.
+#
+# Root files that ARE media and need a manifest row.
+ROOT_MEDIA_DECLARED='logo.png
+screenshot.webp'
+
+# Root files that are NOT media: the recipe, its metadata, the licence of the
+# code and the prose a reader opens. None of them is a thing somebody else may
+# own, which is the question this invariant asks.
+# `.gitignore` and `.mailmap` are listed although T-1916 `export-ignore`s them:
+# they are still in the WORKING tree, which is scope 1, and a classification
+# that only held in one scope would be a hole shaped exactly like the one this
+# block closes.
+#
+# ⚠️ FOUR OF THESE WERE NOT IN THE FIRST DRAFT OF THIS LIST AND RULE 4 NAMED
+# THEM ON ITS FIRST RUN: `.cspell-project-words.txt`, `.eslintrc.json`,
+# `.gitlab-ci.yml` and `CLAUDE.md`. They are `export-ignore`d, so they are in
+# scope 1 and not in scope 2 - which is exactly the case a list written by
+# reading the tarball would have missed. The list was corrected from the
+# invariant's own output rather than from memory, and that is the whole reason
+# rule 4 enumerates a union of both scopes instead of the packaged one.
+ROOT_NON_MEDIA_DECLARED='.cspell-project-words.txt
+.eslintrc.json
+.gitattributes
+.gitignore
+.gitlab-ci.yml
+.mailmap
+AGENTS.md
+CLAUDE.md
+LICENSE.txt
+README.md
+composer.json
+recipe.yml
+recommended.yml'
+
 # The allow-list. PRINTED on every run, per §6.1: "A licence not on it is a
 # finding, never a silent pass - an unrecognised string must not read as
 # absence." Every entry is a licence this project may lawfully redistribute
@@ -164,11 +218,44 @@ EOF
   return 1
 }
 
+is_declared_root_media() { # <path>
+  while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    [ "$1" = "$d" ] && return 0
+  done <<EOF
+$ROOT_MEDIA_DECLARED
+EOF
+  return 1
+}
+
+is_declared_root_non_media() { # <path>
+  while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    [ "$1" = "$d" ] && return 0
+  done <<EOF
+$ROOT_NON_MEDIA_DECLARED
+EOF
+  return 1
+}
+
 # A path is MEDIA when it is under content/, is not *.yml, is not *.json and is
 # not a declared non-media file. Deliberately NOT "is it binary": T-1006 ships
 # CSV distributions, which are text and are still somebody's data under somebody
 # else's licence.
+#
+# T-1916 adds the second arm: a file at the TOP LEVEL of the package is media
+# when it is on ROOT_MEDIA_DECLARED. The asymmetry with the content/ arm is
+# deliberate. Under content/ the default is "media" and the exceptions are
+# named, because content/ is where somebody else's work arrives; at the root
+# the default is neither, because the root is where the recipe itself lives -
+# so every root file is classified explicitly and rule 4 below fails on any
+# that is not.
 is_media() { # <path>
+  case "$1" in
+    */*) ;;
+    *) is_declared_root_media "$1" && return 0
+       return 1 ;;
+  esac
   case "$1" in
     "$CONTENT_DIR"/*) ;;
     *) return 1 ;;
@@ -209,12 +296,37 @@ if [ "${ALLOWED_COUNT:-0}" -eq 0 ]; then
   fatal 'the licence allow-list is empty - the declaration has been emptied and this scan discriminates nothing (I-028).'
 fi
 
+ROOT_MEDIA_COUNT=0
+while IFS= read -r l; do
+  [ -n "$l" ] || continue
+  ROOT_MEDIA_COUNT=$((ROOT_MEDIA_COUNT + 1))
+done <<EOF
+$ROOT_MEDIA_DECLARED
+EOF
+ROOT_NON_MEDIA_COUNT=0
+while IFS= read -r l; do
+  [ -n "$l" ] || continue
+  ROOT_NON_MEDIA_COUNT=$((ROOT_NON_MEDIA_COUNT + 1))
+done <<EOF
+$ROOT_NON_MEDIA_DECLARED
+EOF
+# Both lists FATAL at zero, for the reason the allow-list does: an emptied
+# classification list makes rule 4 report every root file as undeclared, or
+# none of them, depending which half was emptied - and one of those two is a
+# silent pass (I-028).
+if [ "${ROOT_MEDIA_COUNT:-0}" -eq 0 ] || [ "${ROOT_NON_MEDIA_COUNT:-0}" -eq 0 ]; then
+  fatal 'a root classification list is empty - rule 4 would classify the package root against nothing (I-028).'
+fi
+
 printf '\ndeclared scope\n'
 note "content directory:   $CONTENT_DIR/"
 note "manifest:            $MANIFEST"
 note "non-media declared:  $(printf '%s' "$NON_MEDIA_DECLARED" | tr '\n' ' ')"
+note "root media ($ROOT_MEDIA_COUNT):      $(printf '%s' "$ROOT_MEDIA_DECLARED" | tr '\n' ' ')"
+note "root non-media ($ROOT_NON_MEDIA_COUNT):  $(printf '%s' "$ROOT_NON_MEDIA_DECLARED" | tr '\n' ' ')"
 note "allow-list ($ALLOWED_COUNT):     $(printf '%s' "$ALLOWED_LICENCES" | tr '\n' ' ' | sed 's/  */ /g')"
 note 'media = under content/, not *.yml, not *.json, not a declared non-media file'
+note 'media = OR a top-level file on the root media list; every other top-level file must be on the root non-media list (rule 4)'
 
 # =========================================== scope 1: the working tree ========
 printf '\nscope 1 (early warning): working tree - find %s\n' "$CONTENT_DIR"
@@ -229,11 +341,24 @@ if [ "${WORK_ENTRIES:-0}" -eq 0 ]; then
   fatal "$CONTENT_DIR/ enumerated 0 files in the working tree - the scan did not happen (I-007/I-028)."
 fi
 
+# T-1916: the top level of the working tree, enumerated separately so rule 4
+# has a set to classify and so the root media join the media union below.
+find . -maxdepth 1 -type f -print 2>/dev/null | sed 's|^\./||' | LC_ALL=C sort \
+  > "$WORKDIR/work-root"
+WORK_ROOT=$(wc -l < "$WORKDIR/work-root" | tr -d ' ')
+printf 'root entries (working):    %s\n' "$WORK_ROOT"
+# Zero means FAIL (I-031): this repository always has recipe.yml at its root,
+# so a zero here is a broken enumeration and not an empty root.
+if [ "${WORK_ROOT:-0}" -eq 0 ]; then
+  fatal 'the top level of the working tree enumerated 0 files - recipe.yml is always there, so the enumeration broke (I-007/I-028).'
+fi
+cat "$WORKDIR/work-all" "$WORKDIR/work-root" | LC_ALL=C sort -u > "$WORKDIR/work-scope"
+
 : > "$WORKDIR/work-media"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   is_media "$f" && printf '%s\n' "$f" >> "$WORKDIR/work-media"
-done < "$WORKDIR/work-all"
+done < "$WORKDIR/work-scope"
 WORK_MEDIA=$(wc -l < "$WORKDIR/work-media" | tr -d ' ')
 printf 'binaries (working):        %s\n' "$WORK_MEDIA"
 
@@ -260,11 +385,25 @@ if [ "${PKG_ENTRIES:-0}" -eq 0 ]; then
   fatal "$CONTENT_DIR/ contributes 0 files to the packaged tree - either content/ became export-ignored or the archive broke; either way this run proves nothing (I-028)."
 fi
 
+# T-1916: the top level of the tarball. `grep -v /` keeps only entries with no
+# slash at all, which is both the files at the root and nothing else - a
+# directory entry always ends in one.
+printf '%s\n' "$ARCHIVE_LIST" | grep -v '/' 2>/dev/null | grep -v '^$' 2>/dev/null \
+  | LC_ALL=C sort > "$WORKDIR/pkg-root"
+PKG_ROOT=$(wc -l < "$WORKDIR/pkg-root" | tr -d ' ')
+printf 'root entries (packaged):    %s\n' "$PKG_ROOT"
+# Zero means FAIL (I-031): a tarball with nothing at its top level has no
+# recipe.yml and is not a site template.
+if [ "${PKG_ROOT:-0}" -eq 0 ]; then
+  fatal 'the tarball has 0 files at its top level - recipe.yml is mandatory there, so the archive listing was not read (I-028).'
+fi
+cat "$WORKDIR/pkg-all" "$WORKDIR/pkg-root" | LC_ALL=C sort -u > "$WORKDIR/pkg-scope"
+
 : > "$WORKDIR/pkg-media"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   is_media "$f" && printf '%s\n' "$f" >> "$WORKDIR/pkg-media"
-done < "$WORKDIR/pkg-all"
+done < "$WORKDIR/pkg-scope"
 PKG_MEDIA=$(wc -l < "$WORKDIR/pkg-media" | tr -d ' ')
 printf 'binaries (packaged):        %s\n' "$PKG_MEDIA"
 
@@ -277,9 +416,13 @@ MEDIA_UNION=$(wc -l < "$WORKDIR/media-union" | tr -d ' ')
 # same question as what the archive contains - `export-ignore` sits between the
 # two, and the gap between them is a defect nothing else in tests/bin/ can see.
 : > "$WORKDIR/tracked-media"
-TRACKED_LIST=$(git ls-tree -r --name-only HEAD -- "$CONTENT_DIR" 2>/dev/null)
+# T-1916: the whole tree rather than content/ alone, so a root media file that
+# is committed but dropped from the tarball is caught by rule 3 the same way a
+# content/ one is. `is_media` filters it back down, so the set is unchanged for
+# every path this invariant did not previously consider.
+TRACKED_LIST=$(git ls-tree -r --name-only HEAD 2>/dev/null)
 TRACKED_RC=$?
-[ "$TRACKED_RC" -ne 0 ] && fatal "git ls-tree HEAD -- $CONTENT_DIR failed (exit $TRACKED_RC) - rule 3 would compare against an empty set and report agreement it never measured."
+[ "$TRACKED_RC" -ne 0 ] && fatal "git ls-tree -r HEAD failed (exit $TRACKED_RC) - rule 3 would compare against an empty set and report agreement it never measured."
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   is_media "$f" && printf '%s\n' "$f" >> "$WORKDIR/tracked-media"
@@ -294,13 +437,27 @@ printf '\nmanifest - %s\n' "$MANIFEST"
 
 MANIFEST_ROWS=0
 : > "$WORKDIR/rows"
+# A data row is a table row whose first cell is a path under content/ or one of
+# the DECLARED root media paths. The header row and the `|---|` separator
+# therefore exclude themselves, and no line-number arithmetic is needed to skip
+# them - nor does the `| column | what goes in it |` table further up the
+# manifest become a data row by accident.
+#
+# T-1916: the alternation is built from the DECLARATION and not from the disk.
+# Deriving it from the files that exist would make a row whose file has been
+# deleted stop being a row at all, which is the precise case rule 2 exists to
+# catch - a stale row would go quiet instead of red.
+ROW_PREFIX_RE="$CONTENT_DIR/"
+while IFS= read -r r; do
+  [ -n "$r" ] || continue
+  ROW_PREFIX_RE="$ROW_PREFIX_RE|$(printf '%s' "$r" | sed 's/[].[^$*+?(){}|\\]/\\&/g')"
+done <<EOF
+$ROOT_MEDIA_DECLARED
+EOF
 if [ -r "$MANIFEST" ]; then
-  # A data row is a table row whose first cell is a path under content/. The
-  # header row and the `|---|` separator therefore exclude themselves, and no
-  # line-number arithmetic is needed to skip them.
-  ROW_MATCHED=$(grep -nE "^\|[[:space:]]*$CONTENT_DIR/" "$MANIFEST" 2>/dev/null)
+  ROW_MATCHED=$(grep -nE "^\|[[:space:]]*($ROW_PREFIX_RE)" "$MANIFEST" 2>/dev/null)
   ROW_RC=$?
-  [ "$ROW_RC" -ge 2 ] && grep_fatal "$ROW_RC" "^\\|[[:space:]]*$CONTENT_DIR/" "$MANIFEST"
+  [ "$ROW_RC" -ge 2 ] && grep_fatal "$ROW_RC" "^\\|[[:space:]]*($ROW_PREFIX_RE)" "$MANIFEST"
   if [ "$ROW_RC" -eq 0 ]; then
     printf '%s\n' "$ROW_MATCHED" > "$WORKDIR/rows"
     MANIFEST_ROWS=$(wc -l < "$WORKDIR/rows" | tr -d ' ')
@@ -348,7 +505,14 @@ if [ "$ARMED" = yes ]; then
   while IFS= read -r f; do
     [ -n "$f" ] || continue
     if ! grep -qxF "$f" "$WORKDIR/row-paths" 2>/dev/null; then
-      finding "$f" '0' "shipped under $CONTENT_DIR/ with no row in $MANIFEST - somebody may own this file and the package does not say who"
+      # T-1916: the reason names the right place. A root file is not "shipped
+      # under content/", and a finding that misdescribes where the file is
+      # sends the next reader to the wrong directory.
+      case "$f" in
+        */*) _where="shipped under $CONTENT_DIR/" ;;
+        *)   _where='shipped at the root of the package' ;;
+      esac
+      finding "$f" '0' "$_where with no row in $MANIFEST - somebody may own this file and the package does not say who"
       R1=$((R1 + 1))
     fi
   done < "$WORKDIR/media-union"
@@ -456,8 +620,56 @@ EOF
     }
   done < "$WORKDIR/pkg-media"
   [ "$R3" -eq 0 ] && note "committed media sets agree; $UNCOMMITTED uncommitted file(s)"
+
+  # ------------------------------------------------------------- rule 4 -----
+  # T-1916. The closed world over the top level of the package. Every root file
+  # in either scope is on exactly one of the two declared lists, and every path
+  # on the root media list exists in at least one scope.
+  #
+  # The second half is not decoration: without it a declaration could name a
+  # file that left the package, the manifest row for it would still be detected
+  # (the alternation is built from the declaration, above), rule 2 would report
+  # it as a row naming no file - and a reader would have no way to tell whether
+  # the file or the declaration was the mistake. This says which.
+  printf '\n4. every top-level file is classified, and every declared root media file exists\n'
+  R4=0
+  ROOT_SCOPE=0
+  ROOT_AS_MEDIA=0
+  ROOT_AS_NON_MEDIA=0
+  cat "$WORKDIR/work-root" "$WORKDIR/pkg-root" | LC_ALL=C sort -u > "$WORKDIR/root-union"
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    ROOT_SCOPE=$((ROOT_SCOPE + 1))
+    if is_declared_root_media "$f"; then
+      ROOT_AS_MEDIA=$((ROOT_AS_MEDIA + 1))
+      if is_declared_root_non_media "$f"; then
+        finding "$f" '0' 'a top-level file is on BOTH root lists - the classification says two things at once'
+        R4=$((R4 + 1))
+      fi
+    elif is_declared_root_non_media "$f"; then
+      ROOT_AS_NON_MEDIA=$((ROOT_AS_NON_MEDIA + 1))
+    else
+      finding "$f" '0' 'a top-level file of this package is on neither root list - classify it in tests/bin/media-licence as root media (and give it a manifest row) or as root non-media, or take it out of the package'
+      R4=$((R4 + 1))
+    fi
+  done < "$WORKDIR/root-union"
+  # Zero means FAIL (I-031): the union of two enumerations that each FATAL at
+  # zero cannot legitimately be empty.
+  if [ "${ROOT_SCOPE:-0}" -eq 0 ]; then
+    fatal 'rule 4 classified 0 top-level files - the root enumerations did not reach it (I-028).'
+  fi
+  while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    if ! grep -qxF "$d" "$WORKDIR/root-union" 2>/dev/null; then
+      finding "$MANIFEST" '0' "[$d] is declared as root media in tests/bin/media-licence and exists in neither scope - the declaration has outlived its file"
+      R4=$((R4 + 1))
+    fi
+  done <<EOF
+$ROOT_MEDIA_DECLARED
+EOF
+  [ "$R4" -eq 0 ] && note "all $ROOT_SCOPE top-level file(s) classified: $ROOT_AS_MEDIA media, $ROOT_AS_NON_MEDIA non-media"
 else
-  printf '\n1-3. skipped: there is no media to license and no row claiming there is\n'
+  printf '\n1-4. skipped: there is no media to license and no row claiming there is\n'
   note 'this is NOT a clean scan of media - it is the absence of media, and the summary line says so in those words'
   note "the rules arm themselves on wave 10's first image (T-1007); no edit here, nothing to remember"
 fi
@@ -465,6 +677,8 @@ fi
 # ----------------------------------------------------------------- summary ---
 printf '\n---------------------------------------------------------------------------------------------------------\n'
 printf 'content entries: %s (working) · %s (packaged)\n' "$WORK_ENTRIES" "$PKG_ENTRIES"
+printf 'root files: %s (working) · %s (packaged) · root media declared: %s · root non-media declared: %s\n' \
+  "$WORK_ROOT" "$PKG_ROOT" "$ROOT_MEDIA_COUNT" "$ROOT_NON_MEDIA_COUNT"
 printf '%s binaries (working) · %s binaries (packaged) · %s manifest rows · %s allow-listed licences · %s findings' \
   "$WORK_MEDIA" "$PKG_MEDIA" "$MANIFEST_ROWS" "$ALLOWED_COUNT" "$FINDINGS"
 if [ "$ARMED" = yes ]; then

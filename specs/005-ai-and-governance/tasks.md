@@ -178,3 +178,52 @@ number that goes wrong in one place first.**
 not to share it. Left for whoever opens the next unit, with the cost of being wrong stated — under
 A, a reader can no longer tell from a heading whether two waves ran in the same week, which is
 information this project has used exactly once, in the paragraph above.
+
+---
+
+## ⚠️ `plan.md` §5.4 is answered, and the answer is "do not build it" — [ejecutor] 2026-09-21
+
+**No row in this file is edited** (rule 8). This is appended because §5.4 is carried by no wave row
+in either unit, and whoever executes wave 25 would otherwise implement it.
+
+§5.4 asks for an extension of `tests/bin/no-secrets` level 2, *"not a new script"*, to learn the
+`key_provider_settings` shape *"whose value can legitimately be short and which today's length rule
+would miss"*. It was measured under **T-1917** in `specs/003-demo-content/tasks.md`, wave 28.
+Three findings, in the order they matter:
+
+1. **The subject is already covered, and covered more strongly than §5.4 asked for.**
+   `tests/bin/no-key-material` — built for §5.1 — matches `key_value` and
+   `key_provider(_settings)?` in a YAML **key position, whatever the value**. A planted
+   `config/key.key.probe.yml` carrying `key_provider: config` and `key_value: sk-ab12` gives it
+   **4 findings and exit 1**; `no-secrets`, over the same tree, prints `findings: 0` and `clean`.
+   A length rule can never see `key_value: ''`, and the empty one is the warning that precedes the
+   incident — which is §5.1's own argument, now measured for the **provider** half as well.
+
+2. **§5.4's stated reason is wrong in a way that misdirects the fix.** The length rule is not why
+   `no-secrets` misses this shape: `key_value` and `key_provider` **are not in its level 2 keyword
+   list at all**, so it misses them at every length, a full-length real key included. Lowering the
+   threshold would have changed nothing.
+
+3. 🔴 **The extension cannot be made in the file §5.4 names.** Simulated exactly — level 2's
+   pattern with the two keywords added, level 2's placeholder suppression applied to the isolated
+   value, over the whole working tree — it produces **two findings, both on this unit's own
+   research prose**: `research/2026-09-19-ai-and-governance-state-of-the-art.md:62` and
+   `research/2026-09-20-wave-22-measurements.md:661`. Neither is a credential and neither is
+   suppressed. That is I-018 verbatim, and `no-secrets`' own header spends four paragraphs
+   refusing it. **So §5.4 is not merely redundant; it is unimplementable where it is written,
+   without weakening the invariant it names.**
+
+### The one residual, left open on purpose and owned by this unit
+
+Outside `config/`, `content/` and `recipe.yml` — the three trees `no-key-material` reads — a
+`key_value:` carrying a real key that matches no level-1 issued shape (`sk-`, `ghp_`, `AIza`, a
+JWT, a connection string) is caught by **nothing**. The realistic home for such a value is
+`.gitlab-ci.yml` or `.github/workflows/`, which are YAML and which this package does not ship.
+
+**It is a SCOPE decision on `no-key-material`, not a pattern change in `no-secrets`**, and it is
+left here rather than taken in unit 003, because the sentence that bounds that script's scope is
+its own: *"key material is configuration, and configuration in this package is YAML."* Widening it
+to the repository's CI YAML fits that sentence and costs one line plus a denominator; widening it
+further does not. Measured on 2026-09-21: the two keywords occur in **three tracked files**
+(`tests/bin/no-key-material`, and the two research documents above) and in **no** CI file, so the
+widening would be green on the day it lands and non-vacuous in scope.

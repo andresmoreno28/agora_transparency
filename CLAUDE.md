@@ -837,8 +837,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (68 checks · 0 failures) and `gate-a-wave3.sh` (**61** checks · 0 failures), **20** invariants in total —
+  (71 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **20** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`68 · 61` became `71 · 66` on 2026-09-21 (wave 28) and `20` did NOT MOVE for the third
+  time running**, which is the arithmetic behaving rather than an omission: all eight new checks
+  land in EXISTING groups — three in wave 1's G8, three across wave 3's G3/G5/G6 and two in its
+  G12 — and only a new GROUP moves `invariants`. **T-1915** partitions the three invariants that
+  walk the filesystem into `git-tracked` and `untracked`, because their totals were a property of
+  whose machine ran them: the same commit gave **472** files on a maintainer's desk and **462** in
+  CI, and a denominator that changes with the desk is not a denominator. **T-1916** puts the
+  package's own root inside `media-licence`'s closed world, which it never was.
   ⚠️ **`60` became `61` on 2026-09-21 (T-1912) and `20` did NOT MOVE, which is the arithmetic
   behaving rather than an omission**: the third check lands in the EXISTING G11 group, and only a
   new group moves `invariants`. ⚠️ **The defect it closes is the most expensive kind this file

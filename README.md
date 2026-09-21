@@ -243,6 +243,17 @@ Measured 2026-09-12 at commit `6559813`, it prints, in that order: `.gitattribut
 `.mailmap`, `AGENTS.md`, `LICENSE.txt`, `README.md`, `composer.json`, `config/`, `content/`,
 `logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`.
 
+⚠️ **Re-measured 2026-09-21 and it is now ELEVEN, because two of the thirteen were taken out of
+the package deliberately.** `.gitignore` and `.mailmap` are `export-ignore`d as of that date: both
+are git's files rather than the product's, and neither does anything once the package is extracted
+into `recipes/agora_transparency/` — a tarball has no history for a `.mailmap` to canonicalise, and
+a `.gitignore` there names `/web/`, `/vendor/` and `/.ddev/` relative to a directory in which none
+of them exists. The whole tarball goes from **376 entries to 374**. The list is now:
+`.gitattributes`, `AGENTS.md`, `LICENSE.txt`, `README.md`, `composer.json`, `config/`, `content/`,
+`logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. Two checks in
+`tests/bin/gate-a-wave1.sh` G8 hold the exclusion, so undoing it turns the gate red rather than
+quietly restoring the noise.
+
 `git archive` applies the `export-ignore` rules in [`.gitattributes`](.gitattributes), which is what
 Drupal.org's packaging and a Composer release apply too — so the command answers the question
 rather than approximating it. ⚠️ **A path-repository checkout is a different and larger thing**:

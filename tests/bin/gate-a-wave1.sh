@@ -56,7 +56,23 @@
 # otherwise leave that half comparing nothing and printing the silence as
 # agreement, which is I-028 arriving inside the tool built to end it.
 #
-# GATE-CLAIM: checks=68 invariants=2
+# UNIT 003 WAVE 28 (2026-09-21) takes it from 68 to 71, and `invariants` does
+# NOT move, because no group was added - the three checks land in the EXISTING
+# G8. Written out term by term so the total is stated rather than inferred:
+#   T-1916  two more entries on G8's "must NOT travel" list, `.gitignore` and
+#           `.mailmap`, now `export-ignore`d. They are git's files and not the
+#           product's: a tarball has no history for a .mailmap to canonicalise,
+#           and a .gitignore inside `recipes/agora_transparency/` names paths
+#           that never exist there. The checks are what stop the exclusion
+#           being quietly undone.                                     68 -> 70
+#   T-1916  one more entry on G8's "must travel" list, `logo.png`. The audit
+#           asked whether a binary referenced by nothing belongs in the package
+#           at all; the answer is that it has a job Drupal.org performs and no
+#           file in this repository can perform - so it stays, it now carries a
+#           provenance row, and this check is what stops it being deleted by
+#           somebody who finds it referenced by nothing.               70 -> 71
+#
+# GATE-CLAIM: checks=71 invariants=2
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -429,7 +445,9 @@ for excluded in \
   '.github/' \
   '.gitlab-ci.yml' \
   '.tugboat/' \
-  '.eslintrc.json'
+  '.eslintrc.json' \
+  '.gitignore' \
+  '.mailmap'
 do
   # Prefix anchored at the start: 'tests/' matches 'tests/...' and the directory
   # entry 'tests/'; 'CLAUDE.md' matches the exact file entry.
@@ -464,12 +482,26 @@ done
 
 # --- must travel: the product the end user installs ---------------------------
 # AGENTS.md is here on purpose (D-015.1): it is product, not process.
+#
+# T-1916: logo.png is here on purpose too, and the reason is the opposite of a
+# tidy-up. It was packaged and referenced by no recipe, no config and no
+# content, which is exactly what a binary looks like on its way out of a
+# package - so the question "does it have a job?" was answered before the check
+# was written, from the commit that added it (a754611): Drupal.org renders a
+# 512x512 PNG named logo.png at the root of the default branch as the project
+# icon, because the GitLab project avatar is unreachable on drupalcode from
+# both the API and the UI, and Project Browser uses the same file as the card
+# image a site builder sees while CHOOSING what to install. It now has a
+# provenance row in content/MEDIA-LICENCES.md like every other binary this
+# package ships, and this line is what stops it being dropped by somebody who
+# finds it referenced by nothing.
 for included in \
   AGENTS.md \
   recipe.yml \
   composer.json \
   recommended.yml \
   screenshot.webp \
+  logo.png \
   LICENSE.txt
 do
   # T-321(a), house rule 1. Expect-PRESENT site: the `${FOUND:-0}` further down

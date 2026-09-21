@@ -108,11 +108,47 @@ scan_files() {
     -type f -print 2>/dev/null | LC_ALL=C sort
 }
 
+# ------------------------------------------------ tracked / untracked split --
+# T-1915. WHY SCOPE 2'S TOTAL IS NOT A DENOMINATOR, measured rather than
+# argued. Scope 2 walks the FILESYSTEM on purpose - it is the early warning for
+# the uncommitted offender scope 1 is structurally unable to see. But the
+# filesystem is a property of the MACHINE and not of the commit. On 2026-09-21
+# this checkout carried .claude/settings.local.json, five .cspell-cache/ files
+# and four tests/bin/__pycache__/ entries that no clone of the same commit has,
+# so scope 2 reported 472 files here and 456 in CI for one commit.
+#
+# Note that scope 1 does NOT have this problem and never did: `git archive`
+# reads the index, so its entry count is a property of the commit. That
+# asymmetry is the whole finding - the invariants that read the INDEX agree
+# across environments and the ones that walk the FILESYSTEM do not.
+#
+# THE FIX IS NOT TO SCOPE THE WALK TO `git ls-files`: that would delete the one
+# thing scope 2 exists for. It is to PARTITION the same walk. `git-tracked` is
+# identical in every clone of a commit; `untracked` is the local difference,
+# and it is NAMED rather than merely counted.
+#
+# THE TWO LABELS CANNOT BE NESTED: the gate runner extracts a figure with an
+# ERE and takes the LAST match, so a label that is a SUBSTRING of the other -
+# `tracked:` inside `untracked:` - would silently hand it the wrong number.
+#
+# A failed `git ls-files` is FATAL, never "0 tracked". A broken split reports
+# the whole tree as untracked and the tracked denominator as zero, which is a
+# figure that looks like a measurement and is the absence of one (I-028).
+split_tracked() { # <path to the scanned list> <dir to write the three sets in>
+  _list=$1; _dir=$2
+  git -c core.quotePath=false ls-files > "$_dir/tracked-raw" 2>/dev/null \
+    || fatal 'git ls-files failed - the tracked/untracked split did not happen, and an unsplit scan cannot be reconciled with any other run of this invariant.'
+  LC_ALL=C sort -o "$_dir/tracked-raw" "$_dir/tracked-raw"
+  sed 's|^\./||' "$_list" | LC_ALL=C sort > "$_dir/scope-norm"
+  LC_ALL=C comm -12 "$_dir/scope-norm" "$_dir/tracked-raw" > "$_dir/scope-tracked"
+  LC_ALL=C comm -23 "$_dir/scope-norm" "$_dir/tracked-raw" > "$_dir/scope-untracked"
+}
+
 # ---------------------------------------------------------------- preflight --
 # A missing tool cannot be a reason to report a clean tree. `git` and `tar` are
 # required by the packaged scope; without them that scope cannot be evaluated,
 # and an unevaluated scope is a finding.
-for tool in find grep sort wc git tar; do
+for tool in find grep sort wc git tar comm sed; do
   command -v "$tool" >/dev/null 2>&1 || \
     finding '<preflight>' '0' "required tool not available: $tool"
 done
@@ -197,6 +233,35 @@ if [ "${WORKING:-0}" -eq 0 ]; then
   finding '<working>' '0' 'the working tree listed 0 files - the result proves nothing'
 fi
 
+# T-1915: the same walk, partitioned, so this run and the runner's run of the
+# same commit print a figure a reader can put side by side. See split_tracked().
+split_tracked "$WORKING_LIST" "$TMPDIR_RUN"
+TRACKED=$(wc -l < "$TMPDIR_RUN/scope-tracked" | tr -d ' ')
+UNTRACKED=$(wc -l < "$TMPDIR_RUN/scope-untracked" | tr -d ' ')
+printf 'git-tracked: %s files - untracked: %s files\n' "$TRACKED" "$UNTRACKED"
+# Zero means FAIL here, the safe direction of I-031: every clone of this
+# repository has hundreds of tracked files, so 0 means the split broke.
+if [ "${TRACKED:-0}" -eq 0 ]; then
+  finding '<working>' '0' \
+    'the tracked/untracked split reported 0 tracked files - the split broke, and neither of its figures is a measurement'
+fi
+# The partition must exhaust the walk. If `comm` ever disagrees with `find` -
+# a collation mismatch, a path git quotes and find does not - both halves would
+# still print as plausible numbers, and only this line would notice.
+if [ "$((TRACKED + UNTRACKED))" -ne "${WORKING:-0}" ]; then
+  finding '<working>' '0' \
+    "$(printf 'the split does not exhaust the walk: %s tracked + %s untracked != %s working' "$TRACKED" "$UNTRACKED" "$WORKING")"
+fi
+if [ "${UNTRACKED:-0}" -gt 0 ]; then
+  _shown=0
+  while IFS= read -r u; do
+    [ -n "$u" ] || continue
+    _shown=$((_shown + 1))
+    [ "$_shown" -le 25 ] && note "untracked here, in no clone of this commit: $u"
+  done < "$TMPDIR_RUN/scope-untracked"
+  [ "$UNTRACKED" -gt 25 ] && note "... and $((UNTRACKED - 25)) more; the count above is exact"
+fi
+
 WT_INFO=0
 while IFS= read -r f; do
   [ -n "$f" ] || continue
@@ -222,8 +287,8 @@ INFO_TOTAL=$((PKG_INFO + WT_INFO))
 DIRS_TOTAL=$((PKG_DIRS + WT_DIRS))
 
 printf '\n---------------------------------------------------------------------------------------------------------\n'
-printf 'packaged: %s entries - working: %s files - *.info.yml: %s - forbidden dirs: %s - findings: %s\n' \
-  "$PACKAGED" "$WORKING" "$INFO_TOTAL" "$DIRS_TOTAL" "$FINDINGS"
+printf 'packaged: %s entries - working: %s files - git-tracked: %s - untracked: %s - *.info.yml: %s - forbidden dirs: %s - findings: %s\n' \
+  "$PACKAGED" "$WORKING" "$TRACKED" "$UNTRACKED" "$INFO_TOTAL" "$DIRS_TOTAL" "$FINDINGS"
 
 if [ "$FINDINGS" -eq 0 ]; then
   printf '%sno-code-in-template: clean%s\n' "$C_OK" "$C_OFF"
