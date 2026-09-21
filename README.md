@@ -40,7 +40,8 @@ feature list:
 | ~~Content model: documents, officials, contracts, budget lines, public calls~~ **DONE, unit 002** | six bundles ship in `config/` |
 | ~~Demo content — English only, see below — and the real screenshot~~ **DONE, unit 003** | 60 records, and `screenshot.webp` is a real 500×400 capture |
 | Editorial workflow and freedom-of-information requests | unit 004 |
-| AI assistant with citations, and configuration auditing | unit 005 |
+| ~~Configuration auditing~~ **DONE, unit 005** | `drupal/config_guardian` in `require`, installed by `recipe.yml`, with its settings and a governance-auditor role in `config/` |
+| AI assistant with citations | unit 005 |
 
 The full intended scope is written down in `specs/000-project/plan.md` in this repository.
 
