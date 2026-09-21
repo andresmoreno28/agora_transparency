@@ -708,15 +708,33 @@ moving the working copy a session is running in, on the day wave 5 starts.
   closing it. It is closed.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **470** tracked files to cspell, which **checks 429** and
-  finds 0 issues (re-measured 2026-09-21; **this commit adds three files — `tests/bin/ported-copies`, `tests/bin/ported-drift` and `tests/bin/ported-from-theme.manifest`, T-0622 — and moved the denominator
-  by exactly three**, which is the shape to want — it read **467/426** earlier the same day, **456/415** on 2026-09-20, **455/414** on 2026-09-19, **451/410** on 2026-09-12, **448/407**
+  `bash tests/bin/spellcheck` offers **472** tracked files to cspell, which **checks 431** and
+  finds 0 issues (re-measured 2026-09-21, and see the correction immediately below; it read
+  **470/429** earlier the same day, when **this commit adds three files — `tests/bin/ported-copies`, `tests/bin/ported-drift` and `tests/bin/ported-from-theme.manifest`, T-0622 — and moved the denominator
+  by exactly three** was written, which is the shape to want — and **467/426** before that, **456/415** on 2026-09-20, **455/414** on 2026-09-19, **451/410** on 2026-09-12, **448/407**
   on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before
   that).
   ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** Three text
-  files were added and cspell opened all three: 470 − 429 = 41, the same 37 binaries and 4 globs
+  files were added and cspell opened all three: 472 − 431 = 41, the same 37 binaries and 4 globs
   accounted for below. **Both figures were PREDICTED before the run and the run returned exactly
-  470 and 429**, which is the only way a denominator claim is worth anything. **A denominator that rises while the gap also rises would mean a new file
+  470 and 429** on the day that sentence was written, which is the only way a denominator claim is
+  worth anything.
+  🔴 **AND IT WENT STALE BY TWO WITHIN HOURS, IN THE ONE BULLET OF THIS FILE WHOSE SUBJECT IS A
+  DENOMINATOR GOING STALE. Corrected 2026-09-21 (T-0628's report), after being found by RE-RUNNING
+  the tool rather than by any guard.** `74a2b60` added `LICENCE-MANIFEST.md` and
+  `tests/bin/mirror-streak` and did not touch this bullet — against this block's own rule that
+  *the commit that changes a gate's denominator is the commit that updates it.* Re-measured:
+  **472 offered · 431 checked · 0 issues**, and `executable-bit` moved with it to **472 examined ·
+  37 scripts**, +1 script being `mirror-streak` itself. ⚠️ **The two new files explain both moves
+  exactly, which is the check worth doing rather than just refreshing the number**: one script and
+  one markdown file, both text, both opened, so the gap could not move and did not. **A gap that
+  held while both sides rose is evidence; a refreshed pair of numbers on its own is not.**
+  ⚠️ **This figure is written FIVE times in this file** — here, in the arithmetic below, in the
+  frozen prediction above, in the `Files checked:` experiment further down and in the
+  `executable-bit` paragraph — **and that is the finding, not the two stale digits.** The
+  paragraph two below says in as many words that the remedy is *"stop making the second copy"*,
+  and this bullet has four of them. Nothing machine-checks any of it: `claims-match-sources`
+  names spellcheck's LOCAL denominators in its NOT CHECKED list, with a reason that is true. **A denominator that rises while the gap also rises would mean a new file
   went unopened**, which reads exactly like a clean measurement and is not one. The CI job's own count runs two higher — it also opens two files the runner
   generates and this repository does not track. The 36-versus-63 gap **T-222** opened is closed and
   has stayed closed across four changes of denominator.
@@ -725,7 +743,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   enumeration, and the shortfall this paragraph used to admit is closed.** **37** are binaries
   cspell does not read — **34 PDF, 2 WebP and 1 PNG** — and **4** are matched by the upstream
   ignore globs (`.eslintrc.json` by `**/.*.json`, `.gitignore` by `.*ignore`, `LICENSE.txt` and
-  `composer.json` by name). **37 + 4 = 41**, and 456 − 41 = **415**, the number cspell prints.
+  `composer.json` by name). **37 + 4 = 41**, and 472 − 41 = **431**, the number cspell prints.
+  ⚠️ **This line read `456 − 41 = 415` until 2026-09-21 — stale by SIXTEEN, three denominators
+  behind the bullet above it**, which is the same defect its own next paragraph describes and is
+  why that paragraph is no longer the worst instance in this file.
   ⚠️ **This arithmetic said `451 − 41 = 410` until 2026-09-20 while the bullet four paragraphs
   above already said 455/414 — the same figure written twice and refreshed in one copy only**,
   which is the defect that bullet is itself about, committed inside it. Both copies moved in the
@@ -1115,9 +1136,12 @@ moving the working copy a session is running in, on the day wave 5 starts.
   predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
   gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
   The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
-  prints `examined: 470 tracked file(s)` · `scripts: 36` · `findings: 0` today, re-run 2026-09-21
-  (it read `467` and `34` earlier the same day, `456` and `30` on 2026-09-20, `455` before T-1310
-  added one config file, and `451` on 2026-09-12).
+  prints `examined: 472 tracked file(s)` · `scripts: 37` · `findings: 0` today, re-run 2026-09-21
+  (it read `470` and `36` earlier the same day, `467` and `34` before that, `456` and `30` on
+  2026-09-20, `455` before T-1310 added one config file, and `451` on 2026-09-12). **The +1 script
+  is `tests/bin/mirror-streak`**, which is also one of the two files that moved spellcheck's
+  denominator in the bullet above — the same arrival, counted by two invariants, and reconciling
+  them is what made both corrections trustworthy rather than just current.
   ⚠️ **`456 · 30` stood in this line while the invariant printed `467 · 34`, and it was found by
   re-running the tool rather than by any guard** — eleven files and four scripts of drift, in the
   one paragraph of this file whose subject is a figure going stale. It is the third time this pair
