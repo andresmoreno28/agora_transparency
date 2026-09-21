@@ -968,8 +968,31 @@ moving the working copy a session is running in, on the day wave 5 starts.
   undated drift is reported as a finding, so the bug looks like strictness. Its real cost is that
   every genuinely recent drift would have been printed as a **finding** instead of as a number to
   read, which is the unfixable-red the whole design refuses, arriving through the back door. Fixed
-  here; `agora_theme`'s `tests/bin/upstream-drift` carries the same line and **nothing in this
-  repository can fix it** — it needs a commit there.
+  here; ~~`agora_theme`'s `tests/bin/upstream-drift` carries the same line and **nothing in this
+  repository can fix it** — it needs a commit there.~~
+  ✅ **THAT COMMIT LANDED THE SAME DAY: `a427375` in `agora_theme`, 2026-09-21.** The struck
+  sentence was true for hours, and it is kept because it is the only place in this file where a
+  defect is correctly named as **unfixable from here** — which is a real category, and the fix for
+  it is a dispatch against the other repository rather than a task row in this one.
+  ⚠️ **The theme's fix records the mechanism more precisely than the paragraph above does**, in a
+  comment carrying four measured requests rather than two:
+
+  ```
+  since=2026-09-21T09:04:46.000+02:00    -> 3 commits
+  since=2026-09-21T09:04:46.000%2B02:00  -> 8 commits
+  since=2026-09-21T09:04:46.000Z         -> 3 commits  <- what a raw + MEANS
+  since=2026-09-21T07:04:46.000Z         -> 8 commits  <- the instant meant
+  ```
+
+  **The third row is the one worth reading.** A discarded offset does not make the query
+  meaningless — the server reads the same clock reading as **UTC**, two hours later than the
+  instant intended, so the window is too SHORT and a drift age comes out too SMALL. *"Answers
+  nothing"* was the right observation and the wrong mechanism: it answers a different question,
+  confidently. ⚠️ **And the safe-direction reasoning above survives only because of which way the
+  error points here.** An offset EAST of UTC shortens the window; a repository committing from a
+  zone WEST of it would have the window silently LENGTHEN, and a real drift would then be reported
+  as older than it is rather than as a finding. The bug looked like strictness by accident of
+  geography.
   ⚠️ **`71 · 20` became `77 · 21` on 2026-09-21 (unit 006 wave 2), and this is the case where
   `invariants` DOES move**, which is worth one line beside the three notes below saying it did
   not: **T-0608** adds a new GROUP, wave 1's G11, running a new script — `tests/bin/packaged-claims`,
