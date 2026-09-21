@@ -1,0 +1,680 @@
+#!/usr/bin/env bash
+#
+# ported-drift - agora_transparency - has agora_theme changed a source file since we copied it?
+#
+# THE HALF THAT NOTHING WAS SCHEDULED TO LOOK AT, IN THE DIRECTION NOBODY HAD LOOKED AT ALL.
+#
+# tests/bin/ported-copies answers "has a copy been edited HERE". It is offline, it is in the
+# gate, and it is correct - about a question that is not the one that matters. The sibling
+# repository ran exactly that check alone for four weeks while 125 genuinely-absent lines
+# accumulated upstream in a file it was watching, and the detector printed CLEAN throughout.
+# D-063 was signed over that measurement, and the agent who built the theme's equivalent
+# wrote down what a preflight is worth:
+#
+#   "No automated actor has both repositories, so the only thing that can notice upstream
+#    drift is a person who already suspects it. A preflight nobody is obliged to run has
+#    the same detection properties as a comment."
+#
+# ⚠️ AND IN THIS DIRECTION IT WAS WORSE THAN A PREFLIGHT: THERE WAS NOTHING AT ALL.
+# tests/bin/executable-bit and tests/bin/preflight were authored in `agora_theme` and ported
+# here on 2026-09-06. For fifteen days no file in this repository recorded that they came
+# from anywhere, so there was no record to go stale, no detector to print CLEAN, and nothing
+# a person could have suspected. tests/bin/packaged-claims was ported on 2026-09-21 and
+# NAMES the theme's guard nine times in its own header - which reads like documentation and
+# records no commit, so not one of those nine mentions could ever have been checked.
+#
+# This script is what looks, on every push, with nothing checked out but this repository.
+#
+# ---------------------------------------------------------------------------
+# HOW IT READS THE OTHER REPOSITORY WITHOUT A CLONE.
+#
+# Both projects are public on drupalcode and the GitLab API answers anonymously. Measured
+# against `project/agora_theme` before this file was written, not assumed:
+#
+#   GET /api/v4/projects/project%2Fagora_theme                      -> 200, default_branch 1.x
+#   GET .../repository/commits/<the two recorded shas>              -> 200 and 200
+#   GET .../repository/files/<path, url-encoded>/raw?ref=<sha>      -> 200
+#
+# and all three blobs hash to exactly the source_sha256 the manifest records - re-derived
+# over the API and compared against the same three hashes read out of a local clone, which
+# is what makes this a verification rather than a second copy of one belief. NO TOKEN IS
+# USED OR NEEDED, and that is the reason the API is read rather than a job log: the /trace
+# endpoint answers 401 to anonymous requests, so anything built on a CI log would have
+# needed the maintainer's token wired into CI.
+#
+# ---------------------------------------------------------------------------
+# BLOCKING ON PROVENANCE, REPORTING ON DELTA. The shape is deliberate in both directions.
+#
+# PROVENANCE BLOCKS. A record whose source_commit does not resolve over there, whose
+# source_commit is not an ancestor of the canonical branch, whose source_path was not a blob
+# at that commit, or whose source_sha256 does not match the blob there, is a FINDING. In
+# every one of those cases the copy's own claim about itself is false, and A COMMIT IN THIS
+# REPOSITORY CAN ALWAYS FIX IT: record a commit that exists, or re-derive the hash beside it.
+#
+# DELTA REPORTS. A record that is merely behind does NOT turn this pipeline red. An upstream
+# commit would otherwise make this repository red in a way no commit here can fix -
+# somebody else's push, stalling unrelated work - and a gate that fails for a reason its
+# author cannot address is the gate somebody makes permissive inside a week. That is the
+# failure D-023(5) exists to refuse.
+#
+# ⚠️ AND THE DELTA MUST STAY DATA FOR A SECOND REASON THAT IS SPECIFIC TO THIS DIRECTION.
+# All three records here are `adapted`, by +64/-32, +275/-210 and +836/-437 lines. These are
+# not copies that should converge on their sources: preflight runs a DIFFERENT job list
+# because the two pipelines have different jobs, and packaged-claims implements a different
+# rule from the guard it came from. A non-zero delta is the NORMAL, CORRECT state of every
+# record in this manifest, so failing on one would mean failing permanently, and a check
+# that is always red is a check somebody deletes.
+#
+# BUT A DELTA MUST NOT BE ABLE TO SIT INDEFINITELY, WHICH IS THE WHOLE COMPLAINT. So there
+# is a hard cap on AGE, and past it "behind" becomes a finding.
+#
+# ---------------------------------------------------------------------------
+# THE CAP IS 14 DAYS. THE NUMBER IS ADOPTED FROM THE THEME; THE CLOCK IS ARGUED AGAIN HERE
+# BECAUSE THIS DIRECTION PROVED IT ON DAY ONE.
+#
+# WHAT IS MEASURED IS THE AGE OF THE DRIFT, NOT THE AGE OF THE RECORD. In the theme that
+# argument rested on two records sitting at 27-day-old commits while byte-identical to the
+# branch head - a hypothetical harm that happened to be real. Here it is not even a close
+# call: on the day this file was written, executable-bit and preflight had sat at a
+# FIFTEEN-DAY-OLD commit and their sources had moved by NOTHING. A cap on the record's age
+# would have opened this mechanism with two findings against two records that are exactly
+# right, on its first run, before it had found a single true thing. So the clock starts at
+# the FIRST upstream commit that touched the path after the recorded one - the moment the
+# drift began to exist - and not before.
+#
+# WHY 14 AND NOT A NUMBER OF THIS DIRECTION'S OWN. The bound's argument is about how long
+# THIS PROJECT takes to notice, not about a particular file or repository: the one measured
+# blindness is the theme's identity-strings at 28 days, and 14 is half of it, leaving two
+# clear working weeks between an upstream commit landing and this repository being obliged
+# to answer it. Both directions are maintained by the same people with the same habits, so a
+# second number would have to be defended on evidence this direction does not have - it has
+# no measured drift at all yet - and would leave a reader having to remember which cap
+# applies where. The symmetry is the feature: learn the rule once, know it in both
+# repositories.
+#
+# ⚠️ AND THE `preflight` ROLE BUYS NO EXEMPTION, which was the one tempting special case.
+# tests/bin/preflight is not in either gate runner, so a reader could argue its drift
+# matters less. It is also the largest of the three and the most actively developed, which
+# makes it the record most likely to move - so exempting a copy for its role would mean the record
+# most likely to need answering is the one nothing ever asks about.
+#
+# WHAT "ANSWERING IT" MEANS, because a finding with no available remedy is the same trap one
+# level down: take the change and regenerate the record, OR decide the copy should stay
+# behind and move source_commit forward with the reasoning written into the manifest. Both
+# are commits in THIS repository. That is what makes the cap legitimate as a blocking check
+# while a raw delta is not.
+#
+# THE CAP IS PRINTED ON EVERY RUN AND BOUND BY THE GATE. --max-age-days exists so each
+# branch of this script can be falsified, and the gate never passes it: gate-a-wave1.sh G13
+# asserts the printed cap line reads `14 days (default)`, so the number cannot be loosened
+# from the call site without moving a check a human has to look at. A cap an environment
+# variable can raise is a cap that gets raised.
+#
+# ---------------------------------------------------------------------------
+# NO NETWORK IS A THIRD STATE AND IT CAN NEVER READ AS A PASS.
+#
+# The standard already exists three times in this project - watch-gate's mirror section,
+# claims-match-sources' --online NOT ATTEMPTED block, and the theme's own upstream-drift -
+# and each negates the misreading in its own words rather than leaving a blank for a reader
+# to fill in optimistically. This matches them: NOT READ is printed with the sentence that
+# says what it is not, the run exits 2, and no per-record table of blanks is printed,
+# because a table of blanks is how a scope that collapsed to nothing gets read as a clean
+# result (I-007, I-029).
+#
+# NOT READ DOES NOT FAIL THE GATE, and that is the delta argument applied to the same test:
+# a runner that cannot reach drupalcode cannot be fixed by a commit here either. What stops
+# it becoming a silent permanent skip is that the denominators are printed and the gate
+# reads them: `compared`, `read` and `unread` are three numbers in the job log on every push,
+# the gate asserts read + unread == compared, and a run where nothing was read prints
+# `read: 0` beside `compared: 3`. A comparison that silently examined nothing looks exactly
+# like one that found nothing (I-028); these numbers are what makes the two look different.
+#
+# AN HTTP ANSWER IS NOT A TRANSPORT FAILURE. A 404 on a recorded commit is the API stating a
+# fact - that commit is not in `agora_theme` - and it is a FINDING. A connection refused, a
+# DNS failure, a 429 or a 5xx is the API saying nothing at all, and it is NOT READ.
+# Collapsing the two would either make an outage look like corrupt provenance or make
+# corrupt provenance look like an outage. This project has seen HTTP 429 from drupalcode.
+#
+# ---------------------------------------------------------------------------
+# WHAT THIS DOES NOT DO.
+#
+#   * It does not touch tests/bin/ported-copies. That script and every other invariant in
+#     this repository is OFFLINE, and that property is worth more than this check: an
+#     invariant that needs the network can be defeated by unplugging something. The network
+#     path is a separate file; CI is what opts in.
+#   * It does not read a sibling working tree, even when one is sitting beside it. The
+#     canonical repository is what a reviewer can open, and an uncommitted edit over there
+#     is invisible here deliberately - a commit is the only thing the manifest can record.
+#   * It does not discover a FOURTH port. It walks the records it is given. A file copied
+#     from the theme with no record in the manifest is invisible to this script and to
+#     ported-copies alike; finding the third one took a full cross-product of two tests/bin/
+#     directories and a reading of both git histories, and that remains a task for a person.
+#   * It does not add a CI job. It runs inside `agora-invariants`, through gate-a-wave1.sh,
+#     as group G13.
+#
+# Contract (shared by every check in tests/bin/):
+#   scope:    the exact set of records inspected
+#   compared: N records offered by the manifest, and N must be > 0 or this fails
+#   read:     how many were actually answered for, and how many were not
+#   findings: M, each printed as  record:field  reason
+#   exit 0 iff M == 0 and every record was read
+#   exit 1 if M > 0                     (provenance, or a delta past the cap)
+#   exit 2 if any record was NOT READ   (the third state; the gate tolerates it)
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared value;
+# numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an error, never
+# "no match"; never `-F` with `-i`.
+#
+# Usage: tests/bin/ported-drift [--project <path>] [--branch <name>]
+#                               [--max-age-days <n>] [--manifest <path>]
+#                               [--api-host <url>]
+#        (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+# The repository these records came FROM, named here rather than derived from a git remote.
+# This repository's remotes point at agora_transparency and at the mirror; the subject of
+# every record in the manifest is the OTHER project, and that identity is a declaration in
+# the same sense as ported-copies' DECLARED_COMMITS list.
+API_HOST='https://git.drupalcode.org'
+PROJECT='project/agora_theme'
+BRANCH=''            # empty means "ask the API for the default branch"
+MAX_AGE_DAYS=14
+MAX_AGE_DEFAULT=14
+MANIFEST='tests/bin/ported-from-theme.manifest'
+# A bound on pagination. A source file with more than this many commits since its recorded
+# one is not a situation to guess about: hitting the bound is reported rather than silently
+# under-counted.
+MAX_PAGES=10
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --project) shift; [ "$#" -gt 0 ] || { echo "FATAL: --project needs a value"; exit 1; }; PROJECT=$1 ;;
+    --branch)  shift; [ "$#" -gt 0 ] || { echo "FATAL: --branch needs a value"; exit 1; }; BRANCH=$1 ;;
+    --manifest) shift; [ "$#" -gt 0 ] || { echo "FATAL: --manifest needs a path"; exit 1; }; MANIFEST=$1 ;;
+    --api-host) shift; [ "$#" -gt 0 ] || { echo "FATAL: --api-host needs a value"; exit 1; }; API_HOST=$1 ;;
+    --max-age-days)
+      shift
+      [ "$#" -gt 0 ] || { echo "FATAL: --max-age-days needs a number"; exit 1; }
+      case "$1" in
+        ''|*[!0-9]*) echo "FATAL: --max-age-days wants a non-negative integer, got [$1]"; exit 1 ;;
+      esac
+      MAX_AGE_DAYS=$1 ;;
+    -h|--help) sed -n '/^# Usage:/,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *)
+      # Unknown options are refused rather than ignored. A check that silently accepts a
+      # misspelled flag runs its DEFAULT and prints a clean result, which is
+      # indistinguishable from the thing the reader asked for passing.
+      echo "FATAL: unknown option [$1]. Run with --help."; exit 1 ;;
+  esac
+  shift
+done
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+FINDINGS=0
+finding() { # <record> <field> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3"
+}
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+fatal() { # <reason> - no result at all, which is not a clean result (I-029).
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run has NO result, which is not a clean result (I-029).\n'
+  exit 1
+}
+
+# THE THIRD STATE. Printed in words that negate the misreading. Never a pass.
+not_read_banner() { # <reason...>
+  printf '\n  %sNOT READ%s - %s\n' "$C_BAD" "$C_OFF" "$1"
+  shift
+  while [ "$#" -gt 0 ]; do printf '             %s\n' "$1"; shift; done
+  printf '             %sThat is not "the copies are up to date"; it is "nothing\n' "$C_BAD"
+  printf '             here could reach agora_theme". A third state, not a pass.%s\n' "$C_OFF"
+}
+
+printf '=========================================================================================================\n'
+printf 'ported-drift - agora_transparency - the copies against %s, read over the API\n' "$PROJECT"
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+# ------------------------------------------------------------------ tooling -----
+# EXERCISED, NOT LOCATED (I-026). On this project's hosts `python3` once resolved to a Store
+# stub that satisfied `command -v` and then failed at first real use. Every tool below is
+# run for real before it is trusted.
+printf '\ntooling\n'
+
+HASHER=''
+for h in sha256sum 'shasum -a 256' 'openssl dgst -sha256'; do
+  # shellcheck disable=SC2086
+  if printf '' | $h >/dev/null 2>&1; then HASHER=$h; break; fi
+done
+[ -n "$HASHER" ] || fatal 'no working sha256 tool (tried sha256sum, shasum -a 256, openssl dgst -sha256). Without one no provenance can be verified, and an unverified provenance is not a verified one.'
+
+sha256_of() { # <file> -> bare lowercase hex digest
+  # shellcheck disable=SC2086
+  $HASHER < "$1" 2>/dev/null | sed -n 's/^\(SHA2-256(stdin)= \)\{0,1\}\([0-9a-f]\{64\}\).*/\2/p' | head -1
+}
+
+# ONE work directory, removed on the way out. A directory rather than a registry of paths
+# because the obvious shape - a helper that makes a temp file and appends its path to a
+# list - DOES NOT WORK: the helper must be called in a command substitution to return the
+# path, that runs in a SUBSHELL, and the append is discarded with it. Every run would leak
+# temp files while looking perfectly healthy.
+WORK_DIR=$(mktemp -d -t ported-drift.XXXXXX) || fatal 'mktemp -d failed - there is nowhere to put the blobs being compared.'
+trap 'rm -rf "$WORK_DIR"' EXIT INT TERM
+
+# I-028: a hasher that returned the same string for every input would report every
+# comparison below as a match - the degenerate case wearing the expected value's clothes.
+printf 'agora' > "$WORK_DIR/canary" || fatal 'could not write the canary file.'
+CANARY_EXPECT='f7070d57bbe5496e29249421e91572f46ac4c2b62953b7ea046fa3707b9e6b2a'
+CANARY_GOT=$(sha256_of "$WORK_DIR/canary")
+[ "$CANARY_GOT" = "$CANARY_EXPECT" ] || fatal "the sha256 tool ($HASHER) failed its canary: hashed the 5 bytes 'agora' and returned [$CANARY_GOT], expected [$CANARY_EXPECT]."
+note "hasher: $HASHER (canary passed)"
+
+HAVE_JQ=0
+if [ "$(jq -n 1 2>/dev/null)" = '1' ]; then HAVE_JQ=1; fi
+HAVE_CURL=0
+if command -v curl >/dev/null 2>&1 && curl --version >/dev/null 2>&1; then HAVE_CURL=1; fi
+note "curl: $(if [ "$HAVE_CURL" -eq 1 ]; then curl --version 2>/dev/null | head -1; else printf 'ABSENT'; fi)"
+note "jq:   $(if [ "$HAVE_JQ" -eq 1 ]; then jq --version 2>/dev/null; else printf 'ABSENT'; fi)"
+
+# ------------------------------------------------------------ read manifest -----
+# Parsed with the same seven-field, whitespace-separated reader ported-copies uses,
+# deliberately: two parsers of one file disagree eventually, and would go on printing
+# plausible numbers while they did. The OFFLINE checks - status against the hashes, the
+# closed world, the declared commit set, the local hash - belong to ported-copies and are
+# NOT repeated here. This script asks the one question that one cannot: what does the other
+# repository actually say?
+[ -r "$MANIFEST" ] || fatal "$MANIFEST is missing or unreadable."
+
+RECORDS=0
+PARSED=''
+while IFS= read -r line || [ -n "$line" ]; do
+  case "$line" in '#'* | '') continue ;; esac
+  # shellcheck disable=SC2086
+  set -- $line
+  [ "$#" -eq 7 ] || continue
+  RECORDS=$((RECORDS + 1))
+  PARSED="$PARSED$1 $3 $5 $6 $7
+"
+done < "$MANIFEST"
+
+# Zero means FAIL, so `:-0` is the safe direction (I-031). An empty manifest would otherwise
+# satisfy every check below by construction (I-007).
+[ "${RECORDS:-0}" -gt 0 ] || fatal "$MANIFEST parsed to zero records - a walk over nothing is not a walk that found nothing."
+note "manifest: $MANIFEST ($RECORDS record(s) offered)"
+
+# ---------------------------------------------------------------- the API ------
+API="$API_HOST/api/v4/projects/$(printf '%s' "$PROJECT" | sed 's|/|%2F|g')"
+
+# api_get <url> <outfile> -> sets HTTP and TRANSPORT.
+#   TRANSPORT != 0  the request never got an answer  -> NOT READ
+#   HTTP == 200     an answer                        -> usable
+#   HTTP == 404     an answer, and a negative one    -> a FINDING at the caller
+#   HTTP 429/5xx    the server declining to answer   -> NOT READ (retried once)
+HTTP=0
+TRANSPORT=0
+api_get() { # <url> <outfile>
+  _u=$1; _o=$2
+  _attempt=0
+  while : ; do
+    _attempt=$((_attempt + 1))
+    HTTP=$(curl -sS --connect-timeout 15 --max-time 120 \
+             -H 'Accept: application/json' \
+             -o "$_o" -w '%{http_code}' "$_u" 2>/dev/null)
+    TRANSPORT=$?
+    [ -n "$HTTP" ] || HTTP=0
+    if [ "$TRANSPORT" -eq 0 ]; then
+      case "$HTTP" in
+        429|5??)
+          # A single retry, then it is the third state. Rate limiting and a gateway wobble
+          # are both "the server said nothing about the question".
+          if [ "$_attempt" -lt 2 ]; then sleep 5; continue; fi ;;
+      esac
+    fi
+    break
+  done
+}
+
+# no_answer -> true when the last api_get produced no usable answer AT ALL. 200 and 404 are
+# answers; a 404 is a negative one and its meaning belongs to the caller. Everything else -
+# a transport failure, a 429, a 5xx, a 403 - is the server declining to say anything about
+# the question, and is NOT READ.
+no_answer() {
+  [ "$TRANSPORT" -ne 0 ] && return 0
+  case "$HTTP" in 200|404) return 1 ;; esac
+  return 0
+}
+
+# ------------------------------------------------------- the preflight request --
+# One request that proves four things at once: the network is reachable, the API answers
+# anonymously, the project exists, and it is the project this script claims to be reading.
+# The last is not decoration - a typo in --project would otherwise produce a confident run
+# against something else, and the two repositories in this project differ by a hyphen and a
+# word, which is exactly the confusion tests/bin/identity-strings exists for.
+printf '\nreaching %s\n' "$PROJECT"
+
+UNREACHABLE=''
+if [ "$HAVE_CURL" -eq 0 ]; then
+  UNREACHABLE='curl is not installed, so no request can be made at all.'
+elif [ "$HAVE_JQ" -eq 0 ]; then
+  UNREACHABLE='jq is not installed, so the API answers cannot be parsed.'
+fi
+
+HEAD_SHA=''
+HEAD_DATE=''
+if [ -z "$UNREACHABLE" ]; then
+  META="$WORK_DIR/project.json"
+  api_get "$API" "$META"
+  if [ "$TRANSPORT" -ne 0 ]; then
+    UNREACHABLE="curl exited $TRANSPORT reaching $API_HOST - the request got no answer at all (DNS, connectivity, proxy or TLS)."
+  elif [ "$HTTP" != '200' ]; then
+    UNREACHABLE="$API_HOST answered HTTP $HTTP for the project metadata, so nothing below could be read."
+  else
+    GOT_PATH=$(jq -r '.path_with_namespace // empty' < "$META" 2>/dev/null)
+    if [ "$GOT_PATH" != "$PROJECT" ]; then
+      UNREACHABLE="the API answered 200 but named the project [$GOT_PATH], not [$PROJECT]. Reading on would measure the wrong repository."
+    else
+      [ -n "$BRANCH" ] || BRANCH=$(jq -r '.default_branch // empty' < "$META" 2>/dev/null)
+      VISIBILITY=$(jq -r '.visibility // empty' < "$META" 2>/dev/null)
+      note "project: $GOT_PATH (visibility: $VISIBILITY) - answered anonymously, no token used"
+    fi
+  fi
+fi
+
+if [ -z "$UNREACHABLE" ] && [ -z "$BRANCH" ]; then
+  UNREACHABLE='the API named no default branch, so there is no HEAD to measure the recorded commits against.'
+fi
+
+# Resolve the branch tip once. Every delta below is measured against THIS sha, printed, so
+# the whole table is a statement about one commit rather than about whatever the branch
+# happened to be at each request.
+if [ -z "$UNREACHABLE" ]; then
+  HEAD_JSON="$WORK_DIR/branch.json"
+  api_get "$API/repository/commits/$BRANCH" "$HEAD_JSON"
+  if [ "$TRANSPORT" -ne 0 ] || [ "$HTTP" != '200' ]; then
+    UNREACHABLE="the branch [$BRANCH] could not be resolved (curl $TRANSPORT, HTTP $HTTP)."
+  else
+    HEAD_SHA=$(jq -r '.id // empty' < "$HEAD_JSON" 2>/dev/null)
+    HEAD_DATE=$(jq -r '.committed_date // .created_at // empty' < "$HEAD_JSON" 2>/dev/null)
+    [ -n "$HEAD_SHA" ] || UNREACHABLE="the branch [$BRANCH] resolved to no commit id."
+  fi
+fi
+
+# ---- the third state, taken before any per-record work.
+if [ -n "$UNREACHABLE" ]; then
+  not_read_banner \
+    "$UNREACHABLE" \
+    '' \
+    'No per-record table is printed, on purpose: a table of blanks is how a' \
+    'scope that collapsed to nothing gets read as a clean result (I-007, I-029).' \
+    'The denominators below are printed anyway, so the log says how many records' \
+    'went unanswered rather than leaving the reader to assume none did.'
+  printf '\n=========================================================================================================\n'
+  printf 'scope:    %s against %s via %s\n' "$MANIFEST" "$PROJECT" "$API_HOST"
+  printf 'cap:      %s\n' "$(if [ "$MAX_AGE_DAYS" -eq "$MAX_AGE_DEFAULT" ]; then printf '%s days (default)' "$MAX_AGE_DAYS"; else printf '%s days (OVERRIDDEN with --max-age-days; the gate never passes it)' "$MAX_AGE_DAYS"; fi)"
+  printf 'compared: %s record(s) offered by the manifest\n' "$RECORDS"
+  printf 'read:     0 read, %s NOT READ (every record)\n' "$RECORDS"
+  printf 'verified: 0 provenance re-derived - nothing was reachable to derive it from\n'
+  printf 'behind:   unknown - not measured, which is not the same as zero\n'
+  printf 'findings: 0 - and a findings count over an unread scope says nothing (I-028)\n'
+  printf 'network:  NOT READ - %s\n' "$UNREACHABLE"
+  printf '=========================================================================================================\n'
+  printf '%s%s%s\n' "$C_BAD" 'ported-drift: NOT READ - no answer for any record, which is not a clean answer for them' "$C_OFF"
+  exit 2
+fi
+
+note "branch: $BRANCH at $HEAD_SHA ($HEAD_DATE)"
+note "cap: $MAX_AGE_DAYS day(s) - the age of the DRIFT, measured from the first upstream commit that touched the path after the recorded one"
+
+NOW_EPOCH=$(date -u '+%s' 2>/dev/null)
+[ -n "$NOW_EPOCH" ] || fatal 'date -u +%s produced nothing, so no age can be computed and no cap can be applied.'
+
+epoch_of() { # <iso8601> -> epoch seconds, or empty
+  [ -n "$1" ] || return 0
+  date -u -d "$1" '+%s' 2>/dev/null
+}
+
+# ------------------------------------------------------------------ the walk ----
+printf '\nper-record - provenance over the API, then the delta to %s\n' "$(printf '%s' "$HEAD_SHA" | cut -c1-8)"
+printf '  %-18s %-9s %-11s %-6s %s\n' 'script' 'recorded' 'provenance' 'drift' 'delta recorded -> HEAD (source path)'
+printf '  %s\n' '-------------------------------------------------------------------------------------------------'
+
+U_READ=0
+U_UNREAD=0
+U_VERIFIED=0
+U_BEHIND=0
+U_OVER_CAP=0
+U_OLDEST=0
+U_UNREADABLE=''
+
+while IFS= read -r rec; do
+  [ -n "$rec" ] || continue
+  # shellcheck disable=SC2086
+  set -- $rec
+  P_SCRIPT=$1; P_STATUS=$2; P_PATH=$3; P_SOURCE=$4; P_COMMIT=$5
+  # THE SOURCE PATH COMES FROM THE RECORD, NEVER FROM THE BASENAME. packaged-claims was
+  # copied from tests/bin/claims-match-readme, so deriving the path here would ask the API
+  # for a file agora_theme does not have, get an honest 404, and report broken provenance
+  # about a record whose provenance is fine.
+  P_ENC=$(printf '%s' "$P_PATH" | sed 's|/|%2F|g')
+  P_SHORT=$(printf '%s' "$P_COMMIT" | cut -c1-8)
+  P_BASE=$(printf '%s' "$P_PATH" | sed 's|.*/||')
+  R_UNREAD=0
+
+  # ---- 1. does the recorded commit resolve over there?
+  CJ="$WORK_DIR/commit.json"
+  api_get "$API/repository/commits/$P_COMMIT" "$CJ"
+  if no_answer; then
+    R_UNREAD=1
+    printf '  %-18s %-9s %-11s %-6s %s\n' "$P_SCRIPT" "$P_SHORT" 'NOT READ' '-' "no answer (curl $TRANSPORT, HTTP $HTTP)"
+  elif [ "$HTTP" = '404' ]; then
+    finding "$P_SCRIPT" 'source_commit' "$API_HOST answered 404 for [$P_COMMIT] in $PROJECT. The manifest names a commit a reviewer cannot open - it was never pushed, or it was typed rather than read with git rev-parse. Provenance that only exists on one machine is not provenance."
+    printf '  %-18s %-9s %-11s %-6s %s\n' "$P_SCRIPT" "$P_SHORT" 'MISSING' '-' 'the recorded commit is not in the canonical repository'
+    U_READ=$((U_READ + 1))
+    continue
+  elif [ "$HTTP" != '200' ]; then
+    R_UNREAD=1
+    printf '  %-18s %-9s %-11s %-6s %s\n' "$P_SCRIPT" "$P_SHORT" 'NOT READ' '-' "unexpected HTTP $HTTP for the commit"
+  fi
+
+  if [ "$R_UNREAD" -eq 1 ]; then
+    U_UNREAD=$((U_UNREAD + 1))
+    U_UNREADABLE="$U_UNREADABLE $P_SCRIPT"
+    continue
+  fi
+
+  C_DATE=$(jq -r '.committed_date // .created_at // empty' < "$CJ" 2>/dev/null)
+  U_READ=$((U_READ + 1))
+  R_FIND_BEFORE=$FINDINGS
+  PROV="${C_OK}verified${C_OFF}"
+
+  # ---- 2. is it an ancestor of the canonical branch?
+  # A commit that resolves but is not reachable from the branch is on an abandoned line of
+  # development, and the manifest's claim to have copied from the canonical one is false.
+  # merge_base(sha, branch) == sha iff sha is an ancestor. This is a question only the other
+  # repository can answer, which is why it lives here and not in the offline script.
+  MJ="$WORK_DIR/merge-base.json"
+  api_get "$API/repository/merge_base?refs%5B%5D=$P_COMMIT&refs%5B%5D=$BRANCH" "$MJ"
+  if [ "$TRANSPORT" -eq 0 ] && [ "$HTTP" = '200' ]; then
+    MB=$(jq -r '.id // empty' < "$MJ" 2>/dev/null)
+    if [ -n "$MB" ] && [ "$MB" != "$P_COMMIT" ]; then
+      PROV="${C_BAD}NOT ON $BRANCH${C_OFF}"
+      finding "$P_SCRIPT" 'source_commit' "[$P_COMMIT] resolves in $PROJECT but is NOT an ancestor of $BRANCH (merge base is $MB). The copy was taken from a line of development the canonical branch never took, so the recorded provenance does not describe anything a reviewer reaches from $BRANCH."
+    fi
+  else
+    # A non-200 here would mean the endpoint itself is unavailable, which is a narrower
+    # claim than "the commit is missing" - the commit already resolved above - so it is
+    # reported as unread ancestry, not as a finding.
+    note "$P_SCRIPT: ancestry NOT READ (curl $TRANSPORT, HTTP $HTTP) - the other provenance checks below still ran"
+  fi
+
+  # ---- 3. the path at that commit, and its hash.
+  SRC="$WORK_DIR/blob-at-record"
+  api_get "$API/repository/files/$P_ENC/raw?ref=$P_COMMIT" "$SRC"
+  if no_answer; then
+    U_UNREAD=$((U_UNREAD + 1)); U_READ=$((U_READ - 1))
+    U_UNREADABLE="$U_UNREADABLE $P_SCRIPT"
+    printf '  %-18s %-9s %-11s %-6s %s\n' "$P_SCRIPT" "$P_SHORT" 'NOT READ' '-' "the blob got no answer (curl $TRANSPORT, HTTP $HTTP)"
+    continue
+  fi
+  if [ "$HTTP" = '404' ]; then
+    PROV="${C_BAD}NO BLOB${C_OFF}"
+    finding "$P_SCRIPT" 'source_path' "$P_PATH is not a file at [$P_COMMIT] in $PROJECT (HTTP 404). The record names a path and a commit that do not go together, so source_sha256 cannot have been read from them. Check source_path before source_commit: this is the field that carries a rename, and packaged-claims' source is named claims-match-readme."
+    printf '  %-18s %-9s %-11s %-6s %s\n' "$P_SCRIPT" "$P_SHORT" "$PROV" '-' "nothing to compare ($P_PATH)"
+    continue
+  fi
+
+  SRC_HASH=$(sha256_of "$SRC")
+  if [ -z "$SRC_HASH" ]; then
+    PROV="${C_BAD}NO DIGEST${C_OFF}"
+    finding "$P_SCRIPT" 'source_sha256' "$HASHER produced no digest for the blob at [$P_COMMIT] - a file that cannot be hashed is NOT a file that matches."
+  elif [ "$SRC_HASH" != "$P_SOURCE" ]; then
+    PROV="${C_BAD}MISMATCH${C_OFF}"
+    finding "$P_SCRIPT" 'source_sha256' "the blob at $P_PATH@[$P_COMMIT] in $PROJECT hashes to [$SRC_HASH]; the manifest records [$P_SOURCE]. The recorded provenance is fiction: either the sha was typed rather than read, or the commit field was moved without re-deriving the hash beside it."
+  elif [ "$FINDINGS" -eq "$R_FIND_BEFORE" ]; then
+    U_VERIFIED=$((U_VERIFIED + 1))
+  fi
+
+  # ---- 4. the delta. Data, never a verdict - until the cap.
+  HEAD_FILE="$WORK_DIR/blob-at-head"
+  api_get "$API/repository/files/$P_ENC/raw?ref=$BRANCH" "$HEAD_FILE"
+  DRIFT='-'
+  if no_answer; then
+    DELTA='the blob at HEAD got no answer - the delta is UNMEASURED, not zero'
+  elif [ "$HTTP" = '404' ]; then
+    # The path is gone upstream. That is a real change with a date on it, and the most
+    # interesting delta there is, so it is reported as behind rather than as an error: the
+    # copy here now has no source at all.
+    U_BEHIND=$((U_BEHIND + 1))
+    DELTA="${C_BAD}DELETED upstream${C_OFF} - $P_PATH no longer exists on $BRANCH"
+  else
+    HEAD_HASH=$(sha256_of "$HEAD_FILE")
+    if [ -z "$HEAD_HASH" ]; then
+      DELTA='the blob at HEAD could not be hashed - UNMEASURED, not zero'
+    elif [ "$HEAD_HASH" = "$SRC_HASH" ]; then
+      DELTA="${C_OK}+0/-0${C_OFF}   unchanged at HEAD   ($P_BASE)"
+    else
+      U_BEHIND=$((U_BEHIND + 1))
+      DIFF_OUT=$(diff "$SRC" "$HEAD_FILE" 2>/dev/null)
+      ADDED=$(printf '%s\n' "$DIFF_OUT" | awk '/^>/ {n++} END {print n+0}')
+      DELETED=$(printf '%s\n' "$DIFF_OUT" | awk '/^</ {n++} END {print n+0}')
+
+      # ---- when did this drift start? The clock is the FIRST upstream commit that touched
+      # the path after the recorded one, not the recorded one's own age: a record can sit
+      # correctly at a fortnight-old commit, and on this manifest's first run two of three
+      # did exactly that.
+      OLDEST=''
+      N_COMMITS=0
+      PAGE=1
+      TRUNCATED=0
+      # 🔴 THE `+` IN AN ISO 8601 OFFSET MUST BE PERCENT-ENCODED OR THE WHOLE CLOCK STOPS.
+      # committed_date comes back as `2026-09-21T12:44:08.000+02:00`, and in a URL QUERY
+      # STRING a raw `+` means a SPACE. GitLab then reads `...08.000 02:00`, matches
+      # nothing, and answers `[]` - so OLDEST stays empty, the branch below reports UNDATED,
+      # and a record with a perfectly ordinary two-day-old drift is printed as a FINDING
+      # instead of as a number to read. FALSIFIED AT THE API, not reasoned about: the same
+      # request with the offset raw answers `0` commits and with it encoded answers `2`.
+      # It fails in the SAFE direction, which is exactly what made it hard to notice - an
+      # undated drift refuses rather than passes, so the bug looks like strictness.
+      C_SINCE=$(printf '%s' "$C_DATE" | sed 's/+/%2B/g')
+      while [ "$PAGE" -le "$MAX_PAGES" ]; do
+        LJ="$WORK_DIR/commits.json"
+        api_get "$API/repository/commits?path=$P_ENC&ref_name=$BRANCH&since=$C_SINCE&per_page=100&page=$PAGE" "$LJ"
+        if [ "$TRANSPORT" -ne 0 ] || [ "$HTTP" != '200' ]; then N_COMMITS=-1; break; fi
+        # The recorded commit itself is filtered out by id: `since` is inclusive, so a
+        # commit at the same second is returned and is not part of the drift.
+        GOT=$(jq -r --arg self "$P_COMMIT" '.[] | select(.id != $self) | (.committed_date // .created_at)' < "$LJ" 2>/dev/null)
+        PAGE_N=$(jq -r 'length' < "$LJ" 2>/dev/null)
+        [ -n "$PAGE_N" ] || PAGE_N=0
+        if [ -n "$GOT" ]; then
+          N_COMMITS=$((N_COMMITS + $(printf '%s\n' "$GOT" | wc -l | tr -d '[:space:]')))
+          OLDEST=$(printf '%s\n' "$GOT" | tail -1)
+        fi
+        [ "$PAGE_N" -eq 100 ] || break
+        PAGE=$((PAGE + 1))
+        [ "$PAGE" -gt "$MAX_PAGES" ] && TRUNCATED=1
+      done
+
+      if [ "$N_COMMITS" -lt 0 ]; then
+        DRIFT="${C_BAD}?${C_OFF}"
+        DELTA="+$ADDED/-$DELETED   behind, and the commit list got no answer - the age is UNMEASURED"
+      elif [ -z "$OLDEST" ] || [ "$TRUNCATED" -eq 1 ]; then
+        # Behind, but the drift cannot be dated. That can never be waved through: a drift
+        # whose age cannot be measured has not been SHOWN to be inside the cap, and the safe
+        # direction on a guard is to refuse (I-028).
+        DRIFT="${C_BAD}UNDATED${C_OFF}"
+        finding "$P_SCRIPT" 'delta' "the blob differs from $BRANCH but the first upstream commit that touched $P_PATH after [$P_COMMIT] could not be identified$(if [ "$TRUNCATED" -eq 1 ]; then printf ' (more than %s pages of commits)' "$MAX_PAGES"; fi). A drift whose age cannot be measured cannot be shown to be inside the $MAX_AGE_DAYS-day cap, and 'unknown' is not 'recent'."
+        DELTA="+$ADDED/-$DELETED   across $N_COMMITS commit(s)"
+      else
+        O_EPOCH=$(epoch_of "$OLDEST")
+        if [ -z "$O_EPOCH" ]; then
+          DRIFT="${C_BAD}UNDATED${C_OFF}"
+          finding "$P_SCRIPT" 'delta' "the first upstream commit after [$P_COMMIT] reports the timestamp [$OLDEST], which this host's date could not parse. The age is unmeasured, and unmeasured is not inside the cap."
+          DELTA="+$ADDED/-$DELETED   across $N_COMMITS commit(s)"
+        else
+          AGE_D=$(( (NOW_EPOCH - O_EPOCH) / 86400 ))
+          [ "$AGE_D" -gt "$U_OLDEST" ] 2>/dev/null && U_OLDEST=$AGE_D
+          if [ "$AGE_D" -gt "$MAX_AGE_DAYS" ]; then
+            U_OVER_CAP=$((U_OVER_CAP + 1))
+            DRIFT="${C_BAD}${AGE_D}d${C_OFF}"
+            finding "$P_SCRIPT" 'delta' "behind $BRANCH by +$ADDED/-$DELETED across $N_COMMITS commit(s), and the drift has stood for ${AGE_D} days - past the $MAX_AGE_DAYS-day cap. Being behind is not itself wrong - every record in this manifest is \`adapted\` and a non-zero delta is the normal state - but being behind UNANSWERED for this long is. Answer it in ONE of two ways, both commits in THIS repository: take the change and regenerate the record, or decide the copy stays behind and move source_commit forward with the reasoning written into the manifest."
+          else
+            DRIFT="${AGE_D}d"
+          fi
+          DELTA="+$ADDED/-$DELETED   across $N_COMMITS commit(s) - a number to READ, not a failure"
+        fi
+      fi
+    fi
+  fi
+
+  printf '  %-18s %-9s %-11s %-6s %s\n' "$P_SCRIPT" "$P_SHORT" "$PROV" "$DRIFT" "$DELTA"
+done <<EOF
+$PARSED
+EOF
+
+# A walk that considered nothing is not a walk that found nothing (I-007).
+if [ "$((U_READ + U_UNREAD))" -eq 0 ]; then
+  not_read_banner 'the record walk considered 0 records, so nothing above was measured.'
+  exit 2
+fi
+
+printf '\n=========================================================================================================\n'
+printf 'scope:    %s against %s via %s\n' "$MANIFEST" "$PROJECT" "$API_HOST"
+printf 'branch:   %s at %s (%s)\n' "$BRANCH" "$HEAD_SHA" "$HEAD_DATE"
+printf 'cap:      %s\n' "$(if [ "$MAX_AGE_DAYS" -eq "$MAX_AGE_DEFAULT" ]; then printf '%s days (default)' "$MAX_AGE_DAYS"; else printf '%s days (OVERRIDDEN with --max-age-days; the gate never passes it)' "$MAX_AGE_DAYS"; fi)"
+printf 'compared: %s record(s) offered by the manifest\n' "$RECORDS"
+printf 'read:     %s read, %s NOT READ%s\n' \
+  "$U_READ" "$U_UNREAD" "$(if [ -n "$U_UNREADABLE" ]; then printf ':%s' "$U_UNREADABLE"; fi)"
+printf 'verified: %s provenance re-derived from the recorded commit and matching\n' "$U_VERIFIED"
+printf 'behind:   %s record(s) behind %s; oldest drift %s day(s); %s past the cap\n' \
+  "$U_BEHIND" "$BRANCH" "$U_OLDEST" "$U_OVER_CAP"
+printf 'findings: %s  (a delta under the cap is never one - only broken provenance, and a delta left standing too long)\n' "$FINDINGS"
+printf 'network:  READ - %s answered anonymously for %s record(s); no token was used\n' "$API_HOST" "$U_READ"
+printf '=========================================================================================================\n'
+
+if [ "$FINDINGS" -ne 0 ]; then
+  printf '%s%s%s\n' "$C_BAD" "ported-drift: $FINDINGS finding(s) - each one fixable by a commit in THIS repository" "$C_OFF"
+  exit 1
+fi
+if [ "$U_UNREAD" -ne 0 ]; then
+  printf '%s%s%s\n' "$C_BAD" "ported-drift: $U_UNREAD of $RECORDS record(s) NOT READ - this run has no answer for them, which is not a clean answer for them" "$C_OFF"
+  exit 2
+fi
+if [ "$U_BEHIND" -ne 0 ]; then
+  printf '%s%s%s\n' "$C_DIM" "ported-drift: every record read and every provenance verified; $U_BEHIND of $RECORDS sit behind $BRANCH, none past the $MAX_AGE_DAYS-day cap. Read the deltas - these copies are all \`adapted\`, so one that SHOULD stay behind is the normal case, and the manifest's own block for each record is where that argument belongs." "$C_OFF"
+  exit 0
+fi
+printf '%s%s%s\n' "$C_OK" 'ported-drift: every record read, every provenance verified, no source file changed since its recorded commit' "$C_OFF"
+exit 0

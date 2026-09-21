@@ -393,12 +393,28 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `970030`, ref `1.x`, commit `a3037ae`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/970030/jobs` on 2026-09-21. **Ten jobs, every
+- **Observed inventory — the theme.** Pipeline `970165`, ref `1.x`, commit `bf433c9`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/970165/jobs` on 2026-09-21. **Ten jobs, every
   one `success`, every one `allow_failure: false`.** Figures read from the traces the same day:
-  `nightwatch` job `12334193` — **10 pages scanned, 89-89 axe rules per page, 0 violations,
-  heading-order reported on 10 of 10 pages, 774 total assertions**; `phpunit` job `12334194` —
+  `nightwatch` job `12336498` — **10 pages scanned, 89-89 axe rules per page, 0 violations,
+  heading-order reported on 10 of 10 pages, 774 total assertions**; `phpunit` job `12336499` —
   **`OK (203 tests, 959 assertions)`**.
+  ✅ **THE FOURTH REFRESH IN TWENTY-FOUR HOURS, AND THE FIRST ONE THAT LEAVES A MECHANISM BEHIND.**
+  It stood at `970030`/`a3037ae`, and at `969322`, `969068` and `968026` before that. ⚠️ **Both
+  trace figures are UNCHANGED across that whole run of refreshes** — 10 pages, 89-89 rules, 0
+  violations, 10 of 10, 774 assertions, and `OK (203 tests, 959 assertions)` — which is exactly
+  what makes this row's staleness so hard to see by eye: **everything a reader would check is
+  still true, and only the address is wrong.**
+  ⚠️ **What was added is NOT a staleness check, and the distinction is the whole of T-0622's
+  second half.** `tests/bin/claims-match-sources` now binds the pipeline id in the prose above to
+  the id inside the API URL beside it — offline, on every push, for **both** observation tables.
+  The id was written twice and compared against nothing; now a row has to be refreshed in two
+  places or the gate fails. ⚠️ **A check asserting this is the NEWEST pipeline was considered and
+  REFUSED**: it would go red every time somebody pushes to the other repository — a red no commit
+  here can fix, which is the unfixable-red `D-023(5)` exists to refuse — and this file's own rule
+  is that a table records a **named, complete** observation, so "newest" is not even defined while
+  a pipeline is running. Staleness stays in `claims-match-sources`' NOT CHECKED list, named, with
+  a reason that is true.
   🔴 **THIS IS THE THIRD REFRESH OF THIS ROW IN TWENTY-FOUR HOURS, AND THE STALENESS IS THE
   RECORD.** It stood at `969322`/`4f82307` when a drift detector in the theme found it; before
   that at `969068`, and before that at `968026`. **Nothing catches it and the reason is structural:
@@ -406,9 +422,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
   list, and the names do not change when the pipeline does.** ⚠️ **`tests/bin/packaged-claims`
   does not reach it either** — its subject is the *packaged, user-facing* set, and `CLAUDE.md` is
   `export-ignore`d and therefore not in it. **A stale observation of an unchanged list is invisible
-  to every guard this project owns**, which is the one gap left after a week of closing them. The
+  to every guard this project owns**, which is the one gap left after a week of closing them. ~~The
   fix is to bind the pipeline id itself, the way the theme's `claims-match-readme` binds one to a
-  re-runnable URL; it has **no owner and no task row**.
+  re-runnable URL; it has **no owner and no task row**.~~
+  ✅ **CLOSED 2026-09-21 by T-0622, and the struck sentence named the fix correctly** — the binding
+  it describes is the one that landed, modelled on `claims-match-readme` exactly as written. ⚠️
+  **The rest of the paragraph is kept whole because it is still TRUE and is the best description
+  in this file of what a binding does and does not buy:** `theme_jobs` still compares only job
+  names, `packaged-claims` still cannot reach this file, and **a row that is stale in both the
+  prose and the URL still passes.** What changed is that it now has to be stale in *both*, which
+  is a narrower claim than "staleness is caught" and is deliberately the only one being made.
   🔴 **THIS ROW WAS FOUR PIPELINES STALE WHEN THE ONLINE CHECKER WAS BUILT, AND BUILDING THE
   CHECKER IS HOW THAT WAS FOUND.** It named `969068`/`8909f76` while **T-1205's own audit, signed
   in this repository earlier the same day, had already read `969322`/`4f82307`** — so the file
@@ -496,14 +519,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `stylelint` | validate | success | false |
 
   **Trace figures — the theme.** Same mechanism as the site template's table above, same
-  credential-free `/-/jobs/<id>/raw` route, read from pipeline `969322`'s own jobs. ⚠️ **The
+  credential-free `/-/jobs/<id>/raw` route, read from pipeline `970165`'s own jobs.
+  ⚠️ **`agora-invariants` read `35` until 2026-09-21 and the trace says `44`, which is nine
+  checks of drift in a figure whose whole subject is a gate runner's own arithmetic.** It was found
+  by REFRESHING the observation above and re-running `--online`, not by anything watching: the
+  theme's runner grew when it gained its own drift checks, and this table had no way to know. That
+  is the same shape as the pipeline id four paragraphs up — a number written here about a
+  repository that moves on its own schedule — except that this one IS machine-checked, and the
+  check found it the moment the row it hangs off was made current. **A trace figure is only as
+  fresh as the pipeline its table names.** ⚠️ **The
   `gate-a-theme.sh` row is the first figure from the SIBLING repository that anything here can
   check at all** — it was listed as unreachable on the grounds that it "lives in the `agora_theme`
   repository", which is true of the script and false of the number its CI prints.
 
   | job | the line its trace printed |
   |---|---|
-  | `agora-invariants` | `35 checks — 0 failures` |
+  | `agora-invariants` | `44 checks — 0 failures` |
   | `nightwatch` | `10 pages scanned, 89-89 axe rules run per page, 0 violations` |
   | `nightwatch` | `heading-order reported on 10 of 10 pages` |
   | `nightwatch` | `774 total assertions` |
@@ -677,14 +708,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
   closing it. It is closed.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **456** tracked files to cspell, which **checks 415** and
-  finds 0 issues (re-measured 2026-09-20; **this commit adds one file — `config/block.block.agora_base_service_areas.yml`, T-1310 — and moved the denominator
-  by exactly one**, which is the shape to want — it read **455/414** on 2026-09-19, **451/410** on 2026-09-12, **448/407**
+  `bash tests/bin/spellcheck` offers **470** tracked files to cspell, which **checks 429** and
+  finds 0 issues (re-measured 2026-09-21; **this commit adds three files — `tests/bin/ported-copies`, `tests/bin/ported-drift` and `tests/bin/ported-from-theme.manifest`, T-0622 — and moved the denominator
+  by exactly three**, which is the shape to want — it read **467/426** earlier the same day, **456/415** on 2026-09-20, **455/414** on 2026-09-19, **451/410** on 2026-09-12, **448/407**
   on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before
   that).
-  ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** One YAML file
-  was added and cspell opened it: 456 − 415 = 41, the same 37 binaries and 4 globs
-  accounted for below. **A denominator that rises while the gap also rises would mean a new file
+  ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** Three text
+  files were added and cspell opened all three: 470 − 429 = 41, the same 37 binaries and 4 globs
+  accounted for below. **Both figures were PREDICTED before the run and the run returned exactly
+  470 and 429**, which is the only way a denominator claim is worth anything. **A denominator that rises while the gap also rises would mean a new file
   went unopened**, which reads exactly like a clean measurement and is not one. The CI job's own count runs two higher — it also opens two files the runner
   generates and this repository does not track. The 36-versus-63 gap **T-222** opened is closed and
   has stayed closed across four changes of denominator.
@@ -888,8 +920,42 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (77 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **21** invariants in total —
+  (88 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **23** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`77 · 21` became `88 · 23` on 2026-09-21 (unit 006 wave 3), and the eleven checks arrive in
+  TWO new groups rather than one.** Wave 1's **G12** runs `tests/bin/ported-copies` (6 checks) and
+  **G13** runs `tests/bin/ported-drift` (5). They close the direction this repository had no record
+  of at all: `agora_theme` has carried a manifest, a local detector and — since **D-063** — an
+  API-reading drift check for the files it copied FROM here, while the files that travelled the
+  OTHER way had **no manifest, no recorded provenance and no detection of any kind.**
+  ⚠️ **The handed list of those files was two and the answer is three.** `tests/bin/executable-bit`
+  and `tests/bin/preflight` were authored in the theme and ported here on 2026-09-06;
+  `tests/bin/packaged-claims` took 63 lines from the theme's `tests/bin/claims-match-readme` on
+  2026-09-21, **sixty-five minutes after that file was committed there.** It was found by comparing
+  every script in both `tests/bin/` directories against every script in the other and reading the
+  **band** of shared long lines — 15–24 is house style, 37–65 is shared substance — then settling
+  direction with `git log --reverse` on both paths and never by reading the code. The control is
+  that the same method puts *this* repository first for all eight files the theme's own manifest
+  records. **A citation is not a provenance record**: `packaged-claims` names the theme's guard
+  nine times in its own header and not one of those mentions records a commit, so none of them
+  could ever have been checked.
+  🔴 **G13 IS THE FIRST GROUP IN EITHER RUNNER THAT TOUCHES THE NETWORK**, and that is a change of
+  character worth stating rather than discovering. It reads drupalcode's API **anonymously** — no
+  token, because `/trace` answers `401` to anonymous requests and anything built on a CI log would
+  have needed the maintainer's credential wired into CI. **NOT READ is a third state**: it exits
+  **2**, prints `read: 0` beside `compared: 3`, and is tolerated by the gate for the same reason a
+  raw delta is — no commit here can fix an unreachable drupalcode.
+  ⚠️ **A DEFECT WAS FOUND IN THE SIBLING'S IMPLEMENTATION WHILE FALSIFYING THIS ONE, and it is
+  still live over there.** The drift clock asks the API for commits `since` the recorded one, and
+  `committed_date` comes back as `2026-09-21T12:44:08.000+02:00` — where **a raw `+` in a URL query
+  string means a SPACE.** GitLab matches nothing and answers `[]`. Falsified at the API rather than
+  argued: the same request answers **0** commits with the offset raw and **2** with it
+  percent-encoded. **It fails in the SAFE direction, which is exactly why it survived** — an
+  undated drift is reported as a finding, so the bug looks like strictness. Its real cost is that
+  every genuinely recent drift would have been printed as a **finding** instead of as a number to
+  read, which is the unfixable-red the whole design refuses, arriving through the back door. Fixed
+  here; `agora_theme`'s `tests/bin/upstream-drift` carries the same line and **nothing in this
+  repository can fix it** — it needs a commit there.
   ⚠️ **`71 · 20` became `77 · 21` on 2026-09-21 (unit 006 wave 2), and this is the case where
   `invariants` DOES move**, which is worth one line beside the three notes below saying it did
   not: **T-0608** adds a new GROUP, wave 1's G11, running a new script — `tests/bin/packaged-claims`,
@@ -1012,8 +1078,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
   predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
   gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
   The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
-  prints `examined: 456 tracked file(s)` · `scripts: 30` · `findings: 0` today, re-run 2026-09-20
-  (it read `455` before T-1310 added one config file, and `451` on 2026-09-12).
+  prints `examined: 470 tracked file(s)` · `scripts: 36` · `findings: 0` today, re-run 2026-09-21
+  (it read `467` and `34` earlier the same day, `456` and `30` on 2026-09-20, `455` before T-1310
+  added one config file, and `451` on 2026-09-12).
+  ⚠️ **`456 · 30` stood in this line while the invariant printed `467 · 34`, and it was found by
+  re-running the tool rather than by any guard** — eleven files and four scripts of drift, in the
+  one paragraph of this file whose subject is a figure going stale. It is the third time this pair
+  has been refreshed in eight days. **The scripts figure is the one that moved for a reason worth
+  naming**: 34 → 36 is `tests/bin/ported-copies` and `tests/bin/ported-drift`, added by the commit
+  that also wrote this line, so it is a prediction confirmed by a run and not a number carried.
   **A hand-written 28 stood beside a machine-printed 30 in the same paragraph, in the same commit,
   in three files, and nothing failed** — the denominator is 30, and the two files fixed that day
   were 2 of 30. `specs/003-demo-content/tasks.md` records the same correction against T-1501's own

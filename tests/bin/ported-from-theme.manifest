@@ -1,0 +1,210 @@
+# ported-from-theme.manifest - agora_transparency - the OTHER direction of D-028.
+#
+# WHAT THIS FILE IS, AND WHY IT IS NOT THE SIBLING'S MANIFEST WITH THE NAMES SWAPPED.
+#
+# `agora_theme` carries tests/bin/shared-invariants.manifest, which records the files it
+# copied FROM this repository, plus a detector for local edits and, since D-063, one that
+# reads this repository over the API. That machinery has a signed decision behind it
+# (D-028), a named set of five invariants, and three layers of guard.
+#
+# Files travel the other way too, and until this file existed NOTHING in this repository
+# knew it. tests/bin/executable-bit and tests/bin/preflight were both authored in the theme
+# and ported here on 2026-09-06, in a commit whose own subject says so - "the template gets
+# the two guardrails the theme has" - and that sentence in a commit message was the entire
+# provenance record. A commit message is not a mechanism: it is read once, by the person
+# who wrote it.
+#
+# ⚠️ AND THE HANDED LIST WAS ONE SHORT, WHICH IS THE MOST USEFUL THING ON THIS PAGE.
+# Two files were reported as the ports. There are THREE. tests/bin/packaged-claims was
+# written here on 2026-09-21 at 10:49 and shares 65 lines of 45 characters or more with the
+# theme's tests/bin/claims-match-readme, which was committed at 09:44 the same morning -
+# sixty-five minutes earlier. Only 2 of those 65 lines exist in this repository's own
+# earlier tests/bin/claims-match-sources, so 63 of them arrived from the theme rather than
+# being this project's house style flowing back.
+#
+# HOW THE THIRD ONE WAS FOUND, because the method is worth more than the file. Every script
+# in both tests/bin/ directories was compared against every script in the other by counting
+# shared literal lines of 45 characters or more - 38 files against 20, both directions, all
+# pairs. That produces a BAND, and reading the band is the whole technique:
+#
+#   15-24 shared lines   the house style. The contract block, the house-rules paragraph,
+#                        the I-028 sentence. Two files written here by the same hand score
+#                        in this range (no-key-material against no-patches: 24).
+#   37-65 shared lines   real shared substance: helper functions, argument parsers, whole
+#                        printed paragraphs.
+#
+# Nine pairs scored above the band. Eight of them involve a theme file that ORIGINATED HERE
+# - no-secrets, no-patches, gate-a-theme.sh and so on - so the shared substance is this
+# repository's own, measured on its way back. Exactly one pair had a theme file that is
+# genuinely the theme's AND older than its counterpart here: packaged-claims against
+# claims-match-readme, 65.
+#
+# DIRECTION IS SETTLED BY TIMESTAMP, NEVER BY READING THE CODE. Two files that share 65
+# lines tell you they are related; they do not tell you which way. `git log --reverse` on
+# both paths does, and it is the only thing that does:
+#
+#   executable-bit       theme 2026-09-06T13:04:44   here 2026-09-06T15:14:49   (+2h10m)
+#   preflight            theme 2026-09-06T12:42:31   here 2026-09-06T15:14:49   (+2h32m)
+#   claims-match-readme  theme 2026-09-21T09:44:30   here 2026-09-21T10:49:01   (+1h05m)
+#
+# The same method run against the eight files the theme's own manifest records puts this
+# repository first in every one of them, which is the control: a method that said "theme
+# first" for everything would be measuring nothing.
+#
+# -----------------------------------------------------------------------------------------
+# FIELDS, in order. THERE ARE SEVEN, AND THE SIBLING'S MANIFEST HAS SIX.
+#
+#   script         basename inside tests/bin/ HERE
+#   role           invariant | preflight
+#   status         verbatim | adapted
+#   local_sha256   sha256 of the copy in THIS repository, as it stands now
+#   source_path    the path in `agora_theme` the copy was taken from
+#   source_sha256  sha256 of the blob at source_path at source_commit
+#   source_commit  the `agora_theme` commit the copy was taken from
+#
+# ⚠️ `source_path` IS THE ADDED FIELD AND IT IS NOT TIDINESS. The theme's manifest derives
+# the source path from the basename, because no file it copied was ever renamed. In this
+# direction one was: packaged-claims came from claims-match-readme. A six-field manifest
+# could not record that record at all - it would have to ask the API for
+# tests/bin/packaged-claims in `agora_theme`, get an honest 404, and report broken
+# provenance about a file whose provenance is fine. So the path is recorded rather than
+# computed, and the two records where it happens to equal the basename are written out in
+# full anyway: a field that is usually derivable is a field somebody derives.
+#
+# WHY EVERY RECORD IS `adapted`, and why that is the expected state here rather than a
+# backlog. Measured against the recorded source, not estimated:
+#
+#   executable-bit    +64/-32     161 source lines -> 193 here
+#   preflight         +275/-210   737 source lines -> 802 here
+#   packaged-claims   +836/-437   656 source lines -> 1055 here
+#
+# These are not copies that drifted; they are copies that were REWRITTEN for a different
+# subject on arrival. preflight runs the pipeline's lint jobs, and the two pipelines do not
+# share a job list - the theme runs stylelint and nightwatch, this package runs phpstan over
+# PHP tests and a Drupal CMS install smoke. packaged-claims went further still: the theme's
+# guard refuses a figure stated twice IN ONE FILE, and this package's prose is spread over
+# six files no reader opens together, so every registered figure here declares a HOME and
+# the detector runs over all six. That is a different rule, not a port of the same one.
+#
+# The consequence for this manifest is that `verbatim` may never appear in it by accident.
+# `adapted` asserts local_sha256 != source_sha256, and tests/bin/ported-copies fails a
+# record whose status contradicts its own two hashes - which is the check that catches one
+# hash being refreshed while the other is not.
+#
+# -----------------------------------------------------------------------------------------
+# WHAT THE THREE LAYERS ANSWER, AND WHICH QUESTION EACH CANNOT.
+#
+#   this file                    what was taken, from where, at which commit
+#   tests/bin/ported-copies      has a copy been edited HERE since        (offline, in the gate)
+#   tests/bin/ported-drift       has the theme changed it SINCE          (over the API, in the gate)
+#
+# ⚠️ A CLEAN `ported-copies` RUN DOES NOT MEAN THE COPIES ARE CURRENT. It compares a local
+# file against a recorded hash, so it answers "has this been edited here" - truthfully, and
+# about a different question than the one that matters. That exact gap is what D-063 was
+# signed over: 28 days and 125 genuinely-absent lines accumulated in the theme's
+# identity-strings while its detector printed CLEAN, correctly. ported-drift is what asks
+# the other question, and it runs on every push with nothing checked out but this tree.
+#
+# -----------------------------------------------------------------------------------------
+# REGENERATING A RECORD, and step one is not optional.
+#
+#   1. `bash tests/bin/ported-drift` FIRST. It prints, per record, how far the SOURCE has
+#      moved since the recorded commit. Read that number before deciding anything: a delta
+#      is data, not an instruction, and the theme's own worked example is 132 upstream lines
+#      of which 0 should have been taken.
+#   2. Decide PER HUNK what belongs here. These three files were adapted on arrival; a hunk
+#      that fixes a bug in shared logic belongs here, and a hunk about stylelint does not.
+#   3. Re-derive BOTH hashes and read the commit with
+#      `git -C <theme checkout> rev-parse HEAD`. Never type a sha, and never carry a hash
+#      forward from the line above.
+#   4. Re-run ported-drift and confirm the delta moved to exactly what you left behind.
+#
+# Neither detector has a `--fix` flag. A guard that can silence itself in one keystroke is
+# the thing it was built to prevent.
+#
+# -----------------------------------------------------------------------------------------
+# THE STATE ON THE DAY THIS FILE WAS WRITTEN, recorded because a first run that is green is
+# a claim and this one is a measurement with a date on it.
+#
+# All three source blobs are byte-identical to `agora_theme`'s 1.x HEAD (bf433c9) right now.
+# executable-bit and preflight have sat at a FIFTEEN-DAY-OLD commit, unwatched, and drifted
+# by nothing. That is not a lucky result, it is the argument for how the cap is measured:
+# tests/bin/ported-drift starts its clock at the first upstream commit that touched the path
+# AFTER the recorded one - the moment a drift begins to exist - so these two report 0 days,
+# not 15. A cap on the age of the RECORD would have opened this file with two findings
+# against two records that are exactly right, which is the fastest way to teach the next
+# reader that the check is noise.
+#
+# script            role       status    local_sha256                                                     source_path                     source_sha256                                                    source_commit
+#
+# -----------------------------------------------------------------------------------------
+# executable-bit - ported 2026-09-06 in 434e289, role `invariant`, gate-a-wave1.sh G10.
+#
+# It reads the mode a shebang file is COMMITTED at out of the git index rather than from the
+# filesystem, and that is the reason it was worth porting rather than reinventing: on this
+# Windows checkout git does not track the executable bit, so `[ -x ]` answers TRUE for a
+# file committed 100644 while the Linux runner answers FALSE. The theme paid for that
+# lesson - its pipeline 950124 was red for a full push cycle behind a green local gate - and
+# this repository got the finished guard instead of the same red.
+#
+# It was not vacuous on arrival: 2 of the 30 shebang files here were committed 100644.
+#
+# The +64/-32 is mostly the denominators and the prose around them. Both copies read the
+# index; neither reads the filesystem.
+executable-bit     invariant  adapted   9c1eeadc656e45af94dca93829d19c136ff3f0cf93a19ac3bacfac3ff0ccc011 tests/bin/executable-bit        e63e842a63211e3c125265e3550dfc5b593cf8dc9667e77cace0bc7ffd465373 82201a6a779f5f9bc6ee7bfe2b9782ef78af2dd4
+#
+# -----------------------------------------------------------------------------------------
+# preflight - ported 2026-09-06 in 434e289, role `preflight`, in NEITHER gate runner.
+#
+# It runs the pipeline's own lint jobs against a rig with the pipeline's own fetched
+# configuration, and it needs Docker, which is why it is not in the gate and why its role
+# says so. The theme's measurements are the reason it exists at all: eight real phpcs errors
+# sat undetected on a branch there, three real stylelint findings turned a pipeline red, and
+# eslint had never been attempted at all.
+#
+# ⚠️ ITS ROLE BUYS IT NO EXEMPTION FROM THE CAP. A copy that is not in the gate is still a
+# copy whose source can move, and this is the largest and most actively developed of the
+# three, so it is the one most likely to move. Exempting a copy for its role would mean the record
+# most likely to need answering is the one nothing asks about.
+#
+# ⚠️ THE SOURCE COMMIT IS NOT THE COMMIT THAT CREATED THE FILE THERE. preflight was born in
+# the theme at 43505f2 (12:42) and changed again before the port at 82201a6 (13:04), which
+# is the theme's HEAD at the moment of copying and therefore what is recorded. The blob at
+# 43505f2 hashes to 5201a2cc..., which is NOT what was taken. Recording the birth commit
+# because it is the one a reader would guess at would have produced a record that fails its
+# own hash check.
+preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00a5932b3a4c415f5db35a88a3 tests/bin/preflight             054957aefaa94bb5ab3b697f94b956fd01a946a9bd3bf5d0685141371d4b982f 82201a6a779f5f9bc6ee7bfe2b9782ef78af2dd4
+#
+# -----------------------------------------------------------------------------------------
+# packaged-claims - written 2026-09-21 in d7cd919, role `invariant`, gate-a-wave1.sh G11.
+# THE RENAMED ONE, and the record this manifest's seventh field exists for.
+#
+# Its own header cites the theme's guard and argues about it, which is what made the
+# relationship look like a citation rather than a port. It is both: the argument is real and
+# so are the 63 lines. What crossed is the machinery - the argument parser, `fatal`,
+# `not_read`, the colour constants, the word-to-number table, the compare-and-print helper,
+# the NOT CHECKED apparatus and several printed paragraphs verbatim. What did not cross is
+# the rule: the theme refuses a figure stated twice in one file, and this one gives every
+# registered figure a HOME across six packaged files.
+#
+# ⚠️ A CITATION IN A HEADER IS NOT A PROVENANCE RECORD, and this file is the whole reason to
+# say so. packaged-claims names `agora_theme`'s guard nine times and a reader would call
+# that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
+# can be checked, and no mechanism could ever tell you the source had moved. That is the
+# difference between prose about provenance and provenance.
+packaged-claims    invariant  adapted   62ec3441f9e3289acc4bac4ace921cb0cee53ddecdd2d7f2c24392dc35f996ca tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+#
+# -----------------------------------------------------------------------------------------
+# TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own
+# independent copy of the distinct source commits above and compares the two sets, so a
+# half-finished re-sync - some records moved forward, some left behind, every individual
+# record still telling the truth about itself - fails, because the SET stops matching the
+# declaration. A manifest can be internally consistent and collectively wrong.
+#
+# WHAT NOTHING HERE CAN SEE, named rather than left to be discovered: a FOURTH file ported
+# from the theme with no record in this file at all. The closed-world check below compares
+# this manifest against a list declared in ported-copies, so a record deleted from here
+# fails - but a port that was never recorded in either place is invisible to both. Finding
+# the third one took a full cross-product of two tests/bin/ directories and a reading of
+# both git histories; that is a task for a person, and it is written down here so the next
+# person knows what it costs rather than assuming a green gate covered it.

@@ -1,0 +1,382 @@
+#!/usr/bin/env bash
+#
+# ported-copies - agora_transparency - the offline half of the ported-file guard.
+#
+# THE QUESTION THIS ONE ANSWERS: has a copy that came from `agora_theme` been edited HERE
+# since it was recorded, and does every record in tests/bin/ported-from-theme.manifest
+# still describe a real file with a coherent label?
+#
+# THE QUESTION IT DOES NOT ANSWER, stated up front because a clean run here reads exactly
+# like a clean bill of health and is not one: whether the THEME has changed the source since
+# the copy was taken. That needs the other repository, and it is tests/bin/ported-drift's
+# job. The summary below names it on every run, which is how a second mechanism stays
+# findable rather than becoming a script nobody remembers exists.
+#
+# ⚠️ WHY THIS SPLIT IS NOT AN ACCIDENT OF CONVENIENCE. The sibling repository ran the
+# equivalent of this check alone for four weeks and it printed CLEAN throughout, correctly,
+# while 125 genuinely-absent lines accumulated upstream in a file it was watching. A
+# detector that answers a narrower question than the reader has in mind is worse than no
+# detector, because it produces a green somebody trusts. That is the whole of D-063, and
+# this file's summary is written to refuse the same misreading in its own words.
+#
+# WHAT IT CHECKS, and why each one is a comparison rather than an assertion:
+#
+#   1  local_sha256   the file on disk, re-hashed. An edited copy stops matching.
+#   2  status         `verbatim` asserts the two hashes are EQUAL; `adapted` asserts they
+#                     DIFFER. A record whose label contradicts its own hashes is a finding:
+#                     it means one hash was refreshed and the other was not, and the label
+#                     has stopped telling a reviewer where to look.
+#   3  role           `invariant` asserts a gate runner actually invokes the script;
+#                     `preflight` asserts none does. Source against fact, not prose against
+#                     prose - it greps the runners for the `INV=` assignment that RUNS the
+#                     script, never for a mention, because both of the invariant-role
+#                     scripts are also named in comments and a comment runs nothing.
+#   4  closed world   the record names on disk against a list declared IN THIS FILE. A
+#                     manifest that quietly lost a line would otherwise pass its own check
+#                     by having nothing to say about the missing file.
+#   5  commit set     the distinct source commits on disk against a set declared in this
+#                     file. Every record can be individually true while the SET is wrong -
+#                     that is what a half-finished re-sync looks like.
+#   6  field shape    hashes are 64 hex characters, commits are 40, paths are non-empty.
+#                     A truncated sha compares unequal to everything and would be reported
+#                     as drift rather than as the malformed record it is.
+#
+# Contract (shared by every check in tests/bin/):
+#   scope:    the exact set of records inspected
+#   compared: N records offered by the manifest, and N must be > 0 or this fails
+#   findings: M, each printed as  record:field  reason
+#   exit 0 iff M == 0
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared value;
+# numeric guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an error, never
+# "no match"; never `-F` with `-i`.
+#
+# Usage: tests/bin/ported-copies [--manifest <path>]
+#        (run from anywhere; it cd's to the repo root)
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+MANIFEST='tests/bin/ported-from-theme.manifest'
+BIN_DIR='tests/bin'
+RUNNERS='tests/bin/gate-a-wave1.sh tests/bin/gate-a-wave3.sh'
+
+# ---------------------------------------------------------------- declarations --
+# THE INDEPENDENT COPY. These two lists are the point of check 4 and check 5: they live
+# here, in the script, so that a manifest which lost a record or quietly moved one commit
+# forward disagrees with something rather than simply having less to say. A guard whose
+# only input is the file it is guarding cannot notice a deletion.
+#
+# ⚠️ CHANGING EITHER LIST IS A DELIBERATE ACT AND IT BELONGS IN THE SAME COMMIT AS THE
+# MANIFEST CHANGE THAT NEEDS IT. Pasting a new value in to make a red go away is the exact
+# move both of these exist to make visible.
+DECLARED_RECORDS='executable-bit
+preflight
+packaged-claims'
+
+# Two commits, and the reason there are two is recorded in the manifest beside each record:
+# the first two files were copied together on 2026-09-06 at the theme's HEAD of that moment,
+# and packaged-claims on 2026-09-21 at the theme's HEAD of that moment. Making the set
+# uniform would mean back-dating a record to a commit nobody read.
+DECLARED_COMMITS='82201a6a779f5f9bc6ee7bfe2b9782ef78af2dd4
+d8079ad0aeb63bafb992cab31b37dcc2818f3ce3'
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --manifest) shift; [ "$#" -gt 0 ] || { echo "FATAL: --manifest needs a path"; exit 1; }; MANIFEST=$1 ;;
+    -h|--help) sed -n '/^# Usage:/,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *)
+      # Unknown options are refused rather than ignored. A check that silently accepts a
+      # misspelled flag runs its DEFAULT and prints a clean result, which is
+      # indistinguishable from the thing the reader asked for passing.
+      echo "FATAL: unknown option [$1]. Run with --help."; exit 1 ;;
+  esac
+  shift
+done
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+FINDINGS=0
+finding() { # <record> <field> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3"
+}
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+fatal() { # <reason> - no result at all, which is not a clean result (I-029).
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run has NO result, which is not a clean result (I-029).\n'
+  exit 1
+}
+
+printf '=========================================================================================================\n'
+printf 'ported-copies - agora_transparency - the copies taken FROM agora_theme, against their own record\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+# ------------------------------------------------------------------ the hasher --
+# EXERCISED, NOT LOCATED (I-026). A tool that satisfies `command -v` and then fails at first
+# real use has been met on this project's hosts before, so the hasher is run against a known
+# answer before anything is trusted to it.
+printf '\ntooling\n'
+HASHER=''
+for h in sha256sum 'shasum -a 256' 'openssl dgst -sha256'; do
+  # shellcheck disable=SC2086
+  if printf '' | $h >/dev/null 2>&1; then HASHER=$h; break; fi
+done
+[ -n "$HASHER" ] || fatal 'no working sha256 tool (tried sha256sum, shasum -a 256, openssl dgst -sha256). Without one no hash can be re-derived, and a hash that was not re-derived has not been checked.'
+
+sha256_of() { # <file> -> bare lowercase hex digest
+  # shellcheck disable=SC2086
+  $HASHER < "$1" 2>/dev/null | sed -n 's/^\(SHA2-256(stdin)= \)\{0,1\}\([0-9a-f]\{64\}\).*/\2/p' | head -1
+}
+
+# I-028: a hasher that returned the same string for every input would report every
+# comparison below as a match - the degenerate case wearing the expected value's clothes.
+# 'agora' is five bytes and its digest is fixed for all time.
+WORK_DIR=$(mktemp -d -t ported-copies.XXXXXX) || fatal 'mktemp -d failed - there is nowhere to write the canary.'
+trap 'rm -rf "$WORK_DIR"' EXIT INT TERM
+printf 'agora' > "$WORK_DIR/canary" || fatal 'could not write the canary file.'
+CANARY_EXPECT='f7070d57bbe5496e29249421e91572f46ac4c2b62953b7ea046fa3707b9e6b2a'
+CANARY_GOT=$(sha256_of "$WORK_DIR/canary")
+[ "$CANARY_GOT" = "$CANARY_EXPECT" ] || fatal "the sha256 tool ($HASHER) failed its canary: hashed the 5 bytes 'agora' and returned [$CANARY_GOT], expected [$CANARY_EXPECT]."
+note "hasher: $HASHER (canary passed)"
+
+# ------------------------------------------------------------- read the manifest --
+[ -r "$MANIFEST" ] || fatal "$MANIFEST is missing or unreadable - there is nothing to check the copies against."
+
+RECORDS=0
+PARSED=''
+MALFORMED=0
+while IFS= read -r line || [ -n "$line" ]; do
+  case "$line" in '#'* | '') continue ;; esac
+  # shellcheck disable=SC2086
+  set -- $line
+  if [ "$#" -ne 7 ]; then
+    # A line that is neither a comment nor a 7-field record is NOT skipped silently: in a
+    # file whose whole job is to be complete, an unparsed line is a record nobody checks.
+    MALFORMED=$((MALFORMED + 1))
+    finding "${1:-<line $RECORDS>}" 'record' "this line has $# whitespace-separated fields, and a record has exactly 7 (script role status local_sha256 source_path source_sha256 source_commit). An unparsed line is a copy nothing below examines."
+    continue
+  fi
+  RECORDS=$((RECORDS + 1))
+  PARSED="$PARSED$1 $2 $3 $4 $5 $6 $7
+"
+done < "$MANIFEST"
+
+# Zero means FAIL, so `:-0` is the safe direction (I-031). An empty manifest would otherwise
+# satisfy every check below by construction (I-007).
+[ "${RECORDS:-0}" -gt 0 ] || fatal "$MANIFEST parsed to zero records - a walk over nothing is not a walk that found nothing."
+note "manifest: $MANIFEST ($RECORDS record(s) offered)"
+
+# ------------------------------------------------------- the runners, read once --
+# Read into one string so the role check below is a grep over text this script has actually
+# opened, rather than a grep that could silently be reading nothing.
+RUNNER_TEXT=''
+RUNNERS_READ=0
+for r in $RUNNERS; do
+  if [ -r "$r" ]; then
+    RUNNER_TEXT="$RUNNER_TEXT
+$(cat "$r")"
+    RUNNERS_READ=$((RUNNERS_READ + 1))
+  fi
+done
+[ "${RUNNERS_READ:-0}" -gt 0 ] || fatal "none of the gate runners ($RUNNERS) could be read, so no role claim below could be checked against anything."
+note "runners: $RUNNERS_READ of 2 read - the role column is checked against their INV= assignments"
+
+# ------------------------------------------------------------------- the walk ----
+printf '\nper-record\n'
+printf '  %-18s %-10s %-9s %-10s %-9s %s\n' 'script' 'role' 'status' 'local' 'role fit' 'source'
+printf '  %s\n' '-----------------------------------------------------------------------------------------------'
+
+VERIFIED=0
+STATUS_CHECKED=0
+ROLE_CHECKED=0
+N_INVARIANT=0
+N_PREFLIGHT=0
+SEEN_RECORDS=''
+SEEN_COMMITS=''
+
+while IFS= read -r rec; do
+  [ -n "$rec" ] || continue
+  # shellcheck disable=SC2086
+  set -- $rec
+  P_SCRIPT=$1; P_ROLE=$2; P_STATUS=$3; P_LOCAL=$4; P_SRCPATH=$5; P_SOURCE=$6; P_COMMIT=$7
+  SEEN_RECORDS="$SEEN_RECORDS$P_SCRIPT
+"
+  SEEN_COMMITS="$SEEN_COMMITS$P_COMMIT
+"
+
+  # ---- 6. field shape, first, because a malformed field makes every later comparison
+  # report the wrong thing. A truncated sha does not match anything and would otherwise be
+  # printed as drift.
+  SHAPE_OK=1
+  case "$P_LOCAL" in
+    *[!0-9a-f]* | '') SHAPE_OK=0; finding "$P_SCRIPT" 'local_sha256' "[$P_LOCAL] is not lowercase hex." ;;
+    *) [ "${#P_LOCAL}" -eq 64 ] || { SHAPE_OK=0; finding "$P_SCRIPT" 'local_sha256' "is ${#P_LOCAL} characters, and a sha256 is 64. A truncated hash compares unequal to everything and would be reported as an edit."; } ;;
+  esac
+  case "$P_SOURCE" in
+    *[!0-9a-f]* | '') SHAPE_OK=0; finding "$P_SCRIPT" 'source_sha256' "[$P_SOURCE] is not lowercase hex." ;;
+    *) [ "${#P_SOURCE}" -eq 64 ] || { SHAPE_OK=0; finding "$P_SCRIPT" 'source_sha256' "is ${#P_SOURCE} characters, and a sha256 is 64."; } ;;
+  esac
+  case "$P_COMMIT" in
+    *[!0-9a-f]* | '') SHAPE_OK=0; finding "$P_SCRIPT" 'source_commit' "[$P_COMMIT] is not lowercase hex." ;;
+    *) [ "${#P_COMMIT}" -eq 40 ] || { SHAPE_OK=0; finding "$P_SCRIPT" 'source_commit' "is ${#P_COMMIT} characters. A full 40-character sha is recorded so that tests/bin/ported-drift can resolve it over the API without guessing."; } ;;
+  esac
+  case "$P_SRCPATH" in
+    '' | -) SHAPE_OK=0; finding "$P_SCRIPT" 'source_path' 'is empty. The path is recorded rather than derived from the basename precisely because one of these records is a rename, so an empty value cannot be filled in from the script name.' ;;
+  esac
+
+  # ---- 1. the local copy, re-hashed.
+  LOCAL_STATE='?'
+  P_FILE="$BIN_DIR/$P_SCRIPT"
+  GOT=''
+  if [ ! -r "$P_FILE" ]; then
+    LOCAL_STATE="${C_BAD}ABSENT${C_OFF}"
+    finding "$P_SCRIPT" 'script' "$P_FILE is missing or unreadable. The manifest records a copy this repository does not have - either the file was deleted and its record was not, or the record names the wrong basename."
+  else
+    GOT=$(sha256_of "$P_FILE")
+    if [ -z "$GOT" ]; then
+      LOCAL_STATE="${C_BAD}NO DIGEST${C_OFF}"
+      finding "$P_SCRIPT" 'local_sha256' "$HASHER produced no digest for $P_FILE - a file that cannot be hashed is NOT a file that matches."
+    elif [ "$GOT" = "$P_LOCAL" ]; then
+      LOCAL_STATE="${C_OK}match${C_OFF}"
+      VERIFIED=$((VERIFIED + 1))
+    else
+      LOCAL_STATE="${C_BAD}EDITED${C_OFF}"
+      finding "$P_SCRIPT" 'local_sha256' "$P_FILE hashes to [$GOT]; the manifest records [$P_LOCAL]. Either this copy was edited here - which is the thing this file exists to surface - or the change is legitimate and the record was not regenerated with it. The remedy is NEVER to paste the new hash in: read tests/bin/ported-from-theme.manifest's regeneration steps, which start with running tests/bin/ported-drift."
+    fi
+  fi
+
+  # ---- 2. the status label against its own two hashes.
+  STATUS_FIT='?'
+  if [ "$SHAPE_OK" -eq 1 ]; then
+    case "$P_STATUS" in
+      verbatim)
+        STATUS_CHECKED=$((STATUS_CHECKED + 1))
+        if [ "$P_LOCAL" = "$P_SOURCE" ]; then STATUS_FIT="${C_OK}ok${C_OFF}"
+        else
+          STATUS_FIT="${C_BAD}LIES${C_OFF}"
+          finding "$P_SCRIPT" 'status' "labelled \`verbatim\`, but local_sha256 and source_sha256 DIFFER. One hash was refreshed and the other was not, and the label has stopped telling a reviewer where to look."
+        fi ;;
+      adapted)
+        STATUS_CHECKED=$((STATUS_CHECKED + 1))
+        if [ "$P_LOCAL" != "$P_SOURCE" ]; then STATUS_FIT="${C_OK}ok${C_OFF}"
+        else
+          STATUS_FIT="${C_BAD}LIES${C_OFF}"
+          finding "$P_SCRIPT" 'status' "labelled \`adapted\`, but local_sha256 and source_sha256 are IDENTICAL. Either the copy is verbatim and mislabelled, or both hashes were filled in from the same place."
+        fi ;;
+      *)
+        STATUS_FIT="${C_BAD}UNKNOWN${C_OFF}"
+        finding "$P_SCRIPT" 'status' "[$P_STATUS] is not one of: verbatim, adapted. An unrecognised label asserts nothing, so the two hashes below it are checked against no claim at all." ;;
+    esac
+  fi
+
+  # ---- 3. the role against the runners. I-027: grep has THREE exit states and rc >= 2 is
+  # grep failing, which must never read as "the line is absent" - the two need different
+  # remedies. The pattern is the `INV=` assignment that RUNS the script: both invariant-role
+  # scripts are also named in comments, and a comment runs nothing.
+  ROLE_FIT='?'
+  INVOKED='?'
+  HIT=$(printf '%s\n' "$RUNNER_TEXT" | grep -E "^INV=$BIN_DIR/$P_SCRIPT\$" 2>/dev/null)
+  G_RC=$?
+  if [ "$G_RC" -ge 2 ]; then
+    ROLE_FIT="${C_BAD}grep $G_RC${C_OFF}"
+    finding "$P_SCRIPT" 'role' "grep exited $G_RC while reading the gate runners. A grep exit code of 2 or more is an error, never 'no match', and treating it as one would turn a broken read into a clean run."
+  else
+    if [ -n "$HIT" ]; then INVOKED='yes'; else INVOKED='no'; fi
+    case "$P_ROLE" in
+      invariant)
+        ROLE_CHECKED=$((ROLE_CHECKED + 1)); N_INVARIANT=$((N_INVARIANT + 1))
+        if [ "$INVOKED" = 'yes' ]; then ROLE_FIT="${C_OK}in gate${C_OFF}"
+        else
+          ROLE_FIT="${C_BAD}NOT RUN${C_OFF}"
+          finding "$P_SCRIPT" 'role' "labelled \`invariant\`, but no gate runner carries an \`INV=$BIN_DIR/$P_SCRIPT\` line. Either the group that ran it was removed - in which case a guard silently stopped guarding - or the role is wrong. A mention in a comment does not count and is not matched."
+        fi ;;
+      preflight)
+        ROLE_CHECKED=$((ROLE_CHECKED + 1)); N_PREFLIGHT=$((N_PREFLIGHT + 1))
+        if [ "$INVOKED" = 'no' ]; then ROLE_FIT="${C_OK}not in gate${C_OFF}"
+        else
+          ROLE_FIT="${C_BAD}IS RUN${C_OFF}"
+          finding "$P_SCRIPT" 'role' "labelled \`preflight\`, but a gate runner invokes it with \`INV=$BIN_DIR/$P_SCRIPT\`. A preflight is a script the gate does NOT run - usually because it needs Docker - so either it has become part of the gate and the label is stale, or the gate has taken on a dependency nobody declared."
+        fi ;;
+      *)
+        ROLE_FIT="${C_BAD}UNKNOWN${C_OFF}"
+        finding "$P_SCRIPT" 'role' "[$P_ROLE] is not one of: invariant, preflight." ;;
+    esac
+  fi
+
+  printf '  %-18s %-10s %-9s %-19s %-18s %s\n' \
+    "$P_SCRIPT" "$P_ROLE" "$P_STATUS" "$LOCAL_STATE" "$ROLE_FIT" \
+    "$(printf '%s' "$P_SRCPATH" | sed "s|^$BIN_DIR/||") @ $(printf '%s' "$P_COMMIT" | cut -c1-8) [$STATUS_FIT]"
+done <<EOF
+$PARSED
+EOF
+
+# ------------------------------------------------- 4. the closed world -----------
+# The record names on disk against the list declared at the top of THIS file. Compared as
+# two sorted sets in both directions, so a record deleted from the manifest and a record
+# added to it without a declaration produce different, named findings.
+printf '\nclosed world - the manifest against the declaration in this script\n'
+DISK_SET=$(printf '%s' "$SEEN_RECORDS" | sed '/^$/d' | sort)
+DECL_SET=$(printf '%s\n' "$DECLARED_RECORDS" | sed '/^$/d' | sort)
+DECL_N=$(printf '%s\n' "$DECL_SET" | sed '/^$/d' | wc -l | tr -d '[:space:]')
+[ "${DECL_N:-0}" -gt 0 ] || fatal 'DECLARED_RECORDS in this script is empty. An empty declaration matches an empty manifest and passes by construction (I-028), which is the one shape a closed-world check must never have.'
+
+MISSING=$(comm -13 <(printf '%s\n' "$DISK_SET") <(printf '%s\n' "$DECL_SET"))
+EXTRA=$(comm -23 <(printf '%s\n' "$DISK_SET") <(printf '%s\n' "$DECL_SET"))
+if [ -n "$MISSING" ]; then
+  for m in $MISSING; do
+    finding "$m" 'closed-world' "declared in tests/bin/ported-copies but ABSENT from $MANIFEST. A manifest that quietly loses a line would otherwise pass its own check by having nothing to say about the file it stopped describing."
+  done
+fi
+if [ -n "$EXTRA" ]; then
+  for e in $EXTRA; do
+    finding "$e" 'closed-world' "present in $MANIFEST but not declared in tests/bin/ported-copies. A new record is welcome; it is named in both places so that neither file alone can decide what the set is."
+  done
+fi
+note "declared: $DECL_N record name(s); on disk: $RECORDS; missing: $(printf '%s' "$MISSING" | sed '/^$/d' | wc -l | tr -d '[:space:]'); undeclared: $(printf '%s' "$EXTRA" | sed '/^$/d' | wc -l | tr -d '[:space:]')"
+
+# ------------------------------------------------- 5. the source-commit set ------
+# Every record can be individually true while the SET is wrong. That is exactly what a
+# half-finished re-sync looks like: some copies moved forward, some left behind, each record
+# still describing its own file correctly.
+printf '\nsource commits - the set, not the records\n'
+COMMIT_SET=$(printf '%s' "$SEEN_COMMITS" | sed '/^$/d' | sort -u)
+COMMIT_DECL=$(printf '%s\n' "$DECLARED_COMMITS" | sed '/^$/d' | sort -u)
+COMMIT_N=$(printf '%s\n' "$COMMIT_SET" | sed '/^$/d' | wc -l | tr -d '[:space:]')
+COMMIT_DECL_N=$(printf '%s\n' "$COMMIT_DECL" | sed '/^$/d' | wc -l | tr -d '[:space:]')
+[ "${COMMIT_DECL_N:-0}" -gt 0 ] || fatal 'DECLARED_COMMITS in this script is empty, so the commit-set comparison would pass by construction (I-028).'
+if [ "$COMMIT_SET" != "$COMMIT_DECL" ]; then
+  finding 'manifest' 'source_commit' "the distinct source commits on disk are [$(printf '%s' "$COMMIT_SET" | tr '\n' ' ')] and tests/bin/ported-copies declares [$(printf '%s' "$COMMIT_DECL" | tr '\n' ' ')]. A set of source commits is not automatically wrong - the manifest explains why there are two - but an UNDECLARED one is, because a re-sync that moved some records and not others leaves every record telling the truth and the set telling a lie."
+fi
+note "distinct on disk: $COMMIT_N; declared: $COMMIT_DECL_N"
+
+# --------------------------------------------------------------------- summary ---
+printf '\n=========================================================================================================\n'
+printf 'scope:    %s - %s copies taken FROM agora_theme\n' "$MANIFEST" "$RECORDS"
+printf 'compared: %s record(s) offered by the manifest; %s malformed line(s) rejected\n' "$RECORDS" "$MALFORMED"
+printf 'verified: %s local hash(es) re-derived from disk and matching\n' "$VERIFIED"
+printf 'status:   %s label(s) checked against their own two hashes\n' "$STATUS_CHECKED"
+printf 'roles:    %s checked against the gate runners - %s invariant, %s preflight\n' "$ROLE_CHECKED" "$N_INVARIANT" "$N_PREFLIGHT"
+printf 'commits:  %s distinct source commit(s) on disk, %s declared here\n' "$COMMIT_N" "$COMMIT_DECL_N"
+printf 'findings: %s\n' "$FINDINGS"
+printf 'upstream: NOT ASKED - this run cannot see whether agora_theme has changed a source\n'
+printf '          file since its recorded commit. That is tests/bin/ported-drift, and a clean\n'
+printf '          run here is not an answer to it.\n'
+printf '=========================================================================================================\n'
+
+if [ "$FINDINGS" -ne 0 ]; then
+  printf '%s%s%s\n' "$C_BAD" "ported-copies: $FINDINGS finding(s)" "$C_OFF"
+  exit 1
+fi
+printf '%s%s%s\n' "$C_OK" "ported-copies: $RECORDS record(s), every local copy is what the manifest says it is" "$C_OFF"
+exit 0

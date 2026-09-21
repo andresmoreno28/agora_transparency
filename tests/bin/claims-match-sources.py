@@ -169,9 +169,17 @@ UNCHECKED = [
     ("the GitHub mirror's conclusion, and how long it has been red",
      "network; tests/bin/watch-gate reads it live beside the gate and prints "
      "the streak, the last success and how many runs it examined"),
-    ("the pipeline at the TIP of 1.x, and whether it agrees with the tables",
-     "deliberate: --online reads the pipeline each table NAMES, because a job "
-     "list read mid-pipeline is not the gate. tests/bin/watch-gate reads HEAD's"),
+    ("whether an observation names the NEWEST pipeline, i.e. whether the row is "
+     "stale rather than merely self-consistent",
+     "deliberate, and it is the one entry here that names a gap nobody intends "
+     "to close. A check demanding the newest pipeline would go red every time "
+     "the OTHER repository is pushed to - a red no commit here can fix, which "
+     "is the unfixable-red D-023(5) refuses. CLAUDE.md's own rule is that a "
+     "table records a NAMED, COMPLETE observation, and 'newest' is not even "
+     "defined while a pipeline is running. What IS bound as of T-0622: the "
+     "prose id against the id in the API URL beside it, offline on every push, "
+     "so a row now has to be refreshed in two places or fail. And "
+     "tests/bin/watch-gate reads HEAD's pipeline live"),
     ("figures restated in the prose AROUND each trace-figures table",
      "only the table is compared. A value repeated in the narrative beside it - "
      "historical, struck through or simply said twice - is not, and the remedy "
@@ -287,6 +295,48 @@ def observation_header(text, anchor, name, records):
                         "<c>` opening in the 400 characters after %r, expected "
                         "exactly 1 - the observation no longer says which "
                         "pipeline it observed" % (name, len(found), anchor)))
+        return None
+    return found[0]
+
+
+def observation_url(text, anchor, api, name, records):
+    """The pipeline id inside the API URL the observation bullet prints.
+
+    ⚠️ WHY THIS IS A COMPARISON AND NOT A SECOND READING OF ONE FACT. Each
+    observation bullet states its pipeline TWICE - once in prose ("Pipeline
+    `970030`, ref `1.x`, commit `a3037ae`") and once inside the re-runnable API
+    URL printed beside it. Until T-0622 nothing compared them, so the two copies
+    could disagree, and the failure mode is worse than a stale number: a reader
+    who wants to check the table follows the URL, and a URL pointing at a
+    DIFFERENT pipeline from the one the prose names answers a question nobody
+    asked, confidently, with a job list that will usually look right.
+
+    THE PROJECT IS PART OF THE PATTERN, not just the id. The two repositories in
+    this project differ by a hyphen and a word, and a URL for the wrong project
+    carrying the right id would otherwise compare equal. So the encoded project
+    path is spliced into the pattern and a URL for the other repository simply
+    does not match, which surfaces as "no API URL" rather than as a silent pass.
+
+    WHAT THIS DELIBERATELY DOES NOT DO is assert that the named pipeline is the
+    NEWEST one on the branch. See the note beside the comparison itself.
+    """
+    where = text.find(anchor)
+    if where < 0:
+        records.append(("FATAL",
+                        "%s: the anchor %r is gone from CLAUDE.md - the API URL "
+                        "beside the table cannot be located" % (name, anchor)))
+        return None
+    window = text[where:where + 400]
+    found = re.findall(
+        r"/api/v4/projects/%s/pipelines/(\d+)/jobs" % re.escape(api), window)
+    if len(found) != 1:
+        records.append(("FATAL",
+                        "%s: %d API URLs of the shape "
+                        "`/api/v4/projects/%s/pipelines/<id>/jobs` in the 400 "
+                        "characters after %r, expected exactly 1. The table has "
+                        "stopped carrying a re-runnable address for the "
+                        "observation it records, so the pipeline id it names is "
+                        "bound to nothing" % (name, len(found), api, anchor)))
         return None
     return found[0]
 
@@ -730,6 +780,9 @@ def main():
         state["headers"][key] = header
         if header is not None:
             claims["%s_pipeline" % key] = "%s @ %s %s" % header
+            claims["%s_pipeline_id" % key] = header[0]
+        sources["%s_pipeline_id" % key] = observation_url(
+            claude, obs_anchor, _api, "%s_pipeline_url" % key, records)
 
         rows = table_after(claude, obs_anchor, "%s_jobs" % key, records, 4)
         state["rows"][key] = rows
@@ -873,7 +926,42 @@ def main():
                         "the workflow files under .github/workflows/ vs "
                         "MIRROR_WORKFLOWS in " + WATCH + " - a directory "
                         "against a declaration, not prose against prose")
+    # THE PIPELINE ID, BOUND TO THE URL THAT QUOTES IT. Offline, on every push.
+    #
+    # ⚠️ THE GAP THIS CLOSES, AND THE ONE IT DOES NOT. CLAUDE.md's theme row went
+    # stale FOUR TIMES in twenty-four hours, and its own text named why nothing
+    # caught it: `theme_jobs` compares job NAMES, which do not change when a
+    # pipeline does, and `packaged-claims` cannot reach CLAUDE.md because that
+    # file is `export-ignore`d. So the id was stated twice and checked against
+    # nothing. This makes the second copy load-bearing instead of decorative: the
+    # URL a reviewer would follow now has to address the pipeline the prose
+    # claims to have read.
+    #
+    # ⚠️ IT IS DELIBERATELY NOT AN ASSERTION THAT THE NAMED PIPELINE IS THE
+    # NEWEST ONE, and refusing that was the whole decision. CLAUDE.md's own rule
+    # is that a table records a NAMED, COMPLETE observation and that "a job list
+    # read mid-pipeline is not the gate" - so "newest" is not even well defined
+    # while a pipeline is running. Worse, a check demanding it would go red every
+    # time somebody pushes to the OTHER repository: a red no commit here can fix,
+    # which is precisely the unfixable-red D-023(5) refuses and the reason
+    # tests/bin/ported-drift reports deltas rather than failing on them.
+    #
+    # What remains uncovered is therefore STALENESS, and it stays named in the
+    # NOT CHECKED list rather than being quietly implied away. Three things now
+    # bear on it and none of them is this check: `--online` re-reads the named
+    # pipeline's ref, commit and whole job table, so a row refreshed carelessly
+    # fails; tests/bin/watch-gate reads HEAD's pipeline live; and a stale row now
+    # has to be stale in TWO places at once to pass, because refreshing the prose
+    # and forgetting the URL is exactly the half-edit this comparison catches.
     for key, label, _obs, _fig, _api, _web in OBSERVED:
+        compared += compare(
+            "%s_pipeline_id" % key,
+            claims.get("%s_pipeline_id" % key),
+            sources.get("%s_pipeline_id" % key),
+            "the pipeline id %s's observation states in prose vs the id inside "
+            "the re-runnable API URL printed beside it - one fact written "
+            "twice, and now bound. It is NOT asserted to be the newest "
+            "pipeline: see the NOT CHECKED entry" % label)
         compared += compare(
             "%s_trace_jobs" % key,
             claims.get("%s_trace_jobs" % key),

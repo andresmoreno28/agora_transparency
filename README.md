@@ -390,7 +390,7 @@ program computes its hashes is worse than one that is noisy.
 1. Run `bash tests/bin/toolchain-floor` on the Mac and paste the whole output back. That fills the
    empty column above and is the only step that needs a Mac in front of a human.
 2. Run `bash tests/bin/doctor` there; it must reach `READY`.
-3. Run both wave runners and reproduce the counts this repository quotes — **77 checks · 0
+3. Run both wave runners and reproduce the counts this repository quotes — **88 checks · 0
    failures** and **66 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
    It read `61` and `37` until 2026-09-12 and `67` and `49` until 2026-09-21, which was six
    invariants and twenty-seven checks behind by the end: the runners grew and the sentence did not,
@@ -526,7 +526,7 @@ table it summarises, one sentence further from the measurement.
 
 **What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
 stayed closed across five changes of denominator. Measured 2026-09-21 by
-`bash tests/bin/spellcheck`: **467 tracked or stage-able files offered to cspell, 426 checked,
+`bash tests/bin/spellcheck`: **470 tracked or stage-able files offered to cspell, 429 checked,
 `Issues found: 0`** — plus two the CI runner generates and this repository does not track
 (`.editorconfig`, `gitlab_templates_version.txt`), which is why the job's own count reads two
 higher. The script prints both numbers every time it runs, so this paragraph is checkable rather

@@ -80,7 +80,24 @@
 # of it the same morning found six wrong figures in three packaged files,
 # including the two check totals README quotes about these very runners.
 #
-# GATE-CLAIM: checks=77 invariants=3
+# UNIT 006 WAVE 3 (2026-09-21) takes it from 77 to 88 and `invariants` from 3 to
+# 5, because G12 and G13 are two new groups running two new scripts:
+# tests/bin/ported-copies (6 checks) and tests/bin/ported-drift (5). They close
+# the direction NOTHING here had a record of - the files this repository took FROM
+# `agora_theme`. The sibling has carried a manifest, a local detector and, since
+# D-063, an API-reading drift check for the files it took from here; this
+# direction had no manifest, no recorded provenance and no detection of any kind,
+# and its whole provenance was one sentence in a commit message.
+#
+# ⚠️ G13 IS THE FIRST GROUP IN THIS RUNNER THAT TOUCHES THE NETWORK, and that is
+# a deliberate change of character rather than an oversight. The check it performs
+# cannot be done offline - it asks what the other repository says - and a
+# preflight nobody is obliged to run has the same detection properties as a
+# comment. NOT READ is a third state that exits 2 and is tolerated here for the
+# same reason a raw delta is: no commit in this repository can fix an unreachable
+# drupalcode.
+#
+# GATE-CLAIM: checks=88 invariants=5
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -657,6 +674,166 @@ else
   check 'packaged-claims (comparisons > 0)'       'not run' 'yes'
   check 'packaged-claims (one-copy checks > 0)'   'not run' 'yes'
   check 'packaged-claims (unchecked named > 0)'   'not run' 'yes'
+fi
+
+# ------------------------------- G12 - ported-copies (T-0622, 2026-09-21) --
+# THE DIRECTION THIS REPOSITORY HAD NO RECORD OF AT ALL.
+#
+# `agora_theme` has carried tests/bin/shared-invariants.manifest since 2026-08-24
+# for the files it copied FROM here, with a local detector and, since D-063, one
+# that reads this repository over the API. Files travel the other way too:
+# tests/bin/executable-bit and tests/bin/preflight were authored in the theme and
+# ported here on 2026-09-06, and tests/bin/packaged-claims took 63 lines from the
+# theme's tests/bin/claims-match-readme on 2026-09-21. Until this group existed,
+# nothing in this repository knew any of that. The only provenance was a sentence
+# in a commit message, which is read once, by the person who wrote it.
+#
+# ⚠️ THE HANDED LIST WAS TWO FILES AND THE ANSWER IS THREE. The third was found
+# by comparing every script in both tests/bin/ directories against every script in
+# the other and reading the BAND of shared long lines - 15-24 is house style,
+# 37-65 is shared substance - then settling DIRECTION by `git log --reverse` on
+# both paths, never by reading the code. The method and its control are written
+# into tests/bin/ported-from-theme.manifest.
+#
+# IT IS IN THIS RUNNER because it is a hash and a grep: no network, no container,
+# no database, well under a second.
+#
+# SIX DENOMINATORS AND NOT ONE, for the reason I-028 gives. Each of these prints
+# "findings: 0" and passes by construction: a manifest parsed to nothing, a walk
+# that hashed nothing, a status column nobody compared, a role column checked
+# against runners that could not be read, an emptied DECLARED_RECORDS list, and an
+# emptied DECLARED_COMMITS list. The exit status alone separates none of them from
+# a clean tree.
+group 'G12 - ported-copies (the copies taken FROM agora_theme, against their record)'
+INV=tests/bin/ported-copies
+if [ -x "$INV" ]; then
+  INV_OUT=$("$INV" 2>&1); INV_RC=$?
+  PF_CMP=$(printf '%s\n' "$INV_OUT" | grep -oE '^compared: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PF_VER=$(printf '%s\n' "$INV_OUT" | grep -oE '^verified: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PF_STA=$(printf '%s\n' "$INV_OUT" | grep -oE '^status: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PF_ROL=$(printf '%s\n' "$INV_OUT" | grep -oE '^roles: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  PF_COM=$(printf '%s\n' "$INV_OUT" | grep -oE '^commits: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  note "$(printf '%s\n' "$INV_OUT" | grep -E '^(compared|verified|status|roles|commits|findings):' | tr -s ' ' | tr '\n' ' ')"
+  check 'ported-copies (exit)'                    "$INV_RC" '0'
+  check 'ported-copies (records compared > 0)' \
+    "$([ "${PF_CMP:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  # EVERY record verified, not merely "some". `verified` counts local hashes
+  # re-derived AND matching, so a copy edited here lowers it while `compared`
+  # stays put: the two numbers are equal exactly when nothing has been edited,
+  # and comparing them is what a bare "> 0" would miss.
+  check 'ported-copies (every local copy verified)' "$PF_VER" "$PF_CMP"
+  check 'ported-copies (status labels checked > 0)' \
+    "$([ "${PF_STA:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'ported-copies (roles checked > 0)' \
+    "$([ "${PF_ROL:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'ported-copies (source commits > 0)' \
+    "$([ "${PF_COM:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  if [ "$INV_RC" -ne 0 ]; then
+    printf '%s\n' "$INV_OUT" | grep -E '^  [^ ]+:[a-z_-]+ ' | sed 's/^/  /'
+  fi
+else
+  check 'ported-copies present'                     "$(trunc "$INV" 28)" 'present'
+  check 'ported-copies (records compared > 0)'      'not run' 'yes'
+  check 'ported-copies (every local copy verified)' 'not run' '<not run, and that is a failure>'
+  check 'ported-copies (status labels checked > 0)' 'not run' 'yes'
+  check 'ported-copies (roles checked > 0)'         'not run' 'yes'
+  check 'ported-copies (source commits > 0)'        'not run' 'yes'
+fi
+
+# -------------------------------- G13 - ported-drift (T-0622, 2026-09-21) --
+# THE ONLY GROUP IN THIS RUNNER THAT TOUCHES THE NETWORK.
+#
+# WHAT IT CLOSES. G12 answers "has a copy been edited HERE". It cannot see whether
+# `agora_theme` has changed a source file since the copy was taken, and the cost of
+# that blindness is measured rather than feared: the theme's own equivalent printed
+# CLEAN for four weeks while 125 genuinely-absent lines accumulated upstream in a
+# file it was watching. ported-drift reads the other repository over the drupalcode
+# API, anonymously, so this group runs on every push with nothing checked out but
+# this tree. No token: /trace answers 401 anonymously, which is why the API is read
+# and not a job log.
+#
+# BLOCKING ON PROVENANCE, REPORTING ON DELTA, and the exit check below is where
+# that shape lives. Exit 1 - broken provenance, or a delta left standing past the
+# 14-day cap - FAILS this group, because every one of those is fixable by a commit
+# in this repository. Exit 2 - NOT READ - does not, for the same reason a raw delta
+# does not: a runner that cannot reach drupalcode cannot be fixed by a commit here
+# either, and a gate that fails for a reason its author cannot address is the gate
+# somebody makes permissive inside a week (D-023(5)).
+#
+# ⚠️ AND THE DELTA MUST STAY DATA FOR A REASON SPECIAL TO THIS DIRECTION: all three
+# records are `adapted`, by up to +836/-437 lines, because they were rewritten for a
+# different subject on arrival. A non-zero delta is the NORMAL state here, so
+# failing on one would mean failing permanently.
+#
+# WHAT STOPS EXIT 2 BECOMING A SILENT PERMANENT SKIP is the third check. The script
+# prints three denominators - compared, read, unread - and this group asserts
+# read + unread == compared, so a walk that quietly examined fewer records than the
+# manifest offered FAILS rather than reporting a tidy zero (I-028).
+#
+# THE CAP IS BOUND IN THE FIFTH CHECK. --max-age-days exists so each branch of the
+# script can be falsified; this runner never passes it, and asserting the printed
+# cap reads `14 days (default)` means the number cannot be loosened from the call
+# site without moving a check a human has to look at. CLAUDE.md's own PINNED_VARS
+# lesson is the precedent: a gate-critical value guarded by nothing is a value that
+# changes.
+group 'G13 - ported-drift (NETWORK - the copies against agora_theme, over the API)'
+INV=tests/bin/ported-drift
+if [ -x "$INV" ]; then
+  INV_OUT=$("$INV" 2>&1); INV_RC=$?
+  note "$(printf '%s\n' "$INV_OUT" | grep -E '^(cap|compared|read|verified|behind|findings|network):' | tr '\n' ' ')"
+
+  # I-027: grep has THREE exit states. rc >= 2 is grep failing and must never read
+  # as "the line is absent" - the two need different remedies.
+  PD_READLINE=$(printf '%s\n' "$INV_OUT" | grep -E '^read:[[:space:]]' 2>/dev/null)
+  PD_RC=$?
+  if [ "$PD_RC" -ge 2 ]; then
+    PD_READ="<grep exit $PD_RC>"; PD_UNREAD="<grep exit $PD_RC>"
+  else
+    PD_READ=$(printf '%s' "$PD_READLINE" | sed -nE 's/^read:[[:space:]]+([0-9]+) read,.*/\1/p')
+    PD_UNREAD=$(printf '%s' "$PD_READLINE" | sed -nE 's/^read:.*, ([0-9]+) NOT READ.*/\1/p')
+  fi
+  PD_CMP=$(printf '%s\n' "$INV_OUT" | grep -oE '^compared: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+
+  PD_NET_LINE=$(printf '%s\n' "$INV_OUT" | grep -E '^network:[[:space:]]+(NOT )?READ' 2>/dev/null)
+  PD_NET_RC=$?
+  if [ "$PD_NET_RC" -ge 2 ]; then PD_NET="<grep exit $PD_NET_RC>"
+  elif [ -n "$PD_NET_LINE" ]; then PD_NET='named'
+  else PD_NET='absent'; fi
+
+  PD_CAP_LINE=$(printf '%s\n' "$INV_OUT" | grep -E '^cap:[[:space:]]' 2>/dev/null)
+  PD_CAP_RC=$?
+  if [ "$PD_CAP_RC" -ge 2 ]; then PD_CAP="<grep exit $PD_CAP_RC>"
+  else PD_CAP=$(printf '%s' "$PD_CAP_LINE" | sed -nE 's/^cap:[[:space:]]+(.*)$/\1/p'); fi
+
+  # Exit 2 is the third state and is tolerated; exit 1 is a finding and is not.
+  case "$INV_RC" in
+    0|2) PD_EXIT='no finding' ;;
+    *)   PD_EXIT="exit $INV_RC" ;;
+  esac
+
+  # The SUM, not the two numbers separately: a walk that skipped records reports a
+  # smaller total than the manifest offered, and that is the shape this check
+  # exists to catch.
+  if [ -n "$PD_READ" ] && [ -n "$PD_UNREAD" ]; then
+    PD_SUM=$((PD_READ + PD_UNREAD)) 2>/dev/null || PD_SUM='<unparsed>'
+  else
+    PD_SUM='<unparsed>'
+  fi
+
+  check 'ported-drift (exit 0 clean | 2 NOT READ)' "$PD_EXIT" 'no finding'
+  check 'ported-drift (records compared > 0)' \
+    "$([ "${PD_CMP:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'ported-drift (read + unread = compared)'  "$PD_SUM" "$PD_CMP"
+  check 'ported-drift (network state named)'       "$PD_NET" 'named'
+  check 'ported-drift (age cap, never from here)'  "$PD_CAP" '14 days (default)'
+  [ "$INV_RC" -eq 1 ] && printf '%s\n' "$INV_OUT" | grep -E ':(source_commit|source_sha256|source_path|delta)[[:space:]]' | sed 's/^/  /'
+  [ "$INV_RC" -eq 2 ] && printf '  %sNOT READ is a third state, not a pass - see the denominators above.%s\n' "$C_BAD" "$C_OFF"
+else
+  check 'ported-drift present'                     "$(trunc "$INV" 28)" 'present'
+  check 'ported-drift (records compared > 0)'      'not run' 'yes'
+  check 'ported-drift (read + unread = compared)'  '<not run>' '<not run, and that is a failure>'
+  check 'ported-drift (network state named)'       'absent'  'named'
+  check 'ported-drift (age cap, never from here)'  'absent'  '14 days (default)'
 fi
 
 # ----------------------------------------------------------------- summary ---
