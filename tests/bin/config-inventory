@@ -554,8 +554,11 @@ php_const_list() { # <file> <CONST_NAME>
     inside && $0 ~ /^[[:space:]]*\];[[:space:]]*$/ { exit }
     inside && index($0, "private const ") > 0 { exit }
     inside {
-      re = q "[^" q "]+" q
-      if (match($0, re)) { print substr($0, RSTART + 1, RLENGTH - 2) }
+      # Split on the quote and take what lies between the first pair. Written
+      # with split() rather than match() so the program names no awk internal
+      # variables: the match() form has to read two of them back by name, and
+      # the spell checker is right to ask what those are.
+      if (split($0, parts, q) >= 3) { print parts[2] }
     }
   ' "$1"
 }
