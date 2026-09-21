@@ -56,6 +56,25 @@ noise), publishable (everything meets the marketplace terms from day 1).
    practical consequence is the reason to bother:** *"the marketplace requires it"* would have lost
    an argument the first time anyone opened haven's `composer.json`, and every rule sharing the
    sentence would have lost credibility with it.
+   🔴 **THE AMENDMENT ABOVE IS ITSELF CORRECTED, 2026-09-21, AND THE RULE ENDS UP STRONGER THAN
+   EITHER VERSION.** It checked three sources — the starter kit's `GET-STARTED.md`, the site-template
+   RFC, and `haven`'s shipped `composer.json` — and concluded the provenance did not survive.
+   **It never checked the marketplace's own application page.** That page says it, verbatim, and it
+   was re-read at source today (`new.drupal.org/site-template/apply`, HTTP 200, 60,970 bytes,
+   fetched 2026-09-21): *"templates must work within the current versions of Drupal CMS and Drupal
+   Canvas, and **cannot include non-stable releases (dev, alpha, beta, rc) or patches**."*
+   ⚠️ **So the rule now stands on TWO grounds, not one, and neither replaces the other**: it is our
+   own deliberate property (D-004, and rule 2's SBOM discipline), **and** it is written where a
+   template is submitted. ⚠️ **The amendment's evidence survives and its inference does not.**
+   `haven` 1.0.3 still ships `"drupal/webform": "^6.3.0-beta8"` — re-verified today — so a
+   *published* package still violates the *written* requirement; what that falsifies is the claim
+   that the requirement is enforced, not the claim that it exists.
+   ⚠️ **Why this is 🔴 rather than a footnote:** the struck text could let a reader accept a beta
+   dependency believing nobody requires otherwise. They do, on the page where the submission
+   happens. ⚠️ **And the reusable lesson is about the shape of the original mistake, not its
+   content:** *"it does not survive checking"* was concluded from **three sources that did not
+   include the one place the claim would most obviously be written.** An enumeration that stops
+   before the obvious source reads exactly like diligence.
 2. **Minimal and justified SBOM:** every contrib module added needs a line in
    `specs/000-project/DECISIONS.md` (what it brings, security coverage status). When in doubt,
    solve it with what Drupal CMS already ships.
