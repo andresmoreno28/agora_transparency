@@ -95,8 +95,15 @@
 #     shot_bytes         screenshot.webp's size   vs  git cat-file -s
 #     shot_sha           screenshot.webp's digest vs  sha256 of the committed blob
 #
+#   LICENCE-MANIFEST.md
+#     gpl_files          the GPL file count       vs  git archive minus the media set
+#     required_projects  the dependency count     vs  the require block in composer.json
+#     font_files         "0 font files"           vs  git archive, by extension
+#     media_licences_in_use  the terms in use     vs  the licence cells of the manifest rows
+#
 #   the accessibility statement (content/node/<uuid>.yml, rendered at /accessibility-statement)
 #     a11y_pages         the scanned page count   vs  the pages AccessibilityTest declares
+#     a11y_declared_const  DECLARED_PAGES in the test vs  those same pages (source vs source)
 #     canvas_pages       the landing page count   vs  git ls-files content/canvas_page/*.yml
 #     listing_total      the listing route count  vs  git ls-files config/views.view.agora_base_*
 #     listing_scanned    the scanned subset       vs  VIEW_PAGES in AccessibilityTest
@@ -175,8 +182,9 @@ for _arg in "$@"; do
     -h|--help)
       printf 'usage: %s [--online]\n' "$(basename -- "$0")"
       printf '  (no flag)  offline comparisons against this repository. No network.\n'
-      printf '  --online   also re-reads five figures from the theme CI traces the shipped\n'
-      printf '             accessibility statement describes. The gate never passes this.\n'
+      printf '  --online   also re-reads the figures the shipped accessibility statement quotes\n'
+      printf '             from a CI trace: five about the theme, and two about this package own\n'
+      printf '             phpunit job. The gate never passes this.\n'
       exit 0 ;;
     *) printf 'FATAL: unknown argument "%s". Try --help.\n' "$_arg" >&2; exit 2 ;;
   esac
@@ -191,7 +199,11 @@ STATEMENT='content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml'
 RECIPE='recipe.yml'
 COMPOSER='composer.json'
 RECOMMENDED='recommended.yml'
-PACKAGED_FILES="$README $MANIFEST $STATEMENT $RECIPE $COMPOSER $RECOMMENDED"
+# T-0619. The package-level licence manifest. It is a SUBJECT rather than a source: every figure
+# it states is compared below, and every one-copy detector is run over it, so the day it restates
+# a number that lives in README.md or in the media manifest the guard says so by name.
+LICENCES='LICENCE-MANIFEST.md'
+PACKAGED_FILES="$README $MANIFEST $STATEMENT $RECIPE $COMPOSER $RECOMMENDED $LICENCES"
 
 # Sources that are NOT packaged and are read only as the measured side.
 RUNNER1='tests/bin/gate-a-wave1.sh'
@@ -271,7 +283,7 @@ ARCHIVE_N=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '^$' | wc -l | tr -d '[:spac
 # line end would otherwise match in one place and not the other, which is a difference between
 # environments and not between claims.
 TEXT_README=''; TEXT_MANIFEST=''; TEXT_STATEMENT=''
-TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''
+TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''; TEXT_LICENCES=''
 # A SECOND, FLOWED VARIANT OF EVERY SUBJECT, and it is not a convenience. README.md is hard-
 # wrapped at 100 columns, so almost every sentence carrying a figure is split across two lines -
 # and `grep` reads a line at a time. A pattern written for the sentence would therefore match
@@ -281,7 +293,7 @@ TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''
 # text; the two places that genuinely need line anchors - the markdown table rows - read the raw
 # text directly and say so.
 FLOW_README=''; FLOW_MANIFEST=''; FLOW_STATEMENT=''
-FLOW_RECIPE=''; FLOW_COMPOSER=''; FLOW_RECOMMENDED=''
+FLOW_RECIPE=''; FLOW_COMPOSER=''; FLOW_RECOMMENDED=''; FLOW_LICENCES=''
 
 load_packaged() { # <var-suffix> <path>
   local path="$2" body flow
@@ -306,6 +318,7 @@ load_packaged STATEMENT   "$STATEMENT"
 load_packaged RECIPE      "$RECIPE"
 load_packaged COMPOSER    "$COMPOSER"
 load_packaged RECOMMENDED "$RECOMMENDED"
+load_packaged LICENCES    "$LICENCES"
 
 text_of() { # <var-suffix> -> that file's CR-stripped text, line structure intact
   eval "printf '%s' \"\$TEXT_$1\""
@@ -321,6 +334,7 @@ path_of() { # <var-suffix> -> that file's path
     RECIPE) printf '%s' "$RECIPE" ;;
     COMPOSER) printf '%s' "$COMPOSER" ;;
     RECOMMENDED) printf '%s' "$RECOMMENDED" ;;
+    LICENCES) printf '%s' "$LICENCES" ;;
     *) printf '%s' "$1" ;;
   esac
 }
@@ -414,7 +428,7 @@ compare() { # <label> <claimed> <measured> <source>
 one_home() { # <label> <home-list-or-EXTERNAL> <detector ERE> <why the home is the home>
   local label="$1" home="$2" ere="$3" why="$4" hits='' who path rc expect n want
   ONE_COPY=$((ONE_COPY + 1))
-  for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED; do
+  for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES; do
     flow_of "$who" | grep -qE "$ere"
     rc=$?
     case $rc in
@@ -432,7 +446,7 @@ one_home() { # <label> <home-list-or-EXTERNAL> <detector ERE> <why the home is t
     # The declared homes, in the same fixed order the scan visits them, so the two lists are
     # comparable as strings rather than as sets.
     want=''
-    for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED; do
+    for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES; do
       case " $home " in *" $who "*) want="$want $who" ;; esac
     done
     want=${want# }
@@ -759,6 +773,27 @@ compare 'listing_scanned' "$A_SCANNED" "$VIEW_N" "VIEW_PAGES in $A11Y_TEST"
 compare 'a11y_pages' "$A_PAGES" "$((CANVAS_N + VIEW_N + SINGLE_N))" \
   'the pages AccessibilityTest declares'
 
+# T-0612. THE THIRD SIDE OF THE SAME NUMBER, and it is source against source rather than prose
+# against source - the only comparison here that is.
+#
+# The line above binds the shipped STATEMENT to what the package contains. It says nothing at all
+# about what the gate ASSERTS, and until today the gate asserted a floor of six against a package
+# that supplies nine, so a Canvas page could have stopped shipping, the run would have scanned
+# eight, every per-page assertion would have held, and the statement would have gone on saying
+# nine. The floor is now an equality against a named constant, and this reads that constant out of
+# the PHP and compares it against the same five terms the line above sums.
+#
+# WHY IT IS HERE AND NOT ONLY IN THE TEST. The test can only fail where a rig exists - a Selenium
+# browser, a built Drupal, thirteen minutes. This comparison is offline, costs nothing, and fails
+# on the commit that moves one of the two without the other, which is hours earlier and much
+# cheaper. The two are not redundant: this one cannot see the pages that were actually SCANNED,
+# and the test cannot be run by somebody reading the repository.
+A11Y_CONST=$(sed -nE 's/^ +private const DECLARED_PAGES = ([0-9]+);.*/\1/p' "$A11Y_TEST" \
+  | head -1)
+[ -n "$A11Y_CONST" ] || fatal "no \`private const DECLARED_PAGES = <n>;\` line in $A11Y_TEST. The page floor was made an equality against a named constant by T-0612; if the constant was renamed this pattern moves with it in the same commit, and if it was turned back into a literal the gate has lost the only assertion that fails when a surface stops shipping."
+compare 'a11y_declared_const' "$A11Y_CONST" "$((CANVAS_N + VIEW_N + SINGLE_N))" \
+  "DECLARED_PAGES in $A11Y_TEST vs the pages it derives"
+
 compare 'listing_total' "$A_LISTINGS" "$(count_tracked 'config/views.view.agora_base_*.yml')" \
   'git ls-files config/views.view.agora_base_*.yml'
 # The second of the two bound copies of the register count - README carries the other, and both
@@ -791,6 +826,71 @@ fi
 claim_once 'recommended empty' RECOMMENDED 'intentionally empty for now'
 REC_ENTRIES=$(text_of RECOMMENDED | grep -E '^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*:' | wc -l | tr -d '[:space:]')
 compare 'recommended_empty' '0' "$REC_ENTRIES" 'uncommented package keys in recommended.yml'
+
+# ============================================ LICENCE-MANIFEST.md vs what the package holds ==
+# T-0619. The package-level licence manifest states four figures and no others, and each of the
+# four is derived here from the package rather than from another sentence.
+#
+# WHAT IT DELIBERATELY DOES NOT STATE, because the absence is the design. The size of the packaged
+# set lives once in README.md and the media row count lives once in content/MEDIA-LICENCES.md; the
+# licence manifest quotes neither, and states instead the SUBTRACTION between them. That is the
+# same construction as cspell_gap above: where the two absolute figures have homes of their own,
+# the derived one is the only number a third document may carry, and it is compared to both
+# sources at once. A copy of either absolute figure appearing in the licence manifest is caught by
+# the one-copy detectors below, which run over it like every other subject.
+printf '\nLICENCE-MANIFEST.md - the package-level licence manifest against the package\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+# The packaged set, non-directory entries only - the same rule tests/bin/media-licence applies,
+# so the subtraction below is between two sets that were partitioned by one rule and not two.
+PKG_FILES=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '/$' 2>/dev/null | grep -v '^$' \
+  | wc -l | tr -d '[:space:]')
+[ "${PKG_FILES:-0}" -gt 0 ] || fatal 'the packaged listing held no files at all, so every count below would be a subtraction from nothing.'
+
+# MEDIA, defined exactly as tests/bin/media-licence defines it: anything under content/ that is
+# not a *.yml or *.json entity export, plus the two declared root binaries. The two Markdown files
+# under content/ are prose and are excluded by that invariant's own root/non-media declaration, so
+# they are excluded here too. Written out rather than shelling out to media-licence, because
+# packaged-claims must stay offline and under a second; the two are held together by the licence
+# term count below, which reads that invariant's own manifest rows.
+PKG_MEDIA=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '/$' 2>/dev/null \
+  | grep -E '^content/' 2>/dev/null | grep -vE '\.(yml|json|md)$' 2>/dev/null \
+  | wc -l | tr -d '[:space:]')
+ROOT_MEDIA=$(printf '%s\n' "$ARCHIVE_LIST" | grep -xE '(logo\.png|screenshot\.webp)' 2>/dev/null \
+  | wc -l | tr -d '[:space:]')
+PKG_MEDIA=$((PKG_MEDIA + ROOT_MEDIA))
+[ "${PKG_MEDIA:-0}" -gt 0 ] || fatal 'the media rule matched 0 packaged files. The GPL subtraction would then equal the whole package and agree with a prose figure only by accident.'
+
+claim_once 'gpl file count' LICENCES '\*\*[0-9]+ files in the packaged release are covered by'
+L_GPL=$(field 1 '.*\*\*([0-9]+) files.*')
+compare 'gpl_files' "$L_GPL" "$((PKG_FILES - PKG_MEDIA))" \
+  'git archive, non-directory entries, minus the media set'
+
+claim_once 'required projects' LICENCES '\*\*[0-9]+ projects\*\* are named in'
+L_REQ=$(field 1 '.*\*\*([0-9]+) projects\*\*.*')
+REQ_N=$(text_of COMPOSER | sed -n '/^ *"require": {/,/^ *},\{0,1\}$/p' \
+  | grep -E '^ +"[a-z0-9_-]+/[a-z0-9_-]+": ' | wc -l | tr -d '[:space:]')
+[ "${REQ_N:-0}" -gt 0 ] || fatal 'composer.json parsed to 0 require entries. A dependency count compared against nothing is not a check.'
+compare 'required_projects' "$L_REQ" "$REQ_N" 'the require entries in composer.json'
+
+claim_once 'font files' LICENCES 'This package ships \*\*[0-9]+ font files\*\*'
+L_FONTS=$(field 1 '.*\*\*([0-9]+) font files\*\*.*')
+PKG_FONTS=$(printf '%s\n' "$ARCHIVE_LIST" | grep -E '\.(woff2|woff|ttf|otf|eot)$' 2>/dev/null \
+  | grep -v '^$' | wc -l | tr -d '[:space:]')
+compare 'font_files' "$L_FONTS" "$PKG_FONTS" 'font files in git archive'
+
+# The distinct licence terms the media rows actually use. Its home is the licence manifest: the
+# media manifest states the ALLOW-LIST, which is a different and larger set, and the difference
+# between what is permitted and what is used is the whole point of stating this one.
+claim_once 'licences in use' LICENCES '\*\*[A-Za-z]+ licence terms are in use across those rows\*\*'
+L_TERMS=$(to_num "$(field 1 '.*\*\*([A-Za-z]+) licence terms.*')")
+MEDIA_TERMS=$(text_of MANIFEST \
+  | grep -E '^\| [A-Za-z0-9_./-]+ \| .* \| .* \| .* \| .* \| [0-9]{4}-[0-9]{2}-[0-9]{2} \|$' 2>/dev/null \
+  | sed -E 's/^.*\| ([^|]*) \| [0-9]{4}-[0-9]{2}-[0-9]{2} \|$/\1/' | sed 's/^ *//; s/ *$//' \
+  | sort -u | grep -v '^$' | wc -l | tr -d '[:space:]')
+[ "${MEDIA_TERMS:-0}" -gt 0 ] || fatal 'no licence term was read out of the media manifest rows at all, so the count of terms in use would be compared against zero.'
+compare 'media_licences_in_use' "$L_TERMS" "$MEDIA_TERMS" \
+  'distinct licence cells in the media manifest rows'
 
 # ======================================================================= THE ONE-COPY RULE ==
 printf '\nONE COPY - every registered figure has exactly one home in the packaged set (T-0609)\n'
@@ -980,17 +1080,132 @@ print("INV %s" % want["agora-invariants"])
   fi
 fi
 
+# ================================================================== ONLINE - THIS PACKAGE ==
+# T-0613. The figure this package quotes about ITSELF, re-read from this project's own CI trace.
+#
+# WHY THIS BLOCK EXISTS, and it is the plainest gap this unit found. The shipped accessibility
+# statement tells a citizen how many pages of the installed site axe scans. That number came from
+# an assertion MESSAGE, and PHPUnit emits an assertion message only when the assertion FAILS -
+# measured on pipeline 969787, job 12330735, green: `grep -c "pages scanned"` over the trace
+# returned 0, and the junit.xml artefact of the same job carries a self-closing <testcase> with no
+# message anywhere. `tests/` is export-ignored, so a reviewer who downloads the tarball cannot read
+# the test either. The claim was therefore checkable from the README, from the CI log and from the
+# package - that is, from nowhere - while the THEME's equivalent figure has always been public in
+# its nightwatch job. A reviewer could check one claim and not the other.
+#
+# AccessibilityTest::tearDownAfterClass() now prints the summary, which runs outside the per-test
+# output buffer and so is not caught by beStrictAboutOutputDuringTests. This reads it back.
+#
+# IT IS `--online` AND THE GATE NEVER PASSES THAT, for the same reason the theme block is: a check
+# that fails because a runner has no network is a check somebody makes permissive.
+SITE_FIGURES='site_axe_pages_log site_axe_violations_log'
+SITE_PROJECT='agora_transparency'
+
+printf '\nONLINE - this package own axe result, re-read from its own phpunit trace (T-0613)\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+site_not_read() { # <reason>
+  local f
+  for f in $SITE_FIGURES; do
+    UNREAD=$((UNREAD + 1))
+    printf '  %sNOT READ%s  %-22s %s\n' "$C_BAD" "$C_OFF" "$f" "$1"
+  done
+  printf '\n  An absence of information is not good news here either: the whole point of the row this\n'
+  printf '  block closes is that a green run used to say nothing at all about this figure.\n'
+}
+
+if [ "$ONLINE" -ne 1 ]; then
+  site_not_read 'not requested. Pass --online to re-read it; the gate deliberately does not.'
+elif ! command -v curl >/dev/null 2>&1; then
+  site_not_read 'curl is not on PATH, so no trace can be fetched from this shell.'
+elif ! command -v python3 >/dev/null 2>&1; then
+  site_not_read 'python3 is not on PATH, so the pipeline JSON cannot be parsed.'
+else
+  S_API="https://git.drupalcode.org/api/v4/projects/project%2F$SITE_PROJECT"
+  S_RAW="https://git.drupalcode.org/project/$SITE_PROJECT/-/jobs"
+  S_PJ=$(curl -sSL --max-time 40 "$S_API/pipelines?ref=1.x&per_page=20" 2>/dev/null)
+  if [ -z "$S_PJ" ]; then
+    site_not_read "the GitLab API returned nothing for $SITE_PROJECT's pipelines. No network, or the host is unreachable from here."
+  else
+    S_PICK=$(PJ="$S_PJ" python3 -c '
+import json, os
+# cspell:ignore isinstance
+try:
+    ps = json.loads(os.environ["PJ"])
+except Exception as exc:
+    print("ERR the API answered something that is not JSON: %s" % exc); raise SystemExit
+if not isinstance(ps, list) or not ps:
+    print("ERR the pipelines endpoint returned no list at all, which is a failure and not an empty result."); raise SystemExit
+for p in ps:
+    if p.get("status") == "success":
+        print("PIPE %s %s" % (p.get("id"), (p.get("sha") or "")[:8])); raise SystemExit
+print("ERR none of the %d most recent 1.x pipelines is a SUCCESSFUL, terminal one. This block is about what a GREEN run prints, so a red or running pipeline cannot answer it." % len(ps))
+' 2>/dev/null)
+    if [ -z "$S_PICK" ] || [ "${S_PICK#ERR }" != "$S_PICK" ]; then
+      site_not_read "${S_PICK#ERR }"
+    else
+      S_PIPE=$(printf '%s' "$S_PICK" | sed -nE 's/^PIPE ([0-9]+) .*/\1/p')
+      S_SHA=$(printf '%s' "$S_PICK" | sed -nE 's/^PIPE [0-9]+ (.*)/\1/p')
+      S_JJ=$(curl -sSL --max-time 40 "$S_API/pipelines/$S_PIPE/jobs?per_page=100" 2>/dev/null)
+      S_JOB=$(JJ="$S_JJ" python3 -c '
+import json, os
+# cspell:ignore isinstance
+try:
+    js = json.loads(os.environ["JJ"])
+except Exception as exc:
+    print("ERR the jobs endpoint answered something that is not JSON: %s" % exc); raise SystemExit
+if not isinstance(js, list) or not js:
+    print("ERR the jobs endpoint returned no job list at all."); raise SystemExit
+for j in js:
+    if j.get("name") == "phpunit" and j.get("status") == "success":
+        print("JOB %s" % j.get("id")); raise SystemExit
+print("ERR the pipeline has no successful job named exactly phpunit. phpunit-pgsql prints the same line and is deliberately not accepted here: the claim is about the job the criterion names.")
+' 2>/dev/null)
+      if [ -z "$S_JOB" ] || [ "${S_JOB#ERR }" != "$S_JOB" ]; then
+        site_not_read "${S_JOB#ERR } (pipeline $S_PIPE)"
+      else
+        S_ID=$(printf '%s\n' "$S_JOB" | sed -n 's/^JOB //p')
+        printf '  %s' "$C_DIM"
+        printf 'read from %s pipeline %s, commit %s: phpunit job %s%s\n' \
+          "$SITE_PROJECT" "$S_PIPE" "$S_SHA" "$S_ID" "$C_OFF"
+        # -L is MANDATORY: without it the 302 body looks exactly like a failed read.
+        S_T=$(curl -sSL --max-time 60 "$S_RAW/$S_ID/raw" 2>/dev/null | tr -d '\r')
+        S_BYTES=$(printf '%s' "$S_T" | wc -c | tr -d '[:space:]')
+        if [ "${S_BYTES:-0}" -lt 2000 ]; then
+          site_not_read "job $S_ID returned $S_BYTES bytes, which is a redirect or an error, not a log."
+        else
+          S_LINE=$(printf '%s\n' "$S_T" \
+            | grep -oE 'agora_transparency axe gate: [0-9]+ of [0-9]+ declared pages scanned, [0-9]+-[0-9]+ axe rules run per page, [0-9]+ violations' \
+            | sort -u)
+          _n=$(printf '%s\n' "$S_LINE" | grep -v '^$' | wc -l | tr -d '[:space:]')
+          if [ "${_n:-0}" -ne 1 ]; then
+            site_not_read "the trace printed $_n axe summary lines, expected 1. Zero means the summary did not reach a GREEN log, which is exactly the defect T-0613 closed and is a finding about the gate rather than about this script."
+          else
+            compare 'site_axe_pages_log' "$A_PAGES" \
+              "$(printf '%s' "$S_LINE" | sed -nE 's/.*gate: ([0-9]+) of .*/\1/p')" \
+              "phpunit job $S_ID"
+            compare 'site_axe_violations_log' '0' \
+              "$(printf '%s' "$S_LINE" | sed -nE 's/.*page, ([0-9]+) violations.*/\1/p')" \
+              "phpunit job $S_ID"
+          fi
+        fi
+      fi
+    fi
+  fi
+fi
+
 # ======================================================================= NOT CHECKED ==
 # Named with a reason that is TRUE, and the length of this list is asserted non-empty below.
 NOT_CHECKED=(
 "The two absolute cspell denominators - files offered and files checked. They come from tests/bin/spellcheck's own filter, which needs the three inputs it fetches from the CI job's own configuration, so no offline read here can produce them. The script prints both on every run, and the SUBTRACTION between them is compared above."
-"The template's own axe result - nine pages, 0 violations. It is an assertion MESSAGE in tests/src/FunctionalJavascript/AccessibilityTest.php, so PHPUnit emits it only when the assertion FAILS: 'pages scanned' appears 0 times in a green trace. There is nothing to read, in any log, on a passing run. That is T-0613's subject and it is a real gap, not a limitation of this script."
+"The template's own axe result, OFFLINE. It is now printed by AccessibilityTest::tearDownAfterClass() and reaches the phpunit job's trace on a GREEN run (T-0613), so it is read and compared - but only under --online, which the gate never passes. The entry stays because the replacement is narrower and still true: no offline read here can produce the number of pages actually SCANNED, the rules axe ran or the violations found. What IS offline is the DECLARED count, compared above against both the package and the constant the test asserts."
 "The 78 steps, 58 non-core modules and 'Tests: 3, Assertions: 38' of the 2026-08-23 clean install. README marks them as predating the theme swap and says a dated measurement is replaced only by another measurement. A guard that refreshed them would destroy the record they exist to be."
 "Historical and superseded figures throughout the packaged prose - the eight-entry and thirteen-entry packaging counts, the four-then-five-then-six axe page counts, every struck value. Same reason: these are frozen records of past measurements, and rule 8 keeps them."
 "AGENTS.md and LICENSE.txt, both packaged and both outside the declared subject set. LICENSE.txt is the verbatim GPL-2.0 text and carries no figure about this package. AGENTS.md is product prose with claims of its own and is READABLE AND DELIBERATELY NOT BOUND in this pass - a weaker reason than the ones above, and written as one."
 "The legal notice and the privacy notice, content/node/*.yml alongside the accessibility statement. Packaged, user-facing, and readable; they carry no figure about the package today. READABLE AND DELIBERATELY NOT BOUND, and the entry exists so the next figure written into one of them is a decision rather than an oversight."
 "Whether a figure stated in DIFFERENT WORDS somewhere in the packaged set is the same figure. Every comparison above binds ONE canonical sentence by a tight pattern, and the one-copy rule covers a REGISTERED set of detectors rather than every number in six files. The change this script arrived with deleted the restatements it found rather than trying to match them all, so this entry is about the NEXT one somebody writes."
 "The WCAG criterion identifiers - 2.4.7, 2.5.8, 1.4.10, 2.4.1 - which appear in both README.md and the statement. They are names, not measurements: two documents naming the same criterion are not two copies of a figure, and binding them would be binding a citation. READABLE AND DELIBERATELY NOT BOUND."
+"The declared licence of each of the projects in composer.json require. LICENCE-MANIFEST.md states that all of them are GPL-2.0-or-later on the strength of Drupal.org's hosting condition, and says so in its own words; nothing here re-derives it from packages.drupal.org. The COUNT of them is compared above, and tests/bin/sbom-check reads each project's release status and security coverage - neither is the licence. Closing it is eleven HTTP requests in the --online block and it has no owner yet."
 "screenshot.webp's pixel dimensions and logo.png's, quoted in the manifest headings. Reading them needs a WebP and PNG header parser; the BYTE SIZE and the SHA-256 of both are compared above, and a file whose digest matches has not changed its dimensions either."
 )
 

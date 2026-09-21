@@ -920,8 +920,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (88 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **23** invariants in total —
+  (95 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **24** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`88 · 23` became `95 · 24` on 2026-09-21 (unit 006 wave 4), and one of the seven checks is NOT
+  in the new group.** Wave 1's **G14** runs `tests/bin/mirror-streak` (6 checks), which reads the GitHub
+  mirror's runs API **anonymously** and prints the red streak on every push — the quantity that was missing
+  when nine consecutive reds stood for three weeks and only an inbox noticed. The seventh check is in
+  **G8**: the packaged set must now contain `LICENCE-MANIFEST.md`.
+  ⚠️ **And the stated reason a mirror check could not be an invariant was half FALSE, which is why it
+  is one now.** `tests/bin/watch-gate`'s own comment holds that such a check *"would need the network
+  and a GitHub token inside `agora-invariants`"*. Measured 2026-09-21 before the script was written:
+  the mirror is a **public** repository and GitHub answers `/repos/<slug>`, `/actions/workflows` and
+  `/actions/runs` with **HTTP 200 to an anonymous caller**, 60 requests an hour, and this one makes
+  three. The network half stands and is answered as G13 answers it — exit 2 is a third state, tolerated,
+  never a pass. **D-020 is untouched: a red mirror does not fail the gate.** What fails it is provenance
+  and a streak past a 14-day cap with nothing in this repository saying anything about it, both of
+  which a commit here can always fix.
   ⚠️ **`77 · 21` became `88 · 23` on 2026-09-21 (unit 006 wave 3), and the eleven checks arrive in
   TWO new groups rather than one.** Wave 1's **G12** runs `tests/bin/ported-copies` (6 checks) and
   **G13** runs `tests/bin/ported-drift` (5). They close the direction this repository had no record

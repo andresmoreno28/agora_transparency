@@ -135,6 +135,24 @@
 # against two records that are exactly right, which is the fastest way to teach the next
 # reader that the check is noise.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED 2026-09-21 (T-0619), one record, and the four steps above were followed in order.
+#
+#   1. tests/bin/ported-drift FIRST: 3 records compared, 3 read, 3 provenance verified,
+#      **0 behind** 1.x at a427375, 0 past the cap, 0 findings. So there was nothing upstream to
+#      take and no per-hunk decision to make - the change is local adaptation only.
+#   2. What changed HERE: packaged-claims gained LICENCE-MANIFEST.md as a seventh packaged
+#      subject, four comparisons about it, one source-against-source comparison of
+#      AccessibilityTest's DECLARED_PAGES constant, and a second --online block that reads this
+#      project's own phpunit trace. None of it came from agora_theme.
+#   3. local_sha256 re-derived from the file on disk. source_sha256 and source_commit are
+#      UNCHANGED and were not retyped, because step 1 proved the source has not moved - a hash
+#      carried forward from the line above is exactly what this manifest exists to catch.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0.
+#
+# The record stays `adapted`, which it must: ported-copies fails a record whose status
+# contradicts its own two hashes, and these two were already 836 lines apart.
+#
 # script            role       status    local_sha256                                                     source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -192,7 +210,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   62ec3441f9e3289acc4bac4ace921cb0cee53ddecdd2d7f2c24392dc35f996ca tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+packaged-claims    invariant  adapted   8e1639ec0f72c0ea14367156e9934254cbdbecec218273ee50f6d6a9dae3edae tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
 #
 # -----------------------------------------------------------------------------------------
 # TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

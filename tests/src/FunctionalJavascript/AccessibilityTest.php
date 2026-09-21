@@ -44,6 +44,18 @@ class AccessibilityTest extends WebDriverTestBase {
   use RecipeTestTrait;
 
   /**
+   * The one-line report this gate produces, carried out of the test method.
+   *
+   * WHY A STATIC PROPERTY AND NOT A RETURN VALUE. The report has to survive
+   * the end of the test method to be printed from ::tearDownAfterClass(),
+   * which is a static hook, and that is the whole mechanism - see the comment
+   * on that method. NULL means the run never reached the point where the
+   * totals are computed, which is a different thing from "the totals were
+   * zero" and is printed as such.
+   */
+  private static ?string $summary = NULL;
+
+  /**
    * {@inheritdoc}
    *
    * Deliberately NOT `agora_theme`. This property is applied AFTER the site is
@@ -98,6 +110,40 @@ class AccessibilityTest extends WebDriverTestBase {
   private const MISSING_HEADING = 'Page not found';
 
   /**
+   * How many surfaces this gate scans. An EQUALITY, not a floor (T-0612).
+   *
+   * WHY THE FLOOR WAS WRONG, stated as the defect it was rather than as a
+   * preference. The line below read `assertGreaterThanOrEqual(6, ...)` until
+   * today, against a package that supplies nine and a shipped accessibility
+   * statement that tells a citizen nine pages are scanned. Those two numbers
+   * were never compared by anything. A Canvas page could stop shipping, this
+   * gate would scan eight, every per-page assertion would hold, the run would
+   * be green, and the statement would go on saying nine. A floor cannot fail
+   * in the direction the product actually moves.
+   *
+   * WHERE THE NINE COMES FROM. It is not a preference either; it is the sum
+   * of what ::declarePages() derives from the package, and each term is a
+   * different render path:
+   *
+   *   2  Canvas pages, one file each in content/canvas_page/
+   *   1  the front page, which is one of those two WITHOUT a breadcrumb
+   *   4  the register routes named in VIEW_PAGES
+   *   1  a published node, reached through the entity path
+   *   1  the not-found page
+   *
+   * THE CONSTANT IS READ FROM OUTSIDE THIS FILE, which is the other half of
+   * why it is a named constant and not a literal. tests/bin/packaged-claims
+   * re-derives those five terms from the package - it counts the files in
+   * content/canvas_page/, parses VIEW_PAGES, counts the single-surface
+   * entries - and compares the total against this constant AND against the
+   * count the shipped statement quotes. So the number is bound three ways: to
+   * the package offline, to the prose offline, and to the pages actually
+   * scanned at runtime by the assertion below. Change any one of the three
+   * and two checks fail rather than none.
+   */
+  private const DECLARED_PAGES = 9;
+
+  /**
    * The floor, in characters of rendered text, below which a scan is empty.
    *
    * EVERY OTHER ASSERTION IN THIS FILE WOULD HOLD ON A BLANK PAGE. axe reports
@@ -138,6 +184,46 @@ class AccessibilityTest extends WebDriverTestBase {
    */
   protected static function getAxePath(): string {
     return DRUPAL_ROOT . '/core/node_modules/axe-core/axe.min.js';
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * PRINTS THE GATE'S OWN RESULT, ON A GREEN RUN (T-0613). Until this method
+   * existed, this package's accessibility figure was checkable from nowhere a
+   * stranger could reach: the assertion message is emitted only on failure,
+   * `tests/` is `export-ignore`d so the tarball does not contain the test
+   * either, and the shipped statement therefore quoted a number with no
+   * public source. The theme's equivalent figure has always been public in
+   * its `nightwatch` job. A reviewer could check one claim and not the other.
+   *
+   * WHY HERE AND NOT IN THE TEST METHOD, and this was MEASURED rather than
+   * reasoned about. Drupal core's `phpunit.xml.dist` sets
+   * `beStrictAboutOutputDuringTests="true"` with `failOnRisky="true"`, so
+   * output emitted DURING a test makes it risky and fails the run - that is
+   * what turned pipeline 934619 red with every assertion passing, and
+   * `RequirementsTest` records it. `tearDownAfterClass()` runs after the last
+   * test in the class, outside the per-test output buffer PHPUnit opens in
+   * `TestCase::runBare()`, so it is not covered by that rule.
+   *
+   * Falsified both ways against PHPUnit 11.5.56 - the version core requires -
+   * under exactly those settings, before this was written:
+   *   printing here          -> `OK (1 test, 1 assertion)`, exit 0, line in
+   *                             stdout;
+   *   printing in the test   -> `Risky: 1`, exit 1, "Test code or tested code
+   *                             printed unexpected output".
+   * The second is the control: without it, a green would not distinguish
+   * "output is allowed here" from "the strictness is off".
+   *
+   * WHAT IT PRINTS WHEN THERE IS NOTHING TO PRINT. A sentence saying so. This
+   * hook runs even when the test errored on its first line, and a summary
+   * line that quietly reported `0 of 0 pages` would be the exact shape of
+   * green-about-nothing the rest of this file exists to refuse (I-007).
+   */
+  public static function tearDownAfterClass(): void {
+    parent::tearDownAfterClass();
+    print "\n" . (self::$summary ?? 'agora_transparency axe gate: NO SUMMARY - the run did not reach the point where the totals are computed, so this pipeline has no page count, no rule count and no violation count. That is not a clean result; it is an absent one.') . "\n";
+    self::$summary = NULL;
   }
 
   /**
@@ -201,12 +287,21 @@ class AccessibilityTest extends WebDriverTestBase {
 
     // -- (3) declare the pages, deriving every one of them from the package -
     $pages = $this->declarePages();
-    // Six is the floor this row was written against; the package supplies
-    // more. Asserted rather than assumed, because a helper that silently
-    // returned two pages would make every total below meaningless.
-    $this->assertGreaterThanOrEqual(6, count($pages), sprintf(
-      'This gate must declare at least six real surfaces; it declared %d.',
-      count($pages),
+    // AN EQUALITY, AND IT FAILS IN BOTH DIRECTIONS ON PURPOSE (T-0612). Too
+    // few means a surface stopped shipping and this gate would otherwise scan
+    // what is left and stay green; too many means a surface arrived that
+    // nobody declared, and the shipped statement's count is then wrong in the
+    // other direction. The superseded line was a floor of six against a
+    // package that supplies nine, so it could not fail either way.
+    //
+    // The count is a local rather than a `count()` call inside the assertion:
+    // phpstan's `phpunit.assertCount` rule is blocking on this project and
+    // rejects `assertSame($n, count($x))` by name.
+    $declared = count($pages);
+    $this->assertSame(self::DECLARED_PAGES, $declared, sprintf(
+      'This gate declares %d surfaces and DECLARED_PAGES says %d. One of the two moved without the other: either a page stopped being shipped, or one arrived and the constant - which tests/bin/packaged-claims compares against the package and against the count the shipped accessibility statement quotes - was not moved with it.',
+      $declared,
+      self::DECLARED_PAGES,
     ));
 
     // -- (4) scan them ------------------------------------------------------
@@ -238,32 +333,39 @@ class AccessibilityTest extends WebDriverTestBase {
     }
 
     // -- (5) the denominators, which are the point of the whole file --------
-    // THE ASSERTION MESSAGE IS THE REPORT. A test in this package cannot
-    // print: PHPUnit turns any output a test emits into an exception, and
-    // writing to STDERR does not dodge it - see RequirementsTest, which
-    // records the pipeline that failed on exactly that. So every count this
-    // gate produces is carried by an assertion message, where it reaches
-    // junit.xml and the job's own summary instead of being lost.
+    // THE SUMMARY IS BUILT ONCE AND USED TWICE (T-0613). It is the assertion
+    // message below, so a failure carries it; and it is handed to
+    // ::tearDownAfterClass(), which prints it, so a PASS carries it too.
+    //
+    // ⚠️ THE COMMENT THAT STOOD HERE WAS FALSE AND WAS MEASURED FALSE. It
+    // said the message "reaches junit.xml and the job's own summary instead
+    // of being lost". PHPUnit emits an assertion message ONLY when the
+    // assertion fails. On pipeline 969787, commit d06b9b6, job 12330735 -
+    // green - `grep -c "pages scanned"` over the trace returns 0, and the
+    // junit.xml artefact of that same job carries
+    // `<testcase name="testAccessibilityOfTheInstalledPages" ... />`,
+    // self-closing, with no message anywhere. The comment was right about the
+    // failure path and wrong about the only path a green gate ever takes, so
+    // this package's shipped accessibility statement quoted a figure that
+    // existed in no log a reviewer could open - while the theme's equivalent
+    // figure is public in its nightwatch job.
     //
     // The two counts are locals rather than `count()` calls inside the
     // assertions: phpstan's `phpunit.assertCount` rule is blocking on this
     // project and rejects `assertSame($n, count($x))` by name.
     $scanned_count = count($scanned);
     $declared_count = count($pages);
-    $this->assertSame(
-      array_column($pages, 'name'),
-      $scanned,
-      sprintf(
-        'agora_transparency axe gate: %d of %d declared pages scanned, %d-%d axe rules run per page, %d violations, heading-order reported on %d of %d pages.',
-        $scanned_count,
-        $declared_count,
-        $rules_min,
-        $rules_max,
-        $violations,
-        $heading_order_ran,
-        $scanned_count,
-      ),
+    self::$summary = sprintf(
+      'agora_transparency axe gate: %d of %d declared pages scanned, %d-%d axe rules run per page, %d violations, heading-order reported on %d of %d pages.',
+      $scanned_count,
+      $declared_count,
+      $rules_min,
+      $rules_max,
+      $violations,
+      $heading_order_ran,
+      $scanned_count,
     );
+    $this->assertSame(array_column($pages, 'name'), $scanned, self::$summary);
 
     // A rule that did not run cannot have passed. axe files a rule it could
     // not apply in a bucket that reads exactly like a pass, so the violation

@@ -243,7 +243,7 @@ before you run them.
 
 ## What it ships
 
-The packaged release holds **eleven** top-level entries, and the whole tarball is **374 entries**.
+The packaged release holds **twelve** top-level entries, and the whole tarball is **375 entries**.
 They are not transcribed by hand here, because that is how two earlier versions of this paragraph
 went wrong — they are derived, and the derivation is one command anybody reading this can re-run:
 
@@ -251,9 +251,9 @@ went wrong — they are derived, and the derivation is one command anybody readi
 git archive HEAD | tar -t | sed 's#/.*#/#' | sort -u
 ```
 
-Measured 2026-09-21, it prints, in that order: `.gitattributes`, `AGENTS.md`, `LICENSE.txt`,
-`README.md`, `composer.json`, `config/`, `content/`, `logo.png`, `recipe.yml`, `recommended.yml`,
-`screenshot.webp`. Both figures above are now read out of `git archive` by
+Measured 2026-09-21, it prints, in that order: `.gitattributes`, `AGENTS.md`,
+`LICENCE-MANIFEST.md`, `LICENSE.txt`, `README.md`, `composer.json`, `config/`, `content/`,
+`logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. Both figures above are now read out of `git archive` by
 `tests/bin/packaged-claims` on every push, so the commit that changes what the tarball holds is the
 commit that fails until this paragraph is changed with it.
 
@@ -609,7 +609,16 @@ anything filed today is about work in progress.
 
 ## License
 
-GPL-2.0-or-later. See [LICENSE.txt](LICENSE.txt).
+GPL-2.0-or-later. See [LICENSE.txt](LICENSE.txt) for the licence text itself.
+
+**What every file in the package is licensed under is stated in
+[`LICENCE-MANIFEST.md`](LICENCE-MANIFEST.md)** — the package's own exports and prose, the projects
+it requires, the fonts (which ship in the theme and not here), the media and the generated
+assets, each with the invariant that keeps its figure honest. That file is where those numbers
+live; this section deliberately carries none of them.
+
+Neither published Drupal CMS site template ships such a manifest — measured 2026-09-21, 0 of
+748 files in `haven` 1.0.3 and 0 of 651 in `byte` 1.0.3 — so there was no shape to copy.
 
 ## Development process
 

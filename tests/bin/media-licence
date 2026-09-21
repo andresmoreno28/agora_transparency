@@ -164,6 +164,7 @@ screenshot.webp'
 # invariant's own output rather than from memory, and that is the whole reason
 # rule 4 enumerates a union of both scopes instead of the packaged one.
 ROOT_NON_MEDIA_DECLARED='.cspell-project-words.txt
+LICENCE-MANIFEST.md
 .eslintrc.json
 .gitattributes
 .gitignore

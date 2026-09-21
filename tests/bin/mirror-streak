@@ -1,0 +1,608 @@
+#!/usr/bin/env bash
+#
+# mirror-streak - Agora - the GitHub mirror's conclusion is PUSHED, not pulled (T-0623).
+#
+# THE DEFECT, WHICH IS A MEASUREMENT AND NOT A WORRY.
+#
+# On 2026-09-19 the mirror's only workflow was found to have failed on NINE consecutive runs
+# since 2026-08-27. Three weeks. An email to the maintainer on every push, and nobody looked.
+# D-020 keeps that workflow as an informative second opinion and says, in its own words, that it
+# "may fail without blocking, but it may never lie" - and the half about lying had quietly
+# stopped holding.
+#
+# tests/bin/watch-gate was given a mirror section the same day, and it is good: it reads the
+# runs, counts the streak, names the conclusions and refuses to let an absence read as good news.
+# But it only runs WHEN SOMEBODY TYPES THE COMMAND, which is the same detection property as the
+# email that had just been missed nine times. A conclusion nobody is obliged to read is a
+# conclusion nobody reads.
+#
+# This script is what looks, on every push, from inside the pipeline.
+#
+# ---------------------------------------------------------------------------------------------
+# THE OBJECTION THIS FILE HAD TO ANSWER FIRST, AND HALF OF IT WAS FALSE.
+#
+# watch-gate's own comment says an invariant here "would need the network and a GitHub token
+# inside `agora-invariants`, a job that runs in a drupalci container which has neither", and
+# concludes that "a gate that goes red because a token is absent is a gate somebody makes
+# permissive within the week".
+#
+# The conclusion is right and the premise about the TOKEN is not. Measured 2026-09-21, before
+# this file was written, with no credentials of any kind:
+#
+#   GET https://api.github.com/repos/<slug>                          -> 200
+#   GET https://api.github.com/repos/<slug>/actions/workflows        -> 200
+#   GET https://api.github.com/repos/<slug>/actions/runs?branch=1.x  -> 200, total_count 157
+#
+# The mirror is a PUBLIC repository and GitHub's Actions API answers anonymously for one.
+# X-RateLimit-Limit comes back as 60 an hour for an unauthenticated caller, and this script makes
+# three requests. NO TOKEN IS USED OR NEEDED, and that is the whole reason this can exist at all.
+#
+# The network half of the objection stands, and is answered the way tests/bin/ported-drift and
+# the theme's tests/bin/upstream-drift answer it: a runner that cannot reach the API is a THIRD
+# STATE that exits 2, prints the sentence that negates the misreading, and is tolerated by the
+# gate. It is never a pass.
+#
+# ---------------------------------------------------------------------------------------------
+# BLOCKING ON PROVENANCE, REPORTING ON THE STREAK. The shape is tests/bin/ported-drift's, and it
+# is deliberate in both directions.
+#
+# PROVENANCE BLOCKS, and every one of these is fixable by a commit in THIS repository:
+#
+#   * a workflow file exists under .github/workflows/ that is not declared below
+#   * a workflow is declared below that has no file under .github/workflows/
+#   * the API's `full_name` for the declared slug is not the declared slug
+#   * the mirror has RUN a workflow whose path is not declared below
+#   * a local `github` remote exists and does not parse to the declared slug
+#
+# The fourth is the one that matters most and it is the reason the list is declared rather than
+# discovered. D-009(d) and T-804 put visual regression on this mirror. A second workflow whose
+# conclusion nobody reads would reproduce the original defect exactly, one file over.
+#
+# THE STREAK REPORTS. A red mirror does NOT turn this pipeline red. D-020 makes drupalcode the
+# gate and the mirror informative, and promoting a red mirror to a failed gate here would be a
+# signed decision taken by a tool instead of by a person. It would also be the exact shape
+# D-023(5) exists to refuse: a gate that fails for a reason no commit here can address is a gate
+# somebody makes permissive, arriving through the door marked "more rigour".
+#
+# ---------------------------------------------------------------------------------------------
+# BUT A STREAK MUST NOT BE ABLE TO STAND FOR THREE WEEKS AGAIN, WHICH IS THE WHOLE COMPLAINT.
+# So there is a cap on the AGE of the streak, and past it the streak becomes a finding - with an
+# escape that is always available and is always a commit here.
+#
+# WHAT IS MEASURED IS THE AGE OF THE STREAK, NOT THE AGE OF THE MIRROR. The clock starts at the
+# OLDEST run of the current streak - the moment the mirror started being red and stayed red - so
+# a mirror that has been green for a year reports 0 and a mirror that went red yesterday reports
+# 1. A cap on anything else would fire on repositories that are exactly right, which is the
+# quickest way to teach somebody that a check is noise.
+#
+# THE CAP IS 14 DAYS, for the reasons tests/bin/ported-drift argues at length and which apply
+# unchanged here: it must be under the 21 days this defect actually reached, and it must clear a
+# normal working fortnight so that ordinary work is not punished. 14 is two clear weeks between
+# a mirror going red and this repository being obliged to say something about it.
+#
+# THE ESCAPE, AND WHY IT KEEPS D-020 INTACT. A streak past the cap is a finding UNLESS this file
+# carries a dated acknowledgement pinned to that streak's newest commit. Writing one is a commit
+# in this repository, so no state of the mirror can hold this repository red: the remedy is
+# always available and always here. That is the sense in which the mirror's conclusion still does
+# not decide this gate - what decides it is whether this repository has ANSWERED a fortnight-old
+# red, and silence is the only thing that fails.
+#
+# THE ACKNOWLEDGEMENT IS PINNED TO A SHA ON PURPOSE. A new push produces a new run; if that run
+# is red too, the streak's newest sha changes and the acknowledgement stops applying. Answering
+# one red must never silence the next one.
+#
+# ---------------------------------------------------------------------------------------------
+# WHAT THIS DOES NOT DO.
+#
+#   * It does not change tests/bin/watch-gate. That script's mirror section stays exactly as it
+#     is, including its own exit-status guarantee; this is the half that runs unasked, and the
+#     two answer the same question from opposite ends.
+#   * It does not read a job log, only the runs API. Which job inside the workflow failed is a
+#     question for the person who opens the run, and reading logs would need a token.
+#   * It does not add a CI job. It runs inside `agora-invariants`, through gate-a-wave1.sh.
+#
+# Contract (shared by every check in tests/bin/):
+#   scope:    the slug, the branch and the declared workflow list
+#   examined: how many runs the API returned, and over what page size
+#   read:     how many were usable, and how many were not
+#   findings: M, each printed as  subject:field  reason
+#   exit 0 iff M == 0 and the API answered
+#   exit 1 if M > 0                     (provenance, or an unanswered streak past the cap)
+#   exit 2 if the API could not be read (the third state; the gate tolerates it)
+#
+# House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared value; numeric
+# guards defaulted ONLY where zero means FAIL; grep rc >= 2 is an error, never "no match".
+#
+# Usage: tests/bin/mirror-streak [--slug <owner/repo>] [--branch <name>]
+#                                [--max-red-days <n>] [--page <n>]
+#        (run from anywhere; it cd's to the repo root)
+#
+# The four options exist so that every branch below can be falsified. The gate passes none of
+# them: gate-a-wave1.sh asserts the cap line reads `14 days (default)`, so the number cannot be
+# loosened from the call site without moving a check a human has to look at.
+
+set -u
+# No `set -e`: a finding must be recorded and counted, not abort the run.
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$REPO_ROOT" || { echo "FATAL: cannot cd to repo root $REPO_ROOT"; exit 1; }
+
+# ------------------------------------------------------------------------------- declarations --
+# THE SLUG IS DECLARED, NOT DERIVED FROM A GIT REMOTE, and that is a requirement rather than a
+# style choice. A drupalci runner clones from drupalcode and has no remote named `github` at all,
+# so a script that read one would degrade to "nothing to check" in the only environment this file
+# exists to run in - and would report that silence as a clean run. The remote is used as a
+# CROSS-CHECK where it exists, below, which is the opposite direction.
+MIRROR_SLUG='andresmoreno28/agora_transparency'
+# Set by --slug. The cross-check in step 2 compares this file's DECLARATION against the remote,
+# so when an operator overrides the declaration on the command line there is nothing left to
+# cross-check and the mismatch becomes a note rather than a finding - printed either way, because
+# a guard that silently stops applying is worse than one that says it has.
+SLUG_OVERRIDDEN=0
+API_HOST='https://api.github.com'
+BRANCH=''
+MAX_RED_DAYS=14
+MAX_RED_DEFAULT=14
+PAGE=30
+WORKFLOW_DIR='.github/workflows'
+
+# The workflows this repository knows the mirror runs. Declared for the reason the header gives:
+# an undeclared workflow whose conclusion nobody reads is the original defect, one file over.
+DECLARED_WORKFLOWS='.github/workflows/phpunit.yml'
+
+# ---------------------------------------------------------------- the acknowledgement register --
+# EMPTY IS THE CORRECT STATE and it is the state on the day this file was written: the mirror is
+# green. An entry here is a statement that a streak past the cap has been looked at and is not
+# being fixed yet, with the reason and the date, pinned to the newest commit of that streak.
+#
+# Leave all three empty to arm the cap. Fill all three to answer one specific streak.
+ACK_HEAD_SHA=''
+ACK_ON=''
+ACK_WHY=''
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --slug) shift; [ "$#" -gt 0 ] || { echo "FATAL: --slug needs a value"; exit 1; }; MIRROR_SLUG=$1; SLUG_OVERRIDDEN=1 ;;
+    --branch) shift; [ "$#" -gt 0 ] || { echo "FATAL: --branch needs a value"; exit 1; }; BRANCH=$1 ;;
+    --api-host) shift; [ "$#" -gt 0 ] || { echo "FATAL: --api-host needs a value"; exit 1; }; API_HOST=$1 ;;
+    --max-red-days)
+      shift
+      [ "$#" -gt 0 ] || { echo "FATAL: --max-red-days needs a number"; exit 1; }
+      case "$1" in
+        ''|*[!0-9]*) echo "FATAL: --max-red-days wants a non-negative integer, got [$1]"; exit 1 ;;
+      esac
+      MAX_RED_DAYS=$1 ;;
+    --page)
+      shift
+      [ "$#" -gt 0 ] || { echo "FATAL: --page needs a number"; exit 1; }
+      case "$1" in
+        ''|*[!0-9]*) echo "FATAL: --page wants a positive integer, got [$1]"; exit 1 ;;
+      esac
+      [ "$1" -gt 0 ] || { echo "FATAL: --page 0 would examine nothing"; exit 1; }
+      PAGE=$1 ;;
+    -h|--help)
+      sed -n '/^# Usage:/,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0 ;;
+    *)
+      # Refused rather than ignored: a check that silently accepts a misspelled flag runs its
+      # DEFAULT and prints a clean result, which reads exactly like the thing that was asked for.
+      echo "FATAL: unknown option [$1]. Run with --help."
+      exit 1 ;;
+  esac
+  shift
+done
+
+C_OK=""; C_BAD=""; C_OFF=""; C_DIM=""
+if [ -t 1 ]; then
+  C_OK=$'\033[32m'; C_BAD=$'\033[31m'; C_OFF=$'\033[0m'; C_DIM=$'\033[2m'
+fi
+
+FINDINGS=0
+finding() { # <subject> <field> <reason>
+  FINDINGS=$((FINDINGS + 1))
+  printf '  %s%s:%s%s  %s\n' "$C_BAD" "$1" "$2" "$C_OFF" "$3"
+}
+note() { printf '  %s%s%s\n' "$C_DIM" "$1" "$C_OFF"; }
+
+fatal() { # <reason> - no result at all, which is not a clean result (I-029).
+  printf '\n%sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  printf 'This run has NO result, which is not a clean result (I-029).\n'
+  exit 1
+}
+
+grep_fatal() { # <rc> <where>
+  fatal "grep exited $1 while reading $2. A grep exit code of 2 or more is an error, never 'no match', and treating it as one would turn a broken read into a clean run."
+}
+
+not_read_banner() { # <reason...>
+  printf '\n  %sNOT READ%s - %s\n' "$C_BAD" "$C_OFF" "$1"
+  shift
+  while [ "$#" -gt 0 ]; do printf '             %s\n' "$1"; shift; done
+  printf '             %sThat is not "the mirror is fine"; it is "nothing here could see\n' "$C_BAD"
+  printf '             the mirror". An absence of information reading as good news for three\n'
+  printf '             weeks is the entire defect this file closes.%s\n' "$C_OFF"
+}
+
+if [ -z "$BRANCH" ]; then
+  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')
+  [ -n "$BRANCH" ] && [ "$BRANCH" != 'HEAD' ] || BRANCH='1.x'
+fi
+
+printf '=========================================================================================================\n'
+printf 'mirror-streak - Agora - the GitHub mirror of this package, read anonymously (T-0623)\n'
+printf 'repo: %s\n' "$REPO_ROOT"
+printf 'date: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+printf '=========================================================================================================\n'
+
+# --------------------------------------------------------------------------------- the tooling --
+# EXERCISED, NOT LOCATED (I-026). `command -v` has been satisfied on this project's hosts by a
+# stub that then failed at first real use.
+printf '\ntooling\n'
+HAVE_CURL=0
+if command -v curl >/dev/null 2>&1 && curl --version >/dev/null 2>&1; then HAVE_CURL=1; fi
+HAVE_PY=0
+if [ "$(python3 -c 'print(1)' 2>/dev/null)" = '1' ]; then HAVE_PY=1; fi
+note "curl:    $(if [ "$HAVE_CURL" -eq 1 ]; then curl --version 2>/dev/null | head -1; else printf 'ABSENT'; fi)"
+note "python3: $(if [ "$HAVE_PY" -eq 1 ]; then python3 --version 2>/dev/null; else printf 'ABSENT'; fi)"
+
+# ----------------------------------------------------- 1. the declared workflow list, offline --
+# This half needs no network at all, and it runs before anything else so that a repository whose
+# own declaration is wrong is told so even when the API is unreachable.
+printf '\n1. the declared workflow list against %s/ - offline, and always run\n' "$WORKFLOW_DIR"
+
+DECLARED_N=0
+while IFS= read -r w; do
+  [ -n "$w" ] || continue
+  DECLARED_N=$((DECLARED_N + 1))
+  if [ ! -r "$w" ]; then
+    finding 'workflows' 'declared' "[$w] is declared here but is not a readable file in this repository. A declaration that names nothing cannot be compared against anything, and the comparison below would silently shrink."
+  fi
+done <<EOF
+$DECLARED_WORKFLOWS
+EOF
+
+# T-321(b): defaulted because zero means FAIL here - the safe direction of I-031. An empty
+# declaration would make every comparison below pass by construction (I-028).
+if [ "${DECLARED_N:-0}" -eq 0 ]; then
+  fatal 'the declared workflow list is empty. An empty list agrees with any mirror, and reports that agreement as a clean run.'
+fi
+
+ON_DISK=''
+ON_DISK_N=0
+if [ -d "$WORKFLOW_DIR" ]; then
+  ON_DISK=$(find "$WORKFLOW_DIR" -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) 2>/dev/null | sed 's#^\./##' | sort)
+  ON_DISK_N=$(printf '%s\n' "$ON_DISK" | grep -v '^$' | wc -l | tr -d '[:space:]')
+fi
+note "declared: $DECLARED_N - on disk: $ON_DISK_N"
+
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  _found=no
+  while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    [ "$f" = "$d" ] && _found=yes
+  done <<EOF
+$DECLARED_WORKFLOWS
+EOF
+  if [ "$_found" = no ]; then
+    finding 'workflows' 'undeclared' "$f exists in this repository and is not in DECLARED_WORKFLOWS. A workflow whose conclusion nobody reads is the defect this file exists to close, and the second one arrives without ceremony. Declare it here in the same commit that adds it."
+  fi
+done <<EOF
+$ON_DISK
+EOF
+
+# ----------------------------------------------------- 2. the local remote, where there is one --
+# A CROSS-CHECK AND NOT A SOURCE. In CI there is no `github` remote and this prints a note; on a
+# maintainer's checkout there is one, and a slug that disagrees with it means this file is
+# watching a different repository from the one this tree pushes to.
+printf '\n2. the declared slug against the local `github` remote, where one exists\n'
+LOCAL_URL=$(git config --get remote.github.url 2>/dev/null || true)
+if [ -z "$LOCAL_URL" ]; then
+  note "no remote named \`github\` in this checkout - which is the normal state on a CI runner, where the clone comes from drupalcode. The declared slug [$MIRROR_SLUG] is NOT corroborated here."
+else
+  _s="$LOCAL_URL"
+  _s="${_s#https://github.com/}"; _s="${_s#http://github.com/}"
+  _s="${_s#git@github.com:}";     _s="${_s#ssh://git@github.com/}"
+  _s="${_s%.git}"
+  if [ "$_s" = "$MIRROR_SLUG" ]; then
+    note "remote.github.url parses to [$_s], which is the declared slug"
+  elif [ "$SLUG_OVERRIDDEN" -eq 1 ]; then
+    note "remote.github.url parses to [$_s] and --slug asked for [$MIRROR_SLUG]. NOT a finding: the declaration was overridden from the command line, so there is no declaration left to cross-check. The gate never passes --slug."
+  else
+    finding 'slug' 'remote' "this checkout pushes its mirror to [$_s] and this file declares [$MIRROR_SLUG]. One of the two is watching a repository nobody is pushing to, and a green from the wrong repository is worse than no green at all."
+  fi
+fi
+
+# -------------------------------------------------------------------------------- the fetcher --
+# api_get <url> <outfile> -> sets HTTP and TRANSPORT.
+#   TRANSPORT != 0  the request never got an answer      -> NOT READ
+#   HTTP == 200     an answer                            -> usable
+#   HTTP == 404     an answer, and a negative one        -> a FINDING at the caller
+#   403 / 429 / 5xx the server declining to answer       -> NOT READ (retried once)
+# GitHub answers 403 with X-RateLimit-Remaining: 0 when an anonymous caller is over its 60 an
+# hour. That is the server saying nothing about the question, not a statement about the mirror,
+# so it is the third state and never a finding.
+HTTP=0
+TRANSPORT=0
+api_get() { # <url> <outfile>
+  _u=$1; _o=$2
+  _attempt=0
+  while : ; do
+    _attempt=$((_attempt + 1))
+    HTTP=$(curl -sS --connect-timeout 15 --max-time 60 \
+             -H 'Accept: application/vnd.github+json' \
+             -H 'X-GitHub-Api-Version: 2022-11-28' \
+             -o "$_o" -w '%{http_code}' "$_u" 2>/dev/null)
+    TRANSPORT=$?
+    [ -n "$HTTP" ] || HTTP=0
+    if [ "$TRANSPORT" -eq 0 ]; then
+      case "$HTTP" in
+        403|429|5??)
+          if [ "$_attempt" -lt 2 ]; then sleep 5; continue; fi ;;
+      esac
+    fi
+    break
+  done
+}
+
+WORK_DIR=$(mktemp -d -t mirror-streak.XXXXXX) || fatal 'mktemp -d failed - there is nowhere to put the API answers.'
+trap 'rm -rf "$WORK_DIR"' EXIT INT TERM
+
+EXAMINED=0
+READ_N=0
+UNREAD_N=0
+COMPLETED=0
+STREAK=0
+STREAK_OLDEST_AGE=0
+NET_STATE='NOT READ'
+UNREACHABLE=''
+
+if [ "$HAVE_CURL" -eq 0 ]; then
+  UNREACHABLE='curl is not installed, so no request can be made at all.'
+elif [ "$HAVE_PY" -eq 0 ]; then
+  UNREACHABLE='python3 is not installed, so the API answers cannot be parsed.'
+fi
+
+API="$API_HOST/repos/$MIRROR_SLUG"
+
+# --------------------------------------------------- 3. the preflight, which proves four things --
+if [ -z "$UNREACHABLE" ]; then
+  printf '\n3. reaching %s\n' "$MIRROR_SLUG"
+  META="$WORK_DIR/meta.json"
+  api_get "$API" "$META"
+  if [ "$TRANSPORT" -ne 0 ]; then
+    UNREACHABLE="curl exited $TRANSPORT reaching $API_HOST - the request got no answer at all (DNS, connectivity, proxy or TLS)."
+  elif [ "$HTTP" = '404' ]; then
+    finding 'slug' 'declared' "$API_HOST answered 404 for [$MIRROR_SLUG]. That is the API stating a fact - no such public repository - and it is a finding rather than an outage, because a commit here can correct the declaration."
+    UNREACHABLE="the declared repository does not exist, so there are no runs to examine."
+  elif [ "$HTTP" != '200' ]; then
+    UNREACHABLE="$API_HOST answered HTTP $HTTP for the repository itself. 403 with no rate left and 5xx are the server declining to answer; neither is a statement about the mirror."
+  else
+    FULL=$(python3 -c 'import json,sys;print((json.load(open(sys.argv[1],encoding="utf-8")) or {}).get("full_name") or "")' "$META" 2>/dev/null)
+    if [ -z "$FULL" ]; then
+      UNREACHABLE='the repository endpoint answered 200 with something this could not parse as JSON carrying a full_name.'
+    elif [ "$FULL" != "$MIRROR_SLUG" ]; then
+      finding 'slug' 'full_name' "the API calls it [$FULL] and this file declares [$MIRROR_SLUG]. A renamed repository still answers on its old path by redirect, so this is the one request that notices."
+    else
+      note "full_name: $FULL - the declared slug, confirmed by the API"
+    fi
+  fi
+fi
+
+# ------------------------------------------------- 4. the workflows the mirror has actually run --
+if [ -z "$UNREACHABLE" ]; then
+  printf '\n4. the workflows the mirror declares, against the list above\n'
+  WFJ="$WORK_DIR/workflows.json"
+  api_get "$API/actions/workflows?per_page=100" "$WFJ"
+  if [ "$TRANSPORT" -ne 0 ] || [ "$HTTP" != '200' ]; then
+    note "the workflows endpoint gave no usable answer (curl $TRANSPORT, HTTP $HTTP) - the run walk below still ran, and it names undeclared workflows too"
+  else
+    REMOTE_WF=$(python3 -c 'import json,sys
+d = json.load(open(sys.argv[1], encoding="utf-8")) or {}
+for w in d.get("workflows") or []:
+    p = w.get("path") or ""
+    if p:
+        print(p)' "$WFJ" 2>/dev/null | sort -u)
+    REMOTE_WF_N=$(printf '%s\n' "$REMOTE_WF" | grep -v '^$' | wc -l | tr -d '[:space:]')
+    note "the mirror declares $REMOTE_WF_N workflow(s)"
+    while IFS= read -r r; do
+      [ -n "$r" ] || continue
+      _ok=no
+      while IFS= read -r d; do
+        [ -n "$d" ] || continue
+        [ "$r" = "$d" ] && _ok=yes
+      done <<EOF
+$DECLARED_WORKFLOWS
+EOF
+      [ "$_ok" = yes ] || finding 'workflows' 'remote' "the mirror runs [$r], which is not in DECLARED_WORKFLOWS. Its conclusion is being read by nobody here."
+    done <<EOF
+$REMOTE_WF
+EOF
+  fi
+fi
+
+# ------------------------------------------------------------------------------ 5. the streak --
+STREAK_LINES=''
+if [ -z "$UNREACHABLE" ]; then
+  printf '\n5. the runs on branch %s\n' "$BRANCH"
+  RUNS="$WORK_DIR/runs.json"
+  api_get "$API/actions/runs?branch=$BRANCH&per_page=$PAGE" "$RUNS"
+  if [ "$TRANSPORT" -ne 0 ] || [ "$HTTP" != '200' ]; then
+    UNREACHABLE="the runs endpoint gave no usable answer (curl $TRANSPORT, HTTP $HTTP)."
+  else
+    STREAK_LINES=$(MS_DECLARED="$DECLARED_WORKFLOWS" python3 -c '
+import json, os, sys, datetime
+
+# The whole streak computation in one place, because doing it in shell would mean parsing ISO
+# timestamps with `date -d`, which is not portable to every runner this has to work on.
+d = json.load(open(sys.argv[1], encoding="utf-8")) or {}
+runs = d.get("workflow_runs") or []
+print("EXAMINED %d" % len(runs))
+declared = {w.strip() for w in os.environ["MS_DECLARED"].splitlines() if w.strip()}
+
+seen_paths = set()
+completed = []
+for r in runs:
+    p = r.get("path") or ""
+    if p:
+        seen_paths.add(p)
+    if r.get("status") == "completed":
+        completed.append(r)
+
+for p in sorted(seen_paths - declared):
+    print("UNDECLARED %s" % p)
+
+print("COMPLETED %d" % len(completed))
+if not completed:
+    print("NOSTREAK none of the runs examined has completed, so no conclusion can be counted")
+    raise SystemExit
+
+now = datetime.datetime.now(datetime.timezone.utc)
+
+
+def when(run):
+    raw = run.get("updated_at") or run.get("created_at") or ""
+    try:
+        return datetime.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+streak = 0
+for r in completed:
+    if r.get("conclusion") == "success":
+        break
+    streak += 1
+
+print("STREAK %d" % streak)
+if streak:
+    concl = sorted({(r.get("conclusion") or "unknown") for r in completed[:streak]})
+    print("CONCLUSIONS %s" % ",".join(concl))
+    print("NEWEST %s" % (completed[0].get("head_sha") or ""))
+    oldest = when(completed[streak - 1])
+    if oldest is None:
+        print("AGE -1")
+    else:
+        print("AGE %d" % ((now - oldest).days))
+        print("SINCE %s" % completed[streak - 1].get("updated_at"))
+    for r in completed[:streak][:5]:
+        print("RUN %s %s %s %s" % ((r.get("head_sha") or "")[:8],
+                                   r.get("conclusion") or "unknown",
+                                   r.get("updated_at") or "?",
+                                   r.get("html_url") or ""))
+if streak < len(completed):
+    ok = completed[streak]
+    w = when(ok)
+    print("LASTOK %s %s %s" % ((ok.get("head_sha") or "")[:8],
+                               ok.get("updated_at") or "?",
+                               (now - w).days if w else -1))
+else:
+    print("NOOK no success in the %d completed run(s) examined - the streak below is a FLOOR, not a count" % len(completed))
+' "$RUNS" 2>/dev/null)
+    if [ -z "$STREAK_LINES" ]; then
+      UNREACHABLE='the runs endpoint answered 200 with something the parser could not read as a run list.'
+    fi
+  fi
+fi
+
+if [ -n "$UNREACHABLE" ]; then
+  not_read_banner "$UNREACHABLE"
+else
+  NET_STATE='READ'
+  EXAMINED=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^EXAMINED //p' | head -1)
+  COMPLETED=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^COMPLETED //p' | head -1)
+  STREAK=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^STREAK //p' | head -1)
+  [ -n "$EXAMINED" ] || EXAMINED=0
+  [ -n "$COMPLETED" ] || COMPLETED=0
+  [ -n "$STREAK" ] || STREAK=0
+  READ_N=$COMPLETED
+  UNREAD_N=$((EXAMINED - COMPLETED))
+
+  while IFS= read -r u; do
+    [ -n "$u" ] || continue
+    finding 'workflows' 'ran' "the mirror has RUN [$u] on this branch and it is not in DECLARED_WORKFLOWS."
+  done <<EOF
+$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^UNDECLARED //p')
+EOF
+
+  if [ "${EXAMINED:-0}" -eq 0 ]; then
+    not_read_banner "the API answered with NO RUNS AT ALL on branch $BRANCH." \
+      'That is an unread mirror, not a green one. Has this branch ever been pushed to `github`?'
+    NET_STATE='NOT READ'
+    UNREACHABLE='no runs'
+  else
+    note "$EXAMINED run(s) returned (page size $PAGE), $COMPLETED of them completed"
+    _nostreak=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^NOSTREAK //p' | head -1)
+    if [ -n "$_nostreak" ]; then
+      note "streak NOT COMPUTED - $_nostreak"
+    elif [ "${STREAK:-0}" -eq 0 ]; then
+      _lastok=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^LASTOK //p' | head -1)
+      printf '  %sstreak: 0 - the newest completed run on %s succeeded (%s)%s\n' \
+        "$C_OK" "$BRANCH" "$_lastok" "$C_OFF"
+    else
+      _concl=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^CONCLUSIONS //p' | head -1)
+      _age=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^AGE //p' | head -1)
+      _since=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^SINCE //p' | head -1)
+      _newest=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^NEWEST //p' | head -1)
+      _nook=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^NOOK //p' | head -1)
+      [ -n "$_age" ] || _age=-1
+      STREAK_OLDEST_AGE=$_age
+      if [ -n "$_nook" ]; then
+        printf '  %sRED STREAK: >= %s consecutive non-success completed run(s) - %s%s\n' \
+          "$C_BAD" "$STREAK" "$_nook" "$C_OFF"
+      else
+        printf '  %sRED STREAK: %s consecutive non-success completed run(s) on %s%s\n' \
+          "$C_BAD" "$STREAK" "$BRANCH" "$C_OFF"
+      fi
+      printf '  %sconclusions: %s - oldest of the streak: %s (%s day(s) ago)%s\n' \
+        "$C_BAD" "$_concl" "${_since:-unknown}" "$_age" "$C_OFF"
+      printf '%s\n' "$STREAK_LINES" | sed -n 's/^RUN /    /p'
+      _lastok=$(printf '%s\n' "$STREAK_LINES" | sed -n 's/^LASTOK //p' | head -1)
+      [ -n "$_lastok" ] && printf '  %slast success: %s%s\n' "$C_DIM" "$_lastok" "$C_OFF"
+
+      # THE CAP. A streak is data; a streak nobody has answered for a fortnight is a finding.
+      if [ "$_age" -lt 0 ] 2>/dev/null; then
+        finding 'streak' 'age' "the mirror has been red for $STREAK consecutive run(s) and the oldest of them carries a timestamp this host could not parse. An age that cannot be measured has not been shown to be inside the $MAX_RED_DAYS-day cap, and 'unknown' is not 'recent'."
+      elif [ "$_age" -gt "$MAX_RED_DAYS" ]; then
+        if [ -n "$ACK_HEAD_SHA" ] && [ "$ACK_HEAD_SHA" = "$_newest" ]; then
+          note "past the cap, and ANSWERED: acknowledged $ACK_ON for [${_newest}] - $ACK_WHY"
+        else
+          finding 'streak' 'cap' "the mirror has been red for $STREAK consecutive run(s) across $_age days, past the $MAX_RED_DAYS-day cap. Being red is not itself a finding here and never turns this gate red on its own; being red for this long with nothing in this repository saying anything about it is. Answer it in ONE of two ways, both of them commits HERE: fix the workflow under $WORKFLOW_DIR/, or fill ACK_HEAD_SHA (=$_newest), ACK_ON and ACK_WHY in $0 with the reason it stays red. The acknowledgement is pinned to that sha, so the next red push re-arms this."
+        fi
+      fi
+    fi
+  fi
+fi
+
+# ----------------------------------------------------------------------------------- summary --
+printf '\n=========================================================================================================\n'
+printf 'scope:    %s branch %s, %s workflow(s) declared\n' "$MIRROR_SLUG" "$BRANCH" "$DECLARED_N"
+printf 'cap:      %s\n' "$(if [ "$MAX_RED_DAYS" -eq "$MAX_RED_DEFAULT" ]; then printf '%s days (default)' "$MAX_RED_DAYS"; else printf '%s days (OVERRIDDEN with --max-red-days; the gate never passes it)' "$MAX_RED_DAYS"; fi)"
+printf 'examined: %s run(s) returned by the API (page size %s)\n' "$EXAMINED" "$PAGE"
+printf 'read:     %s completed, %s still running or queued\n' "$READ_N" "$UNREAD_N"
+printf 'streak:   %s consecutive non-success completed run(s); oldest %s day(s)\n' \
+  "$STREAK" "$STREAK_OLDEST_AGE"
+printf 'findings: %s  (a streak inside the cap is never one - only broken provenance, and a streak left unanswered too long)\n' "$FINDINGS"
+printf 'network:  %s - %s\n' "$NET_STATE" \
+  "$(if [ "$NET_STATE" = 'READ' ]; then printf '%s answered anonymously; no token was used or needed' "$API_HOST"; else printf '%s said nothing this run could use, so the streak above is not a statement about the mirror' "$API_HOST"; fi)"
+printf '=========================================================================================================\n'
+
+if [ "$FINDINGS" -ne 0 ]; then
+  printf '%s%s%s\n' "$C_BAD" "mirror-streak: $FINDINGS finding(s) - each one fixable by a commit in THIS repository" "$C_OFF"
+  exit 1
+fi
+if [ "$NET_STATE" != 'READ' ]; then
+  printf '%s%s%s\n' "$C_BAD" "mirror-streak: the mirror was NOT READ - this run has no answer about it, which is not a clean answer about it" "$C_OFF"
+  exit 2
+fi
+if [ "${STREAK:-0}" -ne 0 ]; then
+  CAP_WORDS="inside the $MAX_RED_DAYS-day cap"
+  if [ "$STREAK_OLDEST_AGE" -gt "$MAX_RED_DAYS" ] 2>/dev/null; then
+    CAP_WORDS="past the $MAX_RED_DAYS-day cap and ANSWERED by the acknowledgement above"
+  fi
+  printf '%s%s%s\n' "$C_DIM" "mirror-streak: the mirror is RED - $STREAK consecutive non-success run(s), $STREAK_OLDEST_AGE day(s) old, $CAP_WORDS. D-020 keeps the mirror informative, so this does not fail the gate; it is printed on every push so that nobody has to notice an email." "$C_OFF"
+  exit 0
+fi
+printf '%s%s%s\n' "$C_OK" 'mirror-streak: every declared workflow accounted for, and the newest completed run on this branch succeeded' "$C_OFF"
+exit 0

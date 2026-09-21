@@ -97,7 +97,7 @@
 # same reason a raw delta is: no commit in this repository can fix an unreachable
 # drupalcode.
 #
-# GATE-CLAIM: checks=88 invariants=5
+# GATE-CLAIM: checks=95 invariants=6
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -527,7 +527,8 @@ for included in \
   recommended.yml \
   screenshot.webp \
   logo.png \
-  LICENSE.txt
+  LICENSE.txt \
+  LICENCE-MANIFEST.md
 do
   # T-321(a), house rule 1. Expect-PRESENT site: the `${FOUND:-0}` further down
   # STAYS, because here zero means FAIL (absent) - the safe direction of I-031.
@@ -834,6 +835,98 @@ else
   check 'ported-drift (read + unread = compared)'  '<not run>' '<not run, and that is a failure>'
   check 'ported-drift (network state named)'       'absent'  'named'
   check 'ported-drift (age cap, never from here)'  'absent'  '14 days (default)'
+fi
+
+# ------------------------------- G14 - mirror-streak (T-0623, 2026-09-21) --
+# THE MIRROR'S CONCLUSION, PUSHED RATHER THAN PULLED.
+#
+# tests/bin/watch-gate has read the GitHub mirror since 2026-09-19 and reads it
+# well. It runs when somebody types the command, which is the same detection
+# property as the email that had already been missed nine times in a row over
+# three weeks. This group is the half that runs unasked.
+#
+# ⚠️ THE STATED REASON THIS COULD NOT BE AN INVARIANT WAS HALF FALSE, and the
+# false half was the load-bearing one. watch-gate's comment says such a check
+# "would need the network and a GitHub token inside `agora-invariants`". The
+# mirror is a PUBLIC repository and GitHub's Actions API answers a public
+# repository ANONYMOUSLY - measured before the script was written, three
+# endpoints, HTTP 200 on all three, no credentials of any kind. The network
+# half stands and is answered the way G13 answers it: exit 2 is the third
+# state, it is tolerated here, and it is never a pass.
+#
+# D-020 IS UNCHANGED. A red mirror does not fail this gate. What fails it is
+# provenance - an undeclared workflow, a slug that answers 404 - and a streak
+# that has stood past the 14-day cap with nothing in this repository saying
+# anything about it. Every one of those is fixable by a commit HERE, which is
+# the property D-023(5) exists to protect.
+#
+# SIX DENOMINATORS, and the first two are the ones that matter under I-028: an
+# emptied workflow declaration and an unread API both print "findings: 0". The
+# declared count is OFFLINE, so it survives a runner with no network and is the
+# figure that separates "nothing to check" from "nothing was checked".
+group 'G14 - mirror-streak (NETWORK - the GitHub mirror, read anonymously)'
+INV=tests/bin/mirror-streak
+if [ -x "$INV" ]; then
+  INV_OUT=$("$INV" 2>&1); INV_RC=$?
+  note "$(printf '%s\n' "$INV_OUT" | grep -E '^(scope|cap|examined|streak|findings|network):' | tr '\n' ' ')"
+
+  # I-027: grep has THREE exit states. rc >= 2 is grep failing and must never
+  # read as "the line is absent" - the two need different remedies.
+  MS_DECL_LINE=$(printf '%s\n' "$INV_OUT" | grep -E '^scope:[[:space:]]' 2>/dev/null)
+  MS_DECL_RC=$?
+  if [ "$MS_DECL_RC" -ge 2 ]; then
+    MS_DECL="<grep exit $MS_DECL_RC>"
+  else
+    MS_DECL=$(printf '%s' "$MS_DECL_LINE" | sed -nE 's/^scope:.*, ([0-9]+) workflow\(s\) declared.*/\1/p')
+  fi
+
+  MS_EXAM=$(printf '%s\n' "$INV_OUT" | grep -oE '^examined: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  MS_STREAK=$(printf '%s\n' "$INV_OUT" | grep -oE '^streak: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+
+  MS_NET_LINE=$(printf '%s\n' "$INV_OUT" | grep -E '^network:[[:space:]]+(NOT )?READ' 2>/dev/null)
+  MS_NET_RC=$?
+  if [ "$MS_NET_RC" -ge 2 ]; then MS_NET="<grep exit $MS_NET_RC>"
+  elif [ -n "$MS_NET_LINE" ]; then MS_NET='named'
+  else MS_NET='absent'; fi
+
+  MS_CAP_LINE=$(printf '%s\n' "$INV_OUT" | grep -E '^cap:[[:space:]]' 2>/dev/null)
+  MS_CAP_RC=$?
+  if [ "$MS_CAP_RC" -ge 2 ]; then MS_CAP="<grep exit $MS_CAP_RC>"
+  else MS_CAP=$(printf '%s' "$MS_CAP_LINE" | sed -nE 's/^cap:[[:space:]]+(.*)$/\1/p'); fi
+
+  # Exit 2 is the third state and is tolerated; exit 1 is a finding and is not.
+  case "$INV_RC" in
+    0|2) MS_EXIT='no finding' ;;
+    *)   MS_EXIT="exit $INV_RC" ;;
+  esac
+
+  check 'mirror-streak (exit 0 clean | 2 NOT READ)' "$MS_EXIT" 'no finding'
+  check 'mirror-streak (workflows declared > 0)' \
+    "$([ "${MS_DECL:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  # NAMED rather than "> 0": a runner with no network legitimately examines 0
+  # runs, and that state is reported by the NOT READ banner and the network
+  # line, not by this figure. What must never happen is the figure going blank,
+  # because a blank reads exactly like a zero and a zero reads like a clean
+  # mirror.
+  check 'mirror-streak (runs examined, named)' \
+    "$([ -n "$MS_EXAM" ] && echo 'named' || echo 'absent')" 'named'
+  check 'mirror-streak (streak stated)' \
+    "$([ -n "$MS_STREAK" ] && echo 'stated' || echo 'absent')" 'stated'
+  check 'mirror-streak (network state named)'      "$MS_NET" 'named'
+  check 'mirror-streak (age cap, never from here)' "$MS_CAP" '14 days (default)'
+  [ "$INV_RC" -eq 1 ] && printf '%s\n' "$INV_OUT" | grep -E '^  (workflows|slug|streak):' | sed 's/^/  /'
+  [ "$INV_RC" -eq 2 ] && printf '  %sNOT READ is a third state, not a pass - see the denominators above.%s\n' "$C_BAD" "$C_OFF"
+  if [ "$INV_RC" -eq 0 ] && [ "${MS_STREAK:-0}" -gt 0 ] 2>/dev/null; then
+    printf '  %sTHE MIRROR IS RED (%s consecutive non-success run(s)) and this does NOT fail the\n' "$C_BAD" "$MS_STREAK"
+    printf '  gate - D-020 keeps it informative. It is printed here so that it is read.%s\n' "$C_OFF"
+  fi
+else
+  check 'mirror-streak (exit 0 clean | 2 NOT READ)' "$(trunc "$INV" 28)" 'no finding'
+  check 'mirror-streak (workflows declared > 0)'    'not run' 'yes'
+  check 'mirror-streak (runs examined, named)'      'absent'  'named'
+  check 'mirror-streak (streak stated)'             'absent'  'stated'
+  check 'mirror-streak (network state named)'       'absent'  'named'
+  check 'mirror-streak (age cap, never from here)'  'absent'  '14 days (default)'
 fi
 
 # ----------------------------------------------------------------- summary ---
