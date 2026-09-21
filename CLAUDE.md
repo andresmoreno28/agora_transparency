@@ -941,8 +941,29 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (95 checks · 0 failures) and `gate-a-wave3.sh` (**66** checks · 0 failures), **24** invariants in total —
+  (95 checks · 0 failures) and `gate-a-wave3.sh` (**67** checks · 0 failures), **24** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`95 · 66 · 24` became `95 · 67 · 24` on 2026-09-21 (unit 006 wave 5, T-0632), and the one
+  new check is in an EXISTING group — so `invariants` does not move, and wave 1's 95 is a measured
+  non-change rather than an omission.** G7's `no-boilerplate (accounted)`.
+  ⚠️ **The defect it closes is the one this whole block is about, committed inside an invariant
+  instead of inside this file: `tests/bin/no-boilerplate` was FATAL AT ZERO AND SILENT AT PARTIAL.**
+  It already refused `scanned: 0` (I-028). It did not refuse `scanned: half` — and when a scanning
+  pass ended early, the files it never opened were **silently reclassified as binary blobs** and the
+  run printed `findings: 0` at **exit 0**, with nothing in its summary saying a pass had stopped.
+  Measured twice by two people: a complete run reads **728 scanned / 6 skipped as binary**, a
+  truncated one **364 / 370**, and **370 − 6 = 364** is exactly the set that was never searched.
+  ⚠️ **This is NOT an observed CI defect and must not be read as one**: the truncation was
+  *induced*, by wrapping the script in `timeout 120`, and nothing wraps it in `timeout` in CI. What
+  is general is the question it exposed — a child dying mid-scan for any reason, OOM or an evicted
+  runner or a killed pipe, reported green.
+  ⚠️ **AND ADDING THE NUMBERS UP WOULD NOT HAVE CAUGHT IT, which is the reusable half.** Under the
+  same induced truncation the new reconciliation prints `accounted 734 of 734` and `skips named 350
+  of 350` — **every identity balances**, because a path moved from `scanned` into a skip bucket is
+  still accounted for. It is the **classification** that is false, not the sum. What fires is a
+  per-pass **receipt** written where the work happens, and a bucket that says NOT EXTRACTED instead
+  of `binary`. **This project's rule is that every check prints its denominator; this one did, and
+  printing two numbers is not comparing them.**
   ⚠️ **`88 · 23` became `95 · 24` on 2026-09-21 (unit 006 wave 4), and one of the seven checks is NOT
   in the new group.** Wave 1's **G14** runs `tests/bin/mirror-streak` (6 checks), which reads the GitHub
   mirror's runs API **anonymously** and prints the red streak on every push — the quantity that was missing

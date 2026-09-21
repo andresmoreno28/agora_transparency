@@ -33,6 +33,84 @@
 #   - exit 0 ONLY if findings = 0
 #   - a scope that cannot be read (no git, no HEAD) is a FAILURE, never a skip
 #     (I-007: an exit 0 without counts proves nothing).
+#   - every packaged path is ACCOUNTED FOR in both passes, and a shortfall is
+#     a FATAL rather than a finding (see the block immediately below).
+#   - every skip is NAMED. A skip count nobody can attribute to a path is
+#     refused, because that is the shape the defect below wore.
+#
+# ----------------------------------- partial scans: FATAL at zero was not --
+# ----------------------------------- the same guard as FATAL at half ------
+# T-0632, 2026-09-21. This script was FATAL at zero and SILENT AT PARTIAL.
+# The I-028 guard further down refuses `scanned: 0`; nothing refused
+# `scanned: half`, and printing two numbers is not comparing them.
+#
+# Measured on this package, twice, by two people:
+#
+#                     complete run     truncated run
+#   scanned                    728               364
+#   skipped as binary            6               370
+#   findings                     0                 0
+#   exit                         0                 0
+#
+# 370 - 6 = 364, which is exactly the set of files never searched. When
+# pass 1 ended early the recount's `[ -f "$_tmp" ]` test found no HEAD copy
+# for those paths and took its `else` branch, which incremented BINARY. **A
+# path whose content was never produced is not a binary blob**, and calling
+# it one turns "these files were not examined" into "these files were
+# examined and are fine". Nothing in the summary said a pass ended early.
+#
+# TWO HONEST LIMITS ON THAT MEASUREMENT, so this block is not read as more
+# than it is. The truncation was INDUCED, by wrapping the script in
+# `timeout 120`, and NOTHING wraps it in `timeout` in CI - so it is not an
+# observed CI defect and must not be described as one. What IS general is
+# the question it exposed: a child dying mid-scan for any reason - OOM, a
+# runner evicting a job, a killed pipe - was reported green.
+#
+# WHAT CLOSES IT, and none of it is pinned to a number:
+#   (a) each pass writes a RECEIPT line per path it finishes, in the subshell
+#       where the work actually happens. A receipt shorter than the declared
+#       scope is a pass that ended early, and that is a FATAL.
+#   (b) a packaged path with no HEAD copy in the work dir is counted as NOT
+#       EXTRACTED - its own classification, never `binary`. Non-zero is a
+#       FATAL. This is a SECOND, INDEPENDENT witness of (a): the two are
+#       derived from different things - a receipt file written by the
+#       scanning loop, and the work dir that loop populated - so a change
+#       defeating one still trips the other.
+#   (c) both passes must ACCOUNT for the whole declared scope:
+#           pass 1:  text + binary + not-extracted  ==  scope
+#           pass 2:  text + binary + absent         ==  scope
+#           total :  scanned + skips                ==  scope x 2
+#       The scope is `git archive HEAD` filtered to files - the same single
+#       derivation both passes iterate - so a shortfall can only mean a pass
+#       did less than it was asked to.
+#   (d) every skip is NAMED in a ledger and the ledger's length is compared
+#       against the counters. This one is about ATTRIBUTION rather than
+#       independence, and it is written down that way: the ledger line and
+#       the counter are incremented side by side. What it buys is that `6`
+#       is never a bare number - a reader sees WHICH three paths, twice -
+#       and that an emptied ledger cannot sit under a healthy count (I-028).
+#
+# THE ARITHMETIC ALONE WOULD NOT HAVE CAUGHT IT, and that is the part worth
+# reading twice before anybody simplifies this. Measured on the induced
+# truncation described above, with both passes stopped at 20 of 367:
+# `accounted 734 of 734` and `skips named 350 of 350` BOTH HOLD. Every one of
+# the four identities in (c) and (d) balances, because a path moved from
+# `scanned` to a skip bucket is still accounted for - it is the CLASSIFICATION
+# that is false, not the sum. A reconciliation that only added the totals up
+# would have printed a clean-looking balance over a scan of 40 path-scans out
+# of 734. What fires is (a) and (b): the receipts, and the bucket that says
+# NOT EXTRACTED instead of `binary`.
+#
+# The same run shows why (a) is not redundant with (b). Pass 2's recount
+# re-probes the LIVE working tree, which is there whether pass 2 read it or
+# not - so a truncated pass 2 is invisible to every counter in this script
+# except its receipt: the run above prints `pass 2 finished 20` beside
+# `text 364`. Before T-0632 a pass 2 that stopped after one file reported 364
+# worktree files scanned and exited 0.
+#
+# DO NOT replace any of this with a constant. `6` is true of this package on
+# this day and of nothing else; binaries legitimately arrive and leave. Every
+# figure above is derived from the archive listing at run time.
 #
 #
 # House rules for tests/bin/ (T-321(c)): `wc -l` never `grep -c` for a compared
@@ -209,12 +287,68 @@ fi
 ENTRIES=$(printf '%s\n' "$ARCHIVE_LIST" | wc -l | tr -d ' ')
 # Directory entries end in `/` and have no content to scan; files are the scope.
 PACKAGED_FILES=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '/$')
-# T-321(a) EXEMPTION, stated so it is not mistaken for an oversight: this is the
-# one `grep -c` left in this file, and it is DISPLAY-ONLY - FILE_COUNT feeds the
-# scope line below and nothing else. It never reaches a `[` test, so a blank
-# cannot skip a guard here. The real counter, SCANNED, is built in control flow,
-# and TERM_COUNT is `wc -l` above.
-FILE_COUNT=$(printf '%s\n' "$PACKAGED_FILES" | grep -cve '^$')
+_dir_rc=$?
+if [ "$_dir_rc" -ge 2 ]; then
+  printf '\n%sFATAL:%s the directory filter over the archive listing failed (grep exit %s).\n' \
+    "$C_BAD" "$C_OFF" "$_dir_rc"
+  printf 'An empty scope would pass every "does not contain" check by construction.\n'
+  exit 1
+fi
+
+# T-0632: the T-321(a) EXEMPTION that stood here is GONE, and saying so is the
+# point of this comment rather than deleting it quietly. It read: "this is the
+# one `grep -c` left in this file, and it is DISPLAY-ONLY - FILE_COUNT feeds
+# the scope line below and nothing else. It never reaches a `[` test". That
+# was TRUE when it was written. The reconciliation block now COMPARES this
+# value, so the exemption's own premise has expired and the house rule applies
+# again in full: `wc -l` never `grep -c` for a compared value, because
+# `grep -c` prints NOTHING on rc >= 2 and a blank makes `[ "" -eq 0 ]` exit 2 -
+# stepping OVER the guard rather than tripping it (I-031).
+#
+# SCOPE_FILES is also the ONE derivation of the scope from here on. Both
+# passes and the recount read it, so they cannot iterate different sets - and
+# the reconciliation below would be worth nothing if they could.
+SCOPE_FILES=$(printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$')
+_scope_rc=$?
+if [ "$_scope_rc" -ge 2 ]; then
+  printf '\n%sFATAL:%s the blank-line filter over the packaged file list failed (grep exit %s).\n' \
+    "$C_BAD" "$C_OFF" "$_scope_rc"
+  exit 1
+fi
+if [ -n "$SCOPE_FILES" ]; then
+  FILE_COUNT=$(printf '%s\n' "$SCOPE_FILES" | wc -l | tr -d ' ')
+else
+  FILE_COUNT=0
+fi
+
+# I-007 / I-028. This is EARLIER than the SCANNED == 0 guard further down and
+# does not replace it: the two answer different questions ("the scope is
+# empty" against "the scope held nothing scannable"), and catching the first
+# here saves spending ~6600 greps proving that nothing contains anything.
+# Zero means FAIL, so `:-0` trips the guard instead of letting a blank step
+# over it (T-321(b)).
+if [ "${FILE_COUNT:-0}" -eq 0 ]; then
+  printf '\n%sFATAL:%s the packaged scope resolved to 0 files.\n' "$C_BAD" "$C_OFF"
+  printf 'A scan of nothing is not a clean result (I-007).\n'
+  exit 1
+fi
+
+# The HEAD copy of each path is written to WORK_DIR under a name mangled with
+# `tr '/' '_'`, which is NOT injective: `a/b` and `a_b` mangle to the same
+# name. A collision lets one path's temp file be overwritten by another's;
+# BOTH then look extracted, the recount reports two scans, and one path's HEAD
+# content was never searched - a silent skip of exactly the family the
+# reconciliation below exists to refuse, and one it could not see, because
+# the file it looks for IS there. Green and non-vacuous today rather than
+# decorative: 367 paths, 367 distinct names, measured before it was written.
+MANGLED_COUNT=$(printf '%s\n' "$SCOPE_FILES" | tr '/' '_' | sort -u | wc -l | tr -d ' ')
+if [ "${MANGLED_COUNT:-0}" -ne "$FILE_COUNT" ]; then
+  printf '\n%sFATAL:%s %s packaged path(s) collapse to %s distinct work-dir name(s).\n' \
+    "$C_BAD" "$C_OFF" "$FILE_COUNT" "$MANGLED_COUNT"
+  printf 'Two paths sharing one temp file means one of them is never searched\n'
+  printf 'while both are counted as scanned. Widen the mangling. (T-0632)\n'
+  exit 1
+fi
 
 printf '\nscope resolved from `git archive HEAD` (%s):\n' "$(git rev-parse --short HEAD)"
 printf '  %s%d tarball entries - %d files, %d directory entries%s\n' \
@@ -284,33 +418,67 @@ scan_one() {
 HITS_FILE=$(mktemp -t no-boilerplate.XXXXXX) || exit 1
 WORK_DIR=$(mktemp -d -t no-boilerplate.XXXXXX) || exit 1
 GREP_ERR_FILE=$(mktemp -t no-boilerplate-grep.XXXXXX) || exit 1
-trap 'rm -rf -- "$HITS_FILE" "$WORK_DIR" "$GREP_ERR_FILE"' EXIT INT TERM
+# T-0632. The two RECEIPT files are written from inside the scanning
+# subshells, for the same reason HITS_FILE is: a counter incremented there
+# would be lost, and "how far did this pass get" is precisely the question a
+# lost counter cannot answer. SKIP_FILE is the ledger that names every
+# skipped path, so no skip count is ever a bare number.
+PASS1_FILE=$(mktemp -t no-boilerplate-p1.XXXXXX) || exit 1
+PASS2_FILE=$(mktemp -t no-boilerplate-p2.XXXXXX) || exit 1
+SKIP_FILE=$(mktemp -t no-boilerplate-skip.XXXXXX) || exit 1
+trap 'rm -rf -- "$HITS_FILE" "$WORK_DIR" "$GREP_ERR_FILE" "$PASS1_FILE" "$PASS2_FILE" "$SKIP_FILE"' EXIT INT TERM
 
 # --------------------------------------------- pass 1: packaged tree at HEAD --
 printf '\n-- pass 1: packaged tree at HEAD (what Drupal.org ships) ------------------------------------------------\n'
-printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$' | while IFS= read -r f; do
+printf '%s\n' "$SCOPE_FILES" | while IFS= read -r f; do
+  [ -n "$f" ] || continue
   _tmp="$WORK_DIR/head_$(printf '%s' "$f" | tr '/' '_')"
   if git show "HEAD:$f" > "$_tmp" 2>/dev/null; then
     scan_one "HEAD:$f" "$_tmp"
   else
+    # T-0632: the redirect above CREATES $_tmp before git runs, so a failed
+    # `git show` leaves an EMPTY file behind - which the recount's text/binary
+    # probe answers rc 1 for, i.e. it would be filed as a binary blob. Remove
+    # it, so an unreadable path lands in the same NOT EXTRACTED bucket as one
+    # the loop never reached. Both mean the same thing: not searched.
+    rm -f -- "$_tmp"
     printf 'UNREADABLE|-|%s\n' "$f"
   fi
+  # The receipt is written LAST, so it records a path this pass FINISHED
+  # rather than one it started.
+  printf '%s\n' "$f" >> "$PASS1_FILE"
 done >> "$HITS_FILE"
 
 # ------------------------------------- pass 2: working copies of those paths --
 printf -- '-- pass 2: working copies of the same paths (catch it before the commit) ---------------------------------\n'
-printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$' | while IFS= read -r f; do
+printf '%s\n' "$SCOPE_FILES" | while IFS= read -r f; do
+  [ -n "$f" ] || continue
   if [ -f "$f" ]; then
     scan_one "WORKTREE:$f" "$f"
   else
     printf 'DELETED|-|%s\n' "$f"
   fi
+  printf '%s\n' "$f" >> "$PASS2_FILE"
 done >> "$HITS_FILE"
 
 # Recount in the parent shell: the subshell counters above did not survive.
-SCANNED=0
-BINARY=0
-for f in $(printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$'); do
+#
+# T-0632 splits this PER PASS. One merged BINARY counter is what let 364
+# never-extracted paths hide inside a number whose honest value was 3+3: with
+# the passes separated, each one has to add up to the declared scope on its
+# own, and an inflated bucket has nowhere to sit. The fed-by-heredoc `while`
+# replaces `for f in $(...)`: a heredoc is a REDIRECT, not a pipe, so the loop
+# runs in THIS shell and the counters survive - which is why the `for` was
+# there - while `IFS= read -r` also stops a path containing whitespace from
+# being split into two paths that are each counted and neither scanned.
+HEAD_SCANNED=0
+HEAD_BINARY=0
+HEAD_NOT_EXTRACTED=0
+WT_SCANNED=0
+WT_BINARY=0
+WT_ABSENT=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
   _tmp="$WORK_DIR/head_$(printf '%s' "$f" | tr '/' '_')"
   # Written as separate statements rather than `[ -f ] && grep -Iq`, because the
   # `&&` form throws grep's exit status away and cannot tell rc 1 (binary) from
@@ -320,23 +488,127 @@ for f in $(printf '%s\n' "$PACKAGED_FILES" | grep -ve '^$'); do
     grep -Iq . "$_tmp" 2>/dev/null
     _rc=$?
     [ "$_rc" -ge 2 ] && grep_failed "$_rc" "<non-empty-line test: the text/binary probe>" "$_tmp"
-    if [ "$_rc" -eq 0 ]; then SCANNED=$((SCANNED + 1)); else BINARY=$((BINARY + 1)); fi
+    if [ "$_rc" -eq 0 ]; then
+      HEAD_SCANNED=$((HEAD_SCANNED + 1))
+    else
+      HEAD_BINARY=$((HEAD_BINARY + 1))
+      printf 'pass 1|binary|%s\n' "$f" >> "$SKIP_FILE"
+    fi
   else
-    BINARY=$((BINARY + 1))
+    # THE LINE THIS WHOLE CHANGE IS ABOUT. It used to read
+    # `BINARY=$((BINARY + 1))`. A packaged path with no HEAD copy was never
+    # searched; it is not a binary blob, and it is not clean.
+    HEAD_NOT_EXTRACTED=$((HEAD_NOT_EXTRACTED + 1))
+    printf 'pass 1|NOT EXTRACTED|%s\n' "$f" >> "$SKIP_FILE"
   fi
   if [ -f "$f" ]; then
     grep -Iq . "$f" 2>/dev/null
     _rc=$?
     [ "$_rc" -ge 2 ] && grep_failed "$_rc" "<non-empty-line test: the text/binary probe>" "$f"
-    if [ "$_rc" -eq 0 ]; then SCANNED=$((SCANNED + 1)); else BINARY=$((BINARY + 1)); fi
+    if [ "$_rc" -eq 0 ]; then
+      WT_SCANNED=$((WT_SCANNED + 1))
+    else
+      WT_BINARY=$((WT_BINARY + 1))
+      printf 'pass 2|binary|%s\n' "$f" >> "$SKIP_FILE"
+    fi
   else
-    MISSING=$((MISSING + 1))
+    WT_ABSENT=$((WT_ABSENT + 1))
+    printf 'pass 2|absent|%s\n' "$f" >> "$SKIP_FILE"
   fi
-done
+done <<RECOUNT
+$SCOPE_FILES
+RECOUNT
+
+# The totals the summary has always printed, now DERIVED from the per-pass
+# counters rather than accumulated into one bucket.
+SCANNED=$((HEAD_SCANNED + WT_SCANNED))
+BINARY=$((HEAD_BINARY + WT_BINARY))
+MISSING=$WT_ABSENT
 
 # Before the findings block and the counts: any grep that failed - in this shell
 # or in either scanning subshell - stops the run here, loudly.
 assert_grep_ok
+
+# ------------------------------------------ reconciliation (T-0632) ---------
+# `assert_grep_ok` above answers "did a grep fail?". This answers the other
+# way a scan does not happen: "did a pass stop?". They are siblings, and the
+# second had no guard at all - see the block at the top of this file.
+#
+# Every FATAL below gets its OWN sentence. "The reconciliation failed" would
+# leave a reader to work out which of six things went wrong, and the whole
+# complaint against the old behaviour is that it made a reader work out what a
+# number meant.
+RECON_BAD=0
+recon_fail() { # <sentence>
+  printf '  %sFATAL:%s %s\n' "$C_BAD" "$C_OFF" "$1"
+  RECON_BAD=$((RECON_BAD + 1))
+}
+
+# `wc -l` and not `grep -c`: all three feed `[` tests below (house rule,
+# I-031). A missing receipt file is impossible here - mktemp created all three
+# or the script exited - but `wc -l <` on one would print nothing, and
+# `${:-0}` at each use site turns that blank into the FAIL direction.
+PASS1_DONE=$(wc -l < "$PASS1_FILE" | tr -d '[:space:]')
+PASS2_DONE=$(wc -l < "$PASS2_FILE" | tr -d '[:space:]')
+SKIPS_NAMED=$(wc -l < "$SKIP_FILE" | tr -d '[:space:]')
+SKIPS_COUNTED=$((HEAD_BINARY + HEAD_NOT_EXTRACTED + WT_BINARY + WT_ABSENT))
+ACCOUNTED=$((SCANNED + SKIPS_COUNTED))
+EXPECTED=$((FILE_COUNT * 2))
+
+printf '\n-- reconciliation: every packaged path accounted for, in both passes -------------------------------------\n'
+printf '  scope declared by `git archive HEAD`   %d file(s)\n' "$FILE_COUNT"
+printf '  pass 1  HEAD copies      finished %d   text %d   binary %d   NOT EXTRACTED %d\n' \
+  "${PASS1_DONE:-0}" "$HEAD_SCANNED" "$HEAD_BINARY" "$HEAD_NOT_EXTRACTED"
+printf '  pass 2  working copies   finished %d   text %d   binary %d   absent %d\n' \
+  "${PASS2_DONE:-0}" "$WT_SCANNED" "$WT_BINARY" "$WT_ABSENT"
+
+if [ "${PASS1_DONE:-0}" -ne "$FILE_COUNT" ]; then
+  recon_fail "$(printf 'pass 1 finished %s of %s packaged path(s) - it ended early, and the rest were never searched.' \
+    "${PASS1_DONE:-0}" "$FILE_COUNT")"
+fi
+if [ "${PASS2_DONE:-0}" -ne "$FILE_COUNT" ]; then
+  recon_fail "$(printf 'pass 2 finished %s of %s packaged path(s) - it ended early, and the rest were never searched.' \
+    "${PASS2_DONE:-0}" "$FILE_COUNT")"
+fi
+if [ "$HEAD_NOT_EXTRACTED" -gt 0 ]; then
+  recon_fail "$(printf '%s packaged path(s) have no HEAD copy in the work dir - not scanned, and NOT binary blobs.' \
+    "$HEAD_NOT_EXTRACTED")"
+fi
+if [ "$((HEAD_SCANNED + HEAD_BINARY + HEAD_NOT_EXTRACTED))" -ne "$FILE_COUNT" ]; then
+  recon_fail "$(printf 'pass 1 accounts for %s path(s), scope declares %s.' \
+    "$((HEAD_SCANNED + HEAD_BINARY + HEAD_NOT_EXTRACTED))" "$FILE_COUNT")"
+fi
+if [ "$((WT_SCANNED + WT_BINARY + WT_ABSENT))" -ne "$FILE_COUNT" ]; then
+  recon_fail "$(printf 'pass 2 accounts for %s path(s), scope declares %s.' \
+    "$((WT_SCANNED + WT_BINARY + WT_ABSENT))" "$FILE_COUNT")"
+fi
+if [ "$ACCOUNTED" -ne "$EXPECTED" ]; then
+  recon_fail "$(printf 'accounted for %s path-scan(s), the declared scope is %s (%s paths x 2 passes).' \
+    "$ACCOUNTED" "$EXPECTED" "$FILE_COUNT")"
+fi
+# I-028 on the ledger itself: an emptied SKIP_FILE under a healthy skip count
+# would read as "nothing was skipped", which is the same lie one level down.
+if [ "${SKIPS_NAMED:-0}" -ne "$SKIPS_COUNTED" ]; then
+  recon_fail "$(printf '%s skip(s) counted but %s named - a skip nobody can attribute to a path is refused.' \
+    "$SKIPS_COUNTED" "${SKIPS_NAMED:-0}")"
+fi
+
+printf '  accounted %d of %d path-scan(s)   skips named %d of %d counted\n' \
+  "$ACCOUNTED" "$EXPECTED" "${SKIPS_NAMED:-0}" "$SKIPS_COUNTED"
+if [ "$SKIPS_COUNTED" -gt 0 ]; then
+  while IFS='|' read -r _sp _sr _skip_path; do
+    [ -n "$_sp" ] || continue
+    printf '      %s  %-13s %s\n' "$_sp" "$_sr" "$_skip_path"
+  done < "$SKIP_FILE"
+fi
+
+if [ "$RECON_BAD" -gt 0 ]; then
+  printf '\n%sFATAL:%s the scan did not cover the scope it declared (%s reconciliation failure(s)).\n' \
+    "$C_BAD" "$C_OFF" "$RECON_BAD"
+  printf 'A scan that did not happen is NOT a scan that found nothing. This run has\n'
+  printf 'NO result, which is not a clean result. (T-0632, and I-027 for the sibling case)\n'
+  exit 1
+fi
 
 # ------------------------------------------------------- I-007 self-guard ----
 # Every count above is built from PACKAGED_FILES, which is filtered out of the
@@ -399,6 +671,14 @@ fi
 printf '\n=========================================================================================================\n'
 printf 'scope: packaged tree (%d entries) + their working copies - scanned: %d - deny-list terms: %d - findings: %d\n' \
   "$ENTRIES" "$SCANNED" "$TERM_COUNT" "$FINDINGS"
+# T-0632. The gate asserts this figure is positive, which is the I-028 guard
+# on the reconciliation having happened AT ALL: delete the block above and
+# this line goes with it, the runner's extractor returns nothing, and G7 fails
+# naming it - instead of the invariant quietly going back to being silent at
+# partial. Its VALUE is checked by the reconciliation itself, above, which is
+# where the arithmetic is; the runner checks that there is a value.
+printf 'accounted: %d of %d packaged path-scan(s) - %d path(s) x 2 passes - skips named: %d\n' \
+  "$ACCOUNTED" "$EXPECTED" "$FILE_COUNT" "${SKIPS_NAMED:-0}"
 if [ "$BINARY" -gt 0 ] || [ "$MISSING" -gt 0 ]; then
   printf '%s(skipped: %d binary blob(s); %d packaged path(s) absent from the working tree)%s\n' \
     "$C_DIM" "$BINARY" "$MISSING" "$C_OFF"

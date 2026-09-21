@@ -392,7 +392,7 @@ program computes its hashes is worse than one that is noisy.
    empty column above and is the only step that needs a Mac in front of a human.
 2. Run `bash tests/bin/doctor` there; it must reach `READY`.
 3. Run both wave runners and reproduce the counts this repository quotes — **95 checks · 0
-   failures** and **66 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
+   failures** and **67 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
    It read `61` and `37` until 2026-09-12 and `67` and `49` until 2026-09-21, which was six
    invariants and twenty-seven checks behind by the end: the runners grew and the sentence did not,
    twice. It then read `88` for part of one day, and this time the guard below moved it — which is

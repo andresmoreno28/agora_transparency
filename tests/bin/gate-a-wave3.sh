@@ -149,7 +149,23 @@
 #           "15 top-level files classified" over a rule that can no longer
 #           classify anything.                                        64 -> 66
 #
-# GATE-CLAIM: checks=66 invariants=18
+# UNIT 006 WAVE 5 (2026-09-21) takes it from 66 to 67, and `invariants` does
+# NOT move for the same reason: the check lands in the EXISTING G7.
+#   T-0632  G7 no-boilerplate gains `accounted`. The invariant was FATAL at
+#           zero and SILENT AT PARTIAL: when a pass ended mid-scan, the
+#           files it never opened were reclassified as binary blobs and it
+#           printed `findings: 0` at exit 0 over half its declared set. It
+#           now reconciles both passes against the scope it declares, FATALs
+#           on a shortfall, so the invariant's own `(exit)` check already
+#           catches a truncated run. THIS check is the I-028 guard on the
+#           reconciliation existing at all: delete the block and the
+#           `accounted:` line goes with it, the extractor returns nothing,
+#           and G7 fails naming it rather than the invariant quietly going
+#           back to being silent at partial. Asserted positive and never
+#           pinned - 734 is 367 packaged paths x 2 passes today and a
+#           different number the moment the package changes.      66 -> 67
+#
+# GATE-CLAIM: checks=67 invariants=18
 #
 # G11 amended the sentence above from TEN invariants to ELEVEN on 2026-08-24.
 # It is not a dependency or process invariant like the other ten: it exists
@@ -486,14 +502,26 @@ if [ -x "$INV" ]; then
   # pinned to a specific number, so a legitimate change to the deny-list size
   # elsewhere cannot break this check.
   TERMCNT=$(extract_count "$INV_OUT" 'deny-list terms:[[:space:]]*[0-9]+')
-  note "$(printf '%s' "$INV_OUT" | grep -E '^scope:' | tail -1)"
+  # T-0632 / I-028. `scanned` above is the count the invariant reports; this
+  # is the count it RECONCILED against the scope it declared. The two used to
+  # be the same question because nothing compared the second against anything:
+  # a run whose pass 1 ended mid-scan printed `scanned: 364 - findings: 0` and
+  # exit 0, with the 364 files it never opened counted as binary blobs. The
+  # invariant now FATALs on that, so `(exit)` catches the truncation itself;
+  # what this check catches is the reconciliation being REMOVED, which would
+  # otherwise restore the silence with every other check still green.
+  # Positive only, never pinned: 734 = 367 packaged paths x 2 passes today.
+  ACCOUNTED=$(extract_count "$INV_OUT" 'accounted:[[:space:]]*[0-9]+')
+  note "$(printf '%s' "$INV_OUT" | grep -E '^(scope|accounted):' | tr '\n' ' ')"
   check 'no-boilerplate (exit)'            "$INV_RC" '0'
   check_positive 'no-boilerplate (scanned)' "$CNT"
   check_positive 'no-boilerplate (deny terms)' "$TERMCNT"
+  check_positive 'no-boilerplate (accounted)' "$ACCOUNTED"
 else
   check 'no-boilerplate present'           "$(trunc "$INV" 24)" 'present'
   check_positive 'no-boilerplate (scanned)' ''
   check_positive 'no-boilerplate (deny terms)' ''
+  check_positive 'no-boilerplate (accounted)' ''
 fi
 
 # ------------------------------------------------------- G8 - no-blind-phpunit (T-214) --
