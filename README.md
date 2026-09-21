@@ -77,8 +77,15 @@ What actually runs, and what it covers:
   front page as a visitor meets it, four listing routes, one published record, and the
   page-not-found screen — **anonymously**, as a member of the public meets them. It is **blocking**
   in both PHPUnit jobs. Result: **0 violations**.
-* **In `drupal/agora_theme`**, a `nightwatch` job runs axe over **nine fixture pages**, 89 rules
-  each, **0 violations**, with heading order reported on 9 of 9.
+* **In `drupal/agora_theme`**, a `nightwatch` job runs axe over its fixture pages. **That figure
+  is deliberately not repeated here.** It moves whenever the theme adds a surface, it is printed by
+  the job itself, and the job's log is **public and readable without an account** — so the number
+  belongs where a reader can check it rather than in a second copy that goes stale.
+  ⚠️ **This paragraph stated "nine fixture pages … 9 of 9" from 2026-09-20 17:56 until 2026-09-21,
+  and it was wrong within hours of being written.** It was written in the commit whose own subject
+  was *"the package contradicted itself about accessibility on its own front page"*; the theme took
+  the gate from nine pages to ten the same evening, and nothing here knew. **A number written in
+  two places goes stale in one of them first**, and the fix is to stop making the second copy.
 
 **What neither gate covers, stated because a gate's silence is not a pass:** anything behind a
 login; four of the eight listing routes, the prose pages — including this statement's own page —

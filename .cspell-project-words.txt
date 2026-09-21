@@ -393,3 +393,8 @@ amazeeio
 # `automators`, from ai_automators - one of the five editor-productivity submodules unit 005
 # puts explicitly OUT of scope.
 automators
+# Unit 006 scaffolding, 2026-09-21. `numstat`, from `git diff --numstat` - the flag that prints
+# added and deleted line counts per file, which is how the 28-day drift in the two `adapted`
+# shared invariants was measured (+132/-4 and +54/-3). A git option name, not a word, and it
+# recurs in the plan and in the task row that quotes the command it came from.
+numstat
