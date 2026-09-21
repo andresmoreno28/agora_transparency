@@ -800,6 +800,42 @@ compare 'listing_total' "$A_LISTINGS" "$(count_tracked 'config/views.view.agora_
 # are read against the same measured source, which is what makes the duplicate safe.
 compare 'registers_stated' "$A_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_base_* node bundles'
 
+# ============================ T-0614: the scoping sentence, and the half of it that binds ==
+# The shipped statement excluded the administrative interface by saying it "is Drupal core"
+# until 2026-09-21. It is not. An Agora install's admin interface is the Gin THEME, core
+# `navigation` and contrib `coffee` - all three installed by the `drupal_cms_admin_ui` recipe
+# this package applies at recipe.yml:64 - plus the Config Guardian dashboard this package
+# installs itself at recipe.yml:190 and configures through its own
+# config/config_guardian.settings.yml. (recipe.yml:705-721 is a COMMENT explaining why those
+# settings are NOT a config action, which is a different thing from being the configuration.)
+#
+# THE FIRST CLAIM IS AN EXTRACTION AND NOT A COMPARISON, and it is the one that matters most:
+# reword the sentence back and claim_once FATALs in the same commit, naming the pattern. A
+# correction nothing holds in place is a correction with a half-life - and this file's own
+# header records a figure that was false within hours of being written.
+claim_once 'admin scope' STATEMENT \
+  'The administrative interface is <strong>not</strong> Drupal core\.'
+
+# THE ONE COMPONENT OF THAT SENTENCE THIS REPOSITORY CAN CHECK. Gin, coffee and navigation are
+# installed by a DEPENDENCY's recipe and appear nowhere in this tree, so they are named in NOT
+# CHECKED below with that as the reason. The dashboard is ours.
+#
+# The module name is DERIVED FROM THE PROSE rather than typed here. Typing it would make this a
+# constant compared against a constant: renaming the project in the shipped text would leave the
+# comparison passing about a name the statement no longer uses.
+claim_once 'admin dashboard' STATEMENT \
+  'the [A-Z][A-Za-z]+ [A-Z][A-Za-z]+ dashboard, which this site template chose, installed and configured'
+A_DASH=$(field 1 '.*the ([A-Z][A-Za-z]+ [A-Z][A-Za-z]+) dashboard.*' | tr 'A-Z ' 'a-z_')
+RECIPE_INSTALLED=$(text_of RECIPE | sed -n '/^install:/,/^config:/p' \
+  | sed -nE 's/^  - ([a-z0-9_]+)$/\1/p')
+[ -n "$RECIPE_INSTALLED" ] || fatal "recipe.yml's install: list parsed to no extensions at all. The dashboard the statement names would then be looked for in an empty set, and an absent module would read exactly like a present one."
+RECIPE_DASH=''
+for _m in $RECIPE_INSTALLED; do
+  [ "$_m" = "$A_DASH" ] && RECIPE_DASH="$_m"
+done
+compare 'admin_dashboard_module' "$A_DASH" "$RECIPE_DASH" \
+  'the extension of that name in the install: list of recipe.yml'
+
 # ================================= recipe.yml, composer.json, recommended.yml ==
 printf '\nrecipe.yml / composer.json / recommended.yml\n'
 printf -- '---------------------------------------------------------------------------------------------------------\n'
@@ -1206,6 +1242,7 @@ NOT_CHECKED=(
 "Whether a figure stated in DIFFERENT WORDS somewhere in the packaged set is the same figure. Every comparison above binds ONE canonical sentence by a tight pattern, and the one-copy rule covers a REGISTERED set of detectors rather than every number in six files. The change this script arrived with deleted the restatements it found rather than trying to match them all, so this entry is about the NEXT one somebody writes."
 "The WCAG criterion identifiers - 2.4.7, 2.5.8, 1.4.10, 2.4.1 - which appear in both README.md and the statement. They are names, not measurements: two documents naming the same criterion are not two copies of a figure, and binding them would be binding a citation. READABLE AND DELIBERATELY NOT BOUND."
 "The declared licence of each of the projects in composer.json require. LICENCE-MANIFEST.md states that all of them are GPL-2.0-or-later on the strength of Drupal.org's hosting condition, and says so in its own words; nothing here re-derives it from packages.drupal.org. The COUNT of them is compared above, and tests/bin/sbom-check reads each project's release status and security coverage - neither is the licence. Closing it is eleven HTTP requests in the --online block and it has no owner yet."
+"Gin, Coffee and Navigation - the three components the scoping sentence of the accessibility statement names beside the dashboard. All three are installed by drupal_cms_admin_ui, a DEPENDENCY's recipe, and none of the three is named anywhere in this tree, so no offline read here can produce them; the one component this package installs itself is compared above. They were verified at source for T-0614 by reading that recipe on git.drupalcode.org - coffee at its line 7, gin at line 16, navigation at line 21, and admin: gin at line 107, which is the line that makes Gin the administration theme rather than merely an installed one. The file is byte-identical at tags 2.1.4 and 2.1.5 and at the 2.1.x tip, so the citation holds at every version the ^2 constraint can resolve to today; it will not hold forever, and a dependency that dropped one of the three would leave the sentence naming a component that is no longer installed."
 "screenshot.webp's pixel dimensions and logo.png's, quoted in the manifest headings. Reading them needs a WebP and PNG header parser; the BYTE SIZE and the SHA-256 of both are compared above, and a file whose digest matches has not changed its dimensions either."
 "The two figures content/MEDIA-LICENCES.md states about haven - 21 Unsplash-named JPEGs, 77426040 bytes, at release 1.0.3. They are facts about ANOTHER project at a version that will move, and nothing offline can produce them; re-deriving them would be one 78 MB download per run, which is not a gate's business. The page quotes the one-second command that produces both and says in its own words that nothing here keeps them true. It said 22 for twenty-six days, in two places, and 22 is reproducible at no release haven has cut - which is what an unbound third-party figure looks like when it goes wrong."
 )

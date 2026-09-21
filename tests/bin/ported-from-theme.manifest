@@ -177,6 +177,30 @@
 # what it does not cover, which is the opposite direction from weakening, and the G11 checks
 # assert that list is non-empty rather than asserting its length, so nothing was tuned to fit.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-21 (T-0614), the same one record, the same four steps in order.
+#
+#   1. tests/bin/ported-drift FIRST, and BEFORE the edit was decided rather than after it:
+#      3 records compared, 3 read, 3 provenance verified, **0 behind** 1.x at a427375f,
+#      oldest drift 0 day(s), 0 past the cap, 0 findings, network READ anonymously. So there
+#      was nothing upstream to take and no per-hunk decision to make.
+#   2. What changed HERE: packaged-claims gained ONE extraction (`admin scope`, which FATALs
+#      if the corrected scoping sentence of the shipped accessibility statement is reworded
+#      back to "which is Drupal core"), ONE comparison (`admin_dashboard_module`, which
+#      derives the module name FROM the prose and looks for it in recipe.yml's install:
+#      list) and ONE NOT CHECKED entry (Gin, Coffee and Navigation, which arrive from a
+#      dependency's recipe and are named nowhere in this tree). Nothing came from
+#      agora_theme; claims go 25 -> 27, comparisons 36 -> 37, the list 11 -> 12.
+#   3. local_sha256 re-derived with sha256 from the file on disk and substituted by command,
+#      never typed. source_sha256 and source_commit UNCHANGED and not retyped, because step 1
+#      proved the source has not moved.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0.
+#
+# ⚠️ THE DIRECTION IS THE ONE D-028 PERMITS, and it is the same direction as the T-0629 edit
+# above: the guard now says MORE about what it does not cover, and the G11 checks assert the
+# NOT CHECKED list is non-empty rather than asserting its length, so nothing was tuned to fit
+# and no check total moved - 95 / 66 / 24 is unchanged across this commit.
+#
 # script            role       status    local_sha256                                                     source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -234,7 +258,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   9e81f101003df97e130d1ac3c0ac8104fc2e590ebbbf6f8ee7f25fbfd3698eb7 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+packaged-claims    invariant  adapted   a853e57e17838a355c24f9c8a8276ed8bb337775347f0dc00af0fe3a4501d755 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
 #
 # -----------------------------------------------------------------------------------------
 # TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own
