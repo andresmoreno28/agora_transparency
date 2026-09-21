@@ -1432,8 +1432,40 @@ class ValidationTest extends BrowserTestBase {
     // and now the cheapest way to reach a state the shipped corpus no longer
     // puts these surfaces in. Asserted on BOTH surfaces, where it used to be
     // asserted on publications alone.
+    //
+    // 🔴 THE WORDING HERE IS OWNED BY `agora_theme`, NOT BY THIS PACKAGE, and
+    // that is why the exact string is NOT asserted at this one call site.
+    // `agora_theme_preprocess_views_view()` (theme commit b02e0de, released in
+    // 1.2.0) replaces the view's configured empty text whenever an exposed
+    // filter is carrying user input, because "Nothing has been published yet."
+    // in answer to a search that merely matched nothing is a FALSE COMPLIANCE
+    // CLAIM about a public body. The theme is right and the register's own
+    // config cannot make that distinction: to a view, both are zero rows.
+    //
+    // ⚠️ AND THIS PACKAGE PINS NO THEME VERSION. `composer.json` requires
+    // `drupal/agora_theme: ^1.1`, nothing here is locked, and what a clean
+    // install actually receives is decided by packages.drupal.org AT INSTALL
+    // TIME. So a theme release - a repository with its own cadence, that no
+    // commit here participates in - would turn this gate red with nothing in
+    // this repository to blame. Asserting the theme's NEW string would be the
+    // same defect mirrored: green only against 1.2.0 and red against 1.1.0.
+    // What is asserted is what this package owns and what holds across both:
+    // no table, and an empty region that carries text.
+    //
+    // ⚠️ THE STRING ITSELF IS STILL COVERED, where it is true: the two call
+    // sites in ::testTableViews() reach the empty state WITHOUT exposed input
+    // - one past the last pager page, one with the bundle unpublished - so
+    // the theme's replacement never fires there and both still assert the
+    // configured text verbatim. Measured stable across both theme versions.
+    //
+    // ⚠️ SECOND TIME `agora_theme`'s RELEASE CADENCE HAS REACHED INTO THIS
+    // PACKAGE'S GATE; the four `canvas.component.sdc.agora_theme.*` prefixes
+    // in `recipe.yml` were the first. Recorded here rather than in an
+    // invariant because the coupling is a fact a reader of this test needs at
+    // the moment they read it, and a script cannot tell a string this package
+    // owns from one it merely renders.
     foreach (array_keys(self::SURFACE_BUNDLES) as $view_id) {
-      $this->assertEmptyState($paths[$view_id], ['query' => ['search' => 'zzzz-no-such-record']], $empty_text[$view_id]);
+      $this->assertEmptyState($paths[$view_id], ['query' => ['search' => 'zzzz-no-such-record']], empty_text: NULL);
     }
 
     // -- The menu, on a live site --------------------------------------------
@@ -1706,14 +1738,24 @@ class ValidationTest extends BrowserTestBase {
    * carrying headers with no rows under them, which announces a table to a
    * screen-reader user and then leaves them nothing in it.
    *
+   * ⚠️ THE WORDING IS NOT ALWAYS OURS TO ASSERT, which is what `$empty_text`
+   * being nullable is for. See the block comment at the only call site that
+   * passes NULL: `agora_theme` replaces the configured empty text whenever an
+   * exposed filter carries user input, so on a filtered route the sentence a
+   * reader sees belongs to a different Drupal project on a different release
+   * cadence. Every call site that reaches the empty state WITHOUT exposed
+   * input passes the configured string and still asserts it exactly.
+   *
    * @param string $path
    *   The view page's path.
    * @param array $options
    *   Options for drupalGet(), carrying whatever makes the result set empty.
-   * @param string $empty_text
-   *   The empty text the view declares.
+   * @param string|null $empty_text
+   *   The empty text the view declares, asserted verbatim - or NULL to assert
+   *   only that the empty region carries SOME text, for a route whose wording
+   *   this package does not own.
    */
-  protected function assertEmptyState(string $path, array $options, string $empty_text): void {
+  protected function assertEmptyState(string $path, array $options, ?string $empty_text): void {
     $assert = $this->assertSession();
     $this->drupalGet($path, $options);
     $assert->statusCodeEquals(200);
@@ -1730,8 +1772,44 @@ class ValidationTest extends BrowserTestBase {
     // it, while an attachment can only ever be inside the page's own view -
     // so the first match under PAGE_VIEW is the page's view in both cases,
     // and its text subtree contains the attachment's anyway.
-    $assert->elementExists('css', self::PAGE_VIEW);
-    $assert->elementTextContains('css', self::PAGE_VIEW, $empty_text);
+    $view = $assert->elementExists('css', self::PAGE_VIEW);
+
+    if ($empty_text !== NULL) {
+      $assert->elementTextContains('css', self::PAGE_VIEW, $empty_text);
+    }
+    else {
+      // THE SHAPE, NOT THE SENTENCE. The reader-facing guarantee is that a
+      // register which matched nothing says SOMETHING about why it is blank,
+      // and that guarantee is version-independent; the sentence itself is
+      // not ours (see the call site). So the form's own text is subtracted
+      // from the container's, and what is left must not be empty.
+      //
+      // WHY THAT REMAINDER IS THE EMPTY REGION AND NOT SOMETHING ELSE, in
+      // terms a reader can check rather than a measurement they cannot
+      // reproduce: core's `views-view.html.twig` renders the rows and the
+      // empty area as the two mutually exclusive branches of one `if`, and
+      // wraps the empty area in no element of its own. These registers put
+      // nothing else inside that container - no view title, and no pager to
+      // render once the result set is empty. So with the table excluded
+      // below, what is left beside the exposed form is the empty area.
+      $form = $view->find('css', 'form');
+      $this->assertNotNull($form, "$path must render an exposed form, or this is no longer the FILTERED empty state and the call site has stopped testing what it says.");
+      $form_text = trim($form->getText());
+      $whole = trim($view->getText());
+      // ⚠️ THE TWO GUARDS BELOW ARE WHAT KEEP THIS FROM PASSING VACUOUSLY. A
+      // form with no text, or a form whose text is not found in the
+      // container's, makes the subtraction a no-op - and a no-op subtraction
+      // leaves the whole container behind, so the check would hold over a
+      // page carrying nothing but the search box (I-028).
+      $this->assertNotSame('', $form_text, "$path must render a form that carries text, or the subtraction below removes nothing.");
+      $this->assertStringContainsString($form_text, $whole, "$path must contain its own form's text, or the subtraction below removes nothing.");
+      $this->assertNotSame(
+        '',
+        trim(str_replace($form_text, '', $whole)),
+        "$path matched nothing and then told the reader nothing: the view container carries the exposed form and no other text at all. Whatever the wording, and whoever owns it, a filter that matched nothing must say so.",
+      );
+    }
+
     $assert->elementNotExists('css', self::PAGE_VIEW . ' ' . self::REGISTER_TABLE);
   }
 
