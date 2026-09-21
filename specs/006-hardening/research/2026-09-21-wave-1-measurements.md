@@ -623,7 +623,7 @@ every one `success`, every one `allow_failure=false`.**
 | # | ROADMAP point | `ROADMAP.md` | verdict | what decides it |
 |---|---|---|---|---|
 | 1 | Full a11y audit: axe + keyboard walkthrough of every flow + WCAG 2.2 criteria | `:215-216` | 🟡 **part green, part absent** | axe is green and blocking: job **`12330735`**, `AccessibilityTest` **187 assertions**, 0 failures, in `junit.xml`. **Keyboard walkthrough: absent** — no transcript exists; T-0616. **"every flow": false** — 4 of 8 registers, 0 admin routes, `AccessibilityTest.php:71-76` |
-| 2 | WCAG attestation written and signed | `:217` | 🔴 **absent** | No such file. `ACCESSIBILITY.md`, `ATTESTATION.md` both absent; `git ls-files \| grep -iE 'attest\|wcag'` → 0 hits |
+| 2 | WCAG attestation written and signed | `:217` | 🔴 **absent** | No such file. `ACCESSIBILITY.md`, `ATTESTATION.md` both absent. **Over the packaged set** — `git archive --worktree-attributes HEAD \| tar -t \| grep -icE 'attest\|wcag'` → **0 of 374**. ⚠️ Over **tracked** files the same pattern returns **1**: `.claude/skills/accesibilidad-wcag-aa/SKILL.md`, which is process layer and `export-ignore`d. See the note below |
 | 3 | Final SBOM: stable version, security coverage, line in `DECISIONS.md` | `:218-219` | ✅ **green** | `tests/bin/sbom-check`, run by `agora-invariants` job **`12330734`** (`success`, blocking). ⚠️ Re-read on the day is T-0624's job, not this one's |
 | 4 | Complete licence manifest: GPL code, OFL fonts, CC0/own media | `:220` | 🟡 **part green, part absent** | **Media covered**: `content/MEDIA-LICENCES.md` + `tests/bin/media-licence` (G13, wave 3 runner). **Code**: `LICENSE.txt` + `composer.json`. **Fonts**: OFL Public Sans lives in `agora_theme`, not here. **No package-level manifest ties the three together** — T-0619 |
 | 5 | Binding smoke: clean install, no keys, verifying routes and rendering | `:221` | ✅ **green** | `Drupal CMS` job **`12330728`**, `success`, `allow_failure=false`. Builds a fresh `drupal/cms`, installs this package through a path repository |
@@ -634,6 +634,16 @@ every one `success`, every one `allow_failure=false`.**
 | 10 | Final sweep of invariants: `no-unstable-deps`, `no-patches`, `no-secrets`, `sbom-check` | `:227` | ✅ **green** | All four run in `agora-invariants` job **`12330734`**, `success`, blocking. It executes both gate runners — 17 invariants between them |
 
 **Tally: 3 green · 3 part-green (1, 4, 8) · 4 absent (2, 6, 7, 9).**
+
+⚠️ **Point 2's evidence line was WRONG in the first draft of this file, and the correction is worth
+more than the row.** It quoted `git ls-files | grep -iE 'attest|wcag'` → **0 hits**. Re-run before
+this file was finished, the same command returns **1**:
+`.claude/skills/accesibilidad-wcag-aa/SKILL.md`. The **verdict** was right — that file is process
+layer, `export-ignore`d, and ships to nobody — but **the command quoted as its evidence did not
+produce the figure quoted beside it.** Caught by re-running the command instead of re-reading the
+sentence, which is the only way this class of defect is ever caught. **It is left visible rather
+than silently fixed**, because it is a live, first-person instance of exactly what unit 006 exists
+to remove: a claim whose source does not say what the claim says.
 
 ⚠️ **This is not the scaffold's split and the difference is worth one line.** `plan.md:23-26` says
 *"four-tenths already continuously green … three stale in wording, and three genuinely absent"*.
