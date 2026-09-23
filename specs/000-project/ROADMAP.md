@@ -19,6 +19,9 @@
 `003`, `004` and `005` depend on `002` but **not on each other**: they can overlap if the files are
 disjoint. `006` requires the three of them closed. `007` belongs to the human.
 
+> **Amended by D-060 (signed by [andres] 2026-09-23):** `004` is **deferred past v1**, so `006` no
+> longer requires it closed — `006` audits what ships. The map above is left as it was drawn.
+
 ## Roadmap conventions
 
 - **Gate A** = automatable green, with real counts (see the `gate-a-verde` skill).
@@ -112,6 +115,10 @@ the `no-secrets` invariant over `content/` · verification that there is no real
 ---
 
 ## 004 · Publishing + FOI — workflows with ECA
+
+> **DEFERRED PAST V1 — D-060, signed by [andres] 2026-09-23.** v1 is a transparency **publication**
+> portal, and nothing in this section is part of it. The section is kept as the direction for this
+> unit whenever it is taken up.
 
 **Goal:** the portal stops being static: it has an editorial workflow and a citizen request cycle.
 

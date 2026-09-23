@@ -35,10 +35,14 @@ type: Site
 # a rule enforced by the installer's own mechanics.
 #
 #   base        content model, taxonomies, roles and permissions     unit 002
-#   publishing  editorial workflow with ECA                          unit 004
-#   foi         freedom-of-information requests (Webform + ECA)      unit 004
+#   publishing  editorial workflow with ECA                          unit 004 *
+#   foi         freedom-of-information requests (Webform + ECA)      unit 004 *
 #   ai          cited assistant over the document corpus             unit 005
 #   governance  Config Guardian, scheduled snapshots                 unit 005
+#
+#   * Deferred past the first release (D-060). The first release is a
+#     transparency publication portal, and these two areas stay empty in it
+#     by decision.
 #
 # Areas with nothing to contribute yet keep their label, so the block that owns
 # them already exists when their unit arrives.
@@ -75,9 +79,11 @@ recipes:
   # Configures Drupal to send nice-looking HTML emails.
   - easy_email_express
   # -- area: publishing ---------------------------------------------------------
-  # (empty in v1; filled by unit 004 — editorial workflow with ECA)
+  # (empty by decision: unit 004, editorial workflow with ECA, is deferred past
+  # the first release — D-060)
   # -- area: foi ----------------------------------------------------------------
-  # (empty in v1; filled by unit 004 — freedom-of-information requests)
+  # (empty by decision: unit 004, freedom-of-information requests, is deferred
+  # past the first release — D-060)
   # -- area: ai -----------------------------------------------------------------
   # (empty in v1; filled by unit 005 — cited assistant, degrades without an API key)
   # -- area: governance ---------------------------------------------------------
@@ -150,9 +156,9 @@ install:
   # is the only update path a site template has: recipes apply once.
   - agora_theme
   # -- area: publishing ---------------------------------------------------------
-  # (empty in v1; filled by unit 004)
+  # (empty by decision: unit 004 is deferred past the first release — D-060)
   # -- area: foi ----------------------------------------------------------------
-  # (empty in v1; filled by unit 004)
+  # (empty by decision: unit 004 is deferred past the first release — D-060)
   # -- area: ai -----------------------------------------------------------------
   # (empty in v1; filled by unit 005)
   # -- area: governance ---------------------------------------------------------
@@ -697,9 +703,9 @@ config:
       simpleConfigUpdate:
         consentModal.privacyPolicy.url: 'internal:/privacy-notice'
     # -- area: publishing -------------------------------------------------------
-    # (empty in v1; filled by unit 004)
+    # (empty by decision: unit 004 is deferred past the first release — D-060)
     # -- area: foi --------------------------------------------------------------
-    # (empty in v1; filled by unit 004)
+    # (empty by decision: unit 004 is deferred past the first release — D-060)
     # -- area: ai ---------------------------------------------------------------
     # (empty in v1; filled by unit 005)
     # -- area: governance -------------------------------------------------------

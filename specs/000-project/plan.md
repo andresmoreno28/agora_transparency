@@ -39,6 +39,16 @@ Seam rules (mandatory from day 1, zero cost):
 | **ai** | Assistant with citations over the document corpus (RAG), on top of the Drupal CMS AI recipe, provider-agnostic, **optional and degrading gracefully** without an API key. Answers ONLY from published documents; says "I don't know" outside its sources. Hard dependency: `ai ^1.4` and no provider (D-013). |
 | **governance** | Config Guardian preconfigured: scheduled snapshots, admin panel. |
 
+> **Amended by D-060 (signed by [andres] 2026-09-23).** **publishing** and **foi** are **deferred
+> past v1.** v1 is a transparency **publication** portal — the registers, their demonstration
+> records and a document library — which is what `recipe.yml` already is. The two rows above now
+> describe areas, not v1 scope; their seams stay labelled and empty, and `recipe.yml` says so in the
+> packaged text. ⚠️ **"No editorial workflow" means none over Ágora's records**, not that nothing
+> workflow-shaped is installed: `content_moderation` is enabled, and `recipe.yml` records both that
+> the declared Drupal CMS chain brings its stock `basic_editorial` workflow and that none of the six
+> bundles is moderated. The same decision reaches §3's *Participation* page, §5's out-of-scope list
+> and §6's step `004`.
+
 **Outside this repository — `drupal/agora_theme` (D-014):** sober institutional aesthetics, AA contrast
 tokens, free-licensed typography (OFL) **self-hosted**, own/CC0 images, everything in the license
 manifest. It is a **separate project on Drupal.org**, declared in Ágora's `require`: a site template
@@ -52,6 +62,9 @@ offices, remuneration in accessible tables) · Document library with facets · B
 (lightweight visualization + accessible table as fallback; avoid heavy chart modules) ·
 Participation (freedom-of-information request with ECA cycle) · Downloadable open data · AI assistant
 (with disclaimer and citations) · **Accessibility statement** pre-built, with a complaints channel.
+
+> **Amended by D-060 (signed by [andres] 2026-09-23):** *Participation* is the **foi** area, and it
+> is deferred past v1 with it — see §2.
 
 ## 4 · Marketplace requirements that act as hard constraints
 
@@ -68,9 +81,15 @@ and no patches**.
 - Multilingual beyond ES/EN. — Midgard (alpha; narrative in docs only). — Marketplace commerce
   (the DA is building it). — Any module without security coverage.
 
+> **Amended by D-060 (signed by [andres] 2026-09-23):** the **publishing** and **foi** areas are out
+> of scope for v1 too — deferred, not abandoned. See §2.
+
 ## 6 · Planned units (001 is planned in its scaffolding turn; the rest is direction, not scope)
 
 000 project (this doc) → 001 foundation (research + starter kit skeleton + green CI while empty) →
 002 base+theme (content model + Canvas theme) → 003 demo content → 004 publishing+foi (ECA) →
 005 ai+governance → 006 hardening (full a11y audit, binding smoke, SBOM/licenses) →
 007 publication (Drupal.org project, release, marketplace application) [the human's hands].
+
+> **Amended by D-060 (signed by [andres] 2026-09-23):** step `004` is deferred past v1, and `006`
+> audits what ships instead of waiting for it. See §2 and `ROADMAP.md`.

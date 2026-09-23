@@ -39,11 +39,15 @@ feature list:
 |---|---|
 | ~~Content model: documents, officials, contracts, budget lines, public calls~~ **DONE, unit 002** | six bundles ship in `config/` |
 | ~~Demo content — English only, see below — and the real screenshot~~ **DONE, unit 003** | 60 records, and `screenshot.webp` is a real 500×400 capture |
-| Editorial workflow and freedom-of-information requests | unit 004 |
+| Editorial workflow and freedom-of-information requests — **deferred past the first release** (D-060) | unit 004, after the first release |
 | ~~Configuration auditing~~ **DONE, unit 005** | `drupal/config_guardian` in `require`, installed by `recipe.yml`, with its settings and a governance-auditor role in `config/` |
 | AI assistant with citations | unit 005 |
 
-The full intended scope is written down in `specs/000-project/plan.md` in this repository.
+The first release is a transparency **publication** portal: it publishes registers of records and
+a document library, for anyone to browse, filter and download. That is a decision, recorded as
+D-060 in `specs/000-project/DECISIONS.md`; the full intended scope, including what that decision
+defers past the first release, is written down in `specs/000-project/plan.md`. Both are in this
+repository.
 
 ## The demo content is a fictional Spanish municipality, published in English
 
