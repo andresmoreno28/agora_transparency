@@ -74,6 +74,13 @@ WCAG attestation · security response commitment (a defined SLA; the author is p
 Team process through Config Guardian) · current Drupal CMS + Canvas only · **no unstable releases
 and no patches**.
 
+> **Amended by D-064 (signed by [andres] 2026-09-23):** the security-response commitment is a named
+> acknowledgement window and a named contact route, both chosen so that **one maintainer can keep
+> them**. It does **not** rest on the Drupal Security Team process: that process does not cover
+> Ágora, whose Drupal.org project page says so in as many words (re-read 2026-09-23), and the
+> parenthetical above must not be read or quoted as saying otherwise. The author's standing through
+> Config Guardian is a fact about that project, not about this one.
+
 ## 5 · Out-of-scope for v1 (explicit)
 
 - The vertical paid template (it uses these same recipes; a separate future unit).
