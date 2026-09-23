@@ -4845,3 +4845,102 @@ tells a reporter nothing.
 ⚠️ **Cost of being wrong: a promise missed in public is worse than a promise not made.** So the
 window is to be chosen for what a single maintainer can sustain on a bad week, not for what reads
 well. **A number that cannot be kept is the defect this unit is named after.**
+
+---
+
+## Amendment · D-061's foreign list, corrected a second time: the empty heading is `dashboard`'s, not `navigation`'s — [ejecutor] 2026-09-23
+
+**D-061's signed text attributes `empty-heading` on `#menu--dashboard` to `navigation`, and so
+does the wave-1 row of `specs/006-hardening/tasks.md` that measured the admin surface. The heading
+is written empty by `drupal/dashboard`; `navigation` only supplies the sidebar it is rendered
+into.** D-061 is not edited (rule 8); this corrects a fact inside it.
+
+⚠️ **That row is named here by what it is, not by its id, and the reason is a checker defect
+rather than style.** `tests/bin/cited-tasks-exist` accepts at most ONE status glyph in a task
+row's first cell, and that row carries two (`⏸ 👤`), so it is not counted as a definition and any
+citation of its id from this file is reported as a dangling pointer. Every row marked `⏸ 👤` is in
+the same position. The checker is not changed here; the defect is reported to its owner instead.
+
+**The author, read at source on 2026-09-23 rather than inferred from the page.** `drupal/dashboard`
+at tag **2.2.1**, `templates/menu-region--dashboard.html.twig` (586 bytes, sha256 `95fd6ac4…`),
+line 1:
+
+```
+<h4 id="menu--dashboard" class="toolbar-block__title visually-hidden focusable"></h4>
+```
+
+The same module registers that template (`src/Hook/NavigationIntegration.php:87-89`, a
+`#[Hook('theme')]` defining `menu_region__dashboard`) and renders it
+(`src/Plugin/Block/NavigationDashboardBlock.php:60`); the block's `#title` reaches the template
+and is printed in the link label, never in the heading, and the `<ul>` on line 2 takes its
+accessible name from that empty element through `aria-labelledby`. **What puts it in the sidebar is
+`drupal_cms_admin_ui`**, which places the block with `provider: dashboard` (its `recipe.yml:83-86`
+at drupal_cms 2.1.5). That recipe requires `drupal/dashboard: ^2.2` (its `composer.json:10`) and
+`packages.drupal.org` lists **2.2.1** as the newest release, so 2.2.1 is what a clean install
+receives. **The control:** no file among core `navigation`'s eight templates and four components on
+`11.x` writes `id="menu--…"` or carries a literal `<h4` — counted one file at a time. (Its `title`
+component takes its tag from a variable, so this says where the literal heading is written, not
+that `navigation` can never emit an `<h4>`; the positive evidence above is what decides it.)
+
+**The method that found it is the part worth keeping.** The wave-1 measurement attributed each
+violation by walking the failing node's DOM ancestor chain, and credited this one to the owner of the sidebar
+that contains it, `aside#admin-toolbar` — the Navigation sidebar. **Walking a node's ancestors
+finds the owner of its container, not the author of its template.** The T-0615 implementer read
+the template instead, and this amendment re-read it at the tag. ⚠️ **The same walk produced
+that measurement's control-page figure *"`navigation` 4 over the same single selector"*, so that
+attribution moves with this one**: same selector, same author. ⚠️ **Every other attribution in
+that measurement was made by the same walk.** Only the second Gin node below is re-read at source here;
+the rest are not re-verified, and the walk's limit applies to each of them.
+
+⚠️ **This is the SECOND correction to the same foreign list.** The first is in D-061's own text —
+`navigation` x2 became x1, because *"recurrence is not multiplicity"*. The second is that the x1 is
+not `navigation`'s at all. Of the two owners the proposal named, **one survives**: `coffee`. The
+list as it now stands is `coffee`, `gin` (the fourth source D-061 already records), `dashboard`
+(this correction), and `eca_inspector` on the control pages only (the fifth).
+
+**THE FOREIGN SET DEPENDS ON WHO LOGS IN, and that bears on what D-061's *"asserted to be exactly
+those"* means.** Measured by T-0615 on the dashboard route:
+
+| signed in as | Config Guardian's own | foreign |
+|---|---|---|
+| the **Governance auditor** role — what the gate uses | **7**, all `color-contrast` | `gin` 1 (`region` on `#primary-tabs-title`) · `coffee` 1 (`region` on `.coffee-form-wrapper`) |
+| an administrator | **the same 7** | the two above, **plus** `dashboard` 1 (`empty-heading` on `#menu--dashboard`) **and** a second `gin` node (`region` on `.top-bar__actions`) |
+
+Provenance, stated per row because it differs: the auditor and administrator rows are recorded on
+disk at `tests/src/FunctionalJavascript/AccessibilityTest.php:220-231` and in `d47fd5a`'s message.
+**That uid 1 is served exactly the administrator's set is reported by the same implementer in the
+dispatch that ordered this amendment, and is written nowhere on disk before this sentence**; it is
+recorded with that provenance and was not re-measured here.
+
+**Why the auditor is not served the heading, read at source rather than assumed:**
+`NavigationDashboardBlock::blockAccess()` (lines 83-85) allows the block only when
+`DashboardManager::getDefaultDashboard()` (lines 35-52) finds an enabled dashboard the account may
+`view`, and viewing one needs the `view {id} dashboard` permission
+(`DashboardAccessControlHandler.php:33`). `drupal_cms_admin_ui`'s recipe deliberately withholds
+it from the `authenticated` role and grants it to `content_editor` only (its `recipe.yml:121-124`:
+*"Don't grant dashboard access to regular authenticated users"*), and the auditor holds exactly two
+permissions, both Config Guardian's. An
+administrator holds every permission, so the block renders and the empty heading comes with it.
+⚠️ **The second Gin node was checked by the same method, because the same mistake could have hidden
+there, and it did not.** Gin 5.0.15's `templates/navigation/top-bar--gin.html.twig` writes the top
+bar as a `<div>` (line 16) with `.top-bar__actions` inside it (line 38), where core's own
+`top-bar.html.twig` writes an `<aside>` landmark (line 17 on `11.x`) — so the node lies outside
+every landmark because of Gin's template, and inside core's it could not have been flagged by
+`region` at all.
+
+**The gate reads the page as the auditor**, which is the role this template ships for that
+dashboard (`config/user.role.agora_governance_auditor.yml`), and the test's own docblock gives the
+reason. **So the declared set is exact FOR THAT ACCOUNT, and must not be read as "everything
+foreign on the dashboard"**: an administrator is served two foreign nodes the gate never sees.
+**Config Guardian's own seven are the same for every account measured**, which is the half D-061
+is actually about.
+
+**What this changes is an attribution and a statement of scope, not the decision.** Option B
+stands; the criterion is unchanged; the gate asserts what it asserted. ⚠️ **One thing D-061's text
+did not settle and this amendment does not settle either: WHICH account the logged-in page is read
+as.** The implementer chose the auditor and argued it in the test; D-061 says only *"logged-in"*.
+It is consistent with D-061 and with the role's purpose, and it is named here so that it is a
+reading on record rather than a choice nobody saw — if [andres] wants it ruled, it is one line.
+
+**Recorded by [ejecutor], 2026-09-23. No signature is sought: this corrects a fact inside a signed
+record without changing what the record decided.**
