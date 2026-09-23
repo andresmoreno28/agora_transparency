@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 use Drupal\FunctionalTests\Core\Recipe\RecipeTestTrait;
 use Drupal\canvas\JsonSchemaDefinitionsStreamwrapper;
 use Drupal\node\NodeInterface;
+use Drupal\user\RoleInterface;
+use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -39,6 +42,17 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * very first thing this test does is prove the file is readable, and fail with
  * a sentence naming the variable that controls it if it is not. A scan of
  * nothing must never be able to look like a pass (I-007, I-032).
+ *
+ * AND ONE LOGGED-IN PAGE, DECLARED SEPARATELY (D-061, option B). Config
+ * Guardian's dashboard is the one administrative surface this package chose,
+ * installs and configures itself, and it ships a role whose whole purpose is
+ * to read it. That page is scanned AFTER the nine, logged in as that role,
+ * against an expectation set of its own - because on it almost every
+ * violation sits in markup this package installed and did not write. The
+ * criterion is zero violations in markup this package owns, with every other
+ * violation matched by rule, selector and owner against a declared list, so
+ * that a new one fails. ::scanTheGovernanceDashboard() carries the reasoning
+ * and the measurement; the nine are untouched by it.
  *
  * WHY THE CLASS CARRIES #[RunTestsInSeparateProcesses] (T-0628). Core raises
  * E_USER_DEPRECATED, from BrowserTestBase::setUp(), for any Functional or
@@ -189,6 +203,125 @@ class AccessibilityTest extends WebDriverTestBase {
   private const FOOTER_MENU_FLOOR = 5;
 
   /**
+   * How many LOGGED-IN surfaces this gate scans. An equality, like the nine.
+   *
+   * SEPARATE FROM DECLARED_PAGES ON PURPOSE (D-061, option B). That constant
+   * counts the pages a member of the public reads, tests/bin/packaged-claims
+   * compares it against the count the shipped accessibility statement quotes,
+   * and that statement is about the public site. This one counts the single
+   * administrative surface this package chose and installed itself. Folding
+   * the two into one number would make the statement's count wrong in the
+   * direction nobody checks.
+   */
+  private const DECLARED_LOGGED_IN_PAGES = 1;
+
+  /**
+   * The role the logged-in page is read as: this package's own, and only it.
+   *
+   * NOT AN ADMINISTRATOR, AND THAT IS THE POINT RATHER THAN A SHORTCUT.
+   * config/user.role.agora_governance_auditor.yml exists so that somebody who
+   * is NOT the administrator can witness the configuration audit. It holds
+   * exactly two permissions, and `view config snapshots` is the one this route
+   * requires. What that person is served is the page this package chose to give
+   * them. Measured 2026-09-23 on the same route: this role and an administrator
+   * are served the SAME seven nodes of Config Guardian's own markup; the
+   * administrator is additionally served two foreign nodes this role is not
+   * (the `dashboard` module's empty sidebar heading and Gin's top-bar actions).
+   * So the choice changes which foreign chrome is present and hides nothing
+   * Config Guardian renders.
+   */
+  private const LOGGED_IN_ROLE = 'agora_governance_auditor';
+
+  /**
+   * The route of the one logged-in page. Its path and title are read here.
+   */
+  private const DASHBOARD_ROUTE = 'config_guardian.dashboard';
+
+  /**
+   * The root element of Config Guardian's dashboard template.
+   *
+   * `<div class="config-guardian-dashboard">`, line 16 of
+   * templates/config-guardian-dashboard.html.twig in config_guardian 1.0.3.
+   * It is the wait target, part of the page-identity check and the ownership
+   * anchor for that module's markup, so it is written once.
+   */
+  private const DASHBOARD_WRAPPER = '.config-guardian-dashboard';
+
+  /**
+   * Where each installed project's markup begins, each verified at source.
+   *
+   * A violation is attributed to a project only if its node sits INSIDE that
+   * project's anchor, and that is measured in the page, per node, on every
+   * run - not inferred from how a selector reads. A node inside no anchor is
+   * counted as this package's own. That is the conservative direction on
+   * purpose: foreign ownership is the claim that needs the evidence.
+   *
+   *   config_guardian  the dashboard template's own root, above.
+   *   gin              the primary-tabs block Gin places from its own
+   *                    config/optional. Gin's page.html.twig renders it in a
+   *                    div.content-header OUTSIDE <main>, which is what puts
+   *                    the tab list's heading outside every landmark; Claro,
+   *                    Gin's base theme, wraps the same region in a <header>
+   *                    inside <main>.
+   *   coffee           the wrapper coffee.js builds and appends to <body> in
+   *                    its behaviour's attach, outside every landmark by
+   *                    construction.
+   *
+   * `navigation` IS NOT HERE, AND THE HANDED FOREIGN LIST NAMED IT. The empty
+   * heading attributed to it, <h4 id="menu--dashboard">, is written EMPTY in
+   * the `dashboard` module's menu-region--dashboard.html.twig; navigation only
+   * supplies the sidebar that heading lands in. Walking a node's ancestors
+   * names the container's owner, not the template's author. It is absent from
+   * this page anyway: this role is not served it, measured.
+   */
+  private const OWNERSHIP_ANCHORS = [
+    'config_guardian' => self::DASHBOARD_WRAPPER,
+    'gin' => '#block-gin-primary-local-tasks',
+    'coffee' => '.coffee-form-wrapper',
+  ];
+
+  /**
+   * Violations on the logged-in page in markup this package did not write.
+   *
+   * Each is rule, axe selector and owner, asserted EXACTLY (D-061, option B).
+   *
+   * MEASURED 2026-09-23 on a runner built the way the pipeline builds this
+   * job: core 11.4.7, core's own axe-core 4.10.3, selenium/standalone-chrome
+   * 127.0, config_guardian 1.0.3, gin 5.0.15, coffee 2.0.1, logged in as
+   * LOGGED_IN_ROLE. Nine nodes over two rules, the same nine on every scan.
+   *
+   * A SET AND NOT A TOTAL, because a total holds when one violation vanishes
+   * and another arrives. A new entry fails; so does a declared entry that is
+   * no longer there, because a list that outlives its measurement is a claim
+   * about a page nobody looked at.
+   *
+   * config_guardian, color-contrast [serious]: #6c757d on #f5f7fa, 4.36:1
+   * against the 4.5:1 AA floor - the module's own --cg-text-muted on its own
+   * --cg-bg, css/config-guardian.css lines 17 and 14 - on the "(sync ->
+   * active)" and "(active -> sync)" labels of the two comparison cards and the
+   * five header cells of the recent-snapshots table. THE TABLE EXISTS ONLY ONCE
+   * THE SITE HAS A SNAPSHOT, and the first one is taken by the site's first
+   * cron run; see ::scanTheGovernanceDashboard() for why the scan waits for it.
+   *
+   * THIS IS NOT A COMMITMENT TO FIX ANY OF THEM. This project does not
+   * maintain Config Guardian, Gin or Coffee. It is a commitment to have
+   * measured what this package chose, and to say so where a reader looks.
+   */
+  private const INSTALLED_MARKUP_VIOLATIONS = [
+    'config-guardian-dashboard' => [
+      ['color-contrast', '.cg-comparison-card:nth-child(1) > .cg-comparison-header > h4 > small', 'config_guardian'],
+      ['color-contrast', '.cg-comparison-card:nth-child(2) > .cg-comparison-header > h4 > small', 'config_guardian'],
+      ['color-contrast', 'th:nth-child(1)', 'config_guardian'],
+      ['color-contrast', 'th:nth-child(2)', 'config_guardian'],
+      ['color-contrast', 'th:nth-child(3)', 'config_guardian'],
+      ['color-contrast', 'th:nth-child(4)', 'config_guardian'],
+      ['color-contrast', 'th:nth-child(5)', 'config_guardian'],
+      ['region', '#primary-tabs-title', 'gin'],
+      ['region', '.coffee-form-wrapper', 'coffee'],
+    ],
+  ];
+
+  /**
    * Returns the absolute path of the recipe this test is for.
    *
    * @return string
@@ -254,6 +387,13 @@ class AccessibilityTest extends WebDriverTestBase {
    * either, and the shipped statement therefore quoted a number with no
    * public source. The theme's equivalent figure has always been public in
    * its `nightwatch` job. A reviewer could check one claim and not the other.
+   *
+   * ONE LINE PER SURFACE (T-0615). The file carries the nine's line and,
+   * appended after it by ::scanTheGovernanceDashboard(), the logged-in
+   * page's. Both are printed, in that order, and neither restates the
+   * other: they count different pages, with the same definitions of rules
+   * run and of heading-order. The logged-in line also counts violation
+   * NODES, because its criterion is a set of nodes.
    *
    * THE GUARD ON THE FIRST LINE IS THE WHOLE MECHANISM, and it is there
    * because the obvious version of this method TURNED THE GATE RED. Pipeline
@@ -517,6 +657,12 @@ class AccessibilityTest extends WebDriverTestBase {
         $footer_menus,
       )),
     ));
+
+    // -- (6) the one logged-in page, declared separately (D-061, option B) --
+    // AFTER THE NINE, NEVER INTERLEAVED WITH THEM. Every assertion above was
+    // made anonymously, and the login inside this call changes what every
+    // later request is served.
+    $this->scanTheGovernanceDashboard($axe_source);
   }
 
   /**
@@ -848,6 +994,291 @@ class AccessibilityTest extends WebDriverTestBase {
     ));
 
     return ['structure' => $structure, 'axe' => $axe];
+  }
+
+  /**
+   * Scans the one logged-in page: Config Guardian's dashboard (D-061, B).
+   *
+   * WHY THIS PAGE, AND ONLY THIS ONE. The administrative interface is Gin,
+   * Coffee, Navigation and the rest of what the Drupal CMS administration
+   * recipe installs, none of which this project can fix, and auditing all of
+   * it was refused as D-061's option C. Config Guardian differs in the one
+   * respect that decides the question: this package chose it, installs it and
+   * configures it itself (recipe.yml, D-059), and ships a role whose purpose
+   * is to read this page. So the page is measured, and what was measured is
+   * printed in the log a GREEN run leaves behind.
+   *
+   * WHAT IT MEASURES, AND WHAT IT MAY NOT BE READ AS. Almost all the markup on
+   * this page was written by other projects. The criterion has two halves:
+   * zero violations in markup this package owns - counted conservatively, as
+   * every violation that cannot be shown to sit inside an installed project's
+   * own markup - and every other violation matched one by one against
+   * INSTALLED_MARKUP_VIOLATIONS. IT IS NOT A CLAIM THAT THE PAGE CONFORMS. It
+   * does not: Config Guardian's own palette puts seven text nodes under the
+   * AA contrast floor, and the summary says so on every run, green included.
+   *
+   * WHY IT WAITS FOR CRON. Five of the seven are the header cells of a table
+   * the dashboard renders only once a snapshot exists, and on a new site the
+   * first snapshot is taken by the first cron run. Measured, not assumed: after
+   * the recipe is applied `system.cron_last` is NULL; it is STILL NULL
+   * immediately after the first request, because automated_cron runs after the
+   * response is sent; read again eight seconds later, it is set and the
+   * snapshot exists. The nine anonymous scans normally cover that gap many
+   * times over, but "normally" is timing, and a gate must not depend on timing.
+   * So the run waits for the first cron run to finish, and then asserts the
+   * table has a row before axe is asked about it (I-062).
+   *
+   * @param string $axe_source
+   *   The contents of core's axe-core bundle.
+   */
+  protected function scanTheGovernanceDashboard(string $axe_source): void {
+    // -- (a) declare the page, reading its path and title from the router --
+    $route_provider = \Drupal::service('router.route_provider');
+    $title = (string) $route_provider->getRouteByName(self::DASHBOARD_ROUTE)->getDefault('_title');
+    $this->assertNotSame('', $title, sprintf('The route %s must declare a title, or the heading asserted for it is the empty string and proves nothing.', self::DASHBOARD_ROUTE));
+    $pages = [
+      [
+        'name' => 'config-guardian-dashboard',
+        'path' => Url::fromRoute(self::DASHBOARD_ROUTE)->toString(),
+        'heading' => $title,
+      ],
+    ];
+    $declared = count($pages);
+    $this->assertSame(self::DECLARED_LOGGED_IN_PAGES, $declared, sprintf(
+      'The logged-in half of this gate declares %d surfaces and DECLARED_LOGGED_IN_PAGES says %d. One moved without the other.',
+      $declared,
+      self::DECLARED_LOGGED_IN_PAGES,
+    ));
+    // Every declared page has an expectation set of its own, and no set is
+    // left over for a page that stopped being scanned.
+    $this->assertSame(
+      array_column($pages, 'name'),
+      array_keys(self::INSTALLED_MARKUP_VIOLATIONS),
+      'Every logged-in page must have exactly one declared set of installed-markup violations, and every set a page.',
+    );
+
+    // How much of the module this covers, read from the router rather than
+    // typed. It is printed, not asserted: it is here so that the green log
+    // says what this gate did NOT scan.
+    $module_routes = count(array_filter(
+      array_keys(iterator_to_array($route_provider->getAllRoutes())),
+      static fn (string $name): bool => str_starts_with($name, 'config_guardian.'),
+    ));
+
+    // -- (b) log in as this package's own role, and nothing else ------------
+    $account = $this->drupalCreateUser([], 'agora_governance_witness');
+    $this->assertInstanceOf(UserInterface::class, $account);
+    $account->addRole(self::LOGGED_IN_ROLE);
+    $account->save();
+    $roles = $account->getRoles();
+    $expected_roles = [RoleInterface::AUTHENTICATED_ID, self::LOGGED_IN_ROLE];
+    sort($roles);
+    sort($expected_roles);
+    $this->assertSame($expected_roles, $roles, sprintf('The logged-in page is read by a user holding the %s role and nothing else; any other role changes what the page is served.', self::LOGGED_IN_ROLE));
+    $this->drupalLogin($account);
+
+    // -- (c) wait for the first cron run, whose snapshot the page lists -----
+    // Bounded, and it fails by name rather than scanning a page that lacks
+    // the table the expectation set is partly about.
+    $deadline = microtime(TRUE) + 60;
+    \Drupal::state()->resetCache();
+    while (\Drupal::state()->get('system.cron_last') === NULL && microtime(TRUE) < $deadline) {
+      usleep(250000);
+      \Drupal::state()->resetCache();
+    }
+    $this->assertNotNull(\Drupal::state()->get('system.cron_last'), 'The site\'s first cron run did not finish within 60 seconds. automated_cron runs it after the first request following installation, and that run takes the snapshot the dashboard lists; without it the recent-snapshots table is not on the page at all.');
+
+    // -- (d) scan, accumulating; the assertions come after the loop ---------
+    $admin_theme = (string) \Drupal::config('system.theme')->get('admin');
+    $default_theme = (string) \Drupal::config('system.theme')->get('default');
+    $results = [];
+    foreach ($pages as $page) {
+      $name = $page['name'];
+      $this->drupalGet($page['path']);
+      $this->assertNotNull(
+        $this->assertSession()->waitForElement('css', self::DASHBOARD_WRAPPER, 15000),
+        sprintf('%s: "%s" was never present at %s. If the page answered "Access denied", the %s role has lost the permission that reaches it.', $name, self::DASHBOARD_WRAPPER, $page['path'], self::LOGGED_IN_ROLE),
+      );
+
+      // The structure first, before axe is injected, as for the nine: a page
+      // that failed to render is a page axe reports as clean (I-062).
+      $structure = $this->getSession()->evaluateScript(str_replace('__WRAPPER__', self::DASHBOARD_WRAPPER, <<<'JS'
+        (function () {
+          var h1 = document.querySelectorAll('h1');
+          var s = window.drupalSettings || {};
+          return {
+            h1: h1.length,
+            h1Text: h1.length ? (h1[0].textContent || '').trim() : '',
+            wrapper: document.querySelectorAll('__WRAPPER__').length,
+            snapshotRows: document.querySelectorAll('__WRAPPER__ .cg-card--snapshots table tbody tr').length,
+            theme: s.ajaxPageState && s.ajaxPageState.theme ? s.ajaxPageState.theme : '',
+            text: (document.body.innerText || '').trim().length
+          };
+        })()
+        JS));
+      $this->assertIsArray($structure, "$name: the page returned no structure at all.");
+      $this->assertSame(1, $structure['h1'], sprintf('%s: exactly one <h1> (found %d: "%s").', $name, $structure['h1'], $structure['h1Text']));
+      $this->assertSame($page['heading'], $structure['h1Text'], sprintf('%s: served the page it is for - expected the heading "%s" and found "%s".', $name, $page['heading'], $structure['h1Text']));
+      $this->assertSame(1, $structure['wrapper'], sprintf('%s: one dashboard root (found %d).', $name, $structure['wrapper']));
+      // THE PREMISE OF THE OWNERSHIP SPLIT, MEASURED RATHER THAN ASSUMED. The
+      // page is rendered by the administration theme and not by the theme
+      // this template ships. If that ever changed, the chrome around the
+      // dashboard would be this package's own markup and every foreign
+      // attribution below would be wrong.
+      $this->assertSame($admin_theme, $structure['theme'], sprintf('%s: rendered by the administration theme "%s" (found "%s").', $name, $admin_theme, $structure['theme']));
+      $this->assertNotSame($default_theme, $structure['theme'], "$name: must not be rendered by the theme this template ships, or its chrome is this package's own markup and the ownership split does not hold.");
+      $this->assertGreaterThan(self::TEXT_FLOOR, $structure['text'], sprintf('%s: the page has content to be accessible about (%d characters of rendered text, floor %d).', $name, $structure['text'], self::TEXT_FLOOR));
+      $this->assertGreaterThanOrEqual(1, $structure['snapshotRows'], "$name: the recent-snapshots table has a row before axe is asked about it. Five declared violations are its header cells, and without a snapshot the table is not rendered at all.");
+
+      // -- axe: the same bundle and the same two definitions as ::scanPage():
+      // `rules` is the sum of the four buckets and `bucket` is where
+      // heading-order landed, so the two summary lines count the same things.
+      // What is added is ownership, PER NODE: the projects whose anchor
+      // contains it, read from the live DOM.
+      $session = $this->getSession();
+      $session->executeScript($axe_source);
+      $this->assertTrue(
+        (bool) $session->evaluateScript('typeof window.axe === "object"'),
+        "$name: the axe-core bundle was executed but defined no `axe` global.",
+      );
+      $session->executeScript(str_replace('__ANCHORS__', (string) json_encode(self::OWNERSHIP_ANCHORS), <<<'JS'
+        (function (anchors) {
+          window.agoraAxeLoggedIn = null;
+          window.axe.run(document).then(function (r) {
+            var buckets = ['passes', 'violations', 'incomplete', 'inapplicable'];
+            var found = buckets.filter(function (b) {
+              return r[b].some(function (x) { return x.id === 'heading-order'; });
+            });
+            var nodes = [];
+            r.violations.forEach(function (v) {
+              v.nodes.forEach(function (n) {
+                var el = null;
+                if (typeof n.target[0] === 'string') {
+                  try { el = document.querySelector(n.target[0]); } catch (e) { el = null; }
+                }
+                nodes.push({
+                  rule: v.id,
+                  target: n.target.join(' '),
+                  owners: Object.keys(anchors).filter(function (o) {
+                    return el !== null && el.closest(anchors[o]) !== null;
+                  }),
+                  html: (n.html || '').slice(0, 120)
+                });
+              });
+            });
+            window.agoraAxeLoggedIn = {
+              rules: r.passes.length + r.violations.length + r.incomplete.length + r.inapplicable.length,
+              violated: r.violations.length,
+              nodes: nodes,
+              bucket: found.length ? found.join('+') : 'absent'
+            };
+          }).catch(function (e) {
+            window.agoraAxeLoggedIn = {
+              rules: 0,
+              violated: 0,
+              nodes: [{rule: 'axe.run() threw', target: String(e), owners: [], html: ''}],
+              bucket: 'absent'
+            };
+          });
+        })(__ANCHORS__);
+        JS));
+      $this->assertJsCondition('window.agoraAxeLoggedIn !== null', 60000, "$name: axe.run() never settled within 60 seconds.");
+      $axe = $session->evaluateScript('window.agoraAxeLoggedIn');
+      $this->assertIsArray($axe, "$name: axe returned no result object.");
+
+      // Attribute every node. Inside exactly one anchor: that project's.
+      // Inside none, or inside two: not shown to be somebody else's, so it is
+      // counted as this package's own.
+      $ours = [];
+      $installed = [];
+      $by_owner = [];
+      foreach ($axe['nodes'] as $node) {
+        $key = sprintf('%s @ %s', $node['rule'], $node['target']);
+        if (count($node['owners']) !== 1) {
+          $ours[] = sprintf('%s [%s] :: %s', $key, $node['owners'] ? implode('+', $node['owners']) : 'inside no installed project', $node['html']);
+          continue;
+        }
+        $installed[] = sprintf('%s [%s]', $key, $node['owners'][0]);
+        $by_owner[$node['owners'][0]] = ($by_owner[$node['owners'][0]] ?? 0) + 1;
+      }
+      $expected = array_map(
+        static fn (array $entry): string => sprintf('%s @ %s [%s]', $entry[0], $entry[1], $entry[2]),
+        self::INSTALLED_MARKUP_VIOLATIONS[$name],
+      );
+      sort($installed);
+      sort($expected);
+      $results[$name] = [
+        'rules' => $axe['rules'],
+        'bucket' => $axe['bucket'],
+        'violated' => $axe['violated'],
+        'nodes' => count($axe['nodes']),
+        'ours' => $ours,
+        'installed' => $installed,
+        'expected' => $expected,
+        'byOwner' => $by_owner,
+      ];
+    }
+
+    // -- (e) the summary, built BEFORE any assertion below ------------------
+    // So a failure carries it as its message and a pass hands it to the
+    // reporting hook. Its prefix deliberately differs from the nine's line:
+    // tests/bin/packaged-claims reads that one from the trace and requires
+    // exactly one of it.
+    $scanned_count = count($results);
+    $rules = array_column($results, 'rules');
+    $by_owner = [];
+    foreach ($results as $result) {
+      foreach ($result['byOwner'] as $owner => $n) {
+        $by_owner[$owner] = ($by_owner[$owner] ?? 0) + $n;
+      }
+    }
+    ksort($by_owner);
+    $summary = sprintf(
+      'agora_transparency axe gate, logged in: %d of %d declared pages scanned (%s), as a user holding only the %s role, %d-%d axe rules run per page, heading-order reported on %d of %d pages; %d violation nodes over %d rules - %d in markup this package owns, %d in installed markup it did not write, matched by rule, selector and owner against the %d declared (%s). %d routes are named config_guardian.* and this gate scans %d of them.',
+      $scanned_count,
+      $declared,
+      implode(', ', array_column($pages, 'path')),
+      self::LOGGED_IN_ROLE,
+      $rules ? min($rules) : 0,
+      $rules ? max($rules) : 0,
+      count(array_filter(array_column($results, 'bucket'), static fn (string $b): bool => $b !== 'absent')),
+      $scanned_count,
+      array_sum(array_column($results, 'nodes')),
+      array_sum(array_column($results, 'violated')),
+      array_sum(array_map('count', array_column($results, 'ours'))),
+      array_sum(array_map('count', array_column($results, 'installed'))),
+      array_sum(array_map('count', array_column($results, 'expected'))),
+      $by_owner ? implode(', ', array_map(
+        static fn (string $owner, int $n): string => "$owner $n",
+        array_keys($by_owner),
+        $by_owner,
+      )) : 'none',
+      $module_routes,
+      $scanned_count,
+    );
+    // Appended to the file ::tearDownAfterClass() prints, after the nine's
+    // line, so a green log carries both. Writing a file emits no output.
+    @file_put_contents(self::summaryPath(), "\n" . $summary, FILE_APPEND);
+
+    // -- (f) the assertions ---------------------------------------------------
+    $this->assertSame(array_column($pages, 'name'), array_keys($results), $summary);
+    foreach ($results as $name => $result) {
+      // A rule that did not run cannot have passed (I-045).
+      $this->assertGreaterThan(0, $result['rules'], "$name: $summary");
+      $this->assertNotSame('absent', $result['bucket'], "$name: axe must have reported the heading-order rule; it landed in no bucket at all, which is not the same as passing. $summary");
+      // THE FIRST HALF OF THE CRITERION: nothing in markup this package owns.
+      $this->assertSame([], $result['ours'], sprintf('%s: %d violation nodes are not inside any installed project\'s declared markup, so they are counted as this package\'s own: %s. %s', $name, count($result['ours']), implode(' | ', $result['ours']), $summary));
+      // THE SECOND HALF: every other violation is exactly a declared one, and
+      // every declared one is still there.
+      $this->assertSame($result['expected'], $result['installed'], sprintf(
+        '%s: the violations in installed markup are not the declared set. New, not declared: %s. Declared, not found: %s. Found: %s. %s',
+        $name,
+        implode(' | ', array_diff($result['installed'], $result['expected'])) ?: 'none',
+        implode(' | ', array_diff($result['expected'], $result['installed'])) ?: 'none',
+        implode(' | ', $result['installed']),
+        $summary,
+      ));
+    }
   }
 
   /**
