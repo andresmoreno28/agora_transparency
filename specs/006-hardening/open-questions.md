@@ -18,7 +18,8 @@ so no ★ below was overturned: D-062 → **A**, D-063 → **B**, D-065 → **A*
 headings below now carries that fact at the point a reader meets it; the proposal text under it is
 left exactly as written.
 
-**`D-060`, `D-061` and `D-064` remain UNSIGNED and are [andres]'s.** Their substance is untouched.
+~~**`D-060`, `D-061` and `D-064` remain UNSIGNED and are [andres]'s.** Their substance is untouched.~~
+✅ **ALL THREE SIGNED by [andres] 2026-09-23, each as the recommended option B** — recorded in `specs/000-project/DECISIONS.md` by `acd2a51`. **Of this file's six proposals, all six are now signed**: D-062, D-063 and D-065 by [ejecutor] in `0966558`, D-060, D-061 and D-064 by [andres] in `acd2a51`. ⚠️ **D-061's option A was closed by MEASUREMENT before the signature, not by preference**: its own text said it would be wrong if the dashboard had violations, and on 2026-09-23 the dashboard measured 61 violation nodes over 11 pages, 30 of them in Config Guardian's own markup. ⚠️ **This line went stale the day it was written**: the signing commit touched only `DECISIONS.md`, so the one file whose subject is which proposals are unsigned kept saying all three were — found by the agent working the rows, not by a guard.
 
 ⚠️ **And the numbering line went stale by the same commit, which the amendment above would have
 hidden.** **The next free number is `D-066`.** D-060 to D-065 are all allocated — three signed in

@@ -20,7 +20,7 @@ says the ruling is taken *"when unit 005 opens."* It has opened.
 
 | | option | cost |
 |---|---|---|
-| **A** | **No module.** Governance and retrieval ship as configuration; generation is `recommended.yml` plus documentation | **The citation guarantee of plan §4 cannot exist** — there is nowhere to put the strip pipeline or the server-side renderer. So *"an AI assistant with citations"* must be **withdrawn** from `README.md:33`, from `AGENTS.md` and from the project description. The product keeps one differentiator, not two. ~16 rows |
+| **A** | **No module.** Governance and retrieval ship as configuration; generation is `recommended.yml` plus documentation | **The citation guarantee of plan §4 cannot exist** — there is nowhere to put the strip pipeline or the server-side renderer. So *"an AI assistant with citations"* must be **withdrawn** from ~~`README.md:33`~~ `README.md:44` *(line moved 2026-09-21 by `7ab5546`'s split of the Planned table; cited by line, so it went stale by being right)*, from `AGENTS.md` and from the project description. The product keeps one differentiator, not two. ~16 rows |
 | **B ★** | **Yes, one module, scoped to this unit's two tenants** — the retrieval-and-citation layer and the key screen — leaving D-051's other four undecided | A third public project: page, releases, security coverage, SBOM line, CI pipeline. **D-051 §6 prices this from measured experience, not estimate:** publishing the *second* package produced two real failures in two days. ~28 rows |
 | **C** | **Yes, the full D-051 §5 module**, all five tenants plus D-052's route alter | B's cost plus scope nobody has researched, against a unit already carrying eighteen research questions |
 
