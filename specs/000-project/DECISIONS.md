@@ -4769,3 +4769,79 @@ D-023(5) refuses.
 `14 days (default)`, so the number cannot be loosened at the call site without moving a check a
 human must look at. **It is a governed constant, not a tunable**, and that is why ruling on it was
 worth doing rather than leaving the sentence to be read charitably.
+
+---
+
+## D-060 · Unit 004 is deferred past v1; 006 audits what ships — option B — SIGNED by [andres], 2026-09-23
+
+**v1 is a transparency PUBLICATION portal: six registers, 60 records, a library. No editorial
+workflow, no freedom-of-information cycle.** That is not a reduction of the product — **it is what
+`recipe.yml` already is**, and has been since it was written.
+
+**The cost, which is the whole of the work this decision creates:** `plan.md` §2's area table and
+`ROADMAP.md`'s 004 section describe features v1 does not have, and `recipe.yml` says
+*"(empty in v1; filled by unit 004)"* in **six** places. **The packaged text must say so before a
+reviewer reads it.** What needs fixing is a sentence, not a subsystem.
+
+⚠️ **Cost of being wrong:** a reviewer expects a workflow because `plan.md` promises one. The
+remedy is prose and it is in scope here. **Cost of the alternative:** unit 007 does not happen
+this year.
+
+---
+
+## D-061 · The administrative surface is MEASURED, not excluded — option B — SIGNED by [andres], 2026-09-23
+
+**Signed with the measurement in hand, which is the only reason option A is not available.**
+
+**The question, answered plainly:** *can a product claiming WCAG 2.2 AA ship with its
+administrative interface unmeasured?* **Yes — but only if it never claims AA for that interface,
+and it accidentally did, in the one sentence written to scope it out.**
+
+🔴 **Option A — fix the prose, measure nothing — IS RULED OUT BY MEASUREMENT.** Its own text said
+it would be wrong *"if the dashboard has violations, [because] the correction then reads as having
+been written to cover them."* **The dashboard has violations.** Measured 2026-09-23 on a clean rig
+at theme 1.2.0, 11 pages, 91-93 rules per page: **61 violation nodes, of which 30 are in Config
+Guardian's own markup across 25 distinct (rule, selector) pairs** — `color-contrast` x22 in four
+pairs (4.36, 4.48, 4.07 and **3.61**:1, all under the 4.5 AA floor, all from its own palette),
+`region` x5, `scrollable-region-focusable` x1, `heading-order` x1, and **`select-name` [critical]
+x1** on `#filter-type`, a `<select>` with no accessible name on the one page carrying no Drupal
+chrome at all.
+
+**What B is:** the Config Guardian dashboard joins `AccessibilityTest` as a separately declared
+**logged-in** page with its own expectation set. The anonymous nine are untouched. The criterion is
+**"zero violations in markup this package owns"**, with the foreign ones enumerated **by selector**
+and asserted to be exactly those — **so a new one fails.**
+
+⚠️ **The foreign list in the proposal was WRONG and is corrected here by measurement**, which is
+why it is enumerated by selector and not by count: `navigation` is **x1 distinct selector, not x2**
+(`empty-heading` on `#menu--dashboard`, recurring on 10 pages — **recurrence is not multiplicity**);
+`coffee` x1 holds; **`gin` is a FOURTH source** (`region` on three selectors); and a control over
+admin pages carrying no Config Guardian markup adds **`eca_inspector` as a FIFTH**. The foreign set
+is a property of the authenticated admin surface, not of this dashboard.
+
+⚠️ **This is not a commitment to fix Config Guardian's markup**, which this project does not
+maintain. It is a commitment to **measure what we chose, and say truthfully what we did not.**
+Option C — auditing Gin, `navigation` and `coffee` entire — remains refused: this project cannot
+fix them.
+
+⚠️ **The scope sentence was corrected under EVERY option and was already fixed on 2026-09-21
+(`8cb9bd2`, T-0614), before this signature.** Falseness was never a budget question.
+
+---
+
+## D-064 · The security-response commitment names a window and a route — option B — SIGNED by [andres], 2026-09-23
+
+**A named acknowledgement window and a named contact route, both chosen so that ONE maintainer
+can keep them.** It binds a person. **That is the point.**
+
+🔴 **Option C is refused on a fact, not a preference: Ágora is NOT covered by the Drupal Security
+Team** until it opts in and has a stable release. **Quoting somebody else's SLA for a project they
+do not cover is exactly the class of claim this unit exists to remove**, and it would be the worst
+possible one to ship inside a hardening unit.
+
+Option A — best effort, no time named — satisfies the letter of the marketplace criterion and
+tells a reporter nothing.
+
+⚠️ **Cost of being wrong: a promise missed in public is worse than a promise not made.** So the
+window is to be chosen for what a single maintainer can sustain on a bad week, not for what reads
+well. **A number that cannot be kept is the defect this unit is named after.**
