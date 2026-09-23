@@ -279,10 +279,25 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `969557`, ref `1.x`, commit `bc4baa4`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/969557/jobs` on 2026-09-21 —
+- **Observed inventory — the site template.** Pipeline `972571`, ref `1.x`, commit `42bf1e7`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/972571/jobs` on 2026-09-23 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ✅ **THIS IS THE FIRST OBSERVATION IN WHICH A CLEAN INSTALL RECEIVES THE THEME THIS REPOSITORY
+  IS DEVELOPED AGAINST, and the row moved for that reason rather than on a schedule.** The
+  previous row stood at `969557`/`bc4baa4`/2026-09-21, where `Drupal CMS` printed `Locking
+  drupal/agora_theme (1.1.0)`. [andres] published **1.2.0** on 2026-09-23 and this job now prints
+  `Locking drupal/agora_theme (1.2.0)` · `Installing … Extracting archive` · `OK (1 test, 1
+  assertion)`. ⚠️ **Nothing in this repository changed to cause that** — the package pins no theme
+  version, so the resolution moved underneath a commit whose diff is one paragraph of prose. That
+  is the whole argument for reading the log rather than reasoning about `composer.json`.
+  ⚠️ **Two denominators moved with it and BOTH are accounted for, which is the check worth doing
+  rather than just refreshing the numbers**: `cspell` 423 → **433** files and `phpunit` 2596 →
+  **2607** assertions. Neither is caused by the theme release: the commits between `bc4baa4` and
+  `42bf1e7` added `tests/bin/ported-copies`, `ported-drift`, `ported-from-theme.manifest`,
+  `mirror-streak`, `LICENCE-MANIFEST.md` and the partial-scan guard, and the assertion rise is
+  T-0632's four new `no-boilerplate` checks plus the tag section's. **A denominator that moved for
+  a reason nobody can name is the one to distrust.**
   ⚠️ **Refreshed BECAUSE THE RULE AT THE FOOT OF THIS BLOCK DEMANDED IT, which is the first time
   that has happened rather than a human noticing.** Unit 005 wave 23 moved a gate's denominators —
   `phpunit` 21 → 22 tests and 2555 → 2596 assertions, `cspell` 417 → 423 files — so *"the commit
@@ -360,11 +375,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
   | job | the line its trace printed |
   |---|---|
-  | `Drupal CMS` | `Locking drupal/agora_theme (1.1.0)` |
+  | `Drupal CMS` | `Locking drupal/agora_theme (1.2.0)` |
   | `Drupal CMS` | `OK (1 test, 1 assertion)` |
-  | `cspell` | `Files checked: 423, Issues found: 0` |
-  | `phpunit` | `OK (22 tests, 2596 assertions)` |
-  | `phpunit-pgsql` | `OK (22 tests, 2596 assertions)` |
+  | `cspell` | `Files checked: 433, Issues found: 0` |
+  | `phpunit` | `OK (22 tests, 2607 assertions)` |
+  | `phpunit-pgsql` | `OK (22 tests, 2607 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
