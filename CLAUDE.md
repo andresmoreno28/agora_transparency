@@ -305,9 +305,31 @@ moving the working copy a session is running in, on the day wave 5 starts.
   invisible to a check that compares lists.** The block's own rule — *"the commit that changes the
   CI job list, the packaged file set or a gate's denominator is the commit that updates it"* —
   does not reach it either, because none of those three moved. ⚠️ **`Locking drupal/agora_theme
-  (1.1.0)` is the figure to read twice**: the theme's `1.x` is 21 commits past that release and
+  (1.1.0)` is the figure to read twice**: ~~the theme's `1.x` is 21 commits past that release and
   its `components/` directory exists in no published release, so what a clean install receives is
-  not what this repository is developed against. **Re-read whole; the ten names are unchanged since
+  not what this repository is developed against.~~
+  ✅ **DISCHARGED 2026-09-23: [andres] published `agora_theme` 1.2.0.** Verified at the source a
+  clean install actually reads, not at the project page: `packages.drupal.org/files/packages/8/p2/
+  drupal/agora_theme.json` lists **`1.2.0`** ahead of `1.1.0`, so `drupal/agora_theme: ^1.1`
+  now resolves to a release whose `components/` holds **12 files** — the four SDC the four
+  `?canvas.component.sdc.agora_theme.*` actions in `recipe.yml` have been naming into the void
+  since they were written. **`1.1.0` ships 0 files there; `1.2.0` ships 12**, measured with
+  `git ls-tree -r <tag> -- components/` against both tags.
+  ⚠️ **The row above and the trace-figures table still say `1.1.0`, CORRECTLY, and must not be
+  hand-edited to `1.2.0`.** They record what pipeline `969557` actually printed, and that pipeline
+  really did lock 1.1.0. **The discharge is a fact about the world; the table is a measurement of
+  a named pipeline** — it moves when the next observation is read from a trace, not when the world
+  changes. Editing it now would be inventing a figure, which is the defect this whole block exists
+  to refuse.
+  ⚠️ **What was checked BEFORE the release rather than discovered after it**, because the
+  publication changed this package's behaviour with no commit here: two clean installs on
+  identical rigs, one at 1.1.0 and one at 1.2.0. Both install, exit 0, no warning naming
+  `agora_theme`, `canvas` or `sdc`; **0 of 4 components at 1.1.0 and 4 of 4 present and enabled at
+  1.2.0**; of 651 shared config objects exactly 2 differ. It also found the one thing that WOULD
+  have gone red — `ValidationTest` asserting an empty-state string the theme's 1.2.0 rewrites —
+  and that landed in `4b70b0a` before the release, so the suite passes against **both** versions
+  and the release carried no ordering constraint at all. **The `?` prefixes are now unnecessary
+  and stay: harmless, and the day they are removed is the day a 1.1.0 install stops working.** **Re-read whole; the ten names are unchanged since
   `936386`, and it is re-read rather than carried because a table nobody re-opened is a claim, not
   a measurement.** ⚠️ **This is NOT the pipeline of the commit at the tip, and saying which one it
   is matters more than being one commit newer.** `958678`, on `31217a5`, was read first: eight
