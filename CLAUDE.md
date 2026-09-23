@@ -279,10 +279,20 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `972571`, ref `1.x`, commit `42bf1e7`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/972571/jobs` on 2026-09-23 —
+- **Observed inventory — the site template.** Pipeline `973149`, ref `1.x`, commit `d47fd5a`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/973149/jobs` on 2026-09-23 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ⚠️ **Moved the same day as the row below it, and for the rule's reason rather than a schedule:
+  `d47fd5a` changed a gate's denominator and did not update this table.** T-0615 put the Config
+  Guardian dashboard into `AccessibilityTest` as a logged-in page (D-061 option B), adding **26
+  assertions**: `phpunit` and `phpunit-pgsql` both went **2607 → 2633**. ⚠️ **That figure was
+  PREDICTED in the implementing agent's report before this pipeline ran — `2607 + 26` — and the
+  trace returned exactly `OK (22 tests, 2633 assertions)` on both databases**, which is the only
+  way an assertion total is worth recording. Both traces also print the new logged-in summary line,
+  so the D-061 gate is observed running on MySQL **and** PostgreSQL, not only locally. `cspell` held
+  at 433 and `Drupal CMS` still locks `agora_theme (1.2.0)`: a test-only commit moves neither.
+  (It stood at `972571` / `42bf1e7` earlier the same day — the observation below.)
   ✅ **THIS IS THE FIRST OBSERVATION IN WHICH A CLEAN INSTALL RECEIVES THE THEME THIS REPOSITORY
   IS DEVELOPED AGAINST, and the row moved for that reason rather than on a schedule.** The
   previous row stood at `969557`/`bc4baa4`/2026-09-21, where `Drupal CMS` printed `Locking
@@ -378,8 +388,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `Drupal CMS` | `Locking drupal/agora_theme (1.2.0)` |
   | `Drupal CMS` | `OK (1 test, 1 assertion)` |
   | `cspell` | `Files checked: 433, Issues found: 0` |
-  | `phpunit` | `OK (22 tests, 2607 assertions)` |
-  | `phpunit-pgsql` | `OK (22 tests, 2607 assertions)` |
+  | `phpunit` | `OK (22 tests, 2633 assertions)` |
+  | `phpunit-pgsql` | `OK (22 tests, 2633 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
