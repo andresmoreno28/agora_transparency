@@ -201,6 +201,36 @@
 # NOT CHECKED list is non-empty rather than asserting its length, so nothing was tuned to fit
 # and no check total moved - 95 / 66 / 24 is unchanged across this commit.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-23 (D-061 applied: the binding T-0615's closure held back), the
+# same one record, the same four steps in order.
+#
+#   1. tests/bin/ported-drift FIRST, re-run on the day rather than carried from a run earlier
+#      the same morning: 3 records compared, 3 read, 3 provenance verified, **0 behind** 1.x at
+#      2134f7bd, oldest drift 0 day(s), 0 past the cap, 0 findings, network READ anonymously.
+#      So there was nothing upstream to take and no per-hunk decision to make.
+#   2. What changed HERE: packaged-claims gained FIVE extractions and SEVEN comparisons binding
+#      what the shipped accessibility statement and README.md now say about the logged-in check
+#      d47fd5a added - which page, read as which role, whose markup the contrast and landmark
+#      findings are in, and that it is the only such page - to the constants AccessibilityTest
+#      declares; ONE NOT CHECKED entry, for the stylesheet facts no offline read can reach; the
+#      Gin / Coffee / Navigation entry and its twin comment reworded from "named nowhere in this
+#      tree", which had stopped being true, to "declared nowhere", which is; and the three
+#      recipe.yml line numbers in the T-0614 comment re-derived by grep. Nothing came from
+#      agora_theme; claims go 27 -> 32, comparisons 37 -> 44, the list 12 -> 13.
+#   3. local_sha256 re-derived with sha256sum from the file on disk and substituted by command,
+#      never typed. source_sha256 and source_commit UNCHANGED and not retyped, because step 1
+#      proved the source has not moved.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0; ported-copies 3 verified,
+#      0 findings.
+#
+# ⚠️ THIS EDIT WAS HELD BEFORE IT LANDED, AND THE HOLD IS THIS FILE WORKING. The first dispatch
+# permitted the script and not this manifest; with the script edited alone, wave 1 printed
+# `95 checks - 2 failures`, both in G12. A copy edited here without its record moving is exactly
+# what G12 exists to refuse, so the edit waited for the dispatch that permitted both. And the
+# direction is again the one D-028 permits: every comparison added makes the guard say MORE.
+# Wave 1 stays at 95 checks; the wave-3 figure is 67 since T-0632, not the 66 above.
+#
 # script            role       status    local_sha256                                                     source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -258,7 +288,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   a853e57e17838a355c24f9c8a8276ed8bb337775347f0dc00af0fe3a4501d755 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+packaged-claims    invariant  adapted   4cfede61511b817d51f3e0034e1a9c74553158f9a1a55a18a5573ca1935c312e tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
 #
 # -----------------------------------------------------------------------------------------
 # TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

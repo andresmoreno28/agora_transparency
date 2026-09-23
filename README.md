@@ -97,10 +97,12 @@ What actually runs, and what it covers:
   see it. `tests/bin/packaged-claims` now refuses a figure stated in two packaged files at once,
   and its header records the case.
 
-**What neither gate covers, stated because a gate's silence is not a pass:** anything behind a
-login; the listing routes that are not scanned, the prose pages — including this statement's own
-page — and every record page but the one; and the three AA criteria axe cannot decide — **2.4.7
-Focus Visible, 2.5.8 Target Size (Minimum) and 1.4.10 Reflow** — plus 2.4.1 Bypass Blocks *in use*.
+**What neither gate covers, stated because a gate's silence is not a pass:** everything behind a
+login except the Config Guardian dashboard, which is the only page the gate in this repository
+scans signed in and whose findings the shipped statement reports; the listing routes that are not
+scanned, the prose pages — including this statement's own page — and every record page but the one;
+and the three AA criteria axe cannot decide — **2.4.7 Focus Visible, 2.5.8 Target Size (Minimum) and
+1.4.10 Reflow** — plus 2.4.1 Bypass Blocks *in use*.
 **No conformance with any WCAG level is claimed.** The shipped accessibility statement carries the
 full account, with the denominators.
 

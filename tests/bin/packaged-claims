@@ -84,6 +84,8 @@
 #     jobs_total         "Ten jobs"               vs  the rows of its own table
 #     cspell_gap         offered minus checked    vs  the 37 + 4 the same section states
 #     cspell_binaries    that 37                  vs  the binaries cspell cannot open
+#     readme_login_page  the page gated signed in vs  DASHBOARD_ROUTE in AccessibilityTest
+#     readme_login_only  "the only page"          vs  DECLARED_LOGGED_IN_PAGES in that test
 #
 #   content/MEDIA-LICENCES.md
 #     pdf_count          the PDF count            vs  git ls-files content/file/*.pdf
@@ -107,6 +109,12 @@
 #     canvas_pages       the landing page count   vs  git ls-files content/canvas_page/*.yml
 #     listing_total      the listing route count  vs  git ls-files config/views.view.agora_base_*
 #     listing_scanned    the scanned subset       vs  VIEW_PAGES in AccessibilityTest
+#     admin_dashboard_module  the dashboard named vs  the install: list of recipe.yml
+#     admin_checked_page     the page gated       vs  DASHBOARD_ROUTE in AccessibilityTest
+#     admin_checked_role     the role it is read as  vs  the label of the role LOGGED_IN_ROLE names
+#     admin_contrast_owner   who the contrast failures belong to  vs  the declared set's owners
+#     admin_landmark_owners  who the landmark findings belong to  vs  the declared set's owners
+#     admin_checked_only     "no other page"      vs  DECLARED_LOGGED_IN_PAGES in that test
 #
 #   recipe.yml / composer.json / recommended.yml
 #     description_match  the two descriptions     vs  each other (a bound duplicate, see above)
@@ -804,10 +812,12 @@ compare 'registers_stated' "$A_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_ba
 # The shipped statement excluded the administrative interface by saying it "is Drupal core"
 # until 2026-09-21. It is not. An Agora install's admin interface is the Gin THEME, core
 # `navigation` and contrib `coffee` - all three installed by the `drupal_cms_admin_ui` recipe
-# this package applies at recipe.yml:64 - plus the Config Guardian dashboard this package
-# installs itself at recipe.yml:190 and configures through its own
-# config/config_guardian.settings.yml. (recipe.yml:705-721 is a COMMENT explaining why those
+# this package applies at recipe.yml:68 - plus the Config Guardian dashboard this package
+# installs itself at recipe.yml:196 and configures through its own
+# config/config_guardian.settings.yml. (recipe.yml:711-727 is a COMMENT explaining why those
 # settings are NOT a config action, which is a different thing from being the configuration.)
+# These three line numbers read 64, 190 and 705-721 until 2026-09-23 - true when written, moved
+# by a3695ff - and were re-derived by grep, not by adding the offset.
 #
 # THE FIRST CLAIM IS AN EXTRACTION AND NOT A COMPARISON, and it is the one that matters most:
 # reword the sentence back and claim_once FATALs in the same commit, naming the pattern. A
@@ -817,8 +827,11 @@ claim_once 'admin scope' STATEMENT \
   'The administrative interface is <strong>not</strong> Drupal core\.'
 
 # THE ONE COMPONENT OF THAT SENTENCE THIS REPOSITORY CAN CHECK. Gin, coffee and navigation are
-# installed by a DEPENDENCY's recipe and appear nowhere in this tree, so they are named in NOT
-# CHECKED below with that as the reason. The dashboard is ours.
+# installed by a DEPENDENCY's recipe and this package DECLARES none of them, so they are named in
+# NOT CHECKED below with that as the reason. (This comment said they "appear nowhere in this
+# tree" until 2026-09-23. Named is not declared: AccessibilityTest names gin and coffee as the
+# owners of violations it declares, and recipe.yml names navigation's components in the Canvas
+# actions that disable them.) The dashboard is ours.
 #
 # The module name is DERIVED FROM THE PROSE rather than typed here. Typing it would make this a
 # constant compared against a constant: renaming the project in the shipped text would leave the
@@ -835,6 +848,112 @@ for _m in $RECIPE_INSTALLED; do
 done
 compare 'admin_dashboard_module' "$A_DASH" "$RECIPE_DASH" \
   'the extension of that name in the install: list of recipe.yml'
+
+# ================ D-061 applied: the dashboard IS checked, and four sentences now say so ==
+# THE PARAGRAPH ABOVE WENT FALSE WITHOUT BEING EDITED, and that is the defect this block exists
+# to stop repeating. Until 2026-09-23 it ended "None of it is covered by any of the checks
+# described below" and "Neither part is measured as this statement is written". Commit d47fd5a
+# (T-0615, D-061 option B) made AccessibilityTest scan Config Guardian's dashboard logged in, and
+# from that commit on the shipped sentence was true of the prose it sat in and false of the
+# package - and nothing here could notice, because nothing here read the test for anything but
+# the anonymous page count.
+#
+# The statement now says four things about that check. Each is a claim about the TEST, so each is
+# read out of the test rather than typed here:
+#   admin_checked_page     the dashboard the prose names    vs  DASHBOARD_ROUTE, less '.dashboard'
+#   admin_checked_role     the role label the prose names   vs  the label of the PACKAGED role
+#                                                               whose id is LOGGED_IN_ROLE
+#   admin_contrast_owner   the project the prose names for  vs  the owners of every color-contrast
+#                          the contrast failures                entry in INSTALLED_MARKUP_VIOLATIONS
+#   admin_landmark_owners  the projects it names for        vs  the owners of every region entry
+#                          content outside landmarks            in that same declared set
+#   admin_checked_only     "no check covers any other page" vs  DECLARED_LOGGED_IN_PAGES
+#
+# So the test cannot stop scanning the page, scan it as another role, lose the contrast failure
+# the prose names - an upstream fix is the realistic way - or gain a second logged-in page,
+# without this failing in the same commit. Each of the four sentences is also a claim_once, so
+# rewording one back towards "none of it is covered" FATALs here the way 'admin scope' does.
+#
+# NO NUMERAL IS BOUND, BECAUSE THE PROSE CARRIES NONE, DELIBERATELY. The node, rule and route
+# counts are printed by the gate on every green run; they are facts about other projects' markup
+# at versions that will move, and they belong in that log rather than on a public body's page.
+# The typed '1' below is the reading of a sentence, not a figure in it - the same construction
+# as recommended_empty's '0'.
+A11Y_SRC=$(tr -d '\r' < "$A11Y_TEST")
+A11Y_DECLARED_SET=$(printf '%s\n' "$A11Y_SRC" \
+  | sed -n '/private const INSTALLED_MARKUP_VIOLATIONS = \[/,/^  \];/p')
+A11Y_DECLARED_N=$(printf '%s\n' "$A11Y_DECLARED_SET" \
+  | grep -E "^ +\\['[a-z-]+', '.*', '[a-z0-9_]+'\\],\$" | wc -l | tr -d '[:space:]')
+[ "${A11Y_DECLARED_N:-0}" -gt 0 ] || fatal "INSTALLED_MARKUP_VIOLATIONS in $A11Y_TEST yielded 0 entries of the shape ['rule', 'selector', 'owner'], so every owner the statement names would be compared against an empty set. If the constant was renamed or reshaped, this reader moves with it in the same commit."
+declared_owners() { # <axe rule id> -> the sorted, distinct owners of that rule's declared entries
+  printf '%s\n' "$A11Y_DECLARED_SET" \
+    | sed -nE "s/^ +\\['$1', '.*', '([a-z0-9_]+)'\\],\$/\\1/p" | sort -u | tr '\n' ' ' | sed 's/ $//'
+}
+
+claim_once 'admin dashboard checked' STATEMENT \
+  '<strong>The [A-Z][A-Za-z]+ [A-Z][A-Za-z]+ dashboard is scanned by axe-core on every change</strong>, signed in as a user holding only the [A-Z][a-z]+( [a-z]+)* role, which this site template ships'
+A_CHECKED=$(field 1 '.*<strong>The ([A-Z][A-Za-z]+ [A-Z][A-Za-z]+) dashboard is scanned.*' | tr 'A-Z ' 'a-z_')
+A_ROLE_LABEL=$(field 1 '.*holding only the ([A-Z][a-z]+( [a-z]+)*) role, which.*')
+T_DASH_MODULE=$(printf '%s\n' "$A11Y_SRC" \
+  | sed -nE "s/^ +private const DASHBOARD_ROUTE = '([a-z0-9_]+)\\.dashboard';.*/\\1/p" | head -1)
+compare 'admin_checked_page' "$A_CHECKED" "$T_DASH_MODULE" \
+  "DASHBOARD_ROUTE in $A11Y_TEST, less its .dashboard suffix"
+# "A role this site template ships" is the claim, so the role's config is looked for in the
+# PACKAGED listing, not merely on disk: an unpackaged role would leave the label unread and the
+# comparison with an empty side, which is a finding and never agreement.
+T_ROLE_ID=$(printf '%s\n' "$A11Y_SRC" \
+  | sed -nE "s/^ +private const LOGGED_IN_ROLE = '([a-z0-9_]+)';.*/\\1/p" | head -1)
+T_ROLE_LABEL=''
+if [ -n "$T_ROLE_ID" ]; then
+  printf '%s\n' "$ARCHIVE_LIST" | grep -qxF -- "config/user.role.$T_ROLE_ID.yml"
+  _rc=$?
+  case $_rc in
+    0) T_ROLE_LABEL=$(tr -d '\r' < "config/user.role.$T_ROLE_ID.yml" \
+         | sed -nE "s/^label: '(.*)'\$/\\1/p" | head -1) ;;
+    1) : ;;
+    *) grep_fatal "$_rc" "the git archive listing while looking for the role $A11Y_TEST logs in as" ;;
+  esac
+fi
+compare 'admin_checked_role' "$A_ROLE_LABEL" "$T_ROLE_LABEL" \
+  "the label of the packaged role LOGGED_IN_ROLE names in $A11Y_TEST"
+
+claim_once 'admin contrast finding' STATEMENT \
+  '<strong>The scan finds colour contrast failures in markup that [A-Z][A-Za-z]+ [A-Z][A-Za-z]+ itself provides</strong>'
+A_CONTRAST=$(field 1 '.*markup that ([A-Z][A-Za-z]+ [A-Z][A-Za-z]+) itself provides.*' | tr 'A-Z ' 'a-z_')
+compare 'admin_contrast_owner' "$A_CONTRAST" "$(declared_owners 'color-contrast')" \
+  'owners of the color-contrast entries in INSTALLED_MARKUP_VIOLATIONS'
+
+claim_once 'admin landmark finding' STATEMENT \
+  'The same scan also finds parts of the [A-Z][a-z]+ and [A-Z][a-z]+ interface on that page placed outside every landmark region'
+A_LANDMARK=$(printf '%s\n%s\n' \
+  "$(field 1 '.*parts of the ([A-Z][a-z]+) and [A-Z][a-z]+ interface.*')" \
+  "$(field 1 '.*parts of the [A-Z][a-z]+ and ([A-Z][a-z]+) interface.*')" \
+  | tr 'A-Z' 'a-z' | grep -v '^$' | sort -u | tr '\n' ' ' | sed 's/ $//')
+compare 'admin_landmark_owners' "$A_LANDMARK" "$(declared_owners 'region')" \
+  'owners of the region entries in INSTALLED_MARKUP_VIOLATIONS'
+
+claim_once 'admin only page' STATEMENT \
+  '<strong>No accessibility check covers any other page of the administrative interface</strong>'
+T_LOGGED_IN_PAGES=$(printf '%s\n' "$A11Y_SRC" \
+  | sed -nE 's/^ +private const DECLARED_LOGGED_IN_PAGES = ([0-9]+);.*/\1/p' | head -1)
+compare 'admin_checked_only' '1' "$T_LOGGED_IN_PAGES" \
+  "DECLARED_LOGGED_IN_PAGES in $A11Y_TEST"
+
+# README.md SAID THE SAME FALSE THING, AND IN FEWER WORDS. Its "what neither gate covers" list
+# opened with "anything behind a login" until 2026-09-23 - false from d47fd5a on, for the same
+# reason, and found by reading rather than by anything here, because nothing here read it for
+# that. It now names the one exception and points at the statement for what the scan finds, so
+# it carries no finding of its own to go stale. What it does carry - which page, and that it is
+# the only one - is bound to the same two constants as the statement's sentences above. It is
+# read here rather than in the README section of this file because those constants are only
+# read out of the test in this block.
+claim_once 'readme login scope' README \
+  'everything behind a login except the [A-Z][A-Za-z]+ [A-Z][A-Za-z]+ dashboard, which is the only page the gate in this repository scans signed in'
+R_LOGIN_PAGE=$(field 1 '.*except the ([A-Z][A-Za-z]+ [A-Z][A-Za-z]+) dashboard.*' | tr 'A-Z ' 'a-z_')
+compare 'readme_login_page' "$R_LOGIN_PAGE" "$T_DASH_MODULE" \
+  "DASHBOARD_ROUTE in $A11Y_TEST, less its .dashboard suffix"
+compare 'readme_login_only' '1' "$T_LOGGED_IN_PAGES" \
+  "DECLARED_LOGGED_IN_PAGES in $A11Y_TEST"
 
 # ================================= recipe.yml, composer.json, recommended.yml ==
 printf '\nrecipe.yml / composer.json / recommended.yml\n'
@@ -1242,7 +1361,8 @@ NOT_CHECKED=(
 "Whether a figure stated in DIFFERENT WORDS somewhere in the packaged set is the same figure. Every comparison above binds ONE canonical sentence by a tight pattern, and the one-copy rule covers a REGISTERED set of detectors rather than every number in six files. The change this script arrived with deleted the restatements it found rather than trying to match them all, so this entry is about the NEXT one somebody writes."
 "The WCAG criterion identifiers - 2.4.7, 2.5.8, 1.4.10, 2.4.1 - which appear in both README.md and the statement. They are names, not measurements: two documents naming the same criterion are not two copies of a figure, and binding them would be binding a citation. READABLE AND DELIBERATELY NOT BOUND."
 "The declared licence of each of the projects in composer.json require. LICENCE-MANIFEST.md states that all of them are GPL-2.0-or-later on the strength of Drupal.org's hosting condition, and says so in its own words; nothing here re-derives it from packages.drupal.org. The COUNT of them is compared above, and tests/bin/sbom-check reads each project's release status and security coverage - neither is the licence. Closing it is eleven HTTP requests in the --online block and it has no owner yet."
-"Gin, Coffee and Navigation - the three components the scoping sentence of the accessibility statement names beside the dashboard. All three are installed by drupal_cms_admin_ui, a DEPENDENCY's recipe, and none of the three is named anywhere in this tree, so no offline read here can produce them; the one component this package installs itself is compared above. They were verified at source for T-0614 by reading that recipe on git.drupalcode.org - coffee at its line 7, gin at line 16, navigation at line 21, and admin: gin at line 107, which is the line that makes Gin the administration theme rather than merely an installed one. The file is byte-identical at tags 2.1.4 and 2.1.5 and at the 2.1.x tip, so the citation holds at every version the ^2 constraint can resolve to today; it will not hold forever, and a dependency that dropped one of the three would leave the sentence naming a component that is no longer installed."
+"Gin, Coffee and Navigation - the three components the scoping sentence of the accessibility statement names beside the dashboard. All three are installed by drupal_cms_admin_ui, a DEPENDENCY's recipe, and this package DECLARES none of them - none is in composer.json's require and none in recipe.yml's install: list - so no offline read here can show that an install still receives them; the one component this package installs itself is compared above. Until 2026-09-23 this entry said none of the three 'is named anywhere in this tree', which was loose before and false after, because NAMED IS NOT DECLARED: recipe.yml names navigation's components in the Canvas actions that disable them, and AccessibilityTest names gin and coffee as the owners of violations it declares on the Config Guardian dashboard, so a green phpunit run shows both rendering on that page - an observation made at runtime in CI, not a declaration anything offline can read. The navigation module appears in no assertion at all. They were verified at source for T-0614 by reading that recipe on git.drupalcode.org - coffee at its line 7, gin at line 16, navigation at line 21, and admin: gin at line 107, which is the line that makes Gin the administration theme rather than merely an installed one. The file is byte-identical at tags 2.1.4 and 2.1.5 and at the 2.1.x tip, so the citation holds at every version the ^2 constraint can resolve to today; it will not hold forever, and a dependency that dropped one of the three would leave the sentence naming a component that is no longer installed."
+"What the dashboard paragraph of the accessibility statement says about ANOTHER project's source rather than about the test: that the failing text takes BOTH its colour and its background from Config Guardian itself. Verified at source on 2026-09-23 against config_guardian 1.0.3, the release a clean install resolves - css/config-guardian.css sets --cg-bg at line 14 and --cg-text-muted at line 17, and .cg-table th (lines 630-639) and .cg-comparison-header h4 small (lines 243-247, on a header whose background is --cg-bg at line 231) draw one on the other - and the unreleased 1.0.4 tag carries a byte-identical stylesheet. Nothing offline here can read a dependency's stylesheet, and a release that moved either token would leave the clause wrong while admin_contrast_owner still passed on the owner alone; that comparison binds WHO, not WHY."
 "screenshot.webp's pixel dimensions and logo.png's, quoted in the manifest headings. Reading them needs a WebP and PNG header parser; the BYTE SIZE and the SHA-256 of both are compared above, and a file whose digest matches has not changed its dimensions either."
 "The two figures content/MEDIA-LICENCES.md states about haven - 21 Unsplash-named JPEGs, 77426040 bytes, at release 1.0.3. They are facts about ANOTHER project at a version that will move, and nothing offline can produce them; re-deriving them would be one 78 MB download per run, which is not a gate's business. The page quotes the one-second command that produces both and says in its own words that nothing here keeps them true. It said 22 for twenty-six days, in two places, and 22 is reproducible at no release haven has cut - which is what an unbound third-party figure looks like when it goes wrong."
 )

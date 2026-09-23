@@ -163,7 +163,27 @@ CITATION_PATTERN='T-[0-9]{3,4}'
 #   - one row edited to a glyph OFF the set (`| T-1103 ◐ |`) -> exit 1, naming T-1103.
 # The DENOMINATOR is the half that matters: a widening that silently stopped recognising rows
 # would still print `findings: 0`, and that is how the two earlier breaks were caught (I-045).
-DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3,4}\*\*|\|[[:space:]]*T-[0-9]{3,4}[[:space:]]*((✓|○|⏸|👤)[[:space:]]*)?\|)'
+#
+# TWO GLYPHS IN ONE CELL, 2026-09-23 - and this break was found by a CITATION, not by a row.
+# The legend in specs/006-hardening/tasks.md combines markers: `⏸ 👤` is blocked AND needs
+# [andres]'s hands, and it is a true description of a row. The alternation accepted ONE glyph, so
+# nine rows across two task files - T-0522, T-0527, T-0529 and T-0532 in unit 005, T-0603,
+# T-0616, T-0618, T-0627 and T-0633 in unit 006 - were not definitions at all, and nothing noticed
+# because no decision cited them. The first one that did, an amendment to D-061 citing T-0603,
+# got four dangling-pointer findings for a row that exists, and was reworded to avoid the id
+# rather than wait for this. The SET is unchanged and still closed; what changes is that up to
+# TWO of its glyphs may stand in the cell, and three are still refused.
+# Falsified before it was trusted, in a scratch worktree, never in this tree:
+#   - a line citing T-0603 appended to DECISIONS.md, script as it was -> exit 1, `cites T-0603,
+#     which is defined by no task list`, definitions 263, distinct defined 252;
+#   - the same line, this pattern -> exit 0, definitions 272, distinct defined 261: EXACTLY +9,
+#     the nine rows above, none of them defined anywhere else;
+#   - that row edited to three glyphs (`| T-0603 ⏸ 👤 ✓ |`), to an off-set second glyph
+#     (`| T-0603 ⏸ ◐ |`), and to carried-debt prose (`| T-0603 (blocked, unit 006) |`) ->
+#     exit 1 each, naming T-0603: widening the count did not widen the set;
+#   - and the control that the widening made nothing pass by default: a line citing an id no task
+#     list defines -> exit 1, naming it.
+DEFINITION_ANY='^([-*][[:space:]]*(\[[^]]*\][[:space:]]*)?\*\*T-[0-9]{3,4}\*\*|\|[[:space:]]*T-[0-9]{3,4}[[:space:]]*((✓|○|⏸|👤)[[:space:]]*){0,2}\|)'
 
 # ---------------------------------------------------------------- preflight --
 for tool in find grep sort wc cut mktemp; do
