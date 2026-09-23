@@ -4707,3 +4707,65 @@ completed by the body operating the site. The **WCAG attestation** is a statemen
 exists; one does not.
 
 **What it costs to be wrong:** one more file in a package of 374 entries.
+
+---
+
+## D-066 · `mirror-streak` is KEPT as the third invariant — SIGNED by [ejecutor], 2026-09-23
+
+**Signed under the standing delegation.** It is a tooling decision about this repository's own
+gate, not a product trade-off, and it rules on one of the two questions `specs/006-hardening`
+reserved.
+
+**KEEP IT.** And the budget consequence is stated first rather than buried: `plan.md` §5 item 3
+named **two** new invariants for this unit — `packaged-claims` and the drift mode — and said *"a
+third is a conversation, because each permanently costs a `GATE-CLAIM` field, a group and three
+figures."* This **is** that conversation, and it resolves in favour, which means **the unit ships
+three where it budgeted two. That is an overrun, it is deliberate, and it is recorded as one.**
+
+**Why it wins anyway:** the defect it catches was **measured, not feared.** The GitHub mirror ran
+**nine consecutive red workflows across three weeks**, D-020's *"may fail without blocking, but may
+never lie"* had quietly stopped holding for the whole of it, and the only thing that noticed was a
+human reading an inbox. Every alternative considered reproduces the property that caused it — a
+check that runs only when somebody types it. **Nobody ever had the number nine**; that is what the
+streak exists to produce.
+
+**The cost, exactly, because a decision that will not say its own price is not a decision:**
+wave-1 group **G14 (6 checks)**, one more check in **G8**, that runner **88 → 95**, its invariants
+**5 → 6**, the cross-runner total **23 → 24**, one more comparison in `claims-match-sources`
+(13 → 14) and two figures in `CLAUDE.md`. All paid already.
+
+⚠️ **The argument against is real and is not dismissed:** it is a network read inside
+`agora-invariants`, which `watch-gate`'s own comment argues against, and **D-063's cost line calls
+one-more-denominator-to-watch *"this project's cheapest known failure mode"***. Both hold. They are
+outweighed because the failure being prevented is three weeks of silent red, and the failure being
+risked is one more number that goes stale — and a stale number in this project gets **caught**,
+repeatedly and by several mechanisms, as this month's record shows.
+
+---
+
+## D-067 · The 14-day cap is sound; *"the exit status is untouched"* is NOT — SIGNED by [ejecutor], 2026-09-23
+
+**The second reserved question, and the answer is that the two statements are genuinely
+inconsistent — so the WORDING is corrected, not the cap.**
+
+**Provenance first, because it changes who has to be persuaded:** *"the exit status is untouched"*
+is in **T-0623's own criterion cell, written at scaffold time.** It is **not** D-020's wording.
+D-020 holds that the mirror is informative — *"may fail without blocking, but may never lie."*
+So no signed decision is being contradicted; a scaffold sentence is.
+
+**The inconsistency, stated plainly.** With no acknowledgement written here, a sequence taking
+place **entirely outside this repository** — the mirror goes red, a fortnight passes — turns exit
+0 into exit 1. **A timer does reach the exit status.** That the remedy is always a local commit
+makes the *remedy* local; it does not make the **trigger** local, and "untouched" is a claim about
+the trigger.
+
+**Ruling:** the cap **stands**. What is amended is T-0623's criterion, to the narrower statement
+that is true: *the mirror's conclusion never reaches the exit status; what reaches it is a fact
+about THIS repository — whether it has acknowledged a red older than the cap.* That is a real
+constraint, it is always dischargeable by a commit here, and it never produces the unfixable red
+D-023(5) refuses.
+
+⚠️ **One fact for anyone revisiting this:** `gate-a-wave1.sh` asserts the cap line reads
+`14 days (default)`, so the number cannot be loosened at the call site without moving a check a
+human must look at. **It is a governed constant, not a tunable**, and that is why ruling on it was
+worth doing rather than leaving the sentence to be read charitably.
