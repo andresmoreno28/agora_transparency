@@ -1305,3 +1305,33 @@
   observable difference was that a number the log used to print **stopped being printed at all**. A
   green that quietly stops stating its denominator is the same event as a red (I-007, I-045).
   Recorded 2026-09-13 with T-1701.
+
+- I-117 · **The usage-reporting guard and `/admin/config` cannot both work, and the page returns a
+  500 rather than a warning.** Every test rig in this project pins `update.settings.fetch.url` at an
+  unreachable address (`$config['update.settings']['fetch']['url'] =
+  'http://127.0.0.1:1/release-history';` in `settings.php`) so that a throwaway install never
+  inflates the install count on [andres]'s own Drupal.org project. **That guard is non-negotiable,
+  and it breaks an admin page.** With it in place, `/admin/config` as user 1 answers **HTTP 500**:
+  ```
+  GuzzleHttp\Exception\ConnectException: cURL error 7: Failed to connect to 127.0.0.1 port 1 …
+    for http://127.0.0.1:1/release-history/automatic_updates/current?site_key=…&version=4.1.0
+  RuntimeException: The project 'drupal' can not be updated because its status is not-fetched
+    in Drupal\package_manager\ProjectInfo->getInstallableReleases()
+    (line 97 of core/modules/package_manager/src/ProjectInfo.php)
+  ```
+  The chain is: the pinned URL refuses the connection → release data stays `not-fetched` →
+  `package_manager` treats a project whose release data never arrived as a **fatal**, not as "unknown". ⚠️ **Do not
+  read this 500 as a defect in the template.** It is a property of the rig's guard, it appears on
+  no unguarded install, and `automatic_updates` is not even in this package's `require` — a clean
+  install acquires it through the `drupal_cms_*` recipes. ⚠️ **And do not "fix" it by lifting the
+  guard for one page**: the very request that fails carries `site_key=…`, which is the usage
+  report itself. The failure IS the guard doing its job, visible. ⚠️ **What to do instead:** scan
+  and walk the admin surface on routes other than `/admin/config`, and record the exclusion by name
+  — an admin a11y run that silently skips a 500 page has scanned one page fewer than it says
+  (I-062). ⚠️ **A second, smaller trap sits beside this one and reads like a leak:**
+  `update.last_check` is **non-NULL on a correctly guarded rig**, because Drupal records the
+  *attempt* whether or not it succeeds. The assertion that actually means "nothing phoned home" is
+  **`update_available_releases` empty** plus the attempted URL pointing at the pinned address —
+  both readable in `watchdog`. Checking `update.last_check` alone gives a false alarm on a clean
+  rig and would give a false all-clear on a rig whose state had merely been cleared.
+  Recorded 2026-09-23 with T-0633.

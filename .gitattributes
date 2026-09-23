@@ -37,10 +37,26 @@
 #             merely useless there - it is a set of rules about a layout the reader does
 #             not have.
 #
-# Measured, not assumed: `git archive --worktree-attributes HEAD | tar -t | wc -l` goes
-# from 376 entries to 374 with these two lines, and the packaged root becomes nine entries
-# instead of eleven. Two gate checks in tests/bin/gate-a-wave1.sh G8 hold it, so removing
-# a line here turns the gate red rather than quietly restoring the noise.
+# Measured, not assumed - and each figure is written WITH THE COMMAND THAT PRINTS IT,
+# because the pair below went stale by exactly one file and nothing could see it:
+#
+#   entries in the tarball
+#     git archive --worktree-attributes HEAD | tar -t | wc -l
+#     -> 375 with these two lines, 377 without
+#
+#   files at the packaged root
+#     git archive --worktree-attributes HEAD | tar -t | grep -cvE '/'
+#     -> 10 with these two lines, 12 without
+#
+# Both sides were measured on 2026-09-23 by commenting the two lines out, re-running
+# each command, and putting them back - not by adding 2 to the number already here.
+# Run them; do not carry these figures. They read `374` and `nine` from 2026-09-21
+# until `LICENCE-MANIFEST.md` landed at the packaged root, and G8 stayed GREEN across
+# that drift, correctly: G8 DERIVES its count from the tarball and asserts `> 0`, and
+# holds `.gitignore` and `.mailmap` by NAME on its "must NOT travel" list. It never
+# reads these two numbers, so the effect of these lines is guarded and only the prose
+# above them can rot. Removing a line here still turns the gate red rather than
+# quietly restoring the noise.
 #
 # ⚠️ This does NOT reach the `Drupal CMS` CI job, and that is a property worth knowing
 # rather than a gap: that job installs this package through a Composer PATH REPOSITORY,

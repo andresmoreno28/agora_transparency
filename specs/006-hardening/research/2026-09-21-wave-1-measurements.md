@@ -57,6 +57,14 @@ with the URL that produced it, as the row requires. D-012's note reads *"CI inst
 with security coverage · license manifest · WCAG attestation · security response, with no pins and
 no patches"* (`specs/000-project/DECISIONS.md:182-184`). All five match.
 
+⚠️ **One word in criterion 3's gloss is transcribed wrongly, found by re-fetching the page on
+2026-09-23.** It reads *"(such as default content **or** images)"* at source; the table above says
+**and**. The five names, the other four glosses and every cited line number are byte-for-byte
+right, and the meaning does not move — **but the column header says "verbatim"**, and a quotation
+that is 99% right is not verbatim, it is paraphrase with a claim attached. Left visible rather
+than silently swapped, for the same reason the two `git ls-files` and `17 invariants` corrections
+below are.
+
 ### Three divergences from D-012, stated as divergences and not merged
 
 **🔴 D-1 · The release-stability rule IS written down on the marketplace page, verbatim.**
@@ -96,8 +104,18 @@ says a signed amendment is amended, never edited.
 $395 + $250/year figure came from a proposal saying *"(none for pilot and MVP)"*. The page today
 names a different instrument (line 167): *"up to 30% of net retail revenue is assessed as a fee by
 the Drupal Association"* — a **revenue share on paid templates**. `grep -niE "fee|395|250"` over
-the extraction returns that line and nothing else. **For a free template the fee is zero**, and
-D-012's conclusion is unaffected.
+the extraction ~~returns that line and nothing else~~ **returns TWO lines**. **For a free template
+the fee is zero**, and D-012's conclusion is unaffected.
+
+⚠️ **AMENDED 2026-09-23 by re-running the command.** The second hit is line 57, *"Change your
+project's look and feel"* — `fee` inside `feel`. It is a false positive and not a second fee
+statement, so **the conclusion survives exactly as written**; what does not survive is *"and
+nothing else"*, which was a claim about the command's output that the command does not make.
+⚠️ **It was almost certainly false when written, not since**: that line is static marketing copy
+on a page whose extraction still comes to the same **194 text lines**, and every line number this
+section cites — 132-133, 141-142, 148-159, 165, 167 — still lands on the text quoted beside it.
+**So this is not drift. It is an output nobody looked at**, which is the third instance of that
+one class in this file and the reason Appendix C exists.
 
 **🟢 D-3 · D-012's eligibility quote is unchanged**, re-read today at lines 132-133 and 141-142:
 *"Free templates: Any organizations who want to submit free templates, are welcome to."* and
@@ -123,8 +141,17 @@ listed and installable."*
 
 <!-- cspell:disable -->`grep -niE "WCAG|accessib|SBOM|bill of materials|licen[sc]e manifest|security|alpha|beta|patch"`<!-- cspell:enable --><!-- the regex is quoted verbatim because it is the evidence; its deliberately truncated stems are not prose and must not be "corrected" -->
 
-over that page returns **4 hits, all of them site chrome** (the footer's "Security Advisories" and
-"Web Accessibility" links, at lines 64, 65, 167). **Zero review criteria.**
+over that page returns ~~**4 hits**~~ **THREE hits, all of them site chrome** (the footer's
+"Security Advisories" and "Web Accessibility" links, at lines 64, 65, 167). **Zero review
+criteria.**
+
+⚠️ **AMENDED 2026-09-23 by re-running the command. It is THREE, and the sentence named three
+lines while stating the count as four** — the count and the enumeration beside it disagreed in the
+original, and neither a reader nor any gate would see it, because nothing here compares a number
+with the list it introduces. Re-measured: `/share` fetched again, HTTP 200, **180 text lines** —
+identical — and line 126 reproduces verbatim. **The conclusion is untouched**: still zero review
+criteria on the community route. What moves is only the evidence figure, and it moves in the same
+direction as the two errors this file already records against itself.
 
 ⚠️ **So every artefact unit 006 is about to build — the attestation, the response commitment, the
 licence manifest — is required by a route the project has not chosen, and optional on the route it
@@ -277,19 +304,27 @@ you about contrast, focus order, ARIA, or whether a rule ran.
 Run from the site template working copy with a DDEV rig available. Step 4 is the row's deliverable.
 
 ```bash
+# 0. THE RIG NAME BELOW IS A PARAMETER, NOT A FACT. `~/agora-t06` is the rig this
+#    sequence was executed against on 2026-09-23; `~/agora-cms`, which it named
+#    until then, is STOPPED and its docroot layout is not this one. Run
+#    `bash tests/bin/doctor` group 6 for the rigs that exist as you read this.
+
 # 1. A clean rig with the template applied, and NO AI key (I-003).
-wsl.exe -e bash -lc 'cd ~/agora-cms && ddev drush sql:drop --yes && ddev drush site:install \
-  --existing-config --yes && ddev drush recipe ../recipes/agora_transparency'
+#    CORRECTED 2026-09-23 after being EXECUTED: `--existing-config` DOES NOT RUN
+#    here, and it fails AFTER sql:drop has already emptied the database. See the
+#    note at the foot of this section.
+wsl.exe -e bash -lc 'cd ~/agora-t06 && ddev drush sql:drop --yes && ddev drush site:install \
+  minimal --yes && ddev drush recipe ../recipes/agora_transparency'
 
 # 2. Confirm the module and its dashboard route actually exist in THIS install,
 #    rather than trusting the recipe. A route that 404s scans nothing (I-062).
-wsl.exe -e bash -lc 'cd ~/agora-cms && ddev drush pm:list --status=enabled --filter=config_guardian'
-wsl.exe -e bash -lc 'cd ~/agora-cms && ddev drush php:eval \
+wsl.exe -e bash -lc 'cd ~/agora-t06 && ddev drush pm:list --status=enabled --filter=config_guardian'
+wsl.exe -e bash -lc 'cd ~/agora-t06 && ddev drush php:eval \
   "echo \Drupal::service(\"router.route_provider\")->getRouteByName(\"config_guardian.dashboard\")->getPath();"'
 
 # 3. A logged-in session. The dashboard is permission-gated: an anonymous scan
 #    gets the 403 page and reports 0 violations, truthfully and about nothing.
-wsl.exe -e bash -lc 'cd ~/agora-cms && ddev drush user:login /admin/config/development/config-guardian'
+wsl.exe -e bash -lc 'cd ~/agora-t06 && ddev drush user:login /admin/config/development/config-guardian'
 
 # 4. axe over the 16 HTML routes, logged in, recording per page:
 #    pages scanned · rules run per page · violations · each violation's selector.
@@ -313,6 +348,55 @@ wsl.exe -e bash -lc 'cd ~/agora-cms && ddev drush user:login /admin/config/devel
 nothing: scanning the dashboard **anonymously** (you scan the 403 page), and counting violations
 without counting **rules run** (axe files a rule it could not apply in a bucket that reads exactly
 like a pass).
+
+### 🔴 What was wrong with step 1, corrected 2026-09-23 after it was EXECUTED
+
+**`site:install --existing-config` DOES NOT RUN on a site-template rig, and it fails only AFTER
+`sql:drop` has already emptied the database.** Verbatim, on `~/agora-t06`:
+
+```
+ // Do you really want to drop all tables in the database db?: yes.
+In SiteInstallCommands.php line 266:
+  Existing configuration directory sites/default/files/sync does not contain
+  a core.extension.yml file.
+Failed to run drush site:install --existing-config --yes: exit status 1
+```
+
+⚠️ **Destructive-then-broken is the worst shape a written procedure can have**, and it is the
+reason this one had to be run rather than read: a reader following it loses the rig and gets no
+site, at step 1 of 5, having been told this was the step that *builds* the clean rig.
+
+**Why it cannot work, stated so the fix is not copied without the reason.** `--existing-config` installs a site
+from an **exported `config/sync` directory**. A site template has no such export in the rig:
+`config_sync_directory` resolves to `sites/default/files/sync` and it holds **0 files**
+(`ls -1 web/sites/default/files/sync | wc -l` → `0`). This package's `config/` is applied by the
+**recipe**, at the third command, not by the installer at the second. The two were conflated.
+
+✅ **The working sequence, executed end to end on a genuinely dropped database, 2026-09-23:**
+`ddev drush site:install minimal --yes` → `Installation complete.`, then
+`ddev drush recipe ../recipes/agora_transparency` → **82/82**,
+`Installed 3 modules: Configuration Manager, Datetime Range, Config Guardian.`,
+`Installed configuration for Ágora Transparency recipe.`,
+`Created content for Ágora Transparency recipe.`,
+**`[OK] Ágora Transparency applied successfully`**. Resolved afterwards: `agora_theme` **1.2.0**,
+`config_guardian` **1.0.3**, `system.theme` default `agora_theme`.
+
+⚠️ **`minimal` rather than `drupal_cms_installer`, and the reason is a property of the rig, not a
+preference.** `~/agora-t06` is built on `drupal/core-recommended`, not `drupal/cms`, so
+`web/profiles/` contains no Drupal CMS installer profile at all. On a `drupal/cms` rig the profile
+name is the thing that changes here; nothing else in the sequence does.
+
+✅ **Steps 2 and 3 RUN AS WRITTEN**, re-confirmed on the freshly installed site:
+`config_guardian 1.0.3 Enabled`; the route provider prints
+`/admin/config/development/config-guardian`; `user:login` returns a one-time link carrying
+`?destination=/admin/config/development/config-guardian`.
+
+⚠️ **`../recipes/agora_transparency` is CORRECT and looks wrong**, which is worth one line because
+checking it the obvious way says otherwise. `ddev drush` runs with its working directory at the
+**docroot** (`/var/www/html/web`), so `../recipes/…` resolves to `/var/www/html/recipes/…` and
+`recipe.yml` is readable there. **`ddev exec` runs one level up**, at `/var/www/html`, where the
+same relative path resolves to `/var/www/recipes` and does not exist — so testing the path with
+`ddev exec ls` "disproves" a path that works.
 
 ---
 
@@ -572,16 +656,21 @@ From `config/views.view.agora_base_*.yml`, each declaring exactly one `page_1` p
 # 1. Query count per route, from Drupal's own database logger. devel/webprofiler
 #    is NOT installed and MUST NOT be added - plan.md §3 puts "any new contrib
 #    dependency" explicitly OUT of scope for 006.
-#    Use core's built-in database logging instead:
+#    Use core's built-in database logging instead.
+#
+#    CORRECTED 2026-09-23 after being EXECUTED. Two statements in the original
+#    did not run; both are named at the foot of this section. The loop shape is
+#    unchanged and is load-bearing: ONE `ddev drush` per route means ONE PHP
+#    process per route, which is what keeps the sub-request trap out.
 for r in agreements contracts datasets documents grants library people publications; do
-  wsl.exe -e bash -lc "cd ~/agora-cms && ddev drush php:eval '
-    \Drupal::database()->enableLogging();
+  wsl.exe -e bash -lc "cd ~/agora-t06 && ddev drush php:eval '
+    \Drupal\Core\Database\Database::startLog(\"t0606\");
     \$r = \Drupal::service(\"http_kernel\")->handle(
       \Symfony\Component\HttpFoundation\Request::create(\"/$r\")
     );
     printf(\"%-14s status=%d  bytes=%d  queries=%d\n\",
       \"$r\", \$r->getStatusCode(), strlen(\$r->getContent()),
-      count(\Drupal::database()->getLogger()->get(\"default\")));
+      count(\Drupal\Core\Database\Database::getLog(\"t0606\")));
   '"
 done
 
@@ -591,9 +680,9 @@ done
 #    claim about the wrong thing.
 #    Anonymous, cold cache, total transferred over the wire:
 for r in agreements contracts datasets documents grants library people publications; do
-  wsl.exe -e bash -lc "cd ~/agora-cms && curl -sS -o /dev/null \
+  wsl.exe -e bash -lc "cd ~/agora-t06 && curl -sS -o /dev/null \
     -w '$r  html_bytes=%{size_download}  time=%{time_total}\n' \
-    https://agora-cms.ddev.site/$r"
+    https://agora-t06.ddev.site/$r"
 done
 
 # 3. Full page weight including sub-resources, via the Windows screenshot loop
@@ -608,6 +697,40 @@ report a fraction of the first, and which one you measured is the whole meaning 
 an empty view renders no table at all, so a suspiciously light page may be an empty one (I-062).
 (c) **Do not let a test install phone drupal.org** — usage reporting inflates the project's install
 count.
+
+### 🔴 What was wrong with step 1, corrected 2026-09-23 after it was EXECUTED
+
+**TWO statements did not run, and the second was hiding behind the first.**
+
+| # | as written | verbatim result | the working API |
+|---|---|---|---|
+| 1 | `\Drupal::database()->enableLogging();` | `Error: Call to undefined method Drupal\mysql\Driver\Database\mysql\Connection::enableLogging() in eval() (line 2 ...)` | `\Drupal\Core\Database\Database::startLog("t0606");` |
+| 2 | `count(\Drupal::database()->getLogger()->get("default"))` | never reached — it would have thrown `Call to a member function get() on null` | `count(\Drupal\Core\Database\Database::getLog("t0606"))` |
+
+⚠️ **The second one is the instructive one, because a reader repairing the first would not have
+found it.** `getLogger()` **does exist** on `Connection` in Drupal 11 — probed directly:
+`Connection::enableLogging exists = NO`, `Connection::getLogger exists = YES`,
+`Database::startLog exists = YES`, `Database::getLog exists = YES`. But `getLogger()` returns
+**`NULL`** until a log has been started, so deleting the broken line 2 and keeping line 7 produces
+a *different* fatal one line later. **An API that exists is not an API that is usable here**, and
+that is a harder thing to catch by reading than a method that is simply absent.
+
+⚠️ **`"default"` was a third latent trap.** `Database::startLog($logging_key)` takes a LOGGING key,
+while `Database::getLog($logging_key, $connection_key)`'s *second* argument is the connection key
+that defaults to `default`. Passing `"default"` as the logging key works, but it reads as though it
+names the connection, so the corrected form uses `"t0606"` — a key that cannot be mistaken for the
+other thing.
+
+✅ **Verified running on `~/agora-t06`, 2026-09-23**, two routes:
+`agreements status=200 bytes=30606 queries=380` · `contracts status=200 bytes=48464 queries=203`.
+
+⚠️ **And that pair is itself trap (a) above, caught in the act.** Both were run on a rig installed
+minutes earlier. `agreements` went first and paid for the container, discovery and config caches —
+**380** queries; `contracts` ran second, against those now-warm persistent bins, and printed
+**203**, which is exactly the `cold` figure the row records. **So "cold" is not "the first request
+you happen to make": it is a stated cache state**, and the row's own figures define it as the
+`page`, `dynamic_page_cache` and `render` bins emptied. A run that does not say which bins were
+empty has not measured either number.
 
 ---
 
@@ -783,3 +906,78 @@ are currently excluded on the grounds that they *"live only in a CI log"*. Per-s
 `assertions=` are in `junit.xml`, which is anonymously downloadable. **The page count is not**, so
 the exclusion does not disappear — it gets shorter. Not acted on here; named for whoever owns
 T-0613.
+
+---
+
+## Appendix C · Every procedure in this file, EXECUTED — 2026-09-23
+
+**Why this appendix exists.** Five of wave 1's seven rows were closed against procedures nobody
+had executed. **The first one anybody ran was broken** — T-0606's step 1 called a method that does
+not exist in Drupal 11 — which made every other unexecuted procedure here a claim rather than a
+method. This appendix runs all of them and says, for each, exactly one of **RUNS AS WRITTEN** ·
+**RUNS BUT THE OUTPUT DIFFERS** · **DOES NOT RUN**.
+
+**The denominator is 20** — **7** fenced command sequences plus **12** commands quoted inline as
+the source of a stated figure, in this file, plus **1** in `tasks.md` that every budget-accounting
+entry points at. An eighth fenced block (the `<testsuite …>` XML at §T-0605) is *output*, not a
+command, and is not counted. Rig: `~/agora-t06`, DDEV, PHP 8.3, Drupal 11.4.7, MariaDB 10.11.
+Repository at `33e75cc`; the packaged set is **byte-identical** to `42bf1e7`, which the rig was
+built from — same 375 entries, same concatenated bytes.
+
+| # | § | procedure | verdict |
+|---|---|---|---|
+| 1 | T-0602 | `curl … /repository/archive.tar.gz?sha=1.0.3` for `haven` and `byte` | **RUNS AS WRITTEN** — 200/200; **748** and **651** shipped files, exact; `patches.json`, `.gitlab-ci.yml`, `tests/`, `.tugboat/` absent from both |
+| 2 | T-0603 | step 1 — `sql:drop && site:install --existing-config && recipe` | 🔴 **DOES NOT RUN.** Error quoted in §T-0603. **Destroys the database first** |
+| 3 | T-0603 | step 2a — `pm:list --status=enabled --filter=config_guardian` | **RUNS AS WRITTEN** — `Config Guardian (config_guardian) Enabled 1.0.3` |
+| 4 | T-0603 | step 2b — `getRouteByName("config_guardian.dashboard")->getPath()` | **RUNS AS WRITTEN** — `/admin/config/development/config-guardian` |
+| 5 | T-0603 | step 3 — `user:login /admin/config/development/config-guardian` | **RUNS AS WRITTEN** — one-time link with that `?destination=` |
+| 6 | T-0604 | `git diff --numstat 935c133f HEAD -- tests/bin/identity-strings tests/bin/spellcheck` | **RUNS AS WRITTEN** — `133 4` / `54 3` at today's HEAD; **`132 4` / `54 3` at `d06b9b6`**, the tree this file names, reproducing its figures exactly |
+| 7 | T-0604 | `grep -qxF` of each added line against the theme's copy | **RUNS AS WRITTEN** (technique, re-derived) |
+| 8 | T-0604 | `git status --porcelain` in the theme | **RUNS AS WRITTEN** |
+| 9 | T-0605 | `curl -sSL "…/-/jobs/12330735/raw"` | **RUNS AS WRITTEN** — HTTP 200, **34,487 bytes**, exact |
+| 10 | T-0605 | `grep -c "agora_transparency axe gate"` · `grep -c "pages scanned"` | **RUNS AS WRITTEN** — **0** and **0**, exact |
+| 11 | T-0605 | `curl -sSL "…/-/jobs/12330735/artifacts/raw/junit.xml"` | **RUNS AS WRITTEN** — HTTP 200, **7,359 bytes**, exact |
+| 12 | T-0605 | `grep -c "axe gate"` · `grep -c "<failure\|<system-out\|<error"` over `junit.xml` | **RUNS AS WRITTEN** — **0** and **0**; `assertions="187"`, `<testcase …/>` self-closing, exact |
+| 13 | T-0605 | `ls phpunit.xml phpunit.xml.dist` | **RUNS AS WRITTEN** — both absent, exit 2 |
+| 14 | T-0605 | `git archive --worktree-attributes HEAD \| tar -t \| grep -c "tests/"` | **RUNS AS WRITTEN** — **0**, exact |
+| 15 | T-0606 | step 1 — the per-route query/bytes loop | 🔴 **DOES NOT RUN.** Two broken statements; both quoted in §T-0606 |
+| 16 | T-0606 | step 2 — `curl -w 'html_bytes=%{size_download}'` per route | **RUNS AS WRITTEN** (the rig hostname is the only parameter) |
+| 17 | T-0607 | `git archive --worktree-attributes HEAD \| tar -t \| grep -icE 'attest\|wcag'` | ⚠️ **RUNS BUT THE OUTPUT DIFFERS** — still **0 hits**, but *"0 of **374**"* is now **0 of 375** |
+| 18 | T-0607 | `git ls-files \| grep -iE 'attest\|wcag'` | **RUNS AS WRITTEN** — **1**, `.claude/skills/accesibilidad-wcag-aa/SKILL.md`, exact |
+| 19 | App. A | `curl` + the tag-stripping `python3` extraction | ⚠️ **RUNS BUT THE OUTPUT DIFFERS** — **194 text lines**, exact and load-bearing; the *byte* count is **60,549**, not 60,970 |
+| 20 | `tasks.md` | `grep -cE '^\| T-06[0-9]{2} ' specs/006-hardening/tasks.md` | **RUNS AS WRITTEN** — prints **32** |
+
+**Two more inline commands were re-run and each DISAGREED with the figure printed beside it.**
+They are amended at their own sites, §T-0601, rather than only here: `grep -niE "fee|395|250"`
+returns **2** lines where the text says *"that line and nothing else"*, and the keyword grep over
+`/share` returns **3** where the text says **4** while naming three.
+
+### What this changes, and what it does not
+
+✅ **No conclusion in this file is overturned.** Every figure that decides something — the five
+criteria, 748/651, 0-of-748 and 0-of-651, the 13 Twig templates, 19 routes and 16 HTML ones,
+132/4 and 54/3, 187 assertions, the two zeros on a green trace, 0-of-N for the attestation —
+reproduces. Two rows' **conclusions stand on evidence that was misquoted**, which is a weaker
+thing than being wrong and a different thing from being measured.
+
+🔴 **Two procedures did not run at all, and both belong to rows that promised a rig would close
+them cheaply.** *"The exact command sequence is written out so the row becomes a short job the day
+a rig is free"* is this file's own framing of its unexecuted procedures, in its header. It was
+true of neither.
+
+⚠️ **The pattern in all four defects is one thing: an output nobody read.** Not drift — three of
+the four were false on the day they were written, on pages and trees that have not changed. A
+command quoted beside a figure it does not produce is indistinguishable, to every reader and every
+gate this project owns, from one that does.
+
+### Not covered by this appendix
+
+1. **T-0603 steps 4 and 5 were NOT executed** — step 4 is the axe scan of the 16 HTML admin routes
+   and step 5 is a person's keyboard walkthrough. Step 4 is T-0615's work and needs a harness that
+   does not exist here; step 5 is T-0616 and T-0633. **The dashboard is still not scanned.**
+2. **T-0606 step 3** (Playwright sub-resource weight) was not re-run; it is pseudocode in this
+   file, and its figures were measured once, on 2026-09-23, under T-0606's own row.
+3. **The corrected T-0606 step 1 was verified on 2 of the 8 routes**, not all eight — enough to
+   prove the sequence runs and to expose the cache-state trap, not a re-measurement of the row.
+4. **`~/agora-cms`, the rig every sequence here originally named, was never started.** It is
+   `stopped`, and what these sequences do on *it* is unmeasured.
