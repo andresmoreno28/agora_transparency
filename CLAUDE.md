@@ -755,14 +755,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
   closing it. It is closed.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **472** tracked files to cspell, which **checks 431** and
-  finds 0 issues (re-measured 2026-09-21, and see the correction immediately below; it read
+  `bash tests/bin/spellcheck` offers **473** tracked files to cspell, which **checks 432** and
+  finds 0 issues (re-measured 2026-09-23 after `16e7182` added one tracked research file, and
+  **both figures were predicted from disk before the run: +1 each, gap held at 41**; it read
+  **472/431** from 2026-09-21 until then — see the correction immediately below; it read
   **470/429** earlier the same day, when **this commit adds three files — `tests/bin/ported-copies`, `tests/bin/ported-drift` and `tests/bin/ported-from-theme.manifest`, T-0622 — and moved the denominator
   by exactly three** was written, which is the shape to want — and **467/426** before that, **456/415** on 2026-09-20, **455/414** on 2026-09-19, **451/410** on 2026-09-12, **448/407**
   on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before
   that).
   ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** Three text
-  files were added and cspell opened all three: 472 − 431 = 41, the same 37 binaries and 4 globs
+  files were added and cspell opened all three: 473 − 432 = 41, the same 37 binaries and 4 globs
   accounted for below. **Both figures were PREDICTED before the run and the run returned exactly
   470 and 429** on the day that sentence was written, which is the only way a denominator claim is
   worth anything.
@@ -790,7 +792,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   enumeration, and the shortfall this paragraph used to admit is closed.** **37** are binaries
   cspell does not read — **34 PDF, 2 WebP and 1 PNG** — and **4** are matched by the upstream
   ignore globs (`.eslintrc.json` by `**/.*.json`, `.gitignore` by `.*ignore`, `LICENSE.txt` and
-  `composer.json` by name). **37 + 4 = 41**, and 472 − 41 = **431**, the number cspell prints.
+  `composer.json` by name). **37 + 4 = 41**, and 473 − 41 = **432**, the number cspell prints.
   ⚠️ **This line read `456 − 41 = 415` until 2026-09-21 — stale by SIXTEEN, three denominators
   behind the bullet above it**, which is the same defect its own next paragraph describes and is
   why that paragraph is no longer the worst instance in this file.
@@ -1215,8 +1217,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
   gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
   The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
-  prints `examined: 472 tracked file(s)` · `scripts: 37` · `findings: 0` today, re-run 2026-09-21
-  (it read `470` and `36` earlier the same day, `467` and `34` before that, `456` and `30` on
+  prints `examined: 473 tracked file(s)` · `scripts: 37` · `findings: 0` today, re-run 2026-09-23
+  (it read `472` and `37` from 2026-09-21 until `16e7182` added one non-script file — so the
+  examined count moved and the script count, correctly, did not; `470` and `36` earlier on the 21st, `467` and `34` before that, `456` and `30` on
   2026-09-20, `455` before T-1310 added one config file, and `451` on 2026-09-12). **The +1 script
   is `tests/bin/mirror-streak`**, which is also one of the two files that moved spellcheck's
   denominator in the bullet above — the same arrival, counted by two invariants, and reconciling
