@@ -92,7 +92,7 @@ curl -sSL "https://git.drupalcode.org/api/v4/projects/project%2Fhaven/repository
 
 It prints `21 files, 77426040 bytes`. The byte total replaces a rounded
 *"75 MB"* that named no unit convention and no version, and could therefore
-have meant the photographs or the whole 748-file package, which are different
+have meant the photographs or the whole package, which are different
 numbers.
 
 ⚠️ **And nothing in this repository keeps either figure true.** They are facts

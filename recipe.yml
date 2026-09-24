@@ -18,9 +18,9 @@ type: Site
 # with local sub-recipes. The modularity is by FUNCTIONAL AREA, not by directory:
 # every area occupies a contiguous block labelled `# -- area: <name> --` inside
 # each of the three sections below (`recipes:`, `install:`, `config.actions`),
-# and every identifier Ágora owns is prefixed with its area
-# (`agora_base_*`, `agora_publishing_*`, `agora_foi_*`, `agora_ai_*`,
-# `agora_governance_*`).
+# and every config object Ágora names carries its area — `agora_<area>_*`, or
+# `agora-<area>-*` for a menu, as core forbids underscores in a menu ID — except
+# `core.date_format.agora_date` and `pathauto.pattern.agora_*`, which carry none.
 #
 # The point of the convention: when these areas are extracted into standalone
 # contrib recipes for the future paid template, extraction is MOVING lines, not

@@ -42,9 +42,9 @@ how to work on a site that was created from it.
 - The content model on this site was installed by applying the Ágora site template **once**, at
   install time. Inspect what actually exists before assuming anything: `drush pm:list --status=enabled`,
   `drush config:status`, and `/admin/structure/types`.
-- Identifiers that Ágora owns carry a functional-area prefix: `agora_base_*`, `agora_publishing_*`,
-  `agora_foi_*`, `agora_ai_*`, `agora_governance_*`. Keep the prefix when you extend an area; it is
-  what keeps the areas separable.
+- Configuration that Ágora names carries its functional area — `agora_base_*`, `agora_publishing_*`, `agora_foi_*`,
+  `agora_ai_*`, `agora_governance_*`, or `agora-base-*` on menus, since a menu ID cannot contain `_` — except
+  `agora_date` and `pathauto.pattern.agora_*`. Keep the prefix when you extend an area; it keeps the areas separable.
 - A site template is applied once and is then disposable. It has **no upgrade path**. Never re-apply
   it to an existing site expecting an update, and never treat a newer release of the template as a
   migration path for this site.

@@ -30,15 +30,15 @@ building to the review standard keeps the other door open.
 
 | what | terms | its count | the check that keeps it honest |
 |---|---|---|---|
-| This package's own files | `GPL-2.0-or-later` | **325** | `tests/bin/packaged-claims` |
-| The projects it requires | `GPL-2.0-or-later` (Drupal.org's own condition) | **11** | `tests/bin/packaged-claims` · `tests/bin/sbom-check` |
-| Fonts | `OFL-1.1`, and **not in this package** | **0** | `tests/bin/packaged-claims` |
+| This package's own files | `GPL-2.0-or-later` | *stated once, in its section below* | `tests/bin/packaged-claims` |
+| The projects it requires | `GPL-2.0-or-later` (Drupal.org's own condition) | *stated once, in its section below* | `tests/bin/packaged-claims` · `tests/bin/sbom-check` |
+| Fonts | `OFL-1.1`, and **not in this package** | *stated once, in its section below* | `tests/bin/packaged-claims` |
 | Media | per file, in the media manifest | *quoted, not restated* — see below | `tests/bin/media-licence` |
 | Generated assets | `own work` | *stated once, in the media manifest* | `tests/bin/generate-demo-media.py` |
 
-Every count in that table is re-derived on every push by an invariant in the blocking
-`agora-invariants` job. A number here that stops agreeing with the package turns the pipeline red
-rather than sitting on this page being wrong.
+The file, project and font counts are stated once each, in their sections below, as is the number
+of licence terms in use under Media. `tests/bin/packaged-claims` checks them against the package on
+every push in the blocking `agora-invariants` job, so any that stops agreeing turns the pipeline red.
 
 ⚠️ **The checks themselves are NOT in the tarball you are holding, and that is said here
 rather than left to be discovered.** Everything under `tests/` is `export-ignore`d, so a packaged
@@ -66,13 +66,13 @@ config and content systems, so they inherit Drupal's licence, which is the condi
 criterion states first. The prose and the packaging metadata are this project's own work, released
 under the same terms deliberately, so that nothing in the package carries two answers.
 
-⚠️ **325 is a subtraction, and neither of the two numbers it is derived from is written on this
-page.** The size of the packaged file set is stated once, in [`README.md`](README.md); the size of
-the media set is stated once, in [`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md). Copying
-either of them here would create a second copy that goes stale on a day nobody is looking — which is
-the failure this whole document is shaped around, and it has already happened in this repository
-more than once. `tests/bin/packaged-claims` performs the same subtraction from `git archive` and
-from the media rule, and compares the result against the number above.
+⚠️ **The count above is a subtraction, and neither of the two numbers it is derived from is written
+on this page.** The size of the packaged file set is stated once, in [`README.md`](README.md); the
+size of the media set is stated once, in [`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md).
+Copying either of them here would create a second copy that goes stale on a day nobody is looking —
+which is the failure this whole document is shaped around, and it has already happened in this
+repository more than once. `tests/bin/packaged-claims` performs the same subtraction from
+`git archive` and from the media rule, and compares the result against the number above.
 
 ---
 
@@ -94,8 +94,8 @@ What is checked here, and what is not, because the difference matters:
 * ⚠️ **NOT checked.** Nothing in this repository re-derives each project's declared licence from
   `packages.drupal.org` and compares it against the sentence above. The claim rests on Drupal.org's
   hosting condition, not on a measurement taken here. It is written down as an unchecked claim
-  rather than left to look like a checked one; closing it is eleven HTTP requests and it has no
-  owner yet.
+  rather than left to look like a checked one; closing it takes an HTTP request per project, and it
+  has no owner yet.
 
 The dependency list itself, with a justification for every entry, is in
 [`specs/000-project/DECISIONS.md`](specs/000-project/DECISIONS.md) — which stays in the repository
@@ -106,8 +106,8 @@ and is not part of the release.
 ## 3 · Fonts — OFL-1.1, and deliberately not here
 
 **This package ships 0 font files.** Asserted rather than implied: `tests/bin/packaged-claims`
-counts `.woff2`, `.woff`, `.ttf`, `.otf` and `.eot` in the packaged set and fails if the answer is
-not zero, so a font vendored here one day becomes a finding rather than an undocumented binary.
+counts `.woff2`, `.woff`, `.ttf`, `.otf` and `.eot` in the packaged set and fails when that count
+and the figure in bold disagree, so a font cannot be vendored here without this page saying so.
 
 The typeface the installed site uses is **Public Sans**, under the **SIL Open Font License 1.1**. It
 ships in [`drupal/agora_theme`](https://www.drupal.org/project/agora_theme), a separate Drupal.org
@@ -129,8 +129,8 @@ Every photograph, PDF and CSV distribution this package ships has its own row in
 [`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md), giving its path, title, author, source URL,
 SPDX licence identifier and the date its licence statement was read.
 
-**Two licence terms are in use across those rows**, and they are the only two: `own work` and
-`CC0-1.0`. The allow-list a row may draw on is wider than that, and it lives in
+**Two licence terms are in use across those rows**: `own work` and `CC0-1.0`, and no other.
+The allow-list a row may draw on is wider than that, and it lives in
 `tests/bin/media-licence` rather than in prose, so it is printed on every run and cannot be widened
 quietly. **The remedy for a row that will not pass is to relicense or remove the file — never to add
 a term to the list.**
@@ -186,12 +186,11 @@ Said plainly, because a manifest's silence is not a statement of freedom:
 
 ---
 
-## Re-deriving every figure on this page
+## Re-deriving each line of the table
 
-Nothing above is transcribed by hand. Each command below answers one line of the table at the top,
-and the same answers are computed on every push by the invariants named beside them. **They run in
-a clone of the repository, not in an extracted tarball**, for the reason given at the top of this
-page:
+Each command below answers one line of the table at the top, and the same answers are computed on
+every push by the invariants named beside them. **They run in a clone of the repository, not in an
+extracted tarball**, for the reason given at the top of this page:
 
 ```shell
 # 1 - files under GPL-2.0-or-later: the packaged set minus the media set
@@ -201,7 +200,7 @@ bash tests/bin/packaged-claims          # prints the comparison and its two sour
 python3 -c "import json;print(len(json.load(open('composer.json'))['require']))"
 bash tests/bin/sbom-check               # release status and security coverage, over the network
 
-# 3 - font files in the packaged set (expected: 0)
+# 3 - font files in the packaged set
 git archive --worktree-attributes HEAD | tar -t | grep -icE '\.(woff2?|ttf|otf|eot)$'
 
 # 4 - the media rows, read from the invariant rather than from prose
@@ -212,4 +211,6 @@ python3 tests/bin/generate-demo-media.py
 ```
 
 **Measured 2026-09-21.** A dated measurement on this page is replaced by another measurement, never
-by an edit that looks tidier.
+by an edit that looks tidier. The figures about `haven` and `byte` near the top are such a
+measurement — of those projects' own releases, not of this package — and no command above
+re-derives them.
