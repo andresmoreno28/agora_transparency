@@ -5078,7 +5078,7 @@ nor a signature (Y-7) does not include it.**
 ## D-064 · Amended again 2026-09-25 — the coverage opt-in was deliberate; SECURITY.md takes shape B
 
 **[andres], 2026-09-25, asked whether he had opted `agora_transparency` into Drupal's security
-advisory coverage on purpose: "Sí, activé la cobertura de seguridad."** So the opt-in of
+advisory coverage on purpose: <!-- cspell:disable -->"Sí, activé la cobertura de seguridad."<!-- cspell:enable --> ("Yes, I activated the security coverage.")** So the opt-in of
 2026-09-24 15:14 UTC stands, and `SECURITY.md` is written to be true of every package it ships in:
 
 1. **One route**: the project's own "Report a security vulnerability" link, which opens a
