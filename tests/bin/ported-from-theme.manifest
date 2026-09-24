@@ -117,6 +117,13 @@
 #   3. Re-derive BOTH hashes and read the commit with
 #      `git -C <theme checkout> rev-parse HEAD`. Never type a sha, and never carry a hash
 #      forward from the line above.
+#      WHENEVER source_commit MOVES, DECLARED_COMMITS IN tests/bin/ported-copies MOVES WITH
+#      IT, IN THE SAME COMMIT. Check 5 there compares the set of recorded commits against
+#      that list, so a record moved alone fails with exactly one finding. And every answer
+#      to a drift moves source_commit - taking the change, or staying behind on purpose -
+#      so every answer needs that file too: a dispatch that names this manifest and not it
+#      is a dispatch that cannot finish. (Added 2026-09-24, after these steps as written led
+#      to exactly that hold.)
 #   4. Re-run ported-drift and confirm the delta moved to exactly what you left behind.
 #
 # Neither detector has a `--fix` flag. A guard that can silence itself in one keystroke is
@@ -260,6 +267,65 @@
 # direction is again the one D-028 permits - every comparison added makes the guard say
 # MORE, the G11 checks assert `> 0` rather than a length, and wave 1 stays at 95 checks.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-24 - THE FIRST TIME STEP 1 FOUND THE SOURCE HAD MOVED. The
+# theme's 3e4e017 and a0f4cdf changed claims-match-readme, and this is the answer the
+# 14-day cap asks for, given on the day the drift began. Same record, same four steps.
+#
+#   1. tests/bin/ported-drift FIRST: 3 records compared, 3 read, 3 provenance verified,
+#      **1 behind** 1.x at a0f4cdf1 - packaged-claims, +260/-16 across 2 commits, oldest
+#      drift 0 day(s), 0 past the cap, 0 findings, network READ anonymously.
+#   2. Per hunk, read against claims-match-readme at a0f4cdf on drupalcode's anonymous raw
+#      route, never a local checkout. Nine hunks, three taken in whole or in part:
+#        H1 header, --online   PART TAKEN: its count-free "what --online checks" sentence.
+#                              This copy's said "five figures" while --online has read
+#                              SEVEN since T-0613. The per-section rule it adds: not taken.
+#        H2 "Two entries"      TAKEN as "Some entries". This copy said "Three" and there
+#                              are four since T-0634 - the same stale count, re-wrapped,
+#                              so no line-level comparison could have seen it.
+#        H3 --help text        not taken: this copy's --help is its own, and still true.
+#        H4 README_FLOWED      not taken: every subject here has had a flowed variant since
+#                              the first commit, which is the same capability, wider.
+#        H5-H7 DOM, scroller   not taken: README's per-check assertion counts and the
+#                              table scroller are the theme's subjects, and none is here.
+#        H8 per-section parse  not taken, INCLUDING its ANSI and timestamp stripping, and
+#                              that was measured rather than argued. This copy strips
+#                              neither, so every trace it reads was fetched: nightwatch
+#                              12413730, agora-invariants 12413729, phpunit 12412800. Each
+#                              bound line matched once raw and once stripped, byte-identical
+#                              3 of 3; the only escape codes on any of them wrap nightwatch's
+#                              tick glyph BEFORE the match; every pattern is unanchored, so
+#                              the timestamp prefix on every line cannot reach them. And the
+#                              theme itself still greps its own axe summary line from the raw
+#                              log at a0f4cdf - the stripping serves only the new parse.
+#        H9 NOT CHECKED        PART TAKEN: "name the category rather than sample it", for
+#                              the historical-figures entry. Two of the three examples this
+#                              copy's entry named were in no packaged file any more.
+#      The report handed over with those commits - none of the 63 lines that crossed on
+#      2026-09-21 changed - was re-derived rather than accepted, by the header's method:
+#      65 shared, 2 native, 63 ported, at 68 positions; all 63 verbatim at a0f4cdf; 0 of the
+#      16 deleted source lines among them. True, and not sufficient: H2 changed a shared
+#      SENTENCE.
+#   3. source_commit read from the API's 1.x tip; source_sha256 from the blob at that commit
+#      over the API, byte-identical to the web raw route; local_sha256 with sha256sum from
+#      the file committed. All three substituted by command, never typed. ported-copies'
+#      DECLARED_COMMITS moves with this record in the same commit - left behind, check 5
+#      fails with exactly one finding, measured in a disposable copy before either moved.
+#   4. ported-drift re-run afterwards: 3 / 3 / 3, **0 behind**, 0 past the cap, 0 findings;
+#      ported-copies 3 verified, 0 findings.
+#
+# What else changed HERE, in the same commit because each moves this record: the NOT
+# CHECKED entry for the haven and byte figures LICENCE-MANIFEST.md keeps (held on
+# 2026-09-24 for want of this very file; the list goes 14 -> 15); "six files", which is
+# seven since T-0619, and "eleven HTTP requests", a second copy of a bound count, both
+# reworded to carry no count; and a sentence claiming the licence manifest states "four
+# figures and no others", which the new entry would have contradicted. Nothing else moves:
+# claims 35, comparisons 48 offline and 55 online, one-copy checks 8, wave 1 at 100.
+#
+# And step 3 of the procedure at the top of this file now says in its own words that
+# DECLARED_COMMITS moves with source_commit. This regeneration needed a fifth file the
+# four steps never mention, and the place to say so is the one the next person reads first.
+#
 # script            role       status    local_sha256                                                    source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -317,7 +383,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   33f5fa0477294ebfb1510b1e7d15e1dacb316b6bbe59d73803f67a098c40ff71 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+packaged-claims    invariant  adapted   b40a263080118d1d4d0cc310a1e04279dab26cbd0a06525af4929ed88f2edf3a tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
 #
 # -----------------------------------------------------------------------------------------
 # TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

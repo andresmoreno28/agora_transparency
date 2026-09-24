@@ -46,9 +46,9 @@
 # THE ONE-COPY RULE (T-0609) IS THE PART THAT IS NOT IN THE SIBLING GUARD.
 #
 # tests/bin/claims-match-readme in `agora_theme` refuses a figure stated twice IN ONE FILE. That
-# is necessary and it is not sufficient here, because this package's prose is spread over six
-# files that no reader opens together. So every registered figure declares a HOME, and the
-# detector for it is run over ALL the packaged files:
+# is necessary and it is not sufficient here, because this package's prose is spread over
+# several files that no reader opens together. So every registered figure declares a HOME, and
+# the detector for it is run over ALL the packaged files:
 #
 #   home is a packaged file  ->  exactly that one file may state the figure
 #   home is EXTERNAL         ->  NO packaged file may state it; it belongs to another project's
@@ -124,9 +124,12 @@
 #     description_match  the two descriptions     vs  each other (a bound duplicate, see above)
 #     recommended_empty  "intentionally empty"    vs  the non-comment lines of that file
 #
-# WHAT IS CHECKED WITH --online - five figures that exist only in another project's CI log. The
-# accessibility statement this package ships describes the THEME's gate in a paragraph of its
-# own, and says in as many words that its figures are "those reported by the most recent run".
+# WHAT IS CHECKED WITH --online - the figures ONLINE_FIGURES names, which exist only in another
+# project's CI log, and the ones SITE_FIGURES names, which exist only in this package's own
+# (T-0613, beside its block below). How many that is, this header does not say: the two lists are
+# the count, and every run prints each figure by name. The accessibility statement this package
+# ships describes the THEME's gate in a paragraph of its own, and says in as many words that its
+# figures are "those reported by the most recent run".
 # So the most recent run is what --online reads: the newest TERMINAL, SUCCESSFUL pipeline on
 # `agora_theme`'s 1.x, its `nightwatch` trace for the axe summary and its `agora-invariants`
 # trace for the contrast summary. A pipeline still running, or a red one, is NOT READ and never a
@@ -149,7 +152,7 @@
 # reasons for weeks - it said a job trace could not be read anonymously, inferred from an API
 # endpoint's 401 and never tested against the web route that answers 200 - and while they stood,
 # figures it could have been reading went stale. A list of what a guard cannot reach decays into
-# a list of what nobody has tried lately unless it is re-read rather than inherited. Three
+# a list of what nobody has tried lately unless it is re-read rather than inherited. Some
 # entries below say "readable and deliberately not bound", which is a true reason and a weaker
 # one; they are written that way rather than dressed up as impossibilities.
 #
@@ -159,7 +162,7 @@
 #
 # WHAT THIS BUYS IS NARROWER THAN "THE PACKAGED PROSE IS TRUE". Each comparison binds ONE
 # canonical sentence, and the cross-file rule covers a REGISTERED set of figures rather than
-# every number in six files. Both boundaries are in the NOT CHECKED list.
+# every number in the packaged files. Both boundaries are in the NOT CHECKED list.
 #
 # Contract:
 #   files opened:     <N>   - packaged files read; each verified present in `git archive`
@@ -353,11 +356,11 @@ path_of() { # <var-suffix> -> that file's path
 
 CLAIM=""
 # WHERE THE LAST CLAIM WAS READ. A finding that names a value and not a place sends the reader
-# grepping through six files for a number that appears in several of them; the line is what makes
-# the output actionable. It is derived from the RAW text - the flowed variant has one line by
-# construction - by looking for a literal prefix of the matched claim, which is why it can come
-# back as `?`: a claim whose first characters are themselves split across a wrap has no single
-# line to name, and saying so is better than naming the wrong one.
+# grepping through every packaged file for a number that appears in several of them; the line is
+# what makes the output actionable. It is derived from the RAW text - the flowed variant has one
+# line by construction - by looking for a literal prefix of the matched claim, which is why it can
+# come back as `?`: a claim whose first characters are themselves split across a wrap has no
+# single line to name, and saying so is better than naming the wrong one.
 CLAIM_FILE=''
 CLAIM_AT=''
 claim_once() { # <label> <var-suffix> <ERE> - sets CLAIM; FATAL on 0 matches or on 2+
@@ -424,7 +427,7 @@ compare() { # <label> <claimed> <measured> <source>
 
 # ------------------------------------------------------------------------- the one-copy rule --
 # T-0609. Every registered figure declares a home and a detector; the detector is run over all
-# six packaged files and the set of files it matches must be exactly the home.
+# the packaged files and the set of files it matches must be exactly the home.
 #
 # A HOME IS ONE OF THREE THINGS, and the third is the one worth explaining.
 #   <FILE>            exactly that packaged file may state the figure
@@ -1040,8 +1043,10 @@ REC_ENTRIES=$(text_of RECOMMENDED | grep -E '^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*:' 
 compare 'recommended_empty' '0' "$REC_ENTRIES" 'uncommented package keys in recommended.yml'
 
 # ============================================ LICENCE-MANIFEST.md vs what the package holds ==
-# T-0619. The package-level licence manifest states four figures and no others, and each of the
-# four is derived here from the package rather than from another sentence.
+# T-0619. Four of the figures the package-level licence manifest states are compared below, and
+# each of the four is derived here from the package rather than from another sentence. (This
+# said "four figures and no others" until 2026-09-24. The page also states figures about two
+# other projects' releases, which the NOT CHECKED list names.)
 #
 # WHAT IT DELIBERATELY DOES NOT STATE, because the absence is the design. The size of the packaged
 # set lives once in README.md and the media row count lives once in content/MEDIA-LICENCES.md; the
@@ -1412,16 +1417,17 @@ NOT_CHECKED=(
 "The two absolute cspell denominators - files offered and files checked. They come from tests/bin/spellcheck's own filter, which needs the three inputs it fetches from the CI job's own configuration, so no offline read here can produce them. The script prints both on every run, and the SUBTRACTION between them is compared above."
 "The template's own axe result, OFFLINE. It is now printed by AccessibilityTest::tearDownAfterClass() and reaches the phpunit job's trace on a GREEN run (T-0613), so it is read and compared - but only under --online, which the gate never passes. The entry stays because the replacement is narrower and still true: no offline read here can produce the number of pages actually SCANNED, the rules axe ran or the violations found. What IS offline is the DECLARED count, compared above against both the package and the constant the test asserts."
 "The 78 steps, 58 non-core modules and 'Tests: 3, Assertions: 38' of the 2026-08-23 clean install. README marks them as predating the theme swap and says a dated measurement is replaced only by another measurement. A guard that refreshed them would destroy the record they exist to be."
-"Historical and superseded figures throughout the packaged prose - the eight-entry and thirteen-entry packaging counts, the four-then-five-then-six axe page counts, every struck value. Same reason: these are frozen records of past measurements, and rule 8 keeps them."
+"Historical and superseded figures throughout the packaged prose: every figure a packaged file attributes to an earlier state of the package rather than to its current one - a sentence saying what it read until a date, every struck value. The category is named rather than sampled, because a sample has to be refreshed whenever such a sentence is added or removed, and this entry's sample had gone stale in both directions: by 2026-09-24 the thirteen-entry packaging count and the axe page progression it named were in no packaged file, while 'read until' sentences it did not name were. Same reason: these are frozen records of past measurements, and rule 8 keeps them."
 "AGENTS.md and LICENSE.txt, both packaged and both outside the declared subject set. LICENSE.txt is the verbatim GPL-2.0 text and carries no figure about this package. AGENTS.md is product prose with claims of its own and is READABLE AND DELIBERATELY NOT BOUND in this pass - a weaker reason than the ones above, and written as one."
 "The legal notice and the privacy notice, content/node/*.yml alongside the accessibility statement. Packaged, user-facing, and readable; they carry no figure about the package today. READABLE AND DELIBERATELY NOT BOUND, and the entry exists so the next figure written into one of them is a decision rather than an oversight."
-"Whether a figure stated in DIFFERENT WORDS somewhere in the packaged set is the same figure. Every comparison above binds ONE canonical sentence by a tight pattern, and the one-copy rule covers a REGISTERED set of detectors rather than every number in six files. The change this script arrived with deleted the restatements it found rather than trying to match them all, so this entry is about the NEXT one somebody writes."
+"Whether a figure stated in DIFFERENT WORDS somewhere in the packaged set is the same figure. Every comparison above binds ONE canonical sentence by a tight pattern, and the one-copy rule covers a REGISTERED set of detectors rather than every number in the packaged files. The change this script arrived with deleted the restatements it found rather than trying to match them all, so this entry is about the NEXT one somebody writes."
 "The WCAG criterion identifiers - 2.4.7, 2.5.8, 1.4.10, 2.4.1 - which appear in both README.md and the statement. They are names, not measurements: two documents naming the same criterion are not two copies of a figure, and binding them would be binding a citation. READABLE AND DELIBERATELY NOT BOUND."
-"The declared licence of each of the projects in composer.json require. LICENCE-MANIFEST.md states that all of them are GPL-2.0-or-later on the strength of Drupal.org's hosting condition, and says so in its own words; nothing here re-derives it from packages.drupal.org. The COUNT of them is compared above, and tests/bin/sbom-check reads each project's release status and security coverage - neither is the licence. Closing it is eleven HTTP requests in the --online block and it has no owner yet."
+"The declared licence of each of the projects in composer.json require. LICENCE-MANIFEST.md states that all of them are GPL-2.0-or-later on the strength of Drupal.org's hosting condition, and says so in its own words; nothing here re-derives it from packages.drupal.org. The COUNT of them is compared above, and tests/bin/sbom-check reads each project's release status and security coverage - neither is the licence. Closing it is an HTTP request per project in the --online block and it has no owner yet."
 "Gin, Coffee and Navigation - the three components the scoping sentence of the accessibility statement names beside the dashboard. All three are installed by drupal_cms_admin_ui, a DEPENDENCY's recipe, and this package DECLARES none of them - none is in composer.json's require and none in recipe.yml's install: list - so no offline read here can show that an install still receives them; the one component this package installs itself is compared above. Until 2026-09-23 this entry said none of the three 'is named anywhere in this tree', which was loose before and false after, because NAMED IS NOT DECLARED: recipe.yml names navigation's components in the Canvas actions that disable them, and AccessibilityTest names gin and coffee as the owners of violations it declares on the Config Guardian dashboard, so a green phpunit run shows both rendering on that page - an observation made at runtime in CI, not a declaration anything offline can read. The navigation module appears in no assertion at all. They were verified at source for T-0614 by reading that recipe on git.drupalcode.org - coffee at its line 7, gin at line 16, navigation at line 21, and admin: gin at line 107, which is the line that makes Gin the administration theme rather than merely an installed one. The file is byte-identical at tags 2.1.4 and 2.1.5 and at the 2.1.x tip, so the citation holds at every version the ^2 constraint can resolve to today; it will not hold forever, and a dependency that dropped one of the three would leave the sentence naming a component that is no longer installed."
 "What the dashboard paragraph of the accessibility statement says about ANOTHER project's source rather than about the test: that the failing text takes BOTH its colour and its background from Config Guardian itself. Verified at source on 2026-09-23 against config_guardian 1.0.3, the release a clean install resolves - css/config-guardian.css sets --cg-bg at line 14 and --cg-text-muted at line 17, and .cg-table th (lines 630-639) and .cg-comparison-header h4 small (lines 243-247, on a header whose background is --cg-bg at line 231) draw one on the other - and the unreleased 1.0.4 tag carries a byte-identical stylesheet. Nothing offline here can read a dependency's stylesheet, and a release that moved either token would leave the clause wrong while admin_contrast_owner still passed on the owner alone; that comparison binds WHO, not WHY."
 "screenshot.webp's pixel dimensions and logo.png's, quoted in the manifest headings. Reading them needs a WebP and PNG header parser; the BYTE SIZE and the SHA-256 of both are compared above, and a file whose digest matches has not changed its dimensions either."
 "The two figures content/MEDIA-LICENCES.md states about haven - 21 Unsplash-named JPEGs, 77426040 bytes, at release 1.0.3. They are facts about ANOTHER project at a version that will move, and nothing offline can produce them; re-deriving them would be one 78 MB download per run, which is not a gate's business. The page quotes the one-second command that produces both and says in its own words that nothing here keeps them true. It said 22 for twenty-six days, in two places, and 22 is reproducible at no release haven has cut - which is what an unbound third-party figure looks like when it goes wrong."
+"The measurement LICENCE-MANIFEST.md quotes about the two published site templates - haven 1.0.3 ships 0 of 748 files matching any licence manifest, byte 1.0.3 ships 0 of 651 - taken on 2026-09-21 from each release archive. They are facts about OTHER projects' releases and nothing offline can produce them; re-deriving them means downloading both release archives on every run, which is not a gate's business. The page says in its own words that no command on it re-derives them. The 748 was stated in two packaged files until 2026-09-24 - content/MEDIA-LICENCES.md carried a second copy - and that copy was deleted rather than bound, so the figure has one packaged home, dated and attributed to the release it was measured on."
 "The window size the target-size check runs at, and how many targets it measured and left incomplete. AccessibilityTest prints all three on every green run - 1024x768, 557 targets over the nine public pages and 0 incomplete on the rig run that landed T-0634 - and the packaged prose quotes none of them, on purpose: the statement says only that the measurement is taken at a single window size and that targets axe cannot decide are left to a person. 'Single' rests on the browser never being resized mid-run, which nothing asserts; the summary line would print two sizes if it were. READABLE UNDER --online AND DELIBERATELY NOT BOUND."
 )
 

@@ -80,10 +80,11 @@ packaged-claims'
 
 # Two commits, and the reason there are two is recorded in the manifest beside each record:
 # the first two files were copied together on 2026-09-06 at the theme's HEAD of that moment,
-# and packaged-claims on 2026-09-21 at the theme's HEAD of that moment. Making the set
-# uniform would mean back-dating a record to a commit nobody read.
+# and packaged-claims was copied on 2026-09-21 and re-synced on 2026-09-24, each time at the
+# theme's HEAD of that moment. Making the set uniform would mean back-dating a record to a
+# commit nobody read.
 DECLARED_COMMITS='82201a6a779f5f9bc6ee7bfe2b9782ef78af2dd4
-d8079ad0aeb63bafb992cab31b37dcc2818f3ce3'
+a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b'
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
