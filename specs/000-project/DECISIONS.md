@@ -5035,3 +5035,40 @@ fourth promissory claim, true today as a plan. `AGENTS.md` needs nothing any mor
 so whoever rules D-054 reads it there rather than reconstructing it. ⚠️ **The understatement is the
 shape this unit keeps finding: a count asserted from memory ("one line") where a command would have
 said three.** D-068 was written the same hour as the audit that ordered it and was not re-derived.
+
+---
+
+## D-064 · Amended 2026-09-24 — the window is set, by [andres]: acknowledgement within 14 calendar days
+
+**Signed by [andres] 2026-09-24**, in his own words to the question *"acknowledge a security report
+within 14 calendar days — acknowledgement only, no fix time promised?"*: **"Sí."** This fixes the one
+figure D-064 = B left open. It was proposed for what a single maintainer can keep on a bad week — a
+fully offline week with a week to spare — not for how it reads. **No fix time is promised**, because
+a promise missed in public is worse than a promise not made (D-064's own cost line). The route is the
+project's own confidential GitLab tracker. [andres] is setting his notification level on
+`project/agora_transparency` to Watch, without which the route exists and reaches nobody.
+⚠️ **COVERAGE CHANGED THE SAME DAY, AND THIS ENTRY WAS CORRECTED BEFORE IT WAS PUSHED.** It first
+said the project is *not* covered by the Drupal Security Team process. At **15:14 UTC on 2026-09-24**
+— ten minutes before that sentence was committed — the project was opted into Drupal's security
+advisory coverage: the drupal.org API reads `field_security_advisory_coverage = covered`, and the
+project page now says *"Stable releases for this project are covered by the security advisory
+policy. There are currently no supported stable releases."* No release of any kind exists yet.
+**So what `SECURITY.md` says about the Security Team is not settled here.** It waits on one answer
+from [andres] — whether the opt-in was deliberate — and T-0618 is held until then. Found by the agent
+dispatched to write `SECURITY.md`, which re-read the project page instead of trusting the row's
+measurement of the day before, and stopped rather than ship a sentence drupal.org contradicts.
+
+## T-0635 rests on a signature — confirmed by [andres], 2026-09-24
+
+The audit (Y-7, H5) asked whether T-0635 — the guard that stops this package's test sites reporting
+usage to drupal.org — rests on a signature or only on the dispatch that ordered it. **[andres]
+confirmed 2026-09-24 that his instruction of 2026-09-19 is that signature.** The instruction, quoted
+in the original Spanish (rule 6 permits it for his words):
+<!-- cspell:disable -->*"Acuerdate de cuando hagas pruebas de instalación del site template y del tema no lo hagas con el upgrade status porque suben los falsos positivos de instalaciones y puedo meterme en problemas."*<!-- cspell:enable -->
+— *"when you test installing the site template and the theme, don't do it with upgrade status, because
+the false-positive install counts go up and I could get into trouble."* And his clarification the same
+day, which is also the product boundary: **a real installation of the published package must still
+report usage normally; only test installs must not.** That is exactly what T-0635 does — `update`
+stays installed in the product, and only the test sites the suite builds are pinned to a loopback
+address. **So T-0635 passes D-044 on a signature, and the count of rows resting on neither necessity
+nor a signature (Y-7) does not include it.**
