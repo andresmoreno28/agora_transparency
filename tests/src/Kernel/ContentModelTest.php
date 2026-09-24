@@ -75,14 +75,17 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * NAMING CONVENTION, asserted rather than merely described:
  *  - machine names are ENGLISH (CLAUDE.md rule 6 / D-017: identifiers are
- *    English; only demo content is bilingual),
+ *    English, and since D-035 so is the demo content; until 2026-09-24 this
+ *    line called the demo content bilingual),
  *  - labels and descriptions are ENGLISH too (D-033, which OVERTURNED the
  *    earlier ruling this docblock used to state: that the labels carry the
  *    Spanish). English is not a preference here - core compares a config
  *    object's langcode to 'en' before it will translate its strings at all,
  *    so Spanish text under `langcode: en` was both false and untranslatable.
- *    The Spanish reaches a site as a TRANSLATION, from localize.drupal.org,
- *    never from this repository,
+ *    Spanish, where a site wants it, is a TRANSLATION made after install
+ *    through the interface, never this repository's. Until 2026-09-24 this
+ *    said it came from localize.drupal.org, which D-035 measured cannot
+ *    happen: a site template can never be a translation project,
  *  - the names this test asserts carry their functional area (recipe.yml's
  *    seam convention, D-011 rider b). The content model is area `base`, hence
  *    `agora_base_*`; fields additionally keep Drupal's `field_` prefix, hence

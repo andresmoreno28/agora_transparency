@@ -293,6 +293,14 @@ Canvas component named after one, because core forbids `_` in a menu ID — and 
 `core.date_format.agora_date` and the six `pathauto.pattern.agora_*`. It passes on *"false"*.
 Nothing is renamed; that is product work, with its own row and its own tests. The same commit's
 licence-manifest edits complete T-0619's A3, ruled option (a), and need no row of their own.
+⚠️ **There was a THIRD copy, and it was the one that called itself checked.**
+`tests/src/Kernel/ContentModelTest.php` stated the same rule in a naming-convention list headed
+*"asserted rather than merely described"*, and no test asserts it. Corrected in `cc1a61a`, comment
+only: the bullet now names the kinds of object the test's set equalities do cover, and points at
+`recipe.yml` for the rule and its exceptions rather than adding a copy of them. It passes on
+*"false"* and needs no row. Two more sentences in the same list had been false since D-035 - demo
+content called bilingual, and Spanish said to arrive from localize.drupal.org - and are corrected
+in the commit that adds this note.
 
 ⚠️ **Two commits landed in this unit with no row at all — audit finding G-6 — and are recorded here
 rather than left to the audit.** `4b70b0a` (2026-09-21) stopped `ValidationTest` asserting an
