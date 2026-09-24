@@ -74,11 +74,10 @@ how to work on a site that was created from it.
 - **Never hand-edit exported configuration.** Everything under `config/` is generated. Change the
   site through the UI or Drush, run `ddev drush config:export --yes`, then review the diff before
   committing. Hand-edited exports drift from the site and fail on import.
-- **AI features degrade on purpose.** Ágora depends on no AI provider and requires no API key.
-  Without a configured provider, AI features are simply unavailable and the rest of the site works
-  normally. Never commit an API key, token or endpoint — configure providers through environment
-  variables or the admin UI after installation. CI runs with no keys at all and must keep working
-  that way.
+- **No AI feature ships in this release.** Ágora installs no AI module, depends on no AI provider
+  and requires no API key. If AI modules are added to this site later, keep it working with no key
+  configured, and never commit an API key, token or endpoint — configure providers through
+  environment variables or the admin UI after installation.
 - Keep dependencies on **stable** releases only: no `dev`, `alpha`, `beta` or `rc` versions, no
   pinned exact versions, and no patching of contributed code.
 

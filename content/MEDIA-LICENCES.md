@@ -70,7 +70,7 @@ whose subject is accountability can either document somebody else's work or
 ship its own; the second is cheaper to defend and an order of magnitude
 lighter.
 
-⚠️ **AMENDED 2026-09-21 (T-0628): this page said 22, in two places, and 22 is
+⚠️ **AMENDED 2026-09-21 (T-0629): this page said 22, in two places, and 22 is
 not reproducible at any release `haven` has ever cut.** Re-measured at source
 on 2026-09-21 against the **release archive**, which is what a reviewer
 downloads: **21** at `1.0.3`, **21** at `1.0.2`, **21** at the `1.x` tip, by

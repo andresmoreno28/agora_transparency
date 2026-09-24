@@ -9,9 +9,9 @@ This is **not** the licence itself. [`LICENSE.txt`](LICENSE.txt) is the verbatim
 what is inside the tarball and on what terms, without opening 300 files.
 
 **Why it exists at all, stated with the measurement behind it.** Drupal.org's site-template review
-asks for *"A license manifest: Drupal-derived components remain GPL; any non-GPL components (such
-as default content and images) are listed"* — read at source on 2026-09-21 at
-`https://new.drupal.org/site-template/apply`. Measured the same day against the two published site
+asks for *"A license manifest — Drupal-derived components remain GPL; any non-GPL components (such
+as default content or images) are listed"* — read at source on 2026-09-24 at
+`https://new.drupal.org/site-template/apply`. Measured on 2026-09-21 against the two published site
 templates: **`haven` 1.0.3 ships 0 of 748 files matching any licence manifest, and `byte` 1.0.3 ships
 0 of 651.** Both ship the GPL text and nothing else, and `haven` ships third-party photography
 whose terms appear nowhere in its package — the count of those files is stated once, in
@@ -80,7 +80,7 @@ from the media rule, and compares the result against the number above.
 
 **11 projects** are named in `composer.json`'s `require`, and **every one of them is a project
 hosted on Drupal.org**, where the licensing policy makes `GPL-2.0-or-later` a condition of hosting.
-None is vendored: Composer resolves all 11 at install time and none of their files is inside this
+None is vendored: Composer resolves them all at install time and none of their files is inside this
 tarball.
 
 What is checked here, and what is not, because the difference matters:
@@ -173,7 +173,7 @@ media manifest.
 
 Said plainly, because a manifest's silence is not a statement of freedom:
 
-* **Drupal core, and everything Composer resolves beneath the 11 required projects.** None of it is
+* **Drupal core, and everything Composer resolves beneath the required projects.** None of it is
   in this tarball; all of it arrives at install time under its own terms, and Drupal core is
   `GPL-2.0-or-later`.
 * **The development and process layer** — `tests/`, `specs/`, `.claude/`, `CLAUDE.md`,
