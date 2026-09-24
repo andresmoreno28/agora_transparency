@@ -5072,3 +5072,26 @@ report usage normally; only test installs must not.** That is exactly what T-063
 stays installed in the product, and only the test sites the suite builds are pinned to a loopback
 address. **So T-0635 passes D-044 on a signature, and the count of rows resting on neither necessity
 nor a signature (Y-7) does not include it.**
+
+---
+
+## D-064 · Amended again 2026-09-25 — the coverage opt-in was deliberate; SECURITY.md takes shape B
+
+**[andres], 2026-09-25, asked whether he had opted `agora_transparency` into Drupal's security
+advisory coverage on purpose: "Sí, activé la cobertura de seguridad."** So the opt-in of
+2026-09-24 15:14 UTC stands, and `SECURITY.md` is written to be true of every package it ships in:
+
+1. **One route**: the project's own "Report a security vulnerability" link, which opens a
+   confidential work item.
+2. **The maintainer acknowledges a report within 14 calendar days** — acknowledgement only; no fix
+   time is promised (D-064, amended 2026-09-24).
+3. **Stable releases are covered by Drupal's security advisory policy**, so a report about a stable
+   release also enters the Drupal Security Team's process. That process is **linked, never quoted**:
+   its timelines are the Security Team's, not the maintainer's promise.
+4. **Pre-releases and development code are not covered.**
+
+No "yet" and no date appear in it, so it does not go stale when the first stable release is cut.
+⚠️ **This supersedes option C's refusal only on its stated fact, not on its reasoning.** D-064
+refused to cite the Security Team because the project was not covered; it now is, for stable
+releases, so describing that coverage is accurate. What stays refused is quoting somebody else's
+timeline as ours.
