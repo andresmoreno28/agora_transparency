@@ -755,16 +755,18 @@ moving the working copy a session is running in, on the day wave 5 starts.
   closing it. It is closed.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **473** tracked files to cspell, which **checks 432** and
-  finds 0 issues (re-measured 2026-09-23 after `16e7182` added one tracked research file, and
-  **both figures were predicted from disk before the run: +1 each, gap held at 41**; it read
+  `bash tests/bin/spellcheck` offers **475** tracked files to cspell, which **checks 434** and
+  finds 0 issues (re-measured 2026-09-24 after T-0635 added `tests/src/Traits/NoUsageReportingTrait.php`
+  and `tests/bin/no-usage-reporting`, **both figures predicted from disk before the run: +2 each, gap
+  held at 41**; it read **473/432** from 2026-09-23, after `16e7182` added one tracked research file,
+  when both figures were predicted from disk the same way: +1 each; it read
   **472/431** from 2026-09-21 until then — see the correction immediately below; it read
   **470/429** earlier the same day, when **this commit adds three files — `tests/bin/ported-copies`, `tests/bin/ported-drift` and `tests/bin/ported-from-theme.manifest`, T-0622 — and moved the denominator
   by exactly three** was written, which is the shape to want — and **467/426** before that, **456/415** on 2026-09-20, **455/414** on 2026-09-19, **451/410** on 2026-09-12, **448/407**
   on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before
   that).
   ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** Three text
-  files were added and cspell opened all three: 473 − 432 = 41, the same 37 binaries and 4 globs
+  files were added and cspell opened all three: 475 − 434 = 41, the same 37 binaries and 4 globs
   accounted for below. **Both figures were PREDICTED before the run and the run returned exactly
   470 and 429** on the day that sentence was written, which is the only way a denominator claim is
   worth anything.
@@ -792,7 +794,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   enumeration, and the shortfall this paragraph used to admit is closed.** **37** are binaries
   cspell does not read — **34 PDF, 2 WebP and 1 PNG** — and **4** are matched by the upstream
   ignore globs (`.eslintrc.json` by `**/.*.json`, `.gitignore` by `.*ignore`, `LICENSE.txt` and
-  `composer.json` by name). **37 + 4 = 41**, and 473 − 41 = **432**, the number cspell prints.
+  `composer.json` by name). **37 + 4 = 41**, and 475 − 41 = **434**, the number cspell prints.
   ⚠️ **This line read `456 − 41 = 415` until 2026-09-21 — stale by SIXTEEN, three denominators
   behind the bullet above it**, which is the same defect its own next paragraph describes and is
   why that paragraph is no longer the worst instance in this file.
@@ -990,8 +992,27 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (95 checks · 0 failures) and `gate-a-wave3.sh` (**67** checks · 0 failures), **24** invariants in total —
+  (100 checks · 0 failures) and `gate-a-wave3.sh` (**67** checks · 0 failures), **25** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
+  ⚠️ **`95 · 67 · 24` became `100 · 67 · 25` on 2026-09-24 (unit 006, T-0635), and this time a new
+  GROUP moves `invariants`**: wave 1's **G15** runs `tests/bin/no-usage-reporting`, five checks — exit,
+  files scanned, functional classes found, all of them guarded, and a loopback pin. ⚠️ **It exists
+  because this package's own test suite reported usage to Drupal.org.** The recipe installs `update`
+  and `automated_cron`, so every functional test site ran cron on its first web request and sent
+  `updates.drupal.org` a site key and its module list: **18 requests from 9 test sites per run**,
+  measured against a recording stub, and CI runs the suite twice per push. The guard is
+  `tests/src/Traits/NoUsageReportingTrait.php`, which writes `update.settings:fetch.url` into each
+  test site's `settings.php` **before** Drupal installs — core's own place for the same job, where it
+  already switches off `system.advisories` — pointing it at a closed loopback port. With it, the same
+  run sent **0** requests to either recorder, and the 18 attempts were refused on the loopback
+  instead. **Watched failing first**: with the `use` line taken out of `ValidationTest`, the script
+  prints `tests/src/Functional/ValidationTest.php:32 class ValidationTest … does not use
+  NoUsageReportingTrait` and exits 1 — one of fourteen dirty cases, all seen to fail, beside a clean
+  run and two positive controls that pass, each under both mawk and gawk, because the CI image's
+  default awk is mawk. ⚠️ **What it does not reach, named so "closed" is not
+  read as more than it is**: the `Drupal CMS` job runs drupal_cms's own compatibility test, which
+  reports **one** site per push from inside Drupal CMS's installer, before this package is applied.
+  That residual is recorded in T-0635's row, and the upstream fix is [andres]'s call.
   ⚠️ **`95 · 66 · 24` became `95 · 67 · 24` on 2026-09-21 (unit 006 wave 5, T-0632), and the one
   new check is in an EXISTING group — so `invariants` does not move, and wave 1's 95 is a measured
   non-change rather than an omission.** G7's `no-boilerplate (accounted)`.
@@ -1217,8 +1238,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
   gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
   The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
-  prints `examined: 473 tracked file(s)` · `scripts: 37` · `findings: 0` today, re-run 2026-09-23
-  (it read `472` and `37` from 2026-09-21 until `16e7182` added one non-script file — so the
+  prints `examined: 475 tracked file(s)` · `scripts: 38` · `findings: 0` today, re-run 2026-09-24
+  (T-0635 added one script, `tests/bin/no-usage-reporting`, and one file that is not a script, the
+  trait - so both counts moved, each by exactly its own arrival; it read `473` and `37` from
+  2026-09-23, and `472` and `37` from 2026-09-21 until `16e7182` added one non-script file — so the
   examined count moved and the script count, correctly, did not; `470` and `36` earlier on the 21st, `467` and `34` before that, `456` and `30` on
   2026-09-20, `455` before T-1310 added one config file, and `451` on 2026-09-12). **The +1 script
   is `tests/bin/mirror-streak`**, which is also one of the two files that moved spellcheck's

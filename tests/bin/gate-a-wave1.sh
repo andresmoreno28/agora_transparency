@@ -97,7 +97,15 @@
 # same reason a raw delta is: no commit in this repository can fix an unreachable
 # drupalcode.
 #
-# GATE-CLAIM: checks=95 invariants=6
+# UNIT 006 (2026-09-24, T-0635) takes it from 95 to 100 and `invariants` from 6
+# to 7, because G15 is a new group running a new script:
+# tests/bin/no-usage-reporting, five checks. It exists because this package's own
+# test suite reported usage to Drupal.org - every functional test site ran cron
+# with `update` installed and asked updates.drupal.org about every enabled
+# project, 18 requests from 9 sites per run, twice per push. The guard is a trait
+# in tests/src; this group is what stops the next test class leaving it out.
+#
+# GATE-CLAIM: checks=100 invariants=7
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -385,8 +393,8 @@ check 'dev/alpha/beta/rc constraints' "$UNSTABLE" '0'
 [ "$UNSTABLE" != "0" ] && jq -r '.require | to_entries[] | select(.value|test("dev|alpha|beta|rc";"i")) | "      | \(.key): \(.value)"' composer.json 2>/dev/null
 check '.extra.patches'             "$(jq_raw 'if (.extra.patches // null) == null then "absent" else "present" end' composer.json)" 'absent'
 # NOTE: the bare mention of CI_ALLOW_DEV is not searched for (the kit's
-# RequirementsTest.php READS it with getenv() and cannot be touched - T-406).
-# What is searched for is its DEFINITION.
+# RequirementsTest.php READS it with getenv(), by design). What is searched for
+# is its DEFINITION.
 DEFINERS=$(grep_definers 'CI_ALLOW_DEV[[:space:]]*[:=]')
 case "$DEFINERS" in
   '')            CIALLOW=0 ;;
@@ -399,8 +407,14 @@ check 'files DEFINING CI_ALLOW_DEV' "$CIALLOW" '0'
 # ------------------------------------- G6 kit files present ------------------
 # `ValidationTest.php` is here because of the specification-correction rider
 # [andres] 2026-08-21: "ValidationTest.php is added to the set of kit files
-# watched by the gate." These are the three tests the kit ships: T-406 forbids
-# modifying them, so the gate watches that they still exist.
+# watched by the gate." These are the three tests the kit ships, and this group
+# asserts that they are PRESENT - nothing more. T-406's criterion was "0 lines
+# deleted" in them; it never forbade adding to them. Until 2026-09-24 this
+# comment said T-406 "forbids modifying them", which was wider than the task
+# that made the rule: RequirementsTest.php had been extended twice by then, and
+# InstallTest.php gained its first four lines that day (T-0635), the guard that
+# stops its test site reporting usage to Drupal.org, which can only live inside
+# the class.
 group 'G6 - Starter kit files present (T-101) - 13/13'
 for f in \
   recipe.yml \
@@ -927,6 +941,52 @@ else
   check 'mirror-streak (streak stated)'             'absent'  'stated'
   check 'mirror-streak (network state named)'       'absent'  'named'
   check 'mirror-streak (age cap, never from here)'  'absent'  '14 days (default)'
+fi
+
+# ------------------------------- G15 - no-usage-reporting (T-0635, 2026-09-24) --
+# NO SITE THIS SUITE INSTALLS MAY REPORT USAGE TO DRUPAL.ORG.
+#
+# The recipe installs `update` and `automated_cron`, so every functional test
+# site ran cron on its first web request and sent updates.drupal.org a site_key
+# and its module list - measured against a recording stub: 18 requests from 9
+# sites per run, and CI runs the suite twice per push. The fix is a trait in
+# tests/src that pins update.settings:fetch.url to a closed loopback port before
+# Drupal is installed. A guard that the next test class can silently omit is not
+# a guard, so this group fails the gate when one does.
+#
+# It is in this runner because it is find, git and awk: no network, no
+# container, no database, well under a second.
+#
+# FOUR DENOMINATORS BESIDE THE EXIT, for the reason I-028 gives: a scan that
+# opened no file, a parser that stopped recognising BrowserTestBase, a count of
+# guarded classes read from nowhere, and a pin read from nowhere would each
+# print "findings: 0" exactly as a clean tree does.
+group 'G15 - no-usage-reporting (no test site reports usage to Drupal.org)'
+INV=tests/bin/no-usage-reporting
+if [ -r "$INV" ]; then
+  INV_OUT=$(bash "$INV" 2>&1); INV_RC=$?
+  NU_FILES=$(printf '%s\n' "$INV_OUT" | grep -oE '^scanned: +[0-9]+' | tail -1 | grep -oE '[0-9]+')
+  NU_FUNC=$(printf '%s\n' "$INV_OUT" | sed -nE 's/^guarded: +[0-9]+ of ([0-9]+) concrete.*/\1/p' | tail -1)
+  NU_GUARD=$(printf '%s\n' "$INV_OUT" | sed -nE 's/^guarded: +([0-9]+) of [0-9]+ concrete.*/\1/p' | tail -1)
+  NU_LOOP=$(printf '%s\n' "$INV_OUT" | sed -nE 's/^trait pin: .*\(loopback: (yes|no)\).*/\1/p' | tail -1)
+  note "$(printf '%s\n' "$INV_OUT" | grep -E '^(scanned|guarded|trait pin|findings):' | tr -s ' ' | tr '\n' ' ')"
+  check 'no-usage-reporting (exit)'            "$INV_RC" '0'
+  check 'no-usage-reporting (files > 0)' \
+    "$([ "${NU_FILES:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'no-usage-reporting (functional > 0)' \
+    "$([ "${NU_FUNC:-0}" -gt 0 ] 2>/dev/null && echo 'yes' || echo 'no')" 'yes'
+  check 'no-usage-reporting (all guarded)' \
+    "$([ -n "$NU_FUNC" ] && [ "$NU_GUARD" = "$NU_FUNC" ] && echo 'yes' || echo 'no')" 'yes'
+  check 'no-usage-reporting (pin is loopback)' "${NU_LOOP:-absent}" 'yes'
+  if [ "$INV_RC" -ne 0 ]; then
+    printf '%s\n' "$INV_OUT" | grep -E '^  [^ ]+:[0-9]+  |^FAILURE|^FATAL' | sed 's/^/  /'
+  fi
+else
+  check 'no-usage-reporting (exit)'            "$(trunc "$INV" 28)" '0'
+  check 'no-usage-reporting (files > 0)'       'not run' 'yes'
+  check 'no-usage-reporting (functional > 0)'  'not run' 'yes'
+  check 'no-usage-reporting (all guarded)'     'not run' 'yes'
+  check 'no-usage-reporting (pin is loopback)' 'not run' 'yes'
 fi
 
 # ----------------------------------------------------------------- summary ---

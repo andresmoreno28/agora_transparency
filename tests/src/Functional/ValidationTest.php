@@ -19,6 +19,8 @@ use Drupal\Tests\BrowserTestBase;
 use Drupal\views\Entity\View;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
+require_once __DIR__ . '/../Traits/NoUsageReportingTrait.php';
+
 /**
  * Tests that this site template can be applied without errors.
  *
@@ -29,6 +31,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 class ValidationTest extends BrowserTestBase {
 
+  use NoUsageReportingTrait;
   use RecipeTestTrait;
 
   /**

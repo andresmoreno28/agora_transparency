@@ -12,6 +12,8 @@ use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
+require_once __DIR__ . '/../Traits/NoUsageReportingTrait.php';
+
 /**
  * Runs axe over the pages this site template actually installs.
  *
@@ -85,6 +87,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 class AccessibilityTest extends WebDriverTestBase {
 
+  use NoUsageReportingTrait;
   use RecipeTestTrait;
 
   /**

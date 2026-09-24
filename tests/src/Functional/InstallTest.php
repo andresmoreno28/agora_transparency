@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Drupal\Tests\BrowserTestBase;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
+require_once __DIR__ . '/../Traits/NoUsageReportingTrait.php';
+
 /**
  * Tests that this site template can be used to install Drupal.
  *
@@ -14,6 +16,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[RunTestsInSeparateProcesses]
 class InstallTest extends BrowserTestBase {
+
+  use NoUsageReportingTrait;
 
   /**
    * {@inheritdoc}

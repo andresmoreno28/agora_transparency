@@ -402,7 +402,7 @@ program computes its hashes is worse than one that is noisy.
 1. Run `bash tests/bin/toolchain-floor` on the Mac and paste the whole output back. That fills the
    empty column above and is the only step that needs a Mac in front of a human.
 2. Run `bash tests/bin/doctor` there; it must reach `READY`.
-3. Run both wave runners and reproduce the counts this repository quotes — **95 checks · 0
+3. Run both wave runners and reproduce the counts this repository quotes — **100 checks · 0
    failures** and **67 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
    It read `61` and `37` until 2026-09-12 and `67` and `49` until 2026-09-21, which was six
    invariants and twenty-seven checks behind by the end: the runners grew and the sentence did not,

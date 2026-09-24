@@ -28,9 +28,12 @@
 # Why this looks for a DEFINITION and not for the name (I-018): the test that
 # polices a string legitimately contains that string.
 # tests/src/Kernel/RequirementsTest.php reads it with getenv('CI_ALLOW_DEV') BY
-# DESIGN, and T-406 forbids modifying that file. An invariant that matched the
-# bare name would be a permanent, unfixable red - the kind of red that everyone
-# learns to ignore (I-020). The pattern therefore requires the variable name to
+# DESIGN - it is the kit's own escape hatch, and removing the read would be
+# weakening the kit's test. (This said T-406 "forbids modifying that file" until
+# 2026-09-24; T-406's criterion is "0 lines deleted", which forbids exactly that
+# and nothing wider.) An invariant that matched the bare name would be a
+# permanent, unfixable red - the kind of red that everyone learns to ignore
+# (I-020). The pattern therefore requires the variable name to
 # be followed by optional whitespace and then a separator character, colon or
 # equals, which is what a YAML mapping entry or a shell assignment looks like
 # and what getenv() never looks like.
@@ -275,9 +278,9 @@ printf '  mentions in scope: %s\n' "$MENTIONS"
 # T-321(b): defaulted because zero means FAIL here - the safe direction of
 # I-031. Do not copy the `:-0` to a guard where zero means PASS.
 if [ "${MENTIONS:-0}" -eq 0 ] && [ "${SCANNED:-0}" -gt 0 ]; then
-  # tests/src/Kernel/RequirementsTest.php reads the variable by design and T-406
-  # forbids touching it, so at least one mention must always exist. Zero means
-  # the scan did not reach the tree it claims to police.
+  # tests/src/Kernel/RequirementsTest.php reads the variable by design, and
+  # T-406 forbids deleting that read, so at least one mention must always exist.
+  # Zero means the scan did not reach the tree it claims to police.
   finding '<canary>' '0' \
     'zero mentions found in scope - the scan is not credible, it discriminated nothing'
 fi

@@ -67,6 +67,7 @@ localrepo             # Gitaly's internal/git/localrepo package, cited in D-022
 etree                 # Python xml.etree, used by the sbom-check parser
 charmap               # Python's charmap codec, named in the encoding preflight
 webform               # the Drupal contrib project
+drupical              # the Drupal contrib project drupal_cms_admin_ui installs; its events feed is named in T-0635
 akia                  # AWS access-key prefix, a detection pattern in tests/bin/no-secrets
 baprs                 # the xox[baprs]- Slack token character class in no-secrets
 pousr                 # the gh[pousr]_ GitHub token character class in no-secrets
