@@ -279,10 +279,22 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `973149`, ref `1.x`, commit `d47fd5a`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/973149/jobs` on 2026-09-23 —
+- **Observed inventory — the site template.** Pipeline `974214`, ref `1.x`, commit `9bf2432`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/974214/jobs` on 2026-09-24 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ✅ **THE FIRST PIPELINE WHOSE TEST SITES DO NOT REPORT USAGE TO DRUPAL.ORG** (T-0635). Until
+  `9bf2432` every functional test site in this suite ran cron with core `update` installed and
+  requested `release-history` carrying a `site_key` — measured at **18 attempts from 9 test sites per
+  run**, and CI runs the suite twice per push. Both phpunit traces here print the unchanged
+  `OK (22 tests, 2643 assertions)` and name `updates.drupal.org` **0** times. The `Drupal CMS` job
+  still reports **one** site per push, from inside Drupal CMS's own installer, before this package
+  exists — a named residual in T-0635, not a defect this repository can reach.
+  ⚠️ **Two denominators moved and both are accounted for.** `phpunit` 2633 → **2643** is
+  `d354429` enabling axe's `target-size` rule by name (+10 in `AccessibilityTest`), predicted by its
+  agent before any pipeline ran. `cspell` 433 → **436** is exactly three new text files:
+  `16e7182`'s keyboard research, and `9bf2432`'s trait and invariant script.
+  (It stood at `973149` / `d47fd5a` / 2026-09-23 — the paragraph below.)
   ⚠️ **Moved the same day as the row below it, and for the rule's reason rather than a schedule:
   `d47fd5a` changed a gate's denominator and did not update this table.** T-0615 put the Config
   Guardian dashboard into `AccessibilityTest` as a logged-in page (D-061 option B), adding **26
@@ -387,9 +399,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   |---|---|
   | `Drupal CMS` | `Locking drupal/agora_theme (1.2.0)` |
   | `Drupal CMS` | `OK (1 test, 1 assertion)` |
-  | `cspell` | `Files checked: 433, Issues found: 0` |
-  | `phpunit` | `OK (22 tests, 2633 assertions)` |
-  | `phpunit-pgsql` | `OK (22 tests, 2633 assertions)` |
+  | `cspell` | `Files checked: 436, Issues found: 0` |
+  | `phpunit` | `OK (22 tests, 2643 assertions)` |
+  | `phpunit-pgsql` | `OK (22 tests, 2643 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
@@ -440,12 +452,19 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `970165`, ref `1.x`, commit `bf433c9`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/970165/jobs` on 2026-09-21. **Ten jobs, every
-  one `success`, every one `allow_failure: false`.** Figures read from the traces the same day:
-  `nightwatch` job `12336498` — **10 pages scanned, 89-89 axe rules per page, 0 violations,
-  heading-order reported on 10 of 10 pages, 774 total assertions**; `phpunit` job `12336499` —
-  **`OK (203 tests, 959 assertions)`**.
+- **Observed inventory — the theme.** Pipeline `974098`, ref `1.x`, commit `27bf188`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/974098/jobs` on 2026-09-24. **Ten jobs, every
+  one `success`, every one `allow_failure: false`.** `27bf188` is the commit tagged **`1.2.1`**, whose
+  own tag pipeline `974112` is also ten for ten.
+  ✅ **Its figures are in the trace-figures table below and are NOT restated here any more.** They
+  stood in this sentence as a second copy until 2026-09-24, beside the table that `--online` re-reads,
+  and this block's own lesson is to stop making the second copy rather than to refresh both.
+  ⚠️ **The rules-per-page figure moved 89 → 90 and it is a strengthening, not drift**: `7f43ace`
+  asked axe for `target-size` (WCAG 2.2 SC 2.5.8) by name. axe ships that rule switched OFF, so the
+  89 this row carried until today never included 2.5.8, while nothing said so. Assertions went
+  774 → 812: 20 are `target-size` (two lines on each of 10 pages) and 18 are the new table-scroll
+  keyboard test, accounted for by comparing the two traces line by line.
+  (It stood at `970165` / `bf433c9` / 2026-09-21 — the paragraph below.)
   ✅ **THE FOURTH REFRESH IN TWENTY-FOUR HOURS, AND THE FIRST ONE THAT LEAVES A MECHANISM BEHIND.**
   It stood at `970030`/`a3037ae`, and at `969322`, `969068` and `968026` before that. ⚠️ **Both
   trace figures are UNCHANGED across that whole run of refreshes** — 10 pages, 89-89 rules, 0
@@ -566,7 +585,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `stylelint` | validate | success | false |
 
   **Trace figures — the theme.** Same mechanism as the site template's table above, same
-  credential-free `/-/jobs/<id>/raw` route, read from pipeline `970165`'s own jobs.
+  credential-free `/-/jobs/<id>/raw` route, read from pipeline `974098`'s own jobs.
   ⚠️ **`agora-invariants` read `35` until 2026-09-21 and the trace says `44`, which is nine
   checks of drift in a figure whose whole subject is a gate runner's own arithmetic.** It was found
   by REFRESHING the observation above and re-running `--online`, not by anything watching: the
@@ -582,9 +601,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | job | the line its trace printed |
   |---|---|
   | `agora-invariants` | `44 checks — 0 failures` |
-  | `nightwatch` | `10 pages scanned, 89-89 axe rules run per page, 0 violations` |
+  | `nightwatch` | `10 pages scanned, 90-90 axe rules run per page, 0 violations` |
   | `nightwatch` | `heading-order reported on 10 of 10 pages` |
-  | `nightwatch` | `774 total assertions` |
+  | `nightwatch` | `812 total assertions` |
   | `phpunit` | `OK (203 tests, 959 assertions)` |
 
   ⚠️ **A TABLE CAN NEVER NAME ITS OWN COMMIT'S PIPELINE, and that is structural rather than an
