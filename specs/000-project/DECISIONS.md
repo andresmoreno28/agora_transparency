@@ -4944,3 +4944,24 @@ reading on record rather than a choice nobody saw — if [andres] wants it ruled
 
 **Recorded by [ejecutor], 2026-09-23. No signature is sought: this corrects a fact inside a signed
 record without changing what the record decided.**
+
+---
+
+## Amendment 2026-09-24 · "T-406 forbids modifying" the kit files is WIDER than T-406
+
+**No decision changes. A description of one is corrected**, and the shape is the one this record
+has corrected before: a restriction repeated more widely than the rule that made it.
+
+Line 1598 above says `RequirementsTest.php` is a file *"which T-406 forbids modifying"*, and the
+same wording stood in `tests/bin/gate-a-wave1.sh`'s G5 and G6 comments and twice in
+`tests/bin/no-ci-allow-dev` until T-0635 (`9bf2432`) corrected those four. **T-406's criterion is
+that the kit's test files lose 0 lines** — it forbids deleting from them, not adding to them, and
+`RequirementsTest.php` has already been extended twice under it. G6 asserts the kit's files are
+**present** (13 of 13), not unmodified.
+
+⚠️ **Why it mattered:** T-0635 had to add four lines to `InstallTest.php` — the first edit that file
+has ever had — because `InstallTest` is one of the three classes whose test sites reported usage to
+drupal.org, and it can only be guarded from inside the class (its fetch fires inside
+`BrowserTestBase::setUp()`, before control returns). Read as written, line 1598 would have blocked
+the one fix that protects [andres]'s install counts, for a rule that does not say what it was
+quoted as saying. Line 1598 itself is not edited (rule 8); this entry is the correction.

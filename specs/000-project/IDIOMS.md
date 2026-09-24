@@ -1335,3 +1335,22 @@
   both readable in `watchdog`. Checking `update.last_check` alone gives a false alarm on a clean
   rig and would give a false all-clear on a rig whose state had merely been cleared.
   Recorded 2026-09-23 with T-0633.
+- I-118 · **`git commit -- <paths>` drops a NEW file's executable bit on this checkout, so the
+  concurrency-safe commit form and a new script cannot be used together as written.** With
+  git's file-mode tracking turned off (<!-- cspell:disable -->`core.filemode=false`<!-- cspell:enable -->, every Windows checkout here), `--only` rebuilds a temporary index from
+  HEAD plus the working-tree files named, and the working tree carries no mode — so a brand-new
+  script lands `100644` even after `git add --chmod=+x`, which `tests/bin/executable-bit` then
+  refuses. Measured in a scratch clone on 2026-09-24 by the T-0635 agent. **The form that keeps
+  both properties:** `git add --chmod=+x <new script>`, then confirm `git diff --cached --name-status`
+  holds ONLY your files, then `git commit -i -F - -- <paths>` (`--include` keeps the index's mode).
+  ⚠️ `-i` commits whatever else is staged, so the index check immediately before it is not
+  optional: it is the whole of the concurrency protection that `--only` gave for free. Recorded
+  with T-0635.
+- I-119 · **A disposable copy of the working tree is made with `git archive` or a clone whose
+  remotes are removed — never `cp -a`.** `cp -a` copies `.git` with it, and this working copy's
+  remotes carry **live push URLs** for `drupalcode` and `github`. On 2026-09-24 three such copies
+  were made under WSL `/tmp/` for a gate demonstration; nothing was pushed from them and they are
+  deleted, but a bare `git push` in any of them would have reached the canonical repository — the
+  exact accident the deliberate absence of an `origin` remote exists to prevent. ⚠️ **`tests/bin/doctor`
+  cannot see this class**: its clone sweep walks `~/agora-*`, and `/tmp/` is outside it. The guard is
+  the method, not a detector. Recorded with T-0635.
