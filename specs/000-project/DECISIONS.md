@@ -5017,3 +5017,21 @@ issue texts *"exist in no file"*. They exist** — `upstream-issues.md` in the s
 147 lines, both issues — deliberately **outside** the repository, because filing them is [andres]'s
 call and a draft in the repo reads as a commitment. The audit was read-only in the working copy and
 did not look there.
+
+---
+
+## D-068 · Amended 2026-09-24 — ruling 3 understated what a later D-054=A would touch
+
+**No ruling changes. One sentence of D-068(3) is corrected**, and it is corrected here rather than
+in place (rule 8). D-068(3) said that if [andres] later rules D-054 as option A — no module, the
+"AI assistant with citations" claim withdrawn — *"the README line becomes a one-line edit"*. **It
+is three places, measured on disk at `14f3dfa`**: `README.md:44`, and `recipe.yml:40` and `:88`,
+both of which name a "cited assistant". Two more — `recipe.yml:163` and `:710`, which say *"filled
+by unit 005"* without naming an assistant — must be re-read on the day. `recommended.yml:5-7` is a
+fourth promissory claim, true today as a plan. `AGENTS.md` needs nothing any more: wave 6 lane A
+(`9094da7`) made it say that no AI feature ships.
+
+**The complete inventory lives in one place — T-0620's cell** in `specs/006-hardening/tasks.md` —
+so whoever rules D-054 reads it there rather than reconstructing it. ⚠️ **The understatement is the
+shape this unit keeps finding: a count asserted from memory ("one line") where a command would have
+said three.** D-068 was written the same hour as the audit that ordered it and was not re-derived.
