@@ -4965,3 +4965,55 @@ drupal.org, and it can only be guarded from inside the class (its fetch fires in
 `BrowserTestBase::setUp()`, before control returns). Read as written, line 1598 would have blocked
 the one fix that protects [andres]'s install counts, for a rule that does not say what it was
 quoted as saying. Line 1598 itself is not edited (rule 8); this entry is the correction.
+
+---
+
+## D-068 · Four closure rulings from the independent audit of unit 006 — SIGNED by [ejecutor], 2026-09-24
+
+**Signed under the standing delegation.** Each is an accounting or scoping ruling on this unit's own
+rows, recommended (★) by the `orquestador`'s read-only audit of 2026-09-24. None decides a product
+question: **D-054, D-045, the T-0618 acknowledgement window, and whether T-0635 rests on [andres]'s
+instruction are his, and are not touched here.**
+
+The audit's headline, for the record: of the unit's 25 closed rows, **0 not met, 3 met more weakly,
+15 met as written, 7 met more strongly. No row reopens.** The automatic-red check (diffing the
+scaffold `d06b9b6` against HEAD) is clean: three assertions left `tests/src`, and each was a
+tightening or a correction of a false expectation, never a weakening.
+
+**1 · Y-1 — five invariants were spent against a budget of two; `ported-copies` and `ported-drift`
+count as T-0622's (option A).** By command, wave 1's invariants went 2 → 7: `packaged-claims`,
+`ported-copies`, `ported-drift`, `mirror-streak`, `no-usage-reporting`. The two ported-* scripts are
+labelled *"(T-0622, 2026-09-21)"* in `tests/bin/gate-a-wave1.sh` — labels written when the work was
+done — while T-0622's own cell called them *"the OPPOSITE direction"* and read as not covering them.
+They cover the direction T-0622's cell did not; T-0622 is therefore **met more strongly**, in both
+directions. ⚠️ **D-066 miscounted, and this corrects it:** it said the unit ships *"three where it
+budgeted two"*; on the day it was signed the count was **four**, and it is **five** today. **The
+overrun is 3 invariants, not 1**, and it is stated as one.
+
+**2 · Y-2 — D-038's carried half is deferred past v1 (option B).** `specs/003-demo-content/tasks.md`
+records asserting that the five shipped CSV distributions render as tables as *"carried, with an
+owner"*, and D-038 names this unit. Its prerequisite — a published theme that draws a CSV as a
+table — was met on 2026-09-23 (`templates/agora-csv-table.html.twig` is in `agora_theme` 1.2.0).
+**Nothing this package ships claims the CSVs are checked**, so the honest cost is zero rows: T-0627
+records it as deferred, and the WCAG attestation (T-0617) names it among what is **not** measured.
+
+**3 · Y-4 — T-0620 closes now, independent of D-054 (option A).** T-0620's criterion allows a claim
+*"explicitly left with a reason"*. `README.md:44` — *"AI assistant with citations | unit 005"* — is
+true today as a statement of plan; what was false was `AGENTS.md:77-79`, which described AI features
+no release ships, and that is corrected in wave 6 lane A. **D-054 is not decided by this**: if
+[andres] later rules it A (no module, withdraw the claim), the README line becomes a one-line edit
+and T-0620's closure does not stand in the way.
+
+**4 · Y-6 — T-0603's attribution criterion is narrowed to D-061's signed scope (option B).** Its
+*"each violation attributed to the module whose markup produced it, by selector"* was written
+against a one-off 11-page scan of ~25 (rule, selector) pairs, of which 2 were ever verified at
+source. **The shipped claim is the 9 nodes the logged-in gate declares** (config_guardian 7, gin 1,
+coffee 1); those are attributed at source in wave 6 lane T. The rest stay a dated measurement, with
+the known limit of ancestor-walk attribution stated beside them — the method that blamed `navigation`
+for an empty heading the `dashboard` module writes.
+
+⚠️ **One audit finding is corrected here rather than carried: G-5 said T-0635's two drafted upstream
+issue texts *"exist in no file"*. They exist** — `upstream-issues.md` in the session scratchpad,
+147 lines, both issues — deliberately **outside** the repository, because filing them is [andres]'s
+call and a draft in the repo reads as a commitment. The audit was read-only in the working copy and
+did not look there.
