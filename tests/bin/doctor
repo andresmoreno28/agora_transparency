@@ -735,7 +735,8 @@ if [ "$PLATFORM_FAMILY" = windows ] && [ "$DOCKER_DAEMON" != reachable ]; then
         fi
         note "  this IS DDEV's own recommended Windows setup, not a degraded one - do not"
         note "  install Docker Desktop to 'fix' this; the two conflict."
-        note "  run project work there, e.g.: wsl.exe -e bash -lc 'cd ~/agora-smoke && ddev ...'"
+        note "  run project work there in a rig of its own, e.g.: wsl.exe -e bash -lc 'cd ~/agora-t0615 && ddev ...'"
+        note "  never in ~/agora-smoke: that is the maintainer's live preview, and rebuilding it takes it down"
         note "  the project must live IN the WSL filesystem (~/project) - never under /mnt/c,"
         note "  which DDEV documents as slow and permission-prone."
       else

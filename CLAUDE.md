@@ -195,11 +195,19 @@ Remotes: **`drupalcode`** (canonical, `git.drupalcode.org/project/agora_transpar
 **`github`** (read-only mirror, D-016). **There is deliberately no remote named `origin`**, so a
 bare `git push` fails loudly instead of reaching the mirror by accident.
 
-**`~/agora-smoke` inside WSL2 is a throwaway TEST RIG, never a second working copy.** It holds a
+🔴 **AMENDED 2026-09-24: `~/agora-smoke` IS NOT THROWAWAY ANY MORE — IT IS [andres]'s LIVE PREVIEW**, at
+`https://agora-smoke.ddev.site:8443`, held up by a Windows-side process so it survives idle and reboot.
+**Never rebuild, restart, reinstall or `ddev delete` it, and never point a tool at it.** On 2026-09-24 a
+dispatch rebuilt it in place, following the sentence struck below, and it was down for ~2 min 40 s while
+he was looking at it; `tests/bin/preflight` had also been writing lint folders into it by default, which
+it now refuses (`958ac94`). **Test work goes in a rig of its own** (`~/agora-t0615`, `~/agora-kbd`, a new
+one); to refresh the preview, build the new site BESIDE it and switch, so the URL is never dark. It is
+still never a second working copy, and everything below about its `source/` clone still holds.
+~~**`~/agora-smoke` inside WSL2 is a throwaway TEST RIG, never a second working copy.**~~ It holds a
 full Drupal plus a `source/` directory that is a **complete clone of this repository** — so it
 *looks* like a working copy, which makes it more dangerous, not less. **Never edit it, never commit
-from it, never open a session against it.** Refresh it with `git pull`, or delete and rebuild it —
-rebuilding is the only thing that keeps a clean-install smoke actually clean.
+from it, never open a session against it.** ~~Refresh it with `git pull`, or delete and rebuild it —
+rebuilding is the only thing that keeps a clean-install smoke actually clean.~~
 
 **Docker and DDEV live INSIDE WSL2 Ubuntu on this machine**, not in Docker Desktop, whose distro is
 stopped on purpose — the two conflict, and the WSL setup is the one DDEV itself recommends for
