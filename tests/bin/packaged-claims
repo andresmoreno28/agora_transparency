@@ -104,6 +104,9 @@
 #     font_files         "0 font files"           vs  git archive, by extension
 #     media_licences_in_use  the terms in use     vs  the licence cells of the manifest rows
 #
+#   SECURITY.md
+#     security_window    the acknowledgement time vs  the D-064 heading that set it, in DECISIONS.md
+#
 #   the accessibility statement (content/node/<uuid>.yml, rendered at /accessibility-statement)
 #     a11y_pages         the scanned page count   vs  the pages AccessibilityTest declares
 #     a11y_declared_const  DECLARED_PAGES in the test vs  those same pages (source vs source)
@@ -218,13 +221,18 @@ RECOMMENDED='recommended.yml'
 # it states is compared below, and every one-copy detector is run over it, so the day it restates
 # a number that lives in README.md or in the media manifest the guard says so by name.
 LICENCES='LICENCE-MANIFEST.md'
-PACKAGED_FILES="$README $MANIFEST $STATEMENT $RECIPE $COMPOSER $RECOMMENDED $LICENCES"
+# T-0618. The security policy. A SUBJECT for the same reason: it states one figure, how long a
+# reporter waits for an acknowledgement, and that figure binds a named person to a named time. It is
+# compared below against the decision that set it, and every one-copy detector runs over it.
+SECURITY_MD='SECURITY.md'
+PACKAGED_FILES="$README $MANIFEST $STATEMENT $RECIPE $COMPOSER $RECOMMENDED $LICENCES $SECURITY_MD"
 
 # Sources that are NOT packaged and are read only as the measured side.
 RUNNER1='tests/bin/gate-a-wave1.sh'
 RUNNER3='tests/bin/gate-a-wave3.sh'
 WATCH='tests/bin/watch-gate'
 A11Y_TEST='tests/src/FunctionalJavascript/AccessibilityTest.php'
+DECISIONS='specs/000-project/DECISIONS.md'
 
 FILES_OPENED=0
 CLAIMS=0
@@ -298,7 +306,7 @@ ARCHIVE_N=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '^$' | wc -l | tr -d '[:spac
 # line end would otherwise match in one place and not the other, which is a difference between
 # environments and not between claims.
 TEXT_README=''; TEXT_MANIFEST=''; TEXT_STATEMENT=''
-TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''; TEXT_LICENCES=''
+TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''; TEXT_LICENCES=''; TEXT_SECURITY=''
 # A SECOND, FLOWED VARIANT OF EVERY SUBJECT, and it is not a convenience. README.md is hard-
 # wrapped at 100 columns, so almost every sentence carrying a figure is split across two lines -
 # and `grep` reads a line at a time. A pattern written for the sentence would therefore match
@@ -308,7 +316,7 @@ TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''; TEXT_LICENCES=''
 # text; the two places that genuinely need line anchors - the markdown table rows - read the raw
 # text directly and say so.
 FLOW_README=''; FLOW_MANIFEST=''; FLOW_STATEMENT=''
-FLOW_RECIPE=''; FLOW_COMPOSER=''; FLOW_RECOMMENDED=''; FLOW_LICENCES=''
+FLOW_RECIPE=''; FLOW_COMPOSER=''; FLOW_RECOMMENDED=''; FLOW_LICENCES=''; FLOW_SECURITY=''
 
 load_packaged() { # <var-suffix> <path>
   local path="$2" body flow
@@ -334,6 +342,7 @@ load_packaged RECIPE      "$RECIPE"
 load_packaged COMPOSER    "$COMPOSER"
 load_packaged RECOMMENDED "$RECOMMENDED"
 load_packaged LICENCES    "$LICENCES"
+load_packaged SECURITY    "$SECURITY_MD"
 
 text_of() { # <var-suffix> -> that file's CR-stripped text, line structure intact
   eval "printf '%s' \"\$TEXT_$1\""
@@ -350,6 +359,7 @@ path_of() { # <var-suffix> -> that file's path
     COMPOSER) printf '%s' "$COMPOSER" ;;
     RECOMMENDED) printf '%s' "$RECOMMENDED" ;;
     LICENCES) printf '%s' "$LICENCES" ;;
+    SECURITY) printf '%s' "$SECURITY_MD" ;;
     *) printf '%s' "$1" ;;
   esac
 }
@@ -443,7 +453,7 @@ compare() { # <label> <claimed> <measured> <source>
 one_home() { # <label> <home-list-or-EXTERNAL> <detector ERE> <why the home is the home>
   local label="$1" home="$2" ere="$3" why="$4" hits='' who path rc expect n want
   ONE_COPY=$((ONE_COPY + 1))
-  for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES; do
+  for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES SECURITY; do
     flow_of "$who" | grep -qE "$ere"
     rc=$?
     case $rc in
@@ -461,7 +471,7 @@ one_home() { # <label> <home-list-or-EXTERNAL> <detector ERE> <why the home is t
     # The declared homes, in the same fixed order the scan visits them, so the two lists are
     # comparable as strings rather than as sets.
     want=''
-    for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES; do
+    for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES SECURITY; do
       case " $home " in *" $who "*) want="$want $who" ;; esac
     done
     want=${want# }
@@ -1109,6 +1119,40 @@ MEDIA_TERMS=$(text_of MANIFEST \
 compare 'media_licences_in_use' "$L_TERMS" "$MEDIA_TERMS" \
   'distinct licence cells in the media manifest rows'
 
+# ========================================= SECURITY.md vs the decision that set its window ==
+# T-0618. The security policy makes ONE promise that is a number, and it is the one a reporter acts
+# on: how long they wait before a person answers. The number is [andres]'s, set by D-064's amendment
+# of 2026-09-24, so the measured side is that amendment's HEADING in the decision record - read out
+# of it, never retyped here. A 14 written into this script would be a constant compared against a
+# constant, and SECURITY.md could then move alone and still pass. Read from the record, the two can
+# only move together: a different window is a new signed amendment, and a new amendment is what this
+# comparison then reads.
+#
+# EXACTLY ONE D-064 heading may state a window, for the reason every claim here must match once. A
+# second heading with a different figure would otherwise be settled by whichever line was read
+# first, which is a tie-break and not a measurement. When a later amendment moves the window, this
+# reader moves with it in the same commit. The middle dot in those headings is multi-byte, so it is
+# matched with $DASH, like every other separator in this file.
+#
+# WHAT IS NOT BOUND HERE is named in NOT CHECKED below: the route, the coverage sentence and the
+# sentence about how Drupal CMS copies a template's requirements are facts about Drupal.org or about
+# another project, and nothing offline can re-derive them.
+printf '\nSECURITY.md - the security policy against the decision that set its window\n'
+printf -- '---------------------------------------------------------------------------------------------------------\n'
+
+[ -r "$DECISIONS" ] || fatal "$DECISIONS is not readable, so the acknowledgement window SECURITY.md promises has no signed figure to be compared against."
+claim_once 'security window' SECURITY \
+  'acknowledges a report within \*\*[0-9A-Za-z-]+ calendar days\*\*'
+S_WINDOW=$(to_num "$(field 1 '.*within \*\*([0-9A-Za-z-]+) calendar days.*')")
+D064_HEADS=$(tr -d '\r' < "$DECISIONS" | grep -E "^## D-064 $DASH .*within [0-9A-Za-z-]+ calendar days")
+_rc=$?
+[ "$_rc" -ge 2 ] && grep_fatal "$_rc" "$DECISIONS while looking for the D-064 heading that sets the window"
+[ "$_rc" -eq 0 ] || fatal "no D-064 heading in $DECISIONS states a window of the form 'within <n> calendar days', so the figure SECURITY.md promises would be compared against nothing. If the heading was reworded, this pattern moves with it in the same commit."
+_n=$(printf '%s\n' "$D064_HEADS" | wc -l | tr -d '[:space:]')
+[ "${_n:-0}" -eq 1 ] || fatal "$_n D-064 headings in $DECISIONS state a window, and exactly 1 may. Two signed figures for one promise is the ambiguity this file refuses rather than settles; when an amendment moves the window, this reader moves with it in the same commit."
+D_WINDOW=$(to_num "$(printf '%s' "$D064_HEADS" | sed -nE 's/.*within ([0-9A-Za-z-]+) calendar days.*/\1/p')")
+compare 'security_window' "$S_WINDOW" "$D_WINDOW" "the D-064 heading that set it, in $DECISIONS"
+
 # ======================================================================= THE ONE-COPY RULE ==
 printf '\nONE COPY - every registered figure has exactly one home in the packaged set (T-0609)\n'
 printf -- '---------------------------------------------------------------------------------------------------------\n'
@@ -1140,6 +1184,13 @@ one_home 'top_level_entries' README \
 one_home 'ci_job_table' README \
   '\| `[A-Za-z -]+` \| [a-z]+ \| [a-z]+ \| (true|false) \|' \
   'The CI job list is a developer-facing observation; it belongs in README and nowhere in the shipped content.'
+
+# T-0618. Anchored on "calendar days" and not on "days": the media manifest says "nineteen days"
+# and "twenty-six days" about its own history, and a looser detector would report those as second
+# copies of a promise they have nothing to do with.
+one_home 'security_window' SECURITY \
+  "$NUM calendar days" \
+  'How long a reporter waits is a promise, and it is made in one place, the security policy. A second statement of it elsewhere is a second promise that can drift from the first, read by somebody who never opens the policy.'
 
 # THE ONE DELIBERATELY BOUND DUPLICATE, and the reason the third home kind exists. Deleting
 # either of these would cost a reader something: README's status paragraph and the statement's
@@ -1429,6 +1480,9 @@ NOT_CHECKED=(
 "The two figures content/MEDIA-LICENCES.md states about haven - 21 Unsplash-named JPEGs, 77426040 bytes, at release 1.0.3. They are facts about ANOTHER project at a version that will move, and nothing offline can produce them; re-deriving them would be one 78 MB download per run, which is not a gate's business. The page quotes the one-second command that produces both and says in its own words that nothing here keeps them true. It said 22 for twenty-six days, in two places, and 22 is reproducible at no release haven has cut - which is what an unbound third-party figure looks like when it goes wrong."
 "The measurement LICENCE-MANIFEST.md quotes about the two published site templates - haven 1.0.3 ships 0 of 748 files matching any licence manifest, byte 1.0.3 ships 0 of 651 - taken on 2026-09-21 from each release archive. They are facts about OTHER projects' releases and nothing offline can produce them; re-deriving them means downloading both release archives on every run, which is not a gate's business. The page says in its own words that no command on it re-derives them. The 748 was stated in two packaged files until 2026-09-24 - content/MEDIA-LICENCES.md carried a second copy - and that copy was deleted rather than bound, so the figure has one packaged home, dated and attributed to the release it was measured on."
 "The window size the target-size check runs at, and how many targets it measured and left incomplete. AccessibilityTest prints all three on every green run - 1024x768, 557 targets over the nine public pages and 0 incomplete on the rig run that landed T-0634 - and the packaged prose quotes none of them, on purpose: the statement says only that the measurement is taken at a single window size and that targets axe cannot decide are left to a person. 'Single' rests on the browser never being resized mid-run, which nothing asserts; the summary line would print two sizes if it were. READABLE UNDER --online AND DELIBERATELY NOT BOUND."
+"The route SECURITY.md gives: the project page it links, the name of the sidebar link on that page, and what the link opens - a new work item on git.drupalcode.org with confidentiality switched on, behind a Drupal.org sign-in. Verified at source on 2026-09-25: the page answered HTTP 200 and carried the link with issue[confidential]=true pre-set, and the new-item address answered with a redirect to sign-in. They are facts about Drupal.org's pages, which can change without a commit here. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND in this pass."
+"The coverage sentence in SECURITY.md - that stable releases are covered by Drupal's security advisory policy. It rests on the project's opt-in, which is a setting on Drupal.org and not a file in this package: its API reported field_security_advisory_coverage = covered on 2026-09-25, unchanged since 2026-09-24 15:14 UTC, and the project page says the same in its sidebar. Withdrawing the opt-in needs no commit here, and would leave the sentence false in every package that carries it. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND: reading a Drupal.org field would add a figure to --online, which is a decision of its own."
+"The sentence in SECURITY.md that a site template's requirements are copied into the site's own composer.json when Composer adds it to a Drupal CMS site. It describes another project: drupal/cms 2.1.6 requires drupal/core-recipe-unpack ^11.3.10 and allows it as a plugin, read from its project template at that tag on 2026-09-25, and specs/000-project/DECISIONS.md records the flattening as measured in a rig. A later Drupal CMS could drop the plugin or switch it off, and nothing offline here would see it."
 )
 
 printf '\nNOT CHECKED - named, with a reason, because a guard that silently covers half its subject\n'

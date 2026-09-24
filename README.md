@@ -255,7 +255,7 @@ before you run them.
 
 ## What it ships
 
-The packaged release holds **twelve** top-level entries, and the whole tarball is **375 entries**.
+The packaged release holds **thirteen** top-level entries, and the whole tarball is **376 entries**.
 They are not transcribed by hand here, because that is how two earlier versions of this paragraph
 went wrong — they are derived, and the derivation is one command anybody reading this can re-run:
 
@@ -263,9 +263,9 @@ went wrong — they are derived, and the derivation is one command anybody readi
 git archive HEAD | tar -t | sed 's#/.*#/#' | sort -u
 ```
 
-Measured 2026-09-21, it prints, in that order: `.gitattributes`, `AGENTS.md`,
-`LICENCE-MANIFEST.md`, `LICENSE.txt`, `README.md`, `composer.json`, `config/`, `content/`,
-`logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. Both figures above are now read out of `git archive` by
+Measured 2026-09-25, it prints, in that order: `.gitattributes`, `AGENTS.md`,
+`LICENCE-MANIFEST.md`, `LICENSE.txt`, `README.md`, `SECURITY.md`, `composer.json`, `config/`,
+`content/`, `logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. Both figures above are now read out of `git archive` by
 `tests/bin/packaged-claims` on every push, so the commit that changes what the tarball holds is the
 commit that fails until this paragraph is changed with it.
 
@@ -538,13 +538,15 @@ jobs"* until 2026-09-12, two jobs after it stopped being true — which is the s
 table it summarises, one sentence further from the measurement.
 
 **What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
-stayed closed across five changes of denominator. Measured 2026-09-21 by
-`bash tests/bin/spellcheck`: **472 tracked or stage-able files offered to cspell, 431 checked,
+stayed closed across five changes of denominator. Measured 2026-09-25 by
+`bash tests/bin/spellcheck`: **476 tracked or stage-able files offered to cspell, 435 checked,
 `Issues found: 0`** — plus two the CI runner generates and this repository does not track
 (`.editorconfig`, `gitlab_templates_version.txt`), which is why the job's own count reads two
 higher. The script prints both numbers every time it runs, so this paragraph is checkable rather
 than quotable. ⚠️ It read **70 tracked · 65 opened** here until 2026-09-12; the repository has since
 grown a content model and a media corpus, and the figures were carried rather than re-run.
+It read **472 · 431** from 2026-09-21 until 2026-09-25, one file behind the script from 2026-09-23
+and three from 2026-09-24: only the subtraction below is bound, so nothing here could see it.
 
 **The 41 files not opened, all 41 of them.** The accounting is given in full because an enumeration
 that does not add up to its own denominator reads as an explanation — that exact mistake stood in
@@ -619,6 +621,9 @@ Bugs and questions go to the project's issue queue on Drupal.org:
 [Issues for Ágora Transparency](https://www.drupal.org/project/issues/agora_transparency). It is open
 and currently empty. There is no release yet, so there is no supported version to report against —
 anything filed today is about work in progress.
+
+A security vulnerability is the exception: never file one in that queue. Report it privately, as
+[`SECURITY.md`](SECURITY.md) describes.
 
 ## License
 

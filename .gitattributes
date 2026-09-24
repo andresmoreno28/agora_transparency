@@ -42,13 +42,13 @@
 #
 #   entries in the tarball
 #     git archive --worktree-attributes HEAD | tar -t | wc -l
-#     -> 375 with these two lines, 377 without
+#     -> 376 with these two lines, 378 without
 #
 #   files at the packaged root
 #     git archive --worktree-attributes HEAD | tar -t | grep -cvE '/'
-#     -> 10 with these two lines, 12 without
+#     -> 11 with these two lines, 13 without
 #
-# Both sides were measured on 2026-09-23 by commenting the two lines out, re-running
+# Both sides were measured on 2026-09-25 by commenting the two lines out, re-running
 # each command, and putting them back - not by adding 2 to the number already here.
 # Run them; do not carry these figures. They read `374` and `nine` from 2026-09-21
 # until `LICENCE-MANIFEST.md` landed at the packaged root, and G8 stayed GREEN across
@@ -56,7 +56,8 @@
 # holds `.gitignore` and `.mailmap` by NAME on its "must NOT travel" list. It never
 # reads these two numbers, so the effect of these lines is guarded and only the prose
 # above them can rot. Removing a line here still turns the gate red rather than
-# quietly restoring the noise.
+# quietly restoring the noise. They read `375` and `10` from 2026-09-23 until
+# `SECURITY.md` joined the packaged root on 2026-09-25, in the commit that moved them.
 #
 # ⚠️ This does NOT reach the `Drupal CMS` CI job, and that is a property worth knowing
 # rather than a gap: that job installs this package through a Composer PATH REPOSITORY,

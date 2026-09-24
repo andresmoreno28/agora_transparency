@@ -170,12 +170,18 @@ PRODUCT_ERE='Ágora|Agora|agora_transparency'
 # heading that has already named the product. The closed world caught them the
 # moment they were written, with `findings: 2`, which is the mechanism working
 # rather than an obstacle to route around.
+#
+# SECURITY.md joined on 2026-09-25 (T-0618) by the same test, and it was caught
+# the same way: `findings: 1`, the first time the closed world ran over it. A
+# reporter opens it with no other context - the GitHub mirror shows it as the
+# repository's security policy, and a reviewer finds it at the tarball's root.
 IDENTITY_FILES='recipe.yml
 composer.json
 README.md
 AGENTS.md
 recommended.yml
 LICENCE-MANIFEST.md
+SECURITY.md
 content/PEOPLE.md
 content/MEDIA-LICENCES.md'
 

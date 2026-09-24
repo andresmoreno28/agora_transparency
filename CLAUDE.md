@@ -782,10 +782,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   closing it. It is closed.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **475** tracked files to cspell, which **checks 434** and
-  finds 0 issues (re-measured 2026-09-24 after T-0635 added `tests/src/Traits/NoUsageReportingTrait.php`
-  and `tests/bin/no-usage-reporting`, **both figures predicted from disk before the run: +2 each, gap
-  held at 41**; it read **473/432** from 2026-09-23, after `16e7182` added one tracked research file,
+  `bash tests/bin/spellcheck` offers **476** tracked files to cspell, which **checks 435** and
+  finds 0 issues (re-measured 2026-09-25 after T-0618 added `SECURITY.md`, **both figures predicted
+  from disk before the run: +1 each, gap held at 41**; it read **475/434** from 2026-09-24, after
+  T-0635 added `tests/src/Traits/NoUsageReportingTrait.php` and `tests/bin/no-usage-reporting`, when
+  both figures were predicted from disk the same way: +2 each; it read **473/432** from 2026-09-23, after `16e7182` added one tracked research file,
   when both figures were predicted from disk the same way: +1 each; it read
   **472/431** from 2026-09-21 until then — see the correction immediately below; it read
   **470/429** earlier the same day, when **this commit adds three files — `tests/bin/ported-copies`, `tests/bin/ported-drift` and `tests/bin/ported-from-theme.manifest`, T-0622 — and moved the denominator
@@ -793,7 +794,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   on 2026-09-06, **426/387** on 2026-08-26 at T-806's audit, 183/178 before that and 87/82 before
   that).
   ⚠️ **The gap held at 41 across that move, and that is the half worth checking.** Three text
-  files were added and cspell opened all three: 475 − 434 = 41, the same 37 binaries and 4 globs
+  files were added and cspell opened all three: 476 − 435 = 41, the same 37 binaries and 4 globs
   accounted for below. **Both figures were PREDICTED before the run and the run returned exactly
   470 and 429** on the day that sentence was written, which is the only way a denominator claim is
   worth anything.
@@ -821,7 +822,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   enumeration, and the shortfall this paragraph used to admit is closed.** **37** are binaries
   cspell does not read — **34 PDF, 2 WebP and 1 PNG** — and **4** are matched by the upstream
   ignore globs (`.eslintrc.json` by `**/.*.json`, `.gitignore` by `.*ignore`, `LICENSE.txt` and
-  `composer.json` by name). **37 + 4 = 41**, and 475 − 41 = **434**, the number cspell prints.
+  `composer.json` by name). **37 + 4 = 41**, and 476 − 41 = **435**, the number cspell prints.
   ⚠️ **This line read `456 − 41 = 415` until 2026-09-21 — stale by SIXTEEN, three denominators
   behind the bullet above it**, which is the same defect its own next paragraph describes and is
   why that paragraph is no longer the worst instance in this file.
@@ -1265,9 +1266,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
   gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
   The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
-  prints `examined: 475 tracked file(s)` · `scripts: 38` · `findings: 0` today, re-run 2026-09-24
-  (T-0635 added one script, `tests/bin/no-usage-reporting`, and one file that is not a script, the
-  trait - so both counts moved, each by exactly its own arrival; it read `473` and `37` from
+  prints `examined: 476 tracked file(s)` · `scripts: 38` · `findings: 0` today, re-run 2026-09-25
+  (T-0618 added `SECURITY.md`, which is not a script, so only the examined count moved; it read
+  `475` and `38` from 2026-09-24, when T-0635 added one script, `tests/bin/no-usage-reporting`, and
+  one file that is not a script, the trait - so both counts moved, each by exactly its own arrival; it read `473` and `37` from
   2026-09-23, and `472` and `37` from 2026-09-21 until `16e7182` added one non-script file — so the
   examined count moved and the script count, correctly, did not; `470` and `36` earlier on the 21st, `467` and `34` before that, `456` and `30` on
   2026-09-20, `455` before T-1310 added one config file, and `451` on 2026-09-12). **The +1 script
