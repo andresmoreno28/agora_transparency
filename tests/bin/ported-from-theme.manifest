@@ -326,6 +326,60 @@
 # DECLARED_COMMITS moves with source_commit. This regeneration needed a fifth file the
 # four steps never mention, and the place to say so is the one the next person reads first.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-24 - preflight, THE FIRST TIME THIS RECORD'S SOURCE MOVED, and the
+# change was about safety rather than lint: the theme's ff91c7c took the default rig away. Both
+# copies fell back to ~/agora-smoke whenever no rig was named, and that directory is
+# [andres]'s live preview. Same record, same four steps.
+#
+#   1. tests/bin/ported-drift FIRST, after ff91c7c was on drupalcode and before this copy moved:
+#      3 records compared, 3 read, 3 provenance verified, **1 behind** 1.x at ff91c7c3 -
+#      preflight, +181/-65 across 1 commit, oldest drift 0 day(s), 0 past the cap,
+#      0 findings, network READ anonymously.
+#   2. Per hunk, against the theme's own diff 82201a6..ff91c7c. Five hunks, ALL FIVE TAKEN, each
+#      in this copy's terms - which is why this copy moved by +200/-81 where its source moved
+#      by +181/-65:
+#        H1 header       the no-default section, the quoted usage and the exit line. This
+#                        copy keeps its own examples (--with-wave3) and states its OWN
+#                        evidence: its lint-work-template/ left in the preview at 2026-09-06
+#                        14:55, and its cache there written as late as 2026-09-24 00:47.
+#        H2 arguments    which jobs need a rig is decided up front, and a missing rig stops
+#                        the run before the banner - over this copy's four rig jobs.
+#        H3 the rig      the block that reaches the container host moved ahead of the
+#                        host-side jobs - THIS copy's block, byte for byte, not the theme's,
+#                        whose comments differ - and the program that resolves the rig and
+#                        refuses the preview, whose code is the theme's line for line and
+#                        whose HOME note keeps this copy's wording.
+#        H4 rig side     handed the resolved path, never the string as typed.
+#        H5 rig script   no default and no tilde expansion left in it.
+#      And three edits with no counterpart in the theme, because the sentences exist only
+#      here: the shared-rig paragraph and the linted-copy comment both said "the same
+#      default rig", and the bash -n note counted THREE shell programs where there are now
+#      FOUR.
+#   3. source_commit read with `git -C <theme checkout> rev-parse HEAD` at the moment of
+#      copying, as this procedure says, and confirmed on drupalcode before it was written
+#      here; source_sha256 from the blob at that commit over the API, byte-identical to the
+#      theme checkout's; local_sha256 with sha256sum from the file committed. All three
+#      substituted by command, never typed. DECLARED_COMMITS in ported-copies moves in the
+#      same commit, and the set becomes THREE: executable-bit stays at 82201a6, because its
+#      source has not moved and a record is dated by when it was read.
+#   4. ported-drift re-run afterwards: 3 / 3 / 3, **0 behind**, 0 past the cap, 0 findings;
+#      ported-copies 3 verified, 3 source commits on disk and 3 declared, 0 findings.
+#
+# ⚠️ WATCHED REFUSING IN BOTH DIRECTIONS BEFORE THE RECORD WAS ALLOWED TO MOVE. With the copy
+# edited and this record not, ported-copies printed EDITED for preflight, `verified: 2`,
+# `findings: 1`, exit 1. And with the record pointed at ff91c7c while drupalcode could not yet
+# serve it, ported-copies was satisfied - 3 verified, 0 findings - and ported-drift was not:
+# `preflight:source_commit` "answered 404 ... Provenance that only exists on one machine is
+# not provenance.", 1 finding, exit 1. That is why this commit waited for the theme's push
+# instead of landing beside it: an offline check that agrees with a record is not a
+# provenance check.
+#
+# What else changed HERE: nothing outside the three files a regeneration of this record
+# always touches. tests/bin/ported-copies' comment above DECLARED_COMMITS said two and says
+# three, sitting over the three-line list it describes; its finding sentence and this
+# file's footer stated the set's size as two and now state no size at all.
+#
 # script            role       status    local_sha256                                                    source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -364,7 +418,12 @@ executable-bit     invariant  adapted   9c1eeadc656e45af94dca93829d19c136ff3f0cf
 # 43505f2 hashes to 5201a2cc..., which is NOT what was taken. Recording the birth commit
 # because it is the one a reader would guess at would have produced a record that fails its
 # own hash check.
-preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00a5932b3a4c415f5db35a88a3 tests/bin/preflight             054957aefaa94bb5ab3b697f94b956fd01a946a9bd3bf5d0685141371d4b982f 82201a6a779f5f9bc6ee7bfe2b9782ef78af2dd4
+#
+# RE-SYNCED 2026-09-24 at ff91c7c, the theme commit that took the default rig away, so the
+# record below names that commit and no longer 82201a6. The paragraph above is the account
+# of the ORIGINAL port and stays as one; the regeneration note at the top of this file has
+# the rest.
+preflight          preflight  adapted   e1ce157c4c1a406140ca4f6b84ad26afb4344222250b921c70235506b0e6ace0 tests/bin/preflight             ee0df94a21ca98f70274eb16bf98907f5f38602b11f26d3b76654505a76adaff ff91c7c344cb964b4dab97bcb38e764e7234a065
 #
 # -----------------------------------------------------------------------------------------
 # packaged-claims - written 2026-09-21 in d7cd919, role `invariant`, gate-a-wave1.sh G11.
@@ -386,7 +445,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 packaged-claims    invariant  adapted   b40a263080118d1d4d0cc310a1e04279dab26cbd0a06525af4929ed88f2edf3a tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
 #
 # -----------------------------------------------------------------------------------------
-# TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own
+# THE SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own
 # independent copy of the distinct source commits above and compares the two sets, so a
 # half-finished re-sync - some records moved forward, some left behind, every individual
 # record still telling the truth about itself - fails, because the SET stops matching the

@@ -63,12 +63,12 @@
 # machine once and produced a rig serving stale code. The copy goes to <rig>/lint-work-template/,
 # a sibling of web/, and the script refuses to run if that path ever resolves inside web/.
 #
-# ⚠️ THE DIRECTORY NAME IS DELIBERATELY NOT `lint-work`. agora_theme's preflight uses that name
-# in the SAME default rig (~/agora-smoke). Two repositories writing one path is two repositories
-# clobbering each other's tree, and the symptom would be a linter reporting confidently about the
-# other project's files. `lint-work-tools` IS shared on purpose - it holds nothing but
-# parallel-lint, installed from the same constraint by both - and that is stated rather than left
-# to look like an oversight.
+# ⚠️ THE DIRECTORY NAME IS DELIBERATELY NOT `lint-work`. agora_theme's preflight uses that name,
+# and the two scripts are regularly pointed at the SAME rig. Two repositories writing one path is
+# two repositories clobbering each other's tree, and the symptom would be a linter reporting
+# confidently about the other project's files. `lint-work-tools` IS shared on purpose - it holds
+# nothing but parallel-lint, installed from the same constraint by both - and that is stated
+# rather than left to look like an oversight.
 #
 # ---------------------------------------------------------------------------------------------
 # WHAT THIS IS NOT.
@@ -85,21 +85,63 @@
 # to decide. Running it is a habit; the gate is elsewhere. tests/bin/executable-bit, which this
 # script also runs, IS in the gate - as wave 1's G10 - because it needs nothing but git.
 #
-# Usage:
-#   bash tests/bin/preflight                  # every covered job
-#   bash tests/bin/preflight phpcs eslint     # a subset - the banner says SUBSET, loudly
-#   bash tests/bin/preflight --list           # the coverage split and nothing else
-#   bash tests/bin/preflight --with-wave3     # also run gate-a-wave3.sh (~35 minutes)
-#   AGORA_RIG=~/some-other-rig bash tests/bin/preflight
+# ---------------------------------------------------------------------------------------------
+# THERE IS NO DEFAULT RIG, AND ONE RIG IS REFUSED BY NAME.
 #
-# Exit: 0 clean · 1 a covered job reported a finding · 2 the run could not be made faithful.
+# Until 2026-09-24 a run that named no rig fell back to ~/agora-smoke. That directory is not a
+# throwaway rig: it is [andres]'s live preview, the one site on this machine a person has open in
+# a browser, and it must never be written into or taken down. This script WRITES into its rig -
+# it deletes and rebuilds <rig>/lint-work-template/ on every run and keeps a cache directory
+# beside it - and it runs commands inside the rig's container. A tool whose default target is the
+# one site somebody is looking at is a standing risk, whether or not it has gone off yet.
+#
+# It had already written there. Measured on 2026-09-24, before this change, by listing the
+# preview rather than by reasoning about it: ~/agora-smoke held a lint-work-template/ tree left by
+# a run of this script at 2026-09-06 14:55 (+0200), and this script had fetched into its
+# lint-work-template-cache/ there as recently as 2026-09-24 00:47 - so it was still being run
+# against the preview, by default or by name, on the day the rule changed. agora_theme's copy had
+# left a complete lint-work/ tree there on 2026-09-07. Nothing is known to have broken. That is
+# luck, not a property of the script.
+#
+# So there are two rules, and both are applied BEFORE any job runs:
+#
+#   1. AGORA_RIG, or --rig, is REQUIRED whenever a rig-side job is selected - which a full run
+#      always does. There is no fallback of any kind: a missing rig is an error that names the
+#      variable and shows an example. --list and a host-side-only subset touch no rig and are
+#      not asked for one.
+#   2. A rig that RESOLVES to the preview is refused, by name. The comparison is made on the
+#      container host, between PHYSICAL paths, never between the strings as typed: ~/agora-smoke,
+#      the same directory written absolutely, with a trailing slash, through a symlink, or
+#      through a bind mount (`-ef`: same device, same inode) are all the preview. So is anything
+#      INSIDE it - a rig at ~/agora-smoke/web would put the lint tree in the preview's docroot,
+#      and ddev finds its project by walking UP from the directory it is run in.
+#
+# There is deliberately no switch that turns the refusal off. A guard that can silence itself in
+# one keystroke is the thing it was built to prevent.
+#
+# Usage - every example that needs a rig names one, because there is no default to fall back on:
+#   AGORA_RIG='~/agora-t0615' bash tests/bin/preflight               # every covered job
+#   AGORA_RIG='~/agora-t0615' bash tests/bin/preflight phpcs eslint  # a subset - the banner says SUBSET
+#   AGORA_RIG='~/agora-t0615' bash tests/bin/preflight --with-wave3  # also gate-a-wave3.sh (~35 minutes)
+#   bash tests/bin/preflight --rig '~/agora-t0615' phpstan           # --rig is AGORA_RIG as an option
+#   bash tests/bin/preflight cspell agora-invariants                 # host side only - no rig needed
+#   bash tests/bin/preflight --list                                  # the coverage split, nothing else
+#
+# THE QUOTES AROUND '~/...' ARE LOAD-BEARING ON WINDOWS. Unquoted, Git Bash expands the tilde to
+# the WINDOWS home before this script ever sees it, and the rig is then looked for at a /c/Users
+# path that does not exist inside WSL. Quoted, the tilde reaches the container host and is
+# expanded there, against the account the rig actually belongs to.
+#
+# Exit: 0 clean · 1 a covered job reported a finding · 2 the run could not be made faithful,
+# which includes a missing rig and a refused one.
 #
 # ---------------------------------------------------------------------------------------------
-# ⚠️ `bash -n` ON THIS FILE CHECKS ONLY THE OUTER THIRD OF IT, and believing otherwise cost a rig
-# round-trip while writing it. There are THREE shell programs here: this one, the one that runs
-# on the container host, and the one that runs inside the container. The latter two live inside
-# QUOTED here-documents, so to the outer shell they are literal text rather than code - `bash -n`
-# reported OK over a middle layer that could not parse at all.
+# ⚠️ `bash -n` ON THIS FILE CHECKS ONLY ITS OUTER LAYER, and believing otherwise cost a rig
+# round-trip while writing it. There are FOUR shell programs here - three until 2026-09-24: this
+# one; two that run on the container host, the short one that resolves the rig and refuses the
+# preview and the one that stages and runs the jobs; and the one that runs inside the container.
+# The last three live inside QUOTED here-documents, so to the outer shell they are literal text
+# rather than code - `bash -n` reported OK over a middle layer that could not parse at all.
 #
 # To check a nested layer, extract that here-document body and run `bash -n` over it. The obvious
 # copy-paste command is deliberately NOT written out here: any sed range naming the heredoc
@@ -275,6 +317,22 @@ SUBSET=0
 if [ -n "$WANTED" ]; then SUBSET=1; else WANTED="$COVERED"; fi
 wanted() { printf '%s\n' "$WANTED" | grep -qxF "$1"; }
 
+# ------------------------------------------------------------------------ the rig, required ---
+# WHICH JOBS NEED A RIG IS DECIDED HERE, before anything runs, because the rule below depends on
+# it and a requirement discovered after the host-side jobs have run is discovered minutes late.
+RIG_JOBS=''
+for j in composer-lint eslint phpcs phpstan; do
+  wanted "$j" && RIG_JOBS="$RIG_JOBS $j"
+done
+RIG_JOBS=${RIG_JOBS# }
+
+# NO DEFAULT RIG (see the header). This half needs only the string, so it stops the run before
+# the banner and the reason is the first thing on the screen. Resolving the rig and refusing the
+# preview need the container host, and happen below - still before any job.
+if [ "$LIST_ONLY" -eq 0 ] && [ -n "$RIG_JOBS" ] && [ -z "$RIG_OVERRIDE" ]; then
+  fatal "AGORA_RIG is not set and no --rig was given, and this run includes rig-side jobs ($RIG_JOBS). There is NO default rig: the old one was ~/agora-smoke, the live preview, which this script must never write into. Name a throwaway rig, quoted so the tilde reaches the container host - for example:  AGORA_RIG='~/agora-t0615' bash tests/bin/preflight"
+fi
+
 # --------------------------------------------------------------------------------- banner ---
 COVERED_N=$(printf '%s\n' "$COVERED" | grep -c .)
 UNCOVERED_N=$(printf '%s\n' "$UNCOVERED" | grep -c .)
@@ -310,6 +368,118 @@ fi
 if [ "$LIST_ONLY" -eq 1 ]; then
   printf '\n(--list: the coverage split and nothing else)\n'
   exit 0
+fi
+
+# ==============================================================================================
+# THE RIG - reached, resolved and vetted BEFORE any job runs, the host-side ones included.
+# ==============================================================================================
+# The refusal belongs before the first job, not merely before the first write. A run that spends
+# minutes on the host-side jobs and THEN refuses has been pointed at the preview for all of them,
+# and to anyone watching it reads like a run that went there and failed.
+if [ -n "$RIG_JOBS" ]; then
+
+  # ------------------------------------------------------------------ where the tools answer ---
+  # ON A WINDOWS HOST THIS ALWAYS HOPS INTO WSL, and it does NOT ask whether a Windows-side ddev
+  # exists first. It does exist on this machine, in C:\Program Files - and taking it is a bug,
+  # not a fallback. The container engine and every rig live INSIDE WSL2; the Windows ddev
+  # resolves happily, runs against a different world, and its very first act is to look for the
+  # rig under a Windows home directory that a Linux path can never be. "A tool that resolves" and
+  # "the tool the work needs" are different claims, and the gap between them keeps costing
+  # pipelines (I-046).
+  HOP=''; WSL_EXE=''
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*)
+      WSL_EXE=$(command -v wsl.exe 2>/dev/null)
+      [ -z "$WSL_EXE" ] && WSL_EXE=$(command -v wsl 2>/dev/null)
+      [ -n "$WSL_EXE" ] || fatal 'this is a Windows host and there is no wsl.exe to reach the rig through'
+      MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$WSL_EXE" -e bash -lc 'command -v ddev >/dev/null 2>&1' \
+        || fatal 'no ddev inside WSL, which is where this machine keeps its container engine and its rigs. A ddev on the Windows PATH is not a substitute and is deliberately not used.'
+      HOP=wsl ;;
+    *)
+      command -v ddev >/dev/null 2>&1 || fatal 'ddev is not on PATH and this host is not Windows, so there is nowhere to hop to'
+      HOP=none ;;
+  esac
+
+  # The repository as the container host will see it.
+  if [ "$HOP" = wsl ]; then
+    RIG_REPO=$(MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
+      "$WSL_EXE" -e wslpath -a "$REPO_ROOT" 2>/dev/null | tr -d '\r' | tr -d '\0')
+    [ -n "$RIG_REPO" ] || RIG_REPO=$(printf '%s' "$REPO_ROOT" | sed -E 's|^([a-zA-Z]):|/mnt/\L\1|')
+  else
+    RIG_REPO="$REPO_ROOT"
+  fi
+
+  # The rig script is piped in rather than written to disk: nothing this script does leaves an
+  # artefact in the repository, so there is no cache directory to ignore and nothing downloaded
+  # can ever be committed by accident.
+  run_in_rig() { # <stdin: the script> <args...>
+    if [ "$HOP" = wsl ]; then
+      MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$WSL_EXE" -e bash -s -- "$@"
+    else
+      bash -s -- "$@"
+    fi
+  }
+
+  # ------------------------------------------------------------ the rig, resolved and vetted ---
+  # ONE mechanism decides where the work lands, and it runs on the CONTAINER HOST, because that
+  # is the only place a path like ~/agora-t0615 means anything. It expands the tilde, resolves
+  # the result to a physical path and refuses the preview; what it prints back is the resolved
+  # path, and THAT - never the string as typed - is what the rig side below is handed. The rig
+  # side expands nothing and has no default, so nothing downstream can quietly disagree with it.
+  RIG_VET_OUT=$(run_in_rig "$RIG_OVERRIDE" <<'RIG_VET'
+set -u
+RIG=${1:-}
+die() { printf '##FATAL|%s\n' "$*"; exit 2; }
+
+# HOME IS NOT USABLE HERE, and this cost a run in the sibling repository. When this script is
+# piped into WSL from Git Bash the Windows HOME comes with it, so `$HOME` reads /c/Users/...
+# inside a Linux shell and the rig is looked for at a path that cannot exist. The home directory
+# is therefore read from the password database, which describes the account this shell is
+# actually running as.
+REAL_HOME=$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)
+[ -n "$REAL_HOME" ] || REAL_HOME=$(cd ~ 2>/dev/null && pwd)
+[ -n "$REAL_HOME" ] || die 'cannot determine this account'"'"'s home directory, so neither a ~ in the rig path nor the preview can be located - and a rig that cannot be compared with the preview is not used'
+[ -n "$RIG" ] || die 'no rig reached the container host. There is no default, and this layer never invents one.'
+case "$RIG" in
+  '~')   RIG=$REAL_HOME ;;
+  '~/'*) RIG="$REAL_HOME/${RIG#\~/}" ;;
+esac
+
+# PHYSICAL PATHS, NEVER STRINGS. `cd -P` then `pwd -P` resolves every symlink, `.`, `..`, doubled
+# slash and trailing slash away, so every spelling of one directory prints the same line. The
+# preview is resolved the same way; if it does not exist on this machine its plain path stands in,
+# which is safe - the rig has just been shown to exist, so it cannot be a directory that does not.
+physical() { ( cd -P -- "$1" 2>/dev/null && pwd -P ); }
+RIG_REAL=$(physical "$RIG")
+[ -n "$RIG_REAL" ] || die "no rig at $RIG. Point AGORA_RIG, or --rig, at a ddev project holding a built Drupal. If that path begins /c/Users, the tilde was expanded by the calling shell before it got here - quote it: AGORA_RIG='~/agora-t0615'."
+PREVIEW="$REAL_HOME/agora-smoke"
+PREVIEW_REAL=$(physical "$PREVIEW")
+[ -n "$PREVIEW_REAL" ] || PREVIEW_REAL=$PREVIEW
+
+REFUSED="REFUSED: the rig resolves to $RIG_REAL, and that is ~/agora-smoke ($PREVIEW_REAL) or a directory inside it - the LIVE PREVIEW, not a throwaway rig. This script deletes and rebuilds a lint tree in its rig and runs commands in the rig's container, and the preview must never be written into or taken down. Point AGORA_RIG at a throwaway rig instead, for example AGORA_RIG='~/agora-t0615'. Nothing turns this refusal off."
+case "$RIG_REAL/" in "$PREVIEW_REAL/"*) die "$REFUSED" ;; esac
+# The same directory reached through a bind mount has a different path and the same inode.
+if [ -e "$PREVIEW" ] && [ "$RIG_REAL" -ef "$PREVIEW" ]; then die "$REFUSED"; fi
+
+printf '##RIG|%s\n' "$RIG_REAL"
+printf '##PREVIEW|%s\n' "$PREVIEW_REAL"
+RIG_VET
+  )
+  RIG_VET_RC=$?
+  if printf '%s\n' "$RIG_VET_OUT" | grep -q '^##FATAL|'; then
+    fatal "$(printf '%s\n' "$RIG_VET_OUT" | sed -n 's/^##FATAL|//p' | head -1)"
+  fi
+  RIG_RESOLVED=$(printf '%s\n' "$RIG_VET_OUT" | sed -n 's/^##RIG|//p' | tr -d '\r' | head -1)
+  PREVIEW_RESOLVED=$(printf '%s\n' "$RIG_VET_OUT" | sed -n 's/^##PREVIEW|//p' | tr -d '\r' | head -1)
+  [ "$RIG_VET_RC" -eq 0 ] && [ -n "$RIG_RESOLVED" ] \
+    || fatal "the rig could not be resolved on the container host (exit $RIG_VET_RC). A rig that was not compared with the preview is not used."
+
+  printf '\nRIG - resolved on the container host before any job runs\n'
+  printf '  given:     %s\n' "$RIG_OVERRIDE"
+  printf '  resolved:  %s\n' "$RIG_RESOLVED"
+  printf '  preview:   %s - refused by name; the rig above is neither it nor inside it\n' "$PREVIEW_RESOLVED"
+else
+  printf '\nRIG - not needed: no rig-side job is selected, so none is resolved and none is touched\n'
 fi
 
 # ==============================================================================================
@@ -400,57 +570,11 @@ fi
 # ==============================================================================================
 # RIG SIDE - the four jobs that need core's node modules and the project's PHP toolchain.
 # ==============================================================================================
-RIG_JOBS=''
-for j in composer-lint eslint phpcs phpstan; do
-  wanted "$j" && RIG_JOBS="$RIG_JOBS $j"
-done
-RIG_JOBS=${RIG_JOBS# }
-
+# The rig was reached, resolved and vetted above, before the host-side jobs ran. What is handed
+# over here is that RESOLVED path, never the string as typed.
 if [ -n "$RIG_JOBS" ]; then
 
-  # ------------------------------------------------------------------ where the tools answer ---
-  # ON A WINDOWS HOST THIS ALWAYS HOPS INTO WSL, and it does NOT ask whether a Windows-side ddev
-  # exists first. It does exist on this machine, in C:\Program Files - and taking it is a bug,
-  # not a fallback. The container engine and every rig live INSIDE WSL2; the Windows ddev
-  # resolves happily, runs against a different world, and its very first act is to look for the
-  # rig under a Windows home directory that a Linux path can never be. "A tool that resolves" and
-  # "the tool the work needs" are different claims, and the gap between them keeps costing
-  # pipelines (I-046).
-  HOP=''; WSL_EXE=''
-  case "$(uname -s 2>/dev/null)" in
-    MINGW*|MSYS*|CYGWIN*)
-      WSL_EXE=$(command -v wsl.exe 2>/dev/null)
-      [ -z "$WSL_EXE" ] && WSL_EXE=$(command -v wsl 2>/dev/null)
-      [ -n "$WSL_EXE" ] || fatal 'this is a Windows host and there is no wsl.exe to reach the rig through'
-      MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$WSL_EXE" -e bash -lc 'command -v ddev >/dev/null 2>&1' \
-        || fatal 'no ddev inside WSL, which is where this machine keeps its container engine and its rigs. A ddev on the Windows PATH is not a substitute and is deliberately not used.'
-      HOP=wsl ;;
-    *)
-      command -v ddev >/dev/null 2>&1 || fatal 'ddev is not on PATH and this host is not Windows, so there is nowhere to hop to'
-      HOP=none ;;
-  esac
-
-  # The repository as the container host will see it.
-  if [ "$HOP" = wsl ]; then
-    RIG_REPO=$(MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
-      "$WSL_EXE" -e wslpath -a "$REPO_ROOT" 2>/dev/null | tr -d '\r' | tr -d '\0')
-    [ -n "$RIG_REPO" ] || RIG_REPO=$(printf '%s' "$REPO_ROOT" | sed -E 's|^([a-zA-Z]):|/mnt/\L\1|')
-  else
-    RIG_REPO="$REPO_ROOT"
-  fi
-
-  # The rig script is piped in rather than written to disk: nothing this script does leaves an
-  # artefact in the repository, so there is no cache directory to ignore and nothing downloaded
-  # can ever be committed by accident.
-  run_in_rig() { # <stdin: the script> <args...>
-    if [ "$HOP" = wsl ]; then
-      MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$WSL_EXE" -e bash -s -- "$@"
-    else
-      bash -s -- "$@"
-    fi
-  }
-
-  RIG_OUT=$(run_in_rig "$RIG_REPO" "$RIG_OVERRIDE" "$PKG" "$RIG_JOBS" <<'RIG_SCRIPT'
+  RIG_OUT=$(run_in_rig "$RIG_REPO" "$RIG_RESOLVED" "$PKG" "$RIG_JOBS" <<'RIG_SCRIPT'
 set -u
 REPO=$1
 RIG=${2:-}
@@ -461,17 +585,12 @@ say()  { printf '%s\n' "$*"; }
 die()  { printf '##FATAL|%s\n' "$*"; exit 2; }
 res()  { printf '##RESULT|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4"; }
 
-# HOME IS NOT USABLE HERE, and this cost a run in the sibling repository. When this script is
-# piped into WSL from Git Bash the Windows HOME comes with it, so `$HOME` reads /c/Users/...
-# inside a Linux shell and the rig is looked for at a path that cannot exist. The home directory
-# is therefore read from the password database, which describes the account this shell is
-# actually running as.
-REAL_HOME=$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)
-[ -n "$REAL_HOME" ] || REAL_HOME=$(cd ~ 2>/dev/null && pwd)
-[ -n "$REAL_HOME" ] || die 'cannot determine this account'"'"'s home directory, so the default rig path cannot be built'
-[ -n "$RIG" ] || RIG="$REAL_HOME/agora-smoke"
-case "$RIG" in '~/'*) RIG="$REAL_HOME/${RIG#\~/}" ;; esac
-
+# THE RIG ARRIVES RESOLVED AND VETTED, and it is used exactly as given. The step that ran on this
+# host before any job expanded the tilde, resolved the physical path and refused the preview;
+# this layer expands nothing and has NO DEFAULT, so there is one place that decides where the
+# work lands. An empty argument is a caller that skipped that step, and it stops here rather
+# than being filled in.
+[ -n "$RIG" ] || die 'no rig was handed to the rig side. There is no default, and this layer never invents one.'
 [ -d "$RIG" ] || die "no rig at $RIG. Point this at a ddev project holding a built Drupal, with AGORA_RIG or --rig."
 command -v ddev   >/dev/null 2>&1 || die 'ddev is not on PATH inside the container host'
 command -v rsync  >/dev/null 2>&1 || die 'rsync is not on PATH - it is how the line-ending-normalised copy is made'
@@ -562,9 +681,9 @@ say "  rig       $RIG (container root $CONTAINER_ROOT)"
 # ---------------------------------------------------------------------- the linted copy ---
 # OUTSIDE THE DOCROOT, ALWAYS. A second copy of this package under web/ wins Drupal's extension
 # discovery race and gets served - which has already happened once on this machine. The name is
-# lint-work-template rather than lint-work because agora_theme's preflight uses lint-work in this
-# same default rig, and two repositories writing one path is two repositories clobbering each
-# other's tree.
+# lint-work-template rather than lint-work because agora_theme's preflight uses lint-work, the two
+# are regularly pointed at one rig, and two repositories writing one path is two repositories
+# clobbering each other's tree.
 LW="$RIG/lint-work-template"
 case "$LW" in "$RIG/web/"*) die 'the lint tree would land inside the docroot' ;; esac
 rm -rf "$LW"; mkdir -p "$LW/base/$PKG" || die "cannot create $LW"

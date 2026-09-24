@@ -78,13 +78,15 @@ DECLARED_RECORDS='executable-bit
 preflight
 packaged-claims'
 
-# Two commits, and the reason there are two is recorded in the manifest beside each record:
-# the first two files were copied together on 2026-09-06 at the theme's HEAD of that moment,
-# and packaged-claims was copied on 2026-09-21 and re-synced on 2026-09-24, each time at the
-# theme's HEAD of that moment. Making the set uniform would mean back-dating a record to a
-# commit nobody read.
+# Three commits, and the reason there is more than one is recorded in the manifest beside
+# each record: executable-bit was copied on 2026-09-06 at the theme's HEAD of that moment and
+# its source has not moved since; preflight was copied with it and re-synced on 2026-09-24,
+# when the theme's copy stopped defaulting to the live preview; and packaged-claims was copied
+# on 2026-09-21 and re-synced on 2026-09-24, each time at the theme's HEAD of that moment.
+# Making the set uniform would mean re-dating a record to a commit at which nobody read it.
 DECLARED_COMMITS='82201a6a779f5f9bc6ee7bfe2b9782ef78af2dd4
-a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b'
+a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
+ff91c7c344cb964b4dab97bcb38e764e7234a065'
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -357,7 +359,7 @@ COMMIT_N=$(printf '%s\n' "$COMMIT_SET" | sed '/^$/d' | wc -l | tr -d '[:space:]'
 COMMIT_DECL_N=$(printf '%s\n' "$COMMIT_DECL" | sed '/^$/d' | wc -l | tr -d '[:space:]')
 [ "${COMMIT_DECL_N:-0}" -gt 0 ] || fatal 'DECLARED_COMMITS in this script is empty, so the commit-set comparison would pass by construction (I-028).'
 if [ "$COMMIT_SET" != "$COMMIT_DECL" ]; then
-  finding 'manifest' 'source_commit' "the distinct source commits on disk are [$(printf '%s' "$COMMIT_SET" | tr '\n' ' ')] and tests/bin/ported-copies declares [$(printf '%s' "$COMMIT_DECL" | tr '\n' ' ')]. A set of source commits is not automatically wrong - the manifest explains why there are two - but an UNDECLARED one is, because a re-sync that moved some records and not others leaves every record telling the truth and the set telling a lie."
+  finding 'manifest' 'source_commit' "the distinct source commits on disk are [$(printf '%s' "$COMMIT_SET" | tr '\n' ' ')] and tests/bin/ported-copies declares [$(printf '%s' "$COMMIT_DECL" | tr '\n' ' ')]. A set of source commits is not automatically wrong - the manifest explains why there is more than one - but an UNDECLARED one is, because a re-sync that moved some records and not others leaves every record telling the truth and the set telling a lie."
 fi
 note "distinct on disk: $COMMIT_N; declared: $COMMIT_DECL_N"
 
