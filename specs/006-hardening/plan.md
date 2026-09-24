@@ -1,8 +1,11 @@
 # Unit 006 · Hardening — plan
 
 Scaffolded by `orquestador` 2026-09-21, written here by [ejecutor]. **Nothing is signed scope.**
-Open decisions are in `open-questions.md`; three need [andres] before this plan fully means
-anything.
+~~Open decisions are in `open-questions.md`; three need [andres] before this plan fully means
+anything.~~ **Amended 2026-09-24: all six proposals in `open-questions.md` are signed** — D-060,
+D-061 and D-064 by [andres] (`acd2a51`), D-062, D-063 and D-065 by [ejecutor] (`0966558`) — so
+none of this plan's own decisions is still open. What still waits on [andres] is listed once, at
+the end of `open-questions.md`, and is not restated here.
 
 ## §1 · What is stale before you read anything else
 

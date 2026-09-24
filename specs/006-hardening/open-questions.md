@@ -4,7 +4,7 @@ Proposed 2026-09-21. ~~**None is signed.**~~ Held here rather than in `specs/000
 because that file is append-only and signed, and a proposal written into it reads like a ruling.
 
 ⚠️ ~~**Next free number is D-060.**~~ D-059 is signed in `DECISIONS.md`; **D-054 to D-058 are reserved
-and unsigned in unit 005's `open-questions.md` and must not be reused.** Next free idiom: **I-117**.
+and unsigned in unit 005's `open-questions.md` and must not be reused.** ~~Next free idiom: **I-117**.~~
 
 ⚠️ **AMENDED 2026-09-21. THREE OF THE SIX ARE SIGNED, AND THIS FILE WAS NEVER TOLD.** Nothing above
 is edited (rule 8) — both struck clauses were true when they were written and stopped being true the
@@ -22,11 +22,31 @@ left exactly as written.
 ✅ **ALL THREE SIGNED by [andres] 2026-09-23, each as the recommended option B** — recorded in `specs/000-project/DECISIONS.md` by `acd2a51`. **Of this file's six proposals, all six are now signed**: D-062, D-063 and D-065 by [ejecutor] in `0966558`, D-060, D-061 and D-064 by [andres] in `acd2a51`. ⚠️ **D-061's option A was closed by MEASUREMENT before the signature, not by preference**: its own text said it would be wrong if the dashboard had violations, and on 2026-09-23 the dashboard measured 61 violation nodes over 11 pages, 30 of them in Config Guardian's own markup. ⚠️ **This line went stale the day it was written**: the signing commit touched only `DECISIONS.md`, so the one file whose subject is which proposals are unsigned kept saying all three were — found by the agent working the rows, not by a guard.
 
 ⚠️ **And the numbering line went stale by the same commit, which the amendment above would have
-hidden.** **The next free number is `D-066`.** D-060 to D-065 are all allocated — three signed in
-`DECISIONS.md`, three reserved by the unsigned proposals in this file — and this file's own rule,
-stated one line up about D-054 to D-058, is that a reserved number is never reused. Next free idiom
+hidden.** ~~**The next free number is `D-066`.**~~ D-060 to D-065 are all allocated — ~~three signed in
+`DECISIONS.md`, three reserved by the unsigned proposals in this file~~ — and this file's own rule,
+stated one line up about D-054 to D-058, is that a reserved number is never reused. ~~Next free idiom
 is still **I-117**, re-derived from `IDIOMS.md` on the day rather than carried: the highest there
-is **I-116**.
+is **I-116**.~~
+
+⚠️ **AMENDED 2026-09-24 (the audit's G-3 sweep): THE NUMBERING WENT STALE A SECOND TIME, SO IT IS
+NOW A COMMAND AND NOT A FIGURE.** D-066 and D-067 were signed on 2026-09-23 (`33e75cc`) and D-068
+on 2026-09-24 (`7d28c22`), all three by [ejecutor]; I-117 was recorded on 2026-09-23 and I-118 and
+I-119 on 2026-09-24. Derived on the day:
+
+```
+grep -hoE '^#{2,4} +D-[0-9]{3}' specs/000-project/DECISIONS.md specs/*/open-questions.md \
+  | grep -oE 'D-[0-9]{3}' | sort -u | tail -1                                ->  D-068
+grep -ohE '^- I-[0-9]{3}\b' specs/000-project/IDIOMS.md | sort -u | tail -1  ->  - I-119
+```
+
+**Next free decision number: D-069. Next free idiom: I-120.** The first command reads the
+**headings** of `DECISIONS.md` and of every unit's `open-questions.md`, so a number reserved by an
+unsigned proposal counts as taken — which is this file's rule — and D-054 to D-058, still reserved
+and unsigned in unit 005's, are among what it reads. ⚠️ **It reads headings and never prose, and
+that is load-bearing**: the first draft of this paragraph grepped every `D-NNN` under `specs/`, and
+once the sentence naming D-069 was written, that command printed **D-069** — it had read its own
+answer. **Run the commands rather than trusting the figures**: both pairs this line carried before
+these went stale.
 
 ---
 
@@ -182,3 +202,21 @@ signature at `specs/000-project/DECISIONS.md:1810`, and T-0616 is still `⏸ �
 ⚠️ **D-060 is a genuine blocker on this plan's MEANING, not on writing it down.** Without it,
 `plan.md` §3's OUT list and T-0620 are conditional. **D-061 changes wave 3's shape** — 2 rows
 versus 4 versus 12 — **but not its existence**, because the scope-sentence fix is in every branch.
+
+⚠️ **AMENDED 2026-09-24 (the audit's G-3 sweep): THE TABLE ABOVE IS NO LONGER WHAT WAITS ON
+[andres].** It is left as written (rule 8), and its classification still holds — each of its six
+items was correctly placed as not delegable. But **items 1 to 3 are signed**: D-060, D-061 and
+D-064 by [andres] on 2026-09-23 (`acd2a51`), and the one figure D-064 left open, the
+acknowledgement window, by [andres] on 2026-09-24 (D-064's amendment in `DECISIONS.md`). **Of the
+four things D-068 names as his, two were answered the same day**: that window, and whether T-0635
+rests on his instruction (`DECISIONS.md`, *"T-0635 rests on a signature — confirmed by [andres],
+2026-09-24"*). Re-derived on 2026-09-24 from the rows' glyphs and the decision record, **what still
+waits on him**:
+
+| | what | where it stands |
+|---|---|---|
+| 1 | **D-054** — unit 005's ruling on a third package | Reserved and unsigned in `specs/005-ai-and-governance/open-questions.md`. It touches this unit only through the promissory claims inventoried once, in T-0620's cell (D-068's amendment); T-0620 closed without it under D-068(3) |
+| 2 | **D-045** — visual regression on drupalcode | Still `Ruling: B.` with no signature: its own amendment of 2026-09-12 is headed *"NOT SIGNED"*. OUT of this unit's scope (`plan.md` §3) |
+| 3 | **T-0616** and **T-0633** — the two keyboard walkthroughs, by a person | Both `⏸ 👤`; what each has left is `research/2026-09-23-keyboard-measurability.md` §6. T-0617 waits on T-0616, and T-0603's keyboard half is T-0633's |
+| 4 | **T-0618** — one answer | Whether the opt-in to Drupal's security advisory coverage at 15:14 UTC on 2026-09-24 was deliberate. Recorded in T-0618's own row, and not decided here |
+| 5 | **Gate B** | Unchanged — T-0627's HOLD |
