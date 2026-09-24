@@ -83,11 +83,20 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *    so Spanish text under `langcode: en` was both false and untranslatable.
  *    The Spanish reaches a site as a TRANSLATION, from localize.drupal.org,
  *    never from this repository,
- *  - every identifier Ágora owns is prefixed with its functional area
- *    (recipe.yml's seam convention, D-011 rider b). The content model is area
- *    `base`, hence `agora_base_*`; fields additionally keep Drupal's `field_`
- *    prefix, hence `field_agora_base_*`, which also keeps `estado` from
- *    colliding with the `status` base field of a node.
+ *  - the names this test asserts carry their functional area (recipe.yml's
+ *    seam convention, D-011 rider b). The content model is area `base`, hence
+ *    `agora_base_*`; fields additionally keep Drupal's `field_` prefix, hence
+ *    `field_agora_base_*`, which also keeps `estado` from colliding with the
+ *    `status` base field of a node. What is ASSERTED is narrower than the
+ *    convention: the vocabularies, node types, views, and node field
+ *    storages and instances are each compared for set equality against
+ *    literal names, all of which carry the prefix, so an object of one of
+ *    those kinds that lacks it fails. Nothing asserts the prefix as a rule,
+ *    and no test reads the package's other config objects for it - which is
+ *    where the convention's exceptions are. The package-wide rule and those
+ *    exceptions are stated in the header comment of recipe.yml. Until
+ *    2026-09-24 this bullet said every identifier Ágora owns carries the
+ *    prefix, and the objects recipe.yml names as exceptions made that false.
  *
  * The Spanish term the law uses, mapped to the machine name that implements it.
  * This is a glossary for whoever reads the statute next to the code - it is NOT
