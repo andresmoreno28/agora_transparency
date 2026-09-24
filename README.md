@@ -101,8 +101,13 @@ What actually runs, and what it covers:
 login except the Config Guardian dashboard, which is the only page the gate in this repository
 scans signed in and whose findings the shipped statement reports; the listing routes that are not
 scanned, the prose pages — including this statement's own page — and every record page but the one;
-and the three AA criteria axe cannot decide — **2.4.7 Focus Visible, 2.5.8 Target Size (Minimum) and
-1.4.10 Reflow** — plus 2.4.1 Bypass Blocks *in use*.
+and the AA criteria axe cannot decide — **2.4.7 Focus Visible and 1.4.10 Reflow** — plus 2.4.1
+Bypass Blocks *in use*. **2.5.8 Target Size (Minimum) is covered only in part.** axe-core ships its
+`target-size` rule switched off, and the gate in this repository switches it on by name, so every
+page that gate scans has its links and controls measured against the criterion's minimum size and
+spacing, except links inside a line of text, which the criterion exempts — at the single window
+size the gate runs at. What axe reports as undecided, and every other window size, is left to a
+person.
 **No conformance with any WCAG level is claimed.** The shipped accessibility statement carries the
 full account, with the denominators.
 

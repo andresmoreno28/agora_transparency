@@ -231,7 +231,36 @@
 # direction is again the one D-028 permits: every comparison added makes the guard say MORE.
 # Wave 1 stays at 95 checks; the wave-3 figure is 67 since T-0632, not the 66 above.
 #
-# script            role       status    local_sha256                                                     source_path                     source_sha256                                                    source_commit
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-24 (T-0634, WCAG 2.5.8 switched on by name), the same one
+# record, the same four steps in order.
+#
+#   1. tests/bin/ported-drift FIRST, and BEFORE the edit was decided: 3 records compared,
+#      3 read, 3 provenance verified, **0 behind** 1.x at 2134f7bd, oldest drift 0 day(s),
+#      0 past the cap, 0 findings, network READ anonymously. So there was nothing upstream
+#      to take and no per-hunk decision to make.
+#   2. What changed HERE: packaged-claims gained THREE extractions and FOUR comparisons
+#      binding what the shipped accessibility statement and README.md now say about WCAG
+#      2.5.8 - that the gate switches axe-core's `target-size` rule on by name - to
+#      AccessibilityTest: the rule each document names against AXE_RULE_ENABLED_BY_NAME,
+#      every window.axe.run( call against the calls that pass the options, and the
+#      options builder against the one line that enables that constant. And ONE NOT
+#      CHECKED entry, for the window size and the target counts the gate prints and the
+#      prose deliberately does not quote. Nothing came from agora_theme; claims go
+#      32 -> 35, comparisons 44 -> 48, the list 13 -> 14.
+#   3. local_sha256 re-derived with sha256sum from the file on disk and substituted by
+#      command, never typed: 4cfede61... -> 33f5fa04.... source_sha256 and source_commit
+#      UNCHANGED and not retyped, because step 1 proved the source has not moved.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0; ported-copies 3
+#      verified, 0 findings.
+#
+# ⚠️ WATCHED REFUSING THE EDIT BEFORE THE RECORD MOVED, which is the part of step 3 worth
+# keeping: with the script edited and this record not yet regenerated, ported-copies
+# printed `EDITED` for packaged-claims, `verified: 2`, `findings: 1`, exit 1. And the
+# direction is again the one D-028 permits - every comparison added makes the guard say
+# MORE, the G11 checks assert `> 0` rather than a length, and wave 1 stays at 95 checks.
+#
+# script            role       status    local_sha256                                                    source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
 # executable-bit - ported 2026-09-06 in 434e289, role `invariant`, gate-a-wave1.sh G10.
@@ -288,7 +317,7 @@ preflight          preflight  adapted   2ee82b86c175440c3086596a3011877889565e00
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   4cfede61511b817d51f3e0034e1a9c74553158f9a1a55a18a5573ca1935c312e tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
+packaged-claims    invariant  adapted   33f5fa0477294ebfb1510b1e7d15e1dacb316b6bbe59d73803f67a098c40ff71 tests/bin/claims-match-readme   fe3b22f1d644a78108296d93209c8930297db4c2e2af380b385892c4497a7891 d8079ad0aeb63bafb992cab31b37dcc2818f3ce3
 #
 # -----------------------------------------------------------------------------------------
 # TWO SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

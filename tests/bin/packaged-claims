@@ -86,6 +86,7 @@
 #     cspell_binaries    that 37                  vs  the binaries cspell cannot open
 #     readme_login_page  the page gated signed in vs  DASHBOARD_ROUTE in AccessibilityTest
 #     readme_login_only  "the only page"          vs  DECLARED_LOGGED_IN_PAGES in that test
+#     readme_rule_by_name  the axe rule it names  vs  AXE_RULE_ENABLED_BY_NAME in that test
 #
 #   content/MEDIA-LICENCES.md
 #     pdf_count          the PDF count            vs  git ls-files content/file/*.pdf
@@ -115,6 +116,9 @@
 #     admin_contrast_owner   who the contrast failures belong to  vs  the declared set's owners
 #     admin_landmark_owners  who the landmark findings belong to  vs  the declared set's owners
 #     admin_checked_only     "no other page"      vs  DECLARED_LOGGED_IN_PAGES in that test
+#     a11y_rule_by_name      the rule the "Target size." item names  vs  AXE_RULE_ENABLED_BY_NAME
+#     a11y_rule_every_run    every window.axe.run( in the test  vs  those passing __AXE_OPTIONS__
+#     a11y_rule_options_built  the options builder  vs  one line enabling that constant, by name
 #
 #   recipe.yml / composer.json / recommended.yml
 #     description_match  the two descriptions     vs  each other (a bound duplicate, see above)
@@ -955,6 +959,59 @@ compare 'readme_login_page' "$R_LOGIN_PAGE" "$T_DASH_MODULE" \
 compare 'readme_login_only' '1' "$T_LOGGED_IN_PAGES" \
   "DECLARED_LOGGED_IN_PAGES in $A11Y_TEST"
 
+# ============== T-0634: WCAG 2.5.8, and the one rule the gate switches on by name ==
+# axe-core ships `target-size`, its only rule for WCAG 2.5.8, switched OFF, and until T-0634 the
+# gate ran axe with no options at all - so the shipped statement listed 2.5.8 among what a person
+# must confirm and README.md called it a criterion "axe cannot decide". AccessibilityTest now
+# switches the rule on by name in BOTH of its scans, and both documents say so. That is a claim
+# about the TEST, of exactly the kind the dashboard sentences above make, and it is bound the same
+# way: the next change to the test cannot leave the prose saying 2.5.8 is measured when it is not.
+#
+# THE RULE'S NAME IS DERIVED FROM THE PROSE in both files, never typed here - a typed name would
+# compare a constant against a constant. The statement's item is titled "Target size.", which
+# lower-cases and hyphenates to the rule id; README names the rule in backticks.
+#
+# WHAT THIS CANNOT SEE: whether the rule MEASURED anything on a real page. That is a fact about a
+# run, and the test asserts it itself - more than zero targets measured on every page it scans,
+# logged-in page included - because a run is the only place it can be asked.
+claim_once 'target size checked' STATEMENT \
+  '<li><strong>[A-Z][a-z]+ [a-z]+\.</strong> WCAG 2\.2 success criterion 2\.5\.8 asks'
+A_RULE=$(field 1 '.*<li><strong>([A-Z][a-z]+ [a-z]+)\.</strong> WCAG 2\.2 success criterion 2\.5\.8.*' \
+  | tr 'A-Z ' 'a-z-')
+# Extracted and not compared: reword it away from "on by name" and this FATALs in the same commit,
+# the way 'admin scope' does for the dashboard's scoping sentence.
+claim_once 'target size on by name' STATEMENT \
+  'The scan of the pages above switches that rule on by name'
+T_RULE=$(printf '%s\n' "$A11Y_SRC" \
+  | sed -nE "s/^ +private const AXE_RULE_ENABLED_BY_NAME = '([a-z0-9-]+)';.*/\\1/p" | head -1)
+compare 'a11y_rule_by_name' "$A_RULE" "$T_RULE" \
+  "AXE_RULE_ENABLED_BY_NAME in $A11Y_TEST"
+
+# EVERY axe run, not "an" axe run. The anonymous scan and the logged-in one each call
+# window.axe.run( once, and the options splice in through one placeholder; a scan that went back to
+# a default run would still leave the other one green. A count of ZERO calls is refused before the
+# comparison, because two zeros agree (I-028).
+AXE_RUNS=$(printf '%s\n' "$A11Y_SRC" | grep -E 'window\.axe\.run\(' 2>/dev/null \
+  | wc -l | tr -d '[:space:]')
+[ "${AXE_RUNS:-0}" -gt 0 ] || fatal "no window.axe.run( call was found in $A11Y_TEST. The count of runs that switch the rule on would be compared against zero, which agrees with zero and proves nothing."
+AXE_RUNS_NAMED=$(printf '%s\n' "$A11Y_SRC" \
+  | grep -E 'window\.axe\.run\(document, __AXE_OPTIONS__\)' 2>/dev/null | wc -l | tr -d '[:space:]')
+compare 'a11y_rule_every_run' "$AXE_RUNS" "$AXE_RUNS_NAMED" \
+  "window.axe.run( calls in $A11Y_TEST that pass __AXE_OPTIONS__"
+# And the placeholder carries what its name says: ONE builder line switching on the constant by
+# name. The typed '1' is the reading of the prose, not a figure in it - the same construction as
+# admin_checked_only's '1' above.
+OPTIONS_BUILT=$(printf '%s\n' "$A11Y_SRC" \
+  | grep -E "'rules' => \[self::AXE_RULE_ENABLED_BY_NAME => \['enabled' => TRUE\]\]" 2>/dev/null \
+  | wc -l | tr -d '[:space:]')
+compare 'a11y_rule_options_built' '1' "$OPTIONS_BUILT" \
+  "the line in $A11Y_TEST that builds the axe options from AXE_RULE_ENABLED_BY_NAME"
+
+claim_once 'readme target size' README \
+  '`[a-z0-9-]+` rule switched off, and the gate in this repository switches it on by name'
+compare 'readme_rule_by_name' "$(field 1 '^`([a-z0-9-]+)` rule switched off.*')" "$T_RULE" \
+  "AXE_RULE_ENABLED_BY_NAME in $A11Y_TEST"
+
 # ================================= recipe.yml, composer.json, recommended.yml ==
 printf '\nrecipe.yml / composer.json / recommended.yml\n'
 printf -- '---------------------------------------------------------------------------------------------------------\n'
@@ -1365,6 +1422,7 @@ NOT_CHECKED=(
 "What the dashboard paragraph of the accessibility statement says about ANOTHER project's source rather than about the test: that the failing text takes BOTH its colour and its background from Config Guardian itself. Verified at source on 2026-09-23 against config_guardian 1.0.3, the release a clean install resolves - css/config-guardian.css sets --cg-bg at line 14 and --cg-text-muted at line 17, and .cg-table th (lines 630-639) and .cg-comparison-header h4 small (lines 243-247, on a header whose background is --cg-bg at line 231) draw one on the other - and the unreleased 1.0.4 tag carries a byte-identical stylesheet. Nothing offline here can read a dependency's stylesheet, and a release that moved either token would leave the clause wrong while admin_contrast_owner still passed on the owner alone; that comparison binds WHO, not WHY."
 "screenshot.webp's pixel dimensions and logo.png's, quoted in the manifest headings. Reading them needs a WebP and PNG header parser; the BYTE SIZE and the SHA-256 of both are compared above, and a file whose digest matches has not changed its dimensions either."
 "The two figures content/MEDIA-LICENCES.md states about haven - 21 Unsplash-named JPEGs, 77426040 bytes, at release 1.0.3. They are facts about ANOTHER project at a version that will move, and nothing offline can produce them; re-deriving them would be one 78 MB download per run, which is not a gate's business. The page quotes the one-second command that produces both and says in its own words that nothing here keeps them true. It said 22 for twenty-six days, in two places, and 22 is reproducible at no release haven has cut - which is what an unbound third-party figure looks like when it goes wrong."
+"The window size the target-size check runs at, and how many targets it measured and left incomplete. AccessibilityTest prints all three on every green run - 1024x768, 557 targets over the nine public pages and 0 incomplete on the rig run that landed T-0634 - and the packaged prose quotes none of them, on purpose: the statement says only that the measurement is taken at a single window size and that targets axe cannot decide are left to a person. 'Single' rests on the browser never being resized mid-run, which nothing asserts; the summary line would print two sizes if it were. READABLE UNDER --online AND DELIBERATELY NOT BOUND."
 )
 
 printf '\nNOT CHECKED - named, with a reason, because a guard that silently covers half its subject\n'

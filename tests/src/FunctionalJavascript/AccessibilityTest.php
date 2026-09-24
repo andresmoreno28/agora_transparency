@@ -54,6 +54,13 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * that a new one fails. ::scanTheGovernanceDashboard() carries the reasoning
  * and the measurement; the nine are untouched by it.
  *
+ * AND ONE RULE AXE SHIPS SWITCHED OFF, SWITCHED ON BY NAME (T-0634). WCAG
+ * 2.2's criterion 2.5.8, Target Size (Minimum), is level AA, and the only
+ * axe-core rule that measures it is disabled in the bundle this job loads.
+ * Both scans ask for it by name, so every page this gate reads is measured
+ * for target size too. AXE_RULE_ENABLED_BY_NAME carries the reasoning, and
+ * says what that measurement does not settle.
+ *
  * WHY THE CLASS CARRIES #[RunTestsInSeparateProcesses] (T-0628). Core raises
  * E_USER_DEPRECATED, from BrowserTestBase::setUp(), for any Functional or
  * FunctionalJavascript class that omits the attribute - "deprecated in
@@ -107,6 +114,38 @@ class AccessibilityTest extends WebDriverTestBase {
    * The main landmark this template's theme emits on every page.
    */
   private const MAIN = 'main.agora-page__main';
+
+  /**
+   * The one axe-core rule this gate switches on BY NAME (T-0634).
+   *
+   * WCAG 2.2's success criterion 2.5.8, Target Size (Minimum), is level AA.
+   * axe-core maps exactly one rule to it, `target-size`, and ships that rule
+   * DISABLED: `enabled:!1` in the 4.10.3 bundle that core's yarn.lock
+   * resolves, which is the file ::getAxePath() reads. A default
+   * `axe.run(document)` therefore never asked the question, so the "rules run
+   * per page" this gate printed held no 2.5.8 check at all, while README.md
+   * told a reader 2.5.8 is a criterion axe cannot decide. Found as F3 in
+   * specs/006-hardening/research/2026-09-23-keyboard-measurability.md.
+   *
+   * NAMED, NEVER A TAG SET. `runOnly: {type: 'tag', values: ['wcag22aa']}`
+   * would switch the rule on too, and would REPLACE the default run with a
+   * filtered one in the same stroke. `rules: {<id>: {enabled: true}}` adds
+   * exactly one rule to what the default run already does, so the change is
+   * one criterion wide and this constant says which. The other rules a
+   * default run leaves out stay out: seven more ship disabled, every one AAA
+   * or tagged deprecated or obsolete by axe itself, and seven are tagged
+   * experimental, five of them mapped to level A or AA criteria (1.3.1,
+   * 1.3.4, 2.5.3). Read in the bundle on 2026-09-24: 103 rules in all.
+   *
+   * WHAT IT SETTLES AND WHAT IT DOES NOT. The rule measures each target's
+   * box against the 24 by 24 CSS pixel minimum and applies the criterion's
+   * spacing exception. Where it cannot decide - a target partly covered by
+   * another element, for one - it files the node as `incomplete`, which is a
+   * person's to judge; both counts are printed on every green run. And it
+   * measures at ONE window size, the one the summary prints: a layout that
+   * shrinks its targets only on a narrower screen is not measured here.
+   */
+  private const AXE_RULE_ENABLED_BY_NAME = 'target-size';
 
   /**
    * The four register routes whose path and heading are read from config.
@@ -342,6 +381,21 @@ class AccessibilityTest extends WebDriverTestBase {
   }
 
   /**
+   * Returns the options BOTH axe runs pass: one rule switched on by name.
+   *
+   * Written once and spliced into both scripts, so the anonymous scan and the
+   * logged-in one cannot drift apart on which rules they run.
+   *
+   * @return string
+   *   A JSON object literal, spliced into the page's script as it is.
+   */
+  private static function axeOptions(): string {
+    return (string) json_encode([
+      'rules' => [self::AXE_RULE_ENABLED_BY_NAME => ['enabled' => TRUE]],
+    ]);
+  }
+
+  /**
    * Where the summary travels from the process that measures it to this one.
    *
    * A FILE, BECAUSE A STATIC PROPERTY DOES NOT CROSS A PROCESS BOUNDARY, and
@@ -392,8 +446,9 @@ class AccessibilityTest extends WebDriverTestBase {
    * appended after it by ::scanTheGovernanceDashboard(), the logged-in
    * page's. Both are printed, in that order, and neither restates the
    * other: they count different pages, with the same definitions of rules
-   * run and of heading-order. The logged-in line also counts violation
-   * NODES, because its criterion is a set of nodes.
+   * run, of heading-order and of the targets AXE_RULE_ENABLED_BY_NAME
+   * measured. The logged-in line also counts violation NODES, because its
+   * criterion is a set of nodes.
    *
    * THE GUARD ON THE FIRST LINE IS THE WHOLE MECHANISM, and it is there
    * because the obvious version of this method TURNED THE GATE RED. Pipeline
@@ -545,6 +600,10 @@ class AccessibilityTest extends WebDriverTestBase {
     $rules_min = 0;
     $rules_max = 0;
     $violations = 0;
+    $target_pages = 0;
+    $targets_measured = 0;
+    $targets_incomplete = 0;
+    $viewports = [];
 
     foreach ($pages as $page) {
       $result = $this->scanPage($page, $axe_source);
@@ -562,6 +621,12 @@ class AccessibilityTest extends WebDriverTestBase {
         : min($rules_min, $result['axe']['rules']);
       $rules_max = max($rules_max, $result['axe']['rules']);
       $violations += count($result['axe']['violations']);
+      if ($result['axe']['targets']['measured'] > 0) {
+        $target_pages++;
+      }
+      $targets_measured += $result['axe']['targets']['measured'];
+      $targets_incomplete += $result['axe']['targets']['incomplete'];
+      $viewports[$result['structure']['viewport']] = TRUE;
     }
 
     // -- (5) the denominators, which are the point of the whole file --------
@@ -587,8 +652,11 @@ class AccessibilityTest extends WebDriverTestBase {
     // project and rejects `assertSame($n, count($x))` by name.
     $scanned_count = count($scanned);
     $declared_count = count($pages);
+    // The target-size clause comes AFTER everything tests/bin/packaged-claims
+    // reads out of this line under --online, so that reader's pattern, which
+    // stops at the violation count, is untouched by it.
     self::$summary = sprintf(
-      'agora_transparency axe gate: %d of %d declared pages scanned, %d-%d axe rules run per page, %d violations, heading-order reported on %d of %d pages.',
+      'agora_transparency axe gate: %d of %d declared pages scanned, %d-%d axe rules run per page, %d violations, heading-order reported on %d of %d pages; %s (WCAG 2.5.8), switched on by name, measured %d targets on %d of %d pages at a %s viewport, %d of them left incomplete for a person to judge.',
       $scanned_count,
       $declared_count,
       $rules_min,
@@ -596,6 +664,12 @@ class AccessibilityTest extends WebDriverTestBase {
       $violations,
       $heading_order_ran,
       $scanned_count,
+      self::AXE_RULE_ENABLED_BY_NAME,
+      $targets_measured,
+      $target_pages,
+      $scanned_count,
+      implode(', ', array_keys($viewports)),
+      $targets_incomplete,
     );
     // Handed to the reporting hook through a file, for the reason its own
     // docblock gives: this method runs in a child process and that hook prints
@@ -837,6 +911,7 @@ class AccessibilityTest extends WebDriverTestBase {
           skipLink: document.querySelectorAll('__MAIN__ > a#main-content[tabindex="-1"]').length,
           footerMenus: document.querySelectorAll('footer.agora-page__footer ul.agora-footer-menu').length,
           rows: document.querySelectorAll('__MAIN__ table tbody tr').length,
+          viewport: window.innerWidth + 'x' + window.innerHeight,
           text: (document.body.innerText || '').trim().length
         };
       })()
@@ -936,17 +1011,35 @@ class AccessibilityTest extends WebDriverTestBase {
 
     // axe.run() is a promise, and evaluateScript() is synchronous, so the
     // result is parked on the window and waited for. The whole result is NOT
-    // returned across the wire - it is reduced in the page to the four counts
-    // and the one bucket this gate asserts on, because a full axe report over
-    // a register page is megabytes of nodes nothing here reads.
-    $session->executeScript(<<<'JS'
+    // returned across the wire - it is reduced in the page to the counts and
+    // the buckets this gate asserts on, because a full axe report over a
+    // register page is megabytes of nodes nothing here reads.
+    //
+    // THE OPTIONS ARE THE ONLY DIFFERENCE FROM A DEFAULT RUN (T-0634): one
+    // rule, switched on by name. `targets` is that rule's own reading - the
+    // nodes it measured, in whichever buckets hold them, and how many of
+    // those it could not decide.
+    $placeholders = [
+      '__AXE_OPTIONS__' => self::axeOptions(),
+      '__AXE_RULE__' => self::AXE_RULE_ENABLED_BY_NAME,
+    ];
+    $session->executeScript(str_replace(array_keys($placeholders), array_values($placeholders), <<<'JS'
       window.agoraAxeResult = null;
-      window.axe.run(document).then(function (r) {
+      window.axe.run(document, __AXE_OPTIONS__).then(function (r) {
         var buckets = ['passes', 'violations', 'incomplete', 'inapplicable'];
         var found = [];
         buckets.forEach(function (b) {
           var hit = r[b].some(function (x) { return x.id === 'heading-order'; });
           if (hit) { found.push(b); }
+        });
+        var sized = [];
+        var nodes = {passes: 0, violations: 0, incomplete: 0, inapplicable: 0};
+        buckets.forEach(function (b) {
+          r[b].forEach(function (x) {
+            if (x.id !== '__AXE_RULE__') { return; }
+            if (sized.indexOf(b) === -1) { sized.push(b); }
+            nodes[b] += x.nodes.length;
+          });
         });
         window.agoraAxeResult = {
           rules: r.passes.length + r.violations.length + r.incomplete.length + r.inapplicable.length,
@@ -956,16 +1049,22 @@ class AccessibilityTest extends WebDriverTestBase {
             });
             return v.id + ' x' + v.nodes.length + ' @ ' + where.join(' | ');
           }),
-          bucket: found.length ? found.join('+') : 'absent'
+          bucket: found.length ? found.join('+') : 'absent',
+          targets: {
+            bucket: sized.length ? sized.join('+') : 'absent',
+            measured: nodes.passes + nodes.violations + nodes.incomplete,
+            incomplete: nodes.incomplete
+          }
         };
       }).catch(function (e) {
         window.agoraAxeResult = {
           rules: 0,
           violations: ['axe.run() threw: ' + String(e)],
-          bucket: 'absent'
+          bucket: 'absent',
+          targets: {bucket: 'absent', measured: 0, incomplete: 0}
         };
       });
-      JS);
+      JS));
     $this->assertJsCondition(
       'window.agoraAxeResult !== null',
       60000,
@@ -991,6 +1090,17 @@ class AccessibilityTest extends WebDriverTestBase {
     $this->assertNotSame('absent', $axe['bucket'], sprintf(
       '%s: axe must have reported the heading-order rule; it landed in no bucket at all, which is not the same as passing.',
       $name,
+    ));
+    // 2.5.8 WAS ASKED, AND IT MEASURED SOMETHING (T-0634). The shape of the
+    // heading-order line above, one step stricter: every page here carries
+    // links, so a rule switched on by name that measured no target - landing
+    // nowhere, or only in `inapplicable` - did not do its job, and 2.5.8
+    // would drop out of the run as silently as it was absent until now.
+    $this->assertGreaterThan(0, $axe['targets']['measured'], sprintf(
+      '%s: %s was switched on by name for WCAG 2.5.8 and measured no target on this page (it landed in: %s). A rule that measured nothing cannot have passed.',
+      $name,
+      self::AXE_RULE_ENABLED_BY_NAME,
+      $axe['targets']['bucket'],
     ));
 
     return ['structure' => $structure, 'axe' => $axe];
@@ -1112,6 +1222,7 @@ class AccessibilityTest extends WebDriverTestBase {
             wrapper: document.querySelectorAll('__WRAPPER__').length,
             snapshotRows: document.querySelectorAll('__WRAPPER__ .cg-card--snapshots table tbody tr').length,
             theme: s.ajaxPageState && s.ajaxPageState.theme ? s.ajaxPageState.theme : '',
+            viewport: window.innerWidth + 'x' + window.innerHeight,
             text: (document.body.innerText || '').trim().length
           };
         })()
@@ -1130,24 +1241,41 @@ class AccessibilityTest extends WebDriverTestBase {
       $this->assertGreaterThan(self::TEXT_FLOOR, $structure['text'], sprintf('%s: the page has content to be accessible about (%d characters of rendered text, floor %d).', $name, $structure['text'], self::TEXT_FLOOR));
       $this->assertGreaterThanOrEqual(1, $structure['snapshotRows'], "$name: the recent-snapshots table has a row before axe is asked about it. Five declared violations are its header cells, and without a snapshot the table is not rendered at all.");
 
-      // -- axe: the same bundle and the same two definitions as ::scanPage():
-      // `rules` is the sum of the four buckets and `bucket` is where
-      // heading-order landed, so the two summary lines count the same things.
-      // What is added is ownership, PER NODE: the projects whose anchor
-      // contains it, read from the live DOM.
+      // -- axe: the same bundle, the same options and the same three
+      // definitions as ::scanPage(): `rules` is the sum of the four buckets,
+      // `bucket` is where heading-order landed and `targets` is what the rule
+      // switched on by name measured, so the two summary lines count the
+      // same things. What is added is ownership, PER NODE: the projects whose
+      // anchor contains it, read from the live DOM. A target-size violation
+      // is a violation like any other here, attributed and matched against
+      // the declared set by the same code.
       $session = $this->getSession();
       $session->executeScript($axe_source);
       $this->assertTrue(
         (bool) $session->evaluateScript('typeof window.axe === "object"'),
         "$name: the axe-core bundle was executed but defined no `axe` global.",
       );
-      $session->executeScript(str_replace('__ANCHORS__', (string) json_encode(self::OWNERSHIP_ANCHORS), <<<'JS'
+      $placeholders = [
+        '__ANCHORS__' => (string) json_encode(self::OWNERSHIP_ANCHORS),
+        '__AXE_OPTIONS__' => self::axeOptions(),
+        '__AXE_RULE__' => self::AXE_RULE_ENABLED_BY_NAME,
+      ];
+      $session->executeScript(str_replace(array_keys($placeholders), array_values($placeholders), <<<'JS'
         (function (anchors) {
           window.agoraAxeLoggedIn = null;
-          window.axe.run(document).then(function (r) {
+          window.axe.run(document, __AXE_OPTIONS__).then(function (r) {
             var buckets = ['passes', 'violations', 'incomplete', 'inapplicable'];
             var found = buckets.filter(function (b) {
               return r[b].some(function (x) { return x.id === 'heading-order'; });
+            });
+            var sized = [];
+            var counted = {passes: 0, violations: 0, incomplete: 0, inapplicable: 0};
+            buckets.forEach(function (b) {
+              r[b].forEach(function (x) {
+                if (x.id !== '__AXE_RULE__') { return; }
+                if (sized.indexOf(b) === -1) { sized.push(b); }
+                counted[b] += x.nodes.length;
+              });
             });
             var nodes = [];
             r.violations.forEach(function (v) {
@@ -1170,14 +1298,20 @@ class AccessibilityTest extends WebDriverTestBase {
               rules: r.passes.length + r.violations.length + r.incomplete.length + r.inapplicable.length,
               violated: r.violations.length,
               nodes: nodes,
-              bucket: found.length ? found.join('+') : 'absent'
+              bucket: found.length ? found.join('+') : 'absent',
+              targets: {
+                bucket: sized.length ? sized.join('+') : 'absent',
+                measured: counted.passes + counted.violations + counted.incomplete,
+                incomplete: counted.incomplete
+              }
             };
           }).catch(function (e) {
             window.agoraAxeLoggedIn = {
               rules: 0,
               violated: 0,
               nodes: [{rule: 'axe.run() threw', target: String(e), owners: [], html: ''}],
-              bucket: 'absent'
+              bucket: 'absent',
+              targets: {bucket: 'absent', measured: 0, incomplete: 0}
             };
           });
         })(__ANCHORS__);
@@ -1210,6 +1344,8 @@ class AccessibilityTest extends WebDriverTestBase {
       $results[$name] = [
         'rules' => $axe['rules'],
         'bucket' => $axe['bucket'],
+        'targets' => $axe['targets'],
+        'viewport' => $structure['viewport'],
         'violated' => $axe['violated'],
         'nodes' => count($axe['nodes']),
         'ours' => $ours,
@@ -1233,8 +1369,10 @@ class AccessibilityTest extends WebDriverTestBase {
       }
     }
     ksort($by_owner);
+    $targets = array_column($results, 'targets');
+    $targets_measured = array_column($targets, 'measured');
     $summary = sprintf(
-      'agora_transparency axe gate, logged in: %d of %d declared pages scanned (%s), as a user holding only the %s role, %d-%d axe rules run per page, heading-order reported on %d of %d pages; %d violation nodes over %d rules - %d in markup this package owns, %d in installed markup it did not write, matched by rule, selector and owner against the %d declared (%s). %d routes are named config_guardian.* and this gate scans %d of them.',
+      'agora_transparency axe gate, logged in: %d of %d declared pages scanned (%s), as a user holding only the %s role, %d-%d axe rules run per page, heading-order reported on %d of %d pages, %s (WCAG 2.5.8) measured %d targets on %d of %d pages at a %s viewport, %d of them left incomplete; %d violation nodes over %d rules - %d in markup this package owns, %d in installed markup it did not write, matched by rule, selector and owner against the %d declared (%s). %d routes are named config_guardian.* and this gate scans %d of them.',
       $scanned_count,
       $declared,
       implode(', ', array_column($pages, 'path')),
@@ -1243,6 +1381,12 @@ class AccessibilityTest extends WebDriverTestBase {
       $rules ? max($rules) : 0,
       count(array_filter(array_column($results, 'bucket'), static fn (string $b): bool => $b !== 'absent')),
       $scanned_count,
+      self::AXE_RULE_ENABLED_BY_NAME,
+      array_sum($targets_measured),
+      count(array_filter($targets_measured, static fn (int $n): bool => $n > 0)),
+      $scanned_count,
+      implode(', ', array_unique(array_column($results, 'viewport'))),
+      array_sum(array_column($targets, 'incomplete')),
       array_sum(array_column($results, 'nodes')),
       array_sum(array_column($results, 'violated')),
       array_sum(array_map('count', array_column($results, 'ours'))),
@@ -1266,6 +1410,9 @@ class AccessibilityTest extends WebDriverTestBase {
       // A rule that did not run cannot have passed (I-045).
       $this->assertGreaterThan(0, $result['rules'], "$name: $summary");
       $this->assertNotSame('absent', $result['bucket'], "$name: axe must have reported the heading-order rule; it landed in no bucket at all, which is not the same as passing. $summary");
+      // And the rule switched on by name measured a target (T-0634), exactly
+      // as ::scanPage() requires of each of the nine.
+      $this->assertGreaterThan(0, $result['targets']['measured'], sprintf('%s: %s was switched on by name for WCAG 2.5.8 and measured no target on this page (it landed in: %s). A rule that measured nothing cannot have passed. %s', $name, self::AXE_RULE_ENABLED_BY_NAME, $result['targets']['bucket'], $summary));
       // THE FIRST HALF OF THE CRITERION: nothing in markup this package owns.
       $this->assertSame([], $result['ours'], sprintf('%s: %d violation nodes are not inside any installed project\'s declared markup, so they are counted as this package\'s own: %s. %s', $name, count($result['ours']), implode(' | ', $result['ours']), $summary));
       // THE SECOND HALF: every other violation is exactly a declared one, and
