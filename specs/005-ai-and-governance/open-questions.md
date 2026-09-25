@@ -209,3 +209,15 @@ the measurements file. **"I could not find a clause" is the finding.**
 `automatic_updates_extensions` (**obsolete**) and `eca_node_access` (experimental) — and
 **neither is in any `install:` list**, so the invariant returns 0 today as a measurement rather
 than by construction.
+
+---
+
+## 2026-09-25 — D-054, D-055 and D-057 are signed; D-056 stays where it was
+
+**D-054, D-055 and D-057 were signed by [andres] on 2026-09-25.** Each stands in
+`specs/000-project/DECISIONS.md` under its own number, after the record of his answers of that day,
+quoted verbatim. **The proposals above are left as they were written**: they are what he was shown,
+and the signed entries, not this file, say what he ruled.
+
+**D-056 is unchanged: it stays [ejecutor]'s to sign, once T-0502's rig confirms the predicted
+failure** — the condition the amendment above already sets.

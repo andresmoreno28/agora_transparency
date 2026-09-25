@@ -195,3 +195,17 @@ back to it on 2026-09-24 for compatibility with the 2.1.x installer.
 | 6 | **T-0709**, **T-0712** | releases and pages on drupal.org | launch day |
 | 7 | **D-073**, then **T-0715** | his account and his name on the application | after the launch |
 | 8 | **T-0714** — this unit's Gate B | his signature | closure |
+
+---
+
+## 2026-09-25 — D-069 to D-074 are signed; two things stay open
+
+**D-069 to D-074 were signed by [andres] on 2026-09-25.** Each stands in
+`specs/000-project/DECISIONS.md` under its own number, after the record of his answers of that day,
+quoted verbatim. **The proposals above are left as they were written**: they are what he was shown,
+and the signed entries, not this file, say what he ruled.
+
+- **D-072's form and host remain open, and they are his.** He rejected ★A and wants a demo; whether
+  it is a static snapshot or a live Drupal site, and where it is served, is not ruled.
+- **D-073's timing was put to him the same day**: asking the Drupal CMS team before the launch
+  rather than after it. If he does not answer, C stands as signed.

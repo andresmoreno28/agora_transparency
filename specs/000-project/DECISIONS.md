@@ -5258,3 +5258,332 @@ the two tags.
 **6 · What this does not decide:** which event "the launch" is (**D-071**), and the version numbers
 it carries (**D-070**). Both are open in `specs/007-publication/open-questions.md`, and both are
 [andres]'s.
+
+---
+
+## [andres]'s answers of 2026-09-25, verbatim — the record the entries below rest on
+
+Given at about 09:30 (Madrid) to a message carrying six keyboard questions, the theme page to
+paste (T-0703), D-069 to D-074 with their recommendations, three signature requests and the unit
+005 rulings. Quoted once, whole, in the original Spanish (rule 6); each entry below cites the item
+it rests on. His reply numbers its answers 1, 2, 3 and 5. The sentence just before its "5.-"
+answers the message's fourth item, the signature requests, and the entries below cite it as item 4
+— a reading of where it stands, not a number he wrote.
+
+<!-- cspell:disable -->
+> 1. 1.- Sí, veo el cuadro en minor contract, 2.- Sí, se ve entera al completo, 3.- Sí, se ve Skit
+> to main content en cualquiera 4.- Sí, diría que el orden tiene sentido, va de izquierda a derecha,
+> de arriba a abajo. 5.- Acabo de darme cuenta que ya no está la pantalla de login que teníamos
+> antes, por qué vuelve a estar la de por defecto? He entrado como auditor y sí veo el foco en
+> Analyze Impact y Create Snapshot 6.- Sí, el orden me parece lógico... lo que noto que al entrar en
+> Impact Analysis tarda más de 10 segundos, pero eso es cosa del módulo de Config Guardian supongo,
+> habrá que revisar por qué tarda tanto y en el caso que deba tardar en analizar que no bloquee el
+> acceso a la página de analyze y que simplemente aparezca algo que de a entender que eestá
+> analizando pero sin cortar cargas. 2. Ya he cambiado la descripción del Theme con la que me has
+> dado. 3. Vamos con tus recomendaciones, sí si hay que declarar uso de IA se dice de forma que
+> parezca uso legítimo y no nos pongan el san benito de "Otro producto de IA más". Lo de la imagen
+> te refieres al banner? Para el contenido demo se deja, ya que no es real, pero todo debe ser
+> fácilmente modificable por el usuario para configurar todo al gusto... y tenemos que ofrecer el
+> contenido demo tal y como lo tenemos ahora aquí en local con todos estos datos, ya veremos donde
+> lo alojamos para servirlo si en mi VPS o en algun "pages" que tenga drupal.org o github pages, no
+> sé, lo vemos. Lo de las versiones quiero que no suba demasiado antes de salir, porque aun no hemos
+> salido y el tema ya va por más de la 1.2.0, la template sí o sí debe salir en su versión 1.0.0
+> estable para el marketplace, así que hasta que no lo tengamos el producto al 100% no sale versión
+> primera estable, pero no deberíamos demorarlo tampoco mucho más el terminar el proyecto, hay que
+> meterle caña. En general me dejo llevar por tus recomendaciones, aunque por qué dices que sin demo
+> en vivo? pregunto... esto me gustaría tenerlo. Con lo que hemos hablado Firma por mi con sentido
+> en lo que haya 5.- También vamos con tus recomendaciones. Hay que hacer todas las buenas prácticas
+> para que me acepten.
+<!-- cspell:enable -->
+
+Translated (rule 6): "1. (1) Yes, I see the box on minor contract. (2) Yes, it shows whole,
+completely. (3) Yes, 'Skip to main content' shows on any page. (4) Yes, I would say the order makes
+sense: it goes left to right, top to bottom. (5) I have just noticed that the sign-in screen we had
+before is no longer there — why is the default one back? I signed in as auditor and yes, I see the
+focus on Analyze Impact and Create Snapshot. (6) Yes, the order seems logical to me… what I notice
+is that opening Impact Analysis takes more than 10 seconds, but I suppose that is down to the
+Config Guardian module; we will have to look at why it takes so long, and if it has to take time to
+analyse, it should not block access to the analyse page — it should simply show something that
+makes clear it is analysing, without blocking the page from loading. 2. I have already changed the
+theme's description to the one you gave me. 3. Let's go with your recommendations. Yes: if AI use
+has to be declared, it is said in a way that reads as legitimate use, so that we are not branded
+'yet another AI product'. By the image, do you mean the banner? For the demo content it stays,
+since it is not real — but everything must be easy for the user to change, to configure everything
+to their liking… and we have to offer the demo content just as we have it here locally now, with
+all this data; we will see where we host it to serve it, on my VPS or on some 'pages' that
+drupal.org has, or GitHub Pages, I don't know, we will see. On the versions: I don't want them to
+climb too much before we launch, because we have not launched yet and the theme is already past
+1.2.0; the template must, without fail, come out at its stable 1.0.0 for the marketplace, so until
+we have the product at 100% no first stable version comes out — but we should not delay finishing
+the project much longer either; we have to push hard. In general I go with your recommendations —
+though why do you say no live demo? I'm asking… I would like to have that. With what we have
+discussed, sign for me, sensibly, wherever there is something to sign. 5. Also let's go with your
+recommendations. We have to follow every good practice so that they accept me."
+
+---
+
+## D-069 · The process disclosure is one sentence, in what ships and on the project page — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 3 of the record above): he takes the recommendation put to him in conversation
+(B1); one short disclosure sentence stays, worded as legitimate use; the AI-generated masthead
+image stays as demonstration content. The options were put in conversation and are not on disk;
+this entry records the one he chose, as it was put to him, and nothing about the others.
+
+**B1, as put to him:** clean what ships and what is seen first — `README.md`'s "Development
+process" section, the process notes in `AGENTS.md` and `.gitattributes`, and the
+"human-in-the-loop AI assistance" sentence on the template's drupal.org page. The history stays;
+nothing is rewritten.
+
+**The disclosure is required, and not by us.** Drupal.org's *Policy on the use of AI when
+contributing to Drupal* (Issue procedures and etiquette, last updated 14 September 2026; read at
+source 2026-09-25, HTTP 200, 46,136 bytes): *"If you use an AI tool to generate a significant
+portion of the code or text you are submitting, you must disclose it. You must disclose this use
+regardless of how thoroughly you reviewed the output."* It counts *"extensive documentation
+blocks"* as significant. The condition in his words is met; the tone is ours.
+
+**The sentence**, identical in `README.md` and on the template's project page:
+
+> Ágora is developed with AI coding assistants as part of its tooling, under the maintainer's
+> direction and held to the project's automated checks; the maintainer is accountable for every
+> release, and the project's decisions are recorded, with their reasoning, in its public
+> repository.
+
+It frames the assistants as part of the project's tooling; it states their use plainly, without
+quantifying it; it names no product; and it claims nothing the history falsifies.
+
+**Two sentences it replaces were false**, and removing them is how they stop being false:
+`README.md:658-659`, *"A human reviews and signs every decision and every gate"* — [ejecutor] has
+signed decisions under [andres]'s written delegation since 2026-08-24 (D-027 to D-030 first), and
+D-075 extends it to Gate B; and `README.md:659-660`, *"with no AI co-authorship trailers"* — commit
+`053a602` (2026-09-23), one of 301 on `1.x` at `e003265`, carries one, on drupalcode and on the
+mirror. D-015.5's rule stands; that commit is its one recorded breach, and under this ruling it is
+not rewritten.
+
+**What this amends.** D-015.4: the section becomes one sentence under "How Ágora is built".
+D-015.1: `AGENTS.md`'s audience header keeps its audience statement and loses its pointer to the
+maintainers' process file — the file every Ágora site receives at its root. **Unchanged:** D-015.2
+(the process layer stays public and export-ignored), D-015.5, and D-016 (the real history stays the
+evidence, and the sentence links to it). The masthead image's provenance in
+`content/MEDIA-LICENCES.md` stays word for word: it is a licence statement under D-039, not a
+process disclosure.
+
+**Applied by [ejecutor] under D-075, open to his countersignature:** the same sentence closes the
+theme's `README.md`, because the theme is built the same way; the theme's project page takes it
+when both pages are replaced at the launch (T-0707, T-0712). Implemented by T-0718. Cost of being
+wrong: a rewording costs a release and a paste.
+
+---
+
+## D-070 · Launch versions: the template 1.0.0, the theme 1.2.3 — options A and A — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 3 of the record above): the versions must not climb before the launch, and
+<!-- cspell:disable -->*"la template sí o sí debe salir en su versión 1.0.0 estable"*<!-- cspell:enable -->
+("the template must, without fail, come out at its stable 1.0.0" — translated, per rule 6).
+
+- The template's first stable release is **`1.0.0`**; its branch row `1.0.` is created supported
+  by default.
+- The theme's launch release is **`1.2.3`**, the next patch, cut at the `1.x` commit T-0708 names
+  on launch day. `1.2.2` stays a tag with no release, as `1.0.4` and `1.0.8` already are, so the
+  release list reads 1.2.1 → 1.2.3. No new branch row, nothing to uncheck, no weekday constraint:
+  D-050 part 2 stays dormant.
+
+Cost of being wrong: permanent — a release cannot be taken back, only superseded.
+
+---
+
+## D-071 · The launch is the first stable release, when the product is complete — option A — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 3 of the record above): no first stable release until the product is complete
+(<!-- cspell:disable -->*"al 100%"*<!-- cspell:enable -->), and no longer delay than that
+(<!-- cspell:disable -->*"hay que meterle caña"*<!-- cspell:enable --> — "we have to push hard").
+
+The launch is the community publication: the first stable release, `1.0.0`, per
+`specs/007-publication/plan.md` §5; the marketplace application follows it (D-073). It happens on
+the first day on which plan §5's six preconditions hold, [andres] can guarantee the fourteen days
+D-064 binds, and the product is complete in his sense.
+
+**What "complete" includes is not read into his words here.** It was put to him the same day as
+one question — whether `1.0.0` waits for the module D-054 creates, which would carry the cited
+assistant and the Ágora sign-in page. Until he answers, every row up to unit 007's wave 3 proceeds
+unchanged; only wave 3 waits. His "for the marketplace" does not reopen D-012: the listing reads
+the same release, later.
+
+---
+
+## D-072 · A demo: yes. Its form and host: open — option A rejected — SIGNED by [andres], 2026-09-25, first half
+
+| half | status |
+|---|---|
+| There will be a demo of Ágora showing its demonstration content | **SIGNED by [andres]** — item 3 of the record above |
+| It is not a Tugboat preview, so `.tugboat/` is deleted (T-0705, its Deleted branch) | **[ejecutor] under D-075** — Tugboat builds merge-request previews that expire 30 days after their last update, and the starter kit's file builds Drupal CMS at dev stability with no usage guard |
+| It is not a launch precondition: it is built from the released packages (T-0719) — under S on a guarded throwaway rig, between the template's tag and its release | **[ejecutor] under D-075** — his "no longer delay" |
+| Its **form** — a static snapshot or a live Drupal site — and its **host** | **OPEN, [andres]'s** |
+
+**His question, answered — why the recommendation was no demo.** Four costs, none of them a
+prohibition. A Drupal site that runs cron is counted as an `agora_theme` site unless its build
+prevents it — the false count he asked on 2026-09-19 never to inflate. A public site of a
+security-covered project must be patched on every security release, and a demo that lags
+misrepresents the product. Hosting and a rebuild per release are recurring work. And drupal.org's
+own previews exist only for merge requests and expire. The demos the ecosystem uses (SimplyTest.me)
+arrive only with a place in the curated list. **None of this outweighs his wish if the form is
+chosen to avoid it.**
+
+| | form | cost |
+|---|---|---|
+| **S** | A **static snapshot**: the anonymous site crawled from the rig into plain files, served from his VPS or from a separate GitHub Pages repository | Nothing to patch, nothing that reports usage, nothing to attack; a rebuild is a re-crawl. Filters, search and sign-in cannot work in plain files, so each form is replaced by a one-line notice, and the Config Guardian dashboard is not shown |
+| **L** | A **live Drupal site** on his VPS, from the released packages | Everything works, filters included. It is a real installation, so it reports usage as one site and receives security notices like any real site (T-0635's boundary); he patches it on security-release days; no account is published |
+
+- In conversation, [ejecutor] recommended **L on his VPS**, for interactivity.
+- The independent read-only audit recommends **S**, for zero maintenance.
+
+The audit's reading of two more hosts for S, recorded as cost and not as a ruling: drupal.org's
+GitLab Pages — `project.pages.drupalcode.org` exists (the `gitlab_templates` documentation answers
+200 there, read 2026-09-25), but it is documented for project documentation and would add a job to
+this repository's gate; and the GitHub mirror, which D-016 keeps a read-only copy that `watch-gate`
+reads. D-074 follows from the first half. Cost of being wrong: S — a visitor who wants to try
+filtering installs locally; L — an unpatched public site of a covered project.
+
+---
+
+## D-073 · The marketplace application: ask the Drupal CMS team first, then apply — option C — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 3 of the record above). After the launch, [andres] asks the Drupal CMS team how
+a free template applies — `#drupal-cms-templates` on Drupal Slack (the channel the starter kit
+names, `GET-STARTED.md:74`) or an issue in the Drupal CMS project — and applies by the route they
+name, with T-0715's material ready.
+
+**Applied by [ejecutor] under D-075:** the question and the application are in his own words.
+Drupal.org's AI contribution policy (D-069) counts *"issue comments, MR descriptions, or forum
+posts that are unreviewed AI output, not your own words"* among contributions that do not meet its
+standard; text an assistant drafts for him carries a one-line disclosure or is rewritten by him.
+**Put to him the same day, not decided here:** asking before the launch rather than after. If he
+does not answer, C stands as signed.
+
+---
+
+## D-074 · The installer card: one "Learn more" link and no author — option A — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 3 of the record above). `recipe.yml` gains `extra.drupal_cms_installer.links`
+with one entry in list form — `text: 'Learn more'`, `url:
+'https://www.drupal.org/project/agora_transparency'` — and no `creator`. Lands in T-0706.
+
+**Its clause "no Demo link unless D-072 creates a demo", applied by [ejecutor] under D-075.** D-072
+creates a demo, built from the release, so it cannot exist when `1.0.0` is tagged, and a URL frozen
+into a release cannot be taken back. In `1.0.0` the card carries Learn more only; the project page
+it points to carries the Demo link, which can change at any time. A Demo entry may join `links` in
+a later release once the demo's URL has held through one release.
+
+---
+
+## D-054 · Unit 005 creates a third package: one module, two tenants — option B — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 5 of the record above). One module, scoped to unit 005's two tenants (D-051
+§5): the retrieval-and-citation layer and the API-key screen. D-052's route alter — the Ágora
+sign-in page on a stock install — rides along free (T-0526). D-051's tenants 3 to 5 stay
+undecided; his requirement of 2026-09-25 that everything must be easy for the user to change
+(item 3) is recorded against tenants 3 and 4, the setup page and the currency editor, for the
+ruling that takes them.
+
+**His hands:** creating the drupal.org project, choosing its machine name and opting it into
+security coverage (T-0522). On 2026-09-25 the drupalcode API answered 404 — free — for
+`agora_setup`, `agora_assistant`, `agora_ai`, `agora_core` and `agora_tools`. **Not decided here:
+when.** Whether `1.0.0` waits for this module was put to him the same day (D-071). **Budget:** this
+selects unit 005's module branch, stated at 28 rows (`specs/005-ai-and-governance/plan.md` §9); the
+unit holds 32 known rows by its own command. Recorded as an overrun of 4, not re-set upward to fit.
+
+---
+
+## D-055 · A citation points only at a published entity's canonical URL — option A — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 5 of the record above). A citation is a published node's canonical URL; a
+field fragment only where the field renders a stable `id`; PDF page numbers and Views rows are
+forbidden; a taxonomy term is a navigation offer, never inside the citation list
+(`specs/005-ai-and-governance/plan.md` §4). **Not signed:** the recommendation's second half, "B if
+R9 shows the retrieval layer returns usable text". Quoted passages beside the link need their own
+ruling on R9's measurement.
+
+---
+
+## D-057 · `drupal/ai` in `require`, `ai_search` not installed, no provider — option B — SIGNED by [andres], 2026-09-25
+
+**His ruling** (item 5 of the record above). The shape of the AI dependency, for the release that
+ships the assistant: `drupal/ai` `^1.4` in `require` (never `^1.5` while it has no stable release,
+D-013); `ai_search` kept out of `install:` while it declares `lifecycle: experimental`, which
+`tests/bin/no-experimental-modules` enforces; no provider anywhere (D-013 = A). The recommendation
+read "B, pending R13", and R13 was measured on 2026-09-20 as an absence — the contrib
+security-advisory policy says "experimental" 0 times — recorded as that, not as a clause.
+
+**It adds nothing to `require` before that release.** A dependency no shipped feature uses is SBOM
+without a reason (rule 2); its line here, with version and coverage re-read at source that day
+(rule 1), is written in the commit that adds it.
+
+---
+
+## D-075 · Gate B of units 003, 006 and 007 is delegated to [ejecutor] — SIGNED by [andres], 2026-09-25
+
+**His words** (item 4 of the record above):
+<!-- cspell:disable -->*"Con lo que hemos hablado Firma por mi con sentido en lo que haya"*<!-- cspell:enable -->
+("With what we have discussed, sign for me, sensibly, wherever there is something to sign." —
+translated, per rule 6), answering: delegate the Gate B signatures of units 003, 006 and — after
+the launch — 007, if the independent audit has no 🔴.
+
+1. **Scope.** Gate B of unit 003, of unit 006, and of unit 007 once T-0713 has passed.
+2. **Condition.** The independent read-only audit's verdict on that unit, delivered after the
+   unit's last content commit, has no open 🔴. A 🔴 carried with an owner is open.
+3. **Label.** "SIGNED by [ejecutor] under D-075" — never "[andres]".
+4. **Judgements a gate cannot make are taken from his recorded words, never supplied.** Unit 003's
+   two — institutional tone and plausible truthfulness — rest on item 3 of the record above: he
+   has used the live preview and rules that the demonstration content is offered as it stands
+   there. He did not rule on the two one by one, and this says so.
+5. **The same sentence answers two more requests of that message:** the WCAG attestation's wording
+   is approved by delegation (T-0617), not by his own reading; and item 4 above.
+6. **Not delegated:** releases and project creation on drupal.org (rule 10); version numbers (D-070
+   is his); a decision that overrides one of his own signatures; the unit-005 key protocol with a
+   real key (T-0529); anything he names as his.
+7. **Revocable.** He may countersign, overrule or revoke; a revoked signature is amended, never
+   edited (rule 8).
+
+---
+
+## D-068 · Amended 2026-09-25 — ruling 5: the two keyboard walkthroughs are met by the checklist their research sized — SIGNED by [ejecutor] under D-075
+
+T-0616 and T-0633 name a transcript made "by a person". The research of 2026-09-23
+(`specs/006-hardening/research/2026-09-23-keyboard-measurability.md` §0, §6) measured that a machine
+sends real key presses and photographs every stop, so the transcript — every stop, both widths,
+both directions — is the machine's, and what is left for a person is perception and meaning: §6's
+checklist. [andres] answered it on 2026-09-25 on the live preview (item 1 of the verbatim record).
+
+- **T-0616 — MET.** The three required items, four answers, all yes; the optional reflow glance
+  was not asked, and 1.4.10 rests on the machine (0 of 9 pages scroll sideways at 320 px).
+- **T-0633 — MET MORE WEAKLY THAN WRITTEN.** Two of the dashboard's three faint indicators were
+  noticed ("Analyze Impact", "Create Snapshot"); the third, Gin's "Tabs display toggle" at 320 px,
+  was not asked. The admin order: yes. The machine's verdicts on the admin surface stand — 2.4.7,
+  2.5.8 and 1.4.10 fail there, in markup this package does not own (D-061).
+- **T-0603 closes with T-0633:** its axe half is closed by T-0615 and D-068(4), and its keyboard
+  half is T-0633's.
+
+This turns no gate green: neither row enters a gate total or closes a wave. **The builds differ
+and are named:** the machine walked rig `~/agora-kbd` (template `acd2a51`, theme 1.2.0) on
+2026-09-23; [andres] and the 2026-09-25 machine readings used the live preview — the template as a
+`git archive` of `cdccf2b7d3143f6792cf5a933beeeb600955b743`, rebuilt on 2026-09-24 (its PROVENANCE
+file), and the theme `1.x-dev` at `ec2c990c9fcfee4dab5e49654f2d0b44eb076efb`, read from its
+`composer.lock` — which carries the two ring fixes made after 1.2.1 (`8690b7a`, `ec2c990`). T-0710
+re-measures the two stops he confirmed on the released theme.
+
+**The 2026-09-25 machine readings of the preview were read-only anonymous visits, and they are
+supplementary, not evidence of record.** The evidence of record is the rig research of 2026-09-23
+plus T-0710's launch-day re-measurement. No rule is loosened by them: later readings are taken on
+rigs.
+
+---
+
+## D-045 · Closed 2026-09-25 — not adopted; D-009 C(2) stands — SIGNED by [ejecutor] under the standing delegation
+
+D-045's amendment of 2026-09-12 kept it open because option B would override D-009 C(2), which
+[andres] signed, and it named option A — leave C(2) as signed and build T-1202 on the template's
+existing mirror, "which needs nothing from him" — as the recommendation. Closing it as A keeps his
+signature rather than overriding one, which is inside his delegations of 2026-09-20 and 2026-09-25.
+Visual regression stays where D-009 C(2) put it — GitHub Actions on the template's mirror,
+informative, never a gate — and T-1202 is carried past `1.0.0` with that home. The struck
+prerequisite stays struck (D-045's amendment, item 1). He reopens it by ruling B. This closes the 🔴
+T-1205's audit carried (`specs/003-demo-content/tasks.md:1564`).

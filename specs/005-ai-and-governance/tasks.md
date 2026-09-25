@@ -227,3 +227,20 @@ to the repository's CI YAML fits that sentence and costs one line plus a denomin
 further does not. Measured on 2026-09-21: the two keywords occur in **three tracked files**
 (`tests/bin/no-key-material`, and the two research documents above) and in **no** CI file, so the
 widening would be green on the day it lands and non-vacuous in scope.
+
+---
+
+⚠️ **Reserve accounting, 2026-09-25 — D-054 is signed as B, so the module branch's ceiling applies:
+28 rows. The unit holds 32. Over by 4, and recorded as that.** Counted with this file's own command,
+never from prose:
+
+```
+grep -cE '^\| T-05[0-9]{2} ' specs/005-ai-and-governance/tasks.md   ->  32
+```
+
+**The ruling adds no row and removes none**: the rows the module branch needs were already here,
+written conditional on the ruling (*"If the ruling is yes"*). The first reserve-accounting entry
+above left the ceiling to be re-set with this ruling; **D-054 records the overrun instead of
+re-setting the ceiling upward to fit**, because a ceiling moved to meet the count after the work is
+chosen measures nothing. The one number that can genuinely bind — at most 4 rows resting on neither
+D-044 necessity nor a signature from [andres] — is unchanged at **0** spent.
