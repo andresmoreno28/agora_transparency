@@ -2,7 +2,8 @@
 
 Ágora Transparency targets WCAG 2.2 level AA; no conformance with any WCAG level is claimed. It is
 checked with axe on every push, and its keyboard behaviour was walked through — by machine on every
-public page, and by a person on 2026-09-25 where only a person can judge.
+public page the automated check reads, and by a person on 2026-09-25 where only a person can
+judge.
 
 This file is the author's statement about the package, for whoever reviews it. It is not the
 accessibility statement a site publishes: that one ships with the demonstration content, speaks to a
