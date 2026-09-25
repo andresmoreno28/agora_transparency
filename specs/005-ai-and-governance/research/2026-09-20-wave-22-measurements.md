@@ -4,7 +4,7 @@
   Seven identifiers quoted VERBATIM from third-party source in this file, scoped here rather
   than declared in .cspell-project-words.txt, because this wave's dispatch limited writing to
   specs/005-ai-and-governance/research/. Each survives D-024(3)'s question, and `cspell:ignore`
-  is used in preference to a cspell:disable/enable block on purpose: it exempts these seven
+  is used in preference to a cspell disable/enable block on purpose: it exempts these seven
   words by name and leaves every other word in the file checked, where a disable block would
   stop checking the prose around the quotation too.
 

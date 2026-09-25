@@ -16,7 +16,7 @@
 #     `dict-en-gb-mit` is bundled on the runner. Declaring a language is not silencing a check.
 #   - The verbatim Spanish quotations of [andres] in DECISIONS.md. Declaring those would make
 #     them permanently correct everywhere, forever; they are scoped in place instead, with
-#     cspell:disable markers around each quoted block.
+#     cspell disable/enable markers around each quoted block.
 #   - Real misspellings. Those get fixed, not declared — D-024(3), fourth bucket.
 #
 # Mechanic — corrected, verified against pipeline 933311: cspell's dictionary parser sets
@@ -25,9 +25,11 @@
 # was still reported as an unknown word in the same pipeline run. An unaccented entry does NOT
 # cover its accented form; each accented form that needs to pass either gets its own entry or,
 # where the dictionary is the wrong tool (see the D-024(3) bucket-4 row in DECISIONS.md), a
-# scoped `cspell:disable`/`cspell:enable` pair instead. Whether case folding actually works
+# scoped cspell disable/enable pair instead. Whether case folding actually works
 # (`agora` covering `AGORA`) was not exercised by this finding and stays an untested claim, not
 # a verified one — do not assume it holds just because the accent claim turned out false.
+# cspell:ignore fundación
+# ^ the accented form quoted in the Mechanic note above - scoped here, never declared.
 
 # --- Proper nouns --------------------------------------------------------------------
 # Our own identity, plus the third-party projects, vendors and tools cited as evidence in
@@ -260,7 +262,7 @@ exiftool              # the external EXIF reader T-906 REFUSES to adopt; named t
 
 # ---------------------------------------------------------------------------------------------
 # Added 2026-08-26 with D-010's rider. These two recur throughout unit 003 and are not one-off
-# quotations, so they are declared here rather than fenced with cspell:disable.
+# quotations, so they are declared here rather than fenced with cspell disable markers.
 Fuentelclaro          # the demo's FICTIONAL municipality, verified absent from the INE register
 NXDOMAIN              # the DNS answer proving no organisation of that name is registered today
 

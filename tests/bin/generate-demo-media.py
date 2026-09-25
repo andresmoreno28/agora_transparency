@@ -69,8 +69,8 @@
 # is the same defect wearing better clothes. A courier must not sign as author.
 #
 # ⚠️ THE TECHNICAL OBJECTION IS NOT THE REASON, AND IT IS FALSE. The expected
-# blocker was cspell - this very file records, forty lines up, that a
-# `cspell:disable` pair does not suppress words here, so a Base64 blob looked
+# blocker was cspell - this very file recorded, further down, that a
+# cspell disable pair did not suppress words here, so a Base64 blob looked
 # unfixable. MEASURED 2026-09-05 instead of assumed: a 200-line Base64 block in
 # a file in this directory, run through the same effective cspell config the
 # blocking job uses, reports 0 issues (long unbroken tokens are not offered as
@@ -177,10 +177,10 @@
 # prose. They are scoped out HERE, by name, rather than declared in
 # .cspell-project-words.txt: that list is for vocabulary this project WRITES,
 # and putting a file-format keyword in it would make the word acceptable in
-# prose everywhere. ⚠️ A `cspell:disable`/`cspell:enable` pair around the
-# function was tried first and DID NOT SUPPRESS THEM - measured, 2026-08-27,
-# with the words still reported from inside the disabled region - so the
-# working form is recorded here rather than the one that looks right.
+# prose everywhere. ⚠️ A cspell disable/enable pair around the function
+# was tried first (2026-08-27) and the words were still reported. Re-measured
+# 2026-09-25: the pair silences the four inside build_pdf(); the two left
+# are in this comment, which names them - so the ignore below is the fix.
 # cspell:ignore endobj startxref
 import hashlib
 import os

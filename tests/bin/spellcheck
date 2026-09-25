@@ -30,6 +30,18 @@
 # fix, 64 files checked and 0 issues - the same denominator the job reports (I-045: a green
 # linter is a statement about the set it opened, so this script always prints the set).
 #
+# WHERE IT IS DELIBERATELY STRICTER THAN THE JOB (T-0717, 2026-09-25). cspell honours its
+# block-disable directive - the word cspell, a colon, then disable - wherever that string
+# appears: in a sentence, in backticks, in a comment that only talks about it. It stays off
+# until an enable with the same prefix or until the end of the file, and the file is still
+# counted as checked. Measured that day: eight such mentions, added on seven days, had left 642
+# lines of the two repositories unread while every run printed "Issues found: 0", and 0 of 31
+# words planted in those lines were reported. The job cannot tell an unread line from a clean
+# one - both print the same verdict - and nothing in its configuration asks it to. So before
+# cspell runs, a pre-pass ports cspell-lib's own directive expressions and refuses every span
+# nobody chose (rules F1-F5, at the pre-pass below). On that one point this replica now fails
+# where the job passes, on purpose: what the job's pass certifies there is text nobody read.
+#
 # Usage:  bash tests/bin/spellcheck [--refresh]
 #         --refresh  re-fetch the upstream inputs even if the cache is warm.
 
@@ -75,10 +87,22 @@ command -v pnpm   >/dev/null 2>&1 || fail "pnpm not found - it is the only packa
 mkdir -p "$CACHE" || fail "cannot create $CACHE"
 
 # ---------------------------------------------------------------- fetch the upstream inputs
+# WHY THE TWO DICTIONARIES ARE CACHED UNDER THEIR BRANCH'S NAME, AND WHY EVERY INPUT PRINTS ITS
+# SHA-256. fetch() trusts any non-empty file already at its path, so the cache is only as
+# current as its NAME is specific. Until 2026-09-25 the names carried no branch: the
+# dictionary.txt cached on 2026-08-24 had been read from 11.x, the day before CORE_BRANCH moved
+# to 11.4.x, and it was still being read a month later - with 4 words that 11.4.x's lacks,
+# `vincentlanglet` among them, the very word the note above is about. For that month this
+# replica was QUIETER than the gate while its own parity line said 11.4.x. Keyed by branch, a
+# move of CORE_BRANCH is a cache miss and a fresh fetch, never a silent reuse; and with each
+# input's sha256 printed, two runs that read different bytes no longer print the same lines.
+sha12() {
+  python3 -c 'import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).digest().hex()[:12])' "$1"
+}
 fetch() {
   local url="$1" dest="$2" name="$3"
   if [ "$REFRESH" -eq 0 ] && [ -s "$dest" ]; then
-    echo "  cached   $name"
+    echo "  cached   $name  sha256 $(sha12 "$dest")"
     return 0
   fi
   local code
@@ -87,13 +111,13 @@ fetch() {
     rm -f "$dest.tmp"
     # A stale cache is worth more than nothing, but say so out loud.
     if [ -s "$dest" ]; then
-      echo "  STALE    $name (HTTP $code; using the cached copy - the result may lag the job)"
+      echo "  STALE    $name  sha256 $(sha12 "$dest") (HTTP $code; using the cached copy - the result may lag the job)"
       return 0
     fi
     fail "cannot fetch $name (HTTP $code) and there is no cached copy. Offline? The gate cannot be reproduced without it."
   fi
   mv "$dest.tmp" "$dest"
-  echo "  fetched  $name"
+  echo "  fetched  $name  sha256 $(sha12 "$dest")"
 }
 
 # ---------------------------------------------------------------- the parity check
@@ -133,15 +157,16 @@ else
   fi
 fi
 echo "upstream inputs (core dictionaries from branch $CORE_BRANCH - the branch CI installs)"
-fetch "$UPSTREAM_CONFIG" "$CACHE/upstream.cspell.json" "gitlab_templates assets/.cspell.json"
-fetch "$CORE_DICT"       "$CACHE/dictionary.txt"        "Drupal core dictionary.txt"
-fetch "$DRUPAL_DICT"     "$CACHE/drupal-dictionary.txt" "Drupal core drupal-dictionary.txt"
+fetch "$UPSTREAM_CONFIG" "$CACHE/upstream.cspell.json"                "gitlab_templates assets/.cspell.json"
+fetch "$CORE_DICT"       "$CACHE/dictionary-$CORE_BRANCH.txt"        "Drupal core dictionary.txt ($CORE_BRANCH)"
+fetch "$DRUPAL_DICT"     "$CACHE/drupal-dictionary-$CORE_BRANCH.txt" "Drupal core drupal-dictionary.txt ($CORE_BRANCH)"
 [ -f "$REPO/.cspell-project-words.txt" ] || fail ".cspell-project-words.txt is missing - the job registers it via _CSPELL_DICTIONARY"
 
 # ---------------------------------------------------------------- build the effective config
-python3 - "$REPO" "$CACHE" <<'PY' || fail "could not build the effective config"
+python3 - "$REPO" "$CACHE" "$CORE_BRANCH" <<'PY' || fail "could not build the effective config"
 import json, os, sys
 repo, cache = sys.argv[1].replace(os.sep, "/"), sys.argv[2].replace(os.sep, "/")
+branch = sys.argv[3]
 c = json.load(open(os.path.join(cache, "upstream.cspell.json"), encoding="utf-8"))
 # prepare-cspell.php: words it merges in unconditionally, plus the project's name parts.
 c["words"] = ["agora", "transparency", "lando", "ddev", "endapply", "nightwatchjs", "testgroup",
@@ -157,8 +182,8 @@ c["ignorePaths"] = ["web", "vendor", "node_modules", ".git", "recipes", ".cspell
   "LICENSE.txt", "composer.json", "composer.lock"]
 c["globRoot"] = repo
 c["dictionaryDefinitions"] = [
-  {"name": "drupal",        "path": cache + "/drupal-dictionary.txt"},
-  {"name": "dictionary",    "path": cache + "/dictionary.txt"},
+  {"name": "drupal",        "path": cache + "/drupal-dictionary-" + branch + ".txt"},
+  {"name": "dictionary",    "path": cache + "/dictionary-" + branch + ".txt"},
   {"name": "project-words", "path": repo + "/.cspell-project-words.txt"}]
 c["dictionaries"] = ["companies", "fonts", "html", "php", "softwareTerms", "misc", "typescript",
   "node", "css", "bash", "filetypes", "npm", "lorem-ipsum", "sql", "fullstack",
@@ -177,6 +202,209 @@ echo "file set: $COUNT tracked or stage-able files offered to cspell"
 echo "          (it will skip a few by the upstream ignorePaths above and say how many)"
 echo
 
+# ---------------------------------------------------------------- the pre-pass (T-0717)
+# The header's DELIBERATELY STRICTER paragraph, implemented. Every text file of the set above is
+# read with a port of cspell-lib's own directive expressions, and every span they open is one of
+# three things nobody has to argue about - a FENCE, a self-closing prose pair that hides no
+# letter, or the one declared exception - or it is a finding:
+#
+#   F1  a block closed only by the end of the file
+#   F2  an opener that is not a fence and hides a letter (any Unicode letter)
+#   F3  a fence closed by a sentence that merely mentions the directive
+#   F4  a disable-next directive written in a sentence
+#   F5  a declared exception that matches no span
+#
+# A FENCE is a directive written to be one: preceded on its line by an HTML comment opener and
+# optional spaces, or alone on its line after `#` or `//`. The closer is held to the same test.
+# The directive is never spelled out in this file - the expressions below are its PATTERN - and
+# that is not squeamishness: this file is in the set it reads, and until T-0717 its own advice
+# text opened a span that ran to its last line.
+#
+# Offline: it reads only files already on disk. It skips, and counts, the binary extensions
+# below, files carrying a NUL byte and files that are not UTF-8; a pass over 0 files is FATAL.
+# Every span it computes is written to .cspell-cache/pre-pass-spans.txt, so the list can be
+# compared line for line with what cspell-lib's own expressions compute over the same files.
+python3 - "$REPO" "$CACHE/files.txt" "$CACHE/pre-pass-spans.txt" "$CSPELL_VERSION" <<'PY'
+import bisect, hashlib, re, sys
+# cspell:ignore hashlib finditer ufeff
+
+# The version of cspell-lib whose OWN expressions are ported below: dist/lib/Settings/
+# RegExpPatterns.js lines 12 and 13, the block and disable-next guards, in the cspell-lib that
+# cspell 9.8.0 runs. Line 14, the disable-line guard, hides only the line that carries it and
+# is not ported.
+PORTED_FROM = '9.8.0'
+
+
+def fatal(message):
+    sys.stderr.write('FATAL: ' + message + '\n')
+    sys.exit(2)
+
+
+repo, file_list, spans_out, cspell_version = sys.argv[1:5]
+if cspell_version != PORTED_FROM:
+    fatal('this script runs cspell %s, and its pre-pass ports the expressions of cspell-lib %s. '
+          'Read dist/lib/Settings/RegExpPatterns.js in %s, port its block-disable and '
+          'disable-next expressions again, prove parity against them, and only then move '
+          'PORTED_FROM - a port of another version reads spans cspell does not.'
+          % (cspell_version, PORTED_FROM, cspell_version))
+
+# JavaScript's \s, spelled out: under re.ASCII Python's \s is six characters and JavaScript's is
+# twenty-five. JavaScript's `.` stops at four line terminators and Python's at one, so it is
+# spelled out too. The flags are JavaScript's `gi` without `u`: case folds on ASCII only, and
+# \b is an ASCII word boundary - which is what re.I | re.A means.
+WS = r'[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]'
+DOT = r'[^\n\r\u2028\u2029]'
+PREFIX = r'c?spell(?:-?checker)?::?'
+BLOCK = re.compile(r'(\b' + PREFIX + r')' + WS + r'*disable(?!-line|-next)\b(?!-)[\s\S]*?'
+                   r'((?:\1' + WS + r'*enable\b)|\Z)', re.I | re.A)
+NEXT = re.compile(r'\b' + PREFIX + WS + r'*disable-next\b' + DOT + '*' + WS + WS + '?' + DOT
+                  + '*', re.I | re.A)
+KEYWORD = re.compile(WS + r'*disable', re.I | re.A)
+
+# A FENCE: preceded on its line by an HTML comment opener and optional spaces, or alone on its
+# line after `#` or `//`.
+HTML_OPENER = re.compile(r'<!--[ \t]*\Z')
+
+
+def alone(word):
+    return re.compile(r'[ \t]*(?:#|//)[ \t]*' + PREFIX + r'[ \t]*' + word + r'[ \t\r]*\Z',
+                      re.I | re.A)
+
+
+OPENER, CLOSER, NEXT_ALONE = alone('disable'), alone('enable'), alone(r'disable-next(?:-line)?')
+
+# DECLARED EXCEPTIONS: (path, sha256 of the opener's whole line without its newline, span length
+# in lines). Each excuses exactly ONE span - a second span with the same signature is read like
+# any other - and an entry that matches no span is itself a finding (F5), so an entry that has
+# gone stale cannot sit here excusing nothing.
+EXCEPTIONS = [
+    # The span inside the signed D-052 and D-053. A sentence there mentions the directive, and
+    # the block it opens runs 146 lines, to the enable of the next fence. Rule 8: signed text is
+    # not edited, and a marker inserted there would edit signed bytes. With that opener
+    # neutralised on 2026-09-25, cspell reported 0 issues in those 146 lines (T-0717).
+    ('specs/000-project/DECISIONS.md',
+     'fab08e9af8d2107cf9bda26f2619a93a18ecf134507ae94235cf7c5de0f45306', 146),
+]
+BINARY = ('.pdf', '.png', '.webp', '.jpg', '.jpeg', '.gif', '.ico', '.woff', '.woff2', '.ttf',
+          '.otf', '.eot')
+
+
+def line_starts(text):
+    starts, at = [0], text.find('\n')
+    while at >= 0:
+        starts.append(at + 1)
+        at = text.find('\n', at + 1)
+    return starts
+
+
+def line_at(text, starts, i):
+    """The 1-based number of the line holding offset i, and its bounds without the newline."""
+    n = bisect.bisect_right(starts, i)
+    return n, starts[n - 1], (starts[n] - 1 if n < len(starts) else len(text))
+
+
+def fenced(text, starts, at, form):
+    _, a, b = line_at(text, starts, at)
+    return bool(HTML_OPENER.search(text[a:at])) or bool(form.match(text[a:b]))
+
+
+prefix = repo if repo.endswith('/') else repo + '/'
+skip = {'binary': 0, 'NUL': 0, 'not UTF-8': 0, 'not on disk': 0}
+scanned = spans = fences = pairs = flagged = next_seen = next_fenced = 0
+matched = [0] * len(EXCEPTIONS)
+findings, listing = [], []
+for path in open(file_list, encoding='utf-8').read().splitlines():
+    if not path:
+        continue
+    rel = path[len(prefix):] if path.startswith(prefix) else path
+    if rel.lower().endswith(BINARY):
+        skip['binary'] += 1
+        continue
+    try:
+        with open(path, 'rb') as handle:
+            data = handle.read()
+    except OSError:
+        skip['not on disk'] += 1
+        continue
+    if b'\0' in data:
+        skip['NUL'] += 1
+        continue
+    try:
+        text = data.decode('utf-8')
+    except UnicodeDecodeError:
+        skip['not UTF-8'] += 1
+        continue
+    scanned += 1
+    starts = line_starts(text)
+    last = len(starts) - (1 if text.endswith('\n') else 0)
+    for m in BLOCK.finditer(text):
+        spans += 1
+        s, a, b = line_at(text, starts, m.start())
+        closed = m.group(2) != ''
+        e = line_at(text, starts, m.end() - 1)[0] if closed else last
+        listing.append('%s: (%d,%d) %s' % (rel, s, e, 'closed' if closed else 'EOF'))
+        signature = (rel, hashlib.sha256(text[a:b].encode('utf-8')).digest().hex(), e - s + 1)
+        excused = [k for k, entry in enumerate(EXCEPTIONS) if entry == signature and not matched[k]]
+        if excused:
+            matched[excused[0]] = 1
+            continue
+        where = '%s:%d-%d' % (rel, s, e)
+        unread = ' - %d line%s unread' % (e - s + 1, '' if e == s else 's')
+        opener_fenced = fenced(text, starts, m.start(), OPENER)
+        hidden = text[KEYWORD.match(text, m.end(1)).end():m.start(2) if closed else m.end()]
+        if not closed:
+            findings.append(('F1', where, 'a block closed only by the end of the file' + unread))
+        elif not opener_fenced and any(ch.isalpha() for ch in hidden):
+            findings.append(('F2', where, 'a sentence mentioning the directive opened a block '
+                             'that hides text' + unread))
+        elif opener_fenced and not fenced(text, starts, m.start(2), CLOSER):
+            findings.append(('F3', where, 'a fence closed by a sentence that merely mentions the '
+                             'directive, on line %d%s' % (e, unread)))
+        elif opener_fenced:
+            fences += 1
+            continue
+        else:
+            pairs += 1
+            continue
+        flagged += 1
+    for m in NEXT.finditer(text):
+        next_seen += 1
+        n = line_at(text, starts, m.start())[0]
+        listing.append('NEXT %s:%d' % (rel, n))
+        if fenced(text, starts, m.start(), NEXT_ALONE):
+            next_fenced += 1
+        else:
+            findings.append(('F4', '%s:%d' % (rel, n),
+                             'a disable-next directive written in a sentence'))
+for k, (path, digest, length) in enumerate(EXCEPTIONS):
+    if not matched[k]:
+        findings.append(('F5', path, 'a declared exception matches no span (opener line sha256 '
+                         '%s, %d lines) - the span moved or changed: re-measure it, then move '
+                         'the entry' % (digest[:12], length)))
+with open(spans_out, 'w', encoding='utf-8', newline='\n') as out:
+    out.write(''.join(line + '\n' for line in listing))
+if scanned == 0:
+    fatal('the pre-pass read 0 files (%d skipped) - a pass over nothing is not a pass (I-028)'
+          % sum(skip.values()))
+for rule, where, what in findings:
+    print('  Issues found (pre-pass %s): %s - %s' % (rule, where, what))
+print('pre-pass (cspell-lib %s expressions): scanned %d - skipped %d (%s) - block spans %d '
+      '(fences %d, self-closing prose pairs %d, declared exceptions %d of %d, flagged %d) - '
+      'disable-next %d (fenced %d) - findings %d'
+      % (PORTED_FROM, scanned, sum(skip.values()), ', '.join('%s %d' % kv for kv in skip.items()),
+         spans, fences, pairs, sum(matched), len(EXCEPTIONS), flagged, next_seen, next_fenced,
+         len(findings)))
+sys.exit(3 if findings else 0)
+PY
+PRE_PASS_RC=$?
+case "$PRE_PASS_RC" in
+  0) PRE_PASS_FINDINGS=0 ;;
+  3) PRE_PASS_FINDINGS=1 ;;
+  2) exit 2 ;;
+  *) fail "the pre-pass stopped (exit $PRE_PASS_RC) before its verdict - it neither passed nor refused anything" ;;
+esac
+echo
+
 # ---------------------------------------------------------------- run it
 pnpm dlx "cspell@$CSPELL_VERSION" \
   --config "$CACHE/effective.cspell.json" \
@@ -186,18 +414,35 @@ pnpm dlx "cspell@$CSPELL_VERSION" \
 RC=$?
 
 echo
-if [ "$RC" -eq 0 ]; then
-  echo "spellcheck: clean - and the line above states over how many files, which is the half"
-  echo "            that makes it a gate rather than a badge (I-045)."
-else
+if [ "$RC" -eq 0 ] && [ "$PRE_PASS_FINDINGS" -eq 0 ]; then
+  echo "spellcheck: clean - the pre-pass refused no span, and the line above states over how many"
+  echo "            files, which is the half that makes it a gate rather than a badge (I-045)."
+fi
+if [ "$RC" -ne 0 ]; then
   echo "spellcheck: FAILED. Every word above is one of four things (D-024(3)):"
   echo "  * a real misspelling                 -> fix the prose"
   echo "  * British English                    -> already covered by --locale en,en-GB; if it is"
   echo "                                          still flagged it is not the spelling you think"
   echo "  * project vocabulary or a proper noun-> .cspell-project-words.txt, ONE justified line each"
-  echo "  * a verbatim quotation               -> scope it in the file with cspell:disable/enable,"
-  echo "                                          or cspell:ignore for a long quoted passage"
+  echo "  * a verbatim quotation               -> scope it in the file with a cspell disable/enable pair,"
+  echo "                                          or a cspell ignore line for a long quoted passage"
   echo "  Copying the job's _cspell_updated_project_words.txt over the word list is forbidden:"
   echo "  it is one command from a green pipeline and it declares the next real misspelling correct."
 fi
-exit "$RC"
+if [ "$PRE_PASS_FINDINGS" -ne 0 ]; then
+  echo "spellcheck: the PRE-PASS refused text that cspell does not read. The CI job would pass it,"
+  echo "  and that is the point: what its pass would certify is the unread text. For each finding:"
+  echo "  * a sentence that names the directive  -> in prose, write it without its colon (\"a cspell"
+  echo "                                            disable/enable pair\"), or close it inline with an"
+  echo "                                            enable in an HTML comment right after it, same line"
+  echo "  * a fence left open, or closed by prose -> close it with a fence of its own"
+  echo "  * a declared exception matching nothing -> re-measure that span, then move the entry"
+  echo "  Never put a standalone comment line after a table row: it ends the table."
+fi
+if [ "$RC" -ne 0 ]; then
+  exit "$RC"
+fi
+if [ "$PRE_PASS_FINDINGS" -ne 0 ]; then
+  exit 1
+fi
+exit 0
