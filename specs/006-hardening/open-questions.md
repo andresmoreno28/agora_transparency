@@ -48,6 +48,9 @@ once the sentence naming D-069 was written, that command printed **D-069** — i
 answer. **Run the commands rather than trusting the figures**: both pairs this line carried before
 these went stale.
 
+⚠️ **2026-09-25:** D-069 is reserved in `specs/007-publication/open-questions.md`, D-070–D-074 are
+proposed there, and the next free number is D-075.
+
 ---
 
 ## D-060 · Unit 004 was never scaffolded. What does 006 audit? — 👤 [andres]
