@@ -5628,3 +5628,75 @@ sensibly":
 - whether `1.0.0` waits for `agora_core` 1.0.0 (D-071's open half);
 - the Config Guardian 1.0.5 tag;
 - whether D-075 extends to unit 005's Gate B.
+
+---
+
+## [andres]'s answers of 2026-09-25 (afternoon), and two rulings under D-075
+
+**His words**, answering the three questions that (d) of the mandates entry above records as put
+to him and not decided:
+<!-- cspell:disable -->*"A todo lo demás voy con tus recomendaciones."*<!-- cspell:enable -->
+("To everything else I go with your recommendations." — translated, per rule 6).
+
+1. Does `1.0.0` wait for `agora_core` 1.0.0? Put to him: ★ yes.
+2. Tag and release Config Guardian 1.0.5 before the launch, on a different day? Put to him: ★ yes.
+3. Does D-075 extend to unit 005's Gate B? Put to him: ★ yes.
+
+Each answer is recorded below as an amendment; D-071 and D-075 are not edited (rule 8).
+
+**D-071, amended — its open half is answered: yes.** The launch waits for `agora_core` 1.0.0,
+released and security-covered. A new project can opt into security coverage from its tenth day,
+and `agora_core` was created on 2026-09-25, so the earliest date on which that can hold is
+**2026-10-05**.
+
+**Config Guardian 1.0.5 is approved**, before the launch and on a different day. [ejecutor] cuts
+the tag when its job list is green, and [andres] creates the release. This is the yes T-0541 waits
+for.
+
+**D-075, amended — its scope now includes unit 005's Gate B**, on the same conditions.
+
+**A fact.** [andres] created the drupal.org project `agora_core` on 2026-09-25: node 3625921,
+"Ágora Transparency Core"; category Content display; ecosystem: Ágora Transparency. Its repository
+is `git.drupalcode.org/project/agora_core`, with default branch `1.x`. Its first push, `831e502`,
+gave pipeline 976563: 7 jobs, all `success`, none permissive, `OK (4 tests, 27 assertions)`.
+Re-read anonymously the same day: the node from the D7 API, the job list from
+`/api/v4/projects/project%2Fagora_core/pipelines/976563/jobs`, and the total from `phpunit` job
+12443070's `/-/jobs/<id>/raw`.
+
+### D-076 · How the demonstration files are removed — option A — SIGNED by [ejecutor] under D-075
+
+**The ruling.** A README step with one copy-paste command, measured on a rig. It deletes exactly
+the 11 demonstration files this package ships that no media item carries — 5 CSV and 6 PDF,
+identified by their UUIDs in `content/file/`, and each only if unused — and prints each URI. The
+step lands in T-0720.
+
+The README names the 4 configuration-held files that must never be deleted:
+
+- `hero-wide.webp`, held by `recipe.yml`;
+- `login-wallpaper.png`, held by `gin_login`;
+- `default-avatar.svg`, held by `drupal_cms_authentication`;
+- `generic.png`, media's icon — to be verified at source before the README names it.
+
+**The 11, located on disk at `314dc4b`.** `content/file/` holds 40 file entities: 28 PDFs, each
+the source of one `document` media item; the 11, each attached directly to one node; and
+`hero-wide.webp`, attached to no content entity. A media item's file can leave with it:
+`drupal_cms_media` installs `media_file_delete` (line 21 of its `recipe.yml` at 2.1.6, read at
+source), which lets the person deleting a media item delete its file too — an option that is off
+by default (`delete_file_default: false`). T-0720's criterion names every file left over.
+
+**Option C** — a "Remove demonstration content" action in `agora_core` — is recorded against
+D-051's tenant 3, for later.
+
+**Why A:** it is the only easy path that cannot delete the wrong file. Option B would import
+core's files view, which lists the 4 configuration-held files as unused and deletable: a trap on
+the owner's first day.
+
+### D-077 · Where the template's CI description lives — option B — SIGNED by [ejecutor] under D-075(5)
+
+By the independent read-only audit's count, 668 of the 1,737 words of the shipped accessibility
+statement (`content/node/542d60d9-….yml`) describe the template's CI. That text moves into
+`ACCESSIBILITY.md`. In its place the statement keeps two sentences, a link to `ACCESSIBILITY.md`
+and a "To be completed" note for the owner's own review. Implemented by T-0723.
+
+**Why B:** the statement belongs to whoever operates the site, and the attestation is the
+author's statement for reviewers.
