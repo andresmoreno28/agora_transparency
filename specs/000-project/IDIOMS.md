@@ -1354,3 +1354,26 @@
   exact accident the deliberate absence of an `origin` remote exists to prevent. ⚠️ **`tests/bin/doctor`
   cannot see this class**: its clone sweep walks `~/agora-*`, and `/tmp/` is outside it. The guard is
   the method, not a detector. Recorded with T-0635.
+- I-120 · **The functional suite runs the RIG site's cron, not only the test sites'.** Before a
+  test's first page, `BrowserTestBase::initFrontPage()` visits the base URL (core 11.4.6,
+  `core/tests/Drupal/Tests/BrowserTestBase.php:243-246`) so that cookies can be set on the right
+  domain, and it does so before the test's cookie exists — the one `UiHelperTrait::prepareRequest()`
+  sets so that a request reaches the test site. That first request lands on whatever answers at the
+  base URL: on a rig, the rig's own installed site, which then runs its own cron. Measured in
+  T-0704: **3** HeadlessChrome requests to `/` per suite, and in configuration (c) `update_cron`'s
+  `site_key` request was refused at `127.0.0.1:9`. ⚠️ **So a rig's `settings.php` pin is
+  load-bearing during the suite, not only during the install.** The alternative is to point
+  `SIMPLETEST_BASE_URL` at a host with no installed site. Recorded 2026-09-25 with T-0704.
+- I-121 · **A "cannot happen" claim was read in the caller, not the callee.** `2e07f51`
+  (2026-09-05) wrote into `recipe.yml` that `config.actions` has no `?` optionality, on the strength
+  of `RecipeRunner::processConfiguration()`, which hands every action on with no condition — and
+  `7e09615`, the next day, shipped four `?canvas.component.sdc.agora_theme.*` actions that depend on
+  exactly that optionality. Nothing challenged the claim until 2026-09-25 (T-0702). **The condition
+  lives one call further down:** `ConfigActionManager::applyAction()` returns without applying
+  anything when a `?` name's object is absent (core 11.3.0 and later). ⚠️ **And the repository
+  already carried the counter-evidence.** `tests/bin/config-inventory:462-463`, written on
+  2026-08-25, says a `?` prefix means *"apply if present, SILENTLY skip if not"* — written when
+  `recipe.yml` carried 16 `?` names, every one of them under `config.actions`. ⚠️ **Before writing
+  that something cannot happen, read the code that would make it happen — the callee, not only the
+  loop that calls it — and search the repository for a counter-example.** Recorded 2026-09-25 with
+  T-0702.
