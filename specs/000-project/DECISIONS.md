@@ -5095,3 +5095,166 @@ No "yet" and no date appear in it, so it does not go stale when the first stable
 refused to cite the Security Team because the project was not covered; it now is, for stable
 releases, so describing that coverage is accurate. What stays refused is quoting somebody else's
 timeline as ours.
+
+---
+
+## D-050 · Amended 2026-09-25 — two release rulings of [andres], on disk
+
+**Two rulings of [andres] are put on disk; nothing in D-050 is edited** (rule 8). He gave them on
+2026-09-20 and on 2026-09-24. They shape unit 007's plan, and until this entry — T-0701 — neither
+stood in the decision record. His words come first, each in the original Spanish with a translation
+(rule 6). The facts come next, each printed by a command. [ejecutor]'s reading comes last, labelled
+as a reading and kept apart from his words.
+
+**1 · 2026-09-20 — no more big version steps.** [ejecutor] had cut the theme's `1.2.0` tag without
+asking him first. His words:
+
+> <!-- cspell:disable -->*"ya no crees más tags grandes, en todo caso 1.2.1, 1.2.2… el tema ni siquiera está siendo usado por la gente como para subirlo tanto de versión."*<!-- cspell:enable -->
+
+("don't create any more big tags — at most 1.2.1, 1.2.2… the theme isn't even being used by people
+enough to raise its version that much." — translated, per rule 6.)
+
+**2 · 2026-09-24 — no more versions until the official launch.** His words:
+
+> <!-- cspell:disable -->*"De momento y a no ser que no sea 100% necesario no vamos a sacar más versiones hasta salir oficialmente, no paramos de sacar versiones el mismo día, y eso no está bien, a menos que la necesites para continuar"*<!-- cspell:enable -->
+
+("For now, and unless it is 100% necessary, we are not going to put out any more versions until we
+officially launch; we keep putting out versions on the same day, and that is not right — unless you
+need one in order to continue." — translated, per rule 6.)
+
+**3 · What was measured, 2026-09-25.** Every value below was printed by a command shown with it,
+run from this working copy; none is typed from memory. The theme's tags, from its working copy, the
+sibling of this one:
+
+<!-- cspell:ignore creatordate objectname gmtime -->
+```
+$ git -C ../agora-theme for-each-ref --format='%(refname:short) %(creatordate:iso) %(objectname:short)' refs/tags/1.2.*
+1.2.0 2026-09-20 20:32:58 +0200 07ead3d
+1.2.1 2026-09-24 02:32:11 +0200 762acf4
+1.2.2 2026-09-24 18:45:18 +0200 b22db67
+```
+
+⚠️ **All three are annotated tags, so the last column is the tag object, not the commit.** The date
+is the tag's own — when it was made, not when its commit was. The commit each tag points at — its
+`^{}` line — comes from drupalcode, which also shows all three pushed, with the same tag objects:
+
+```
+$ git -C ../agora-theme ls-remote drupalcode 'refs/tags/1.2.*' | tr '\t' ' '
+07ead3d035867201bbb0bd8aaf7d5757c70ff72e refs/tags/1.2.0
+4f82307fb48622708dd21de22725beef7ff120d7 refs/tags/1.2.0^{}
+762acf419e879f85f0a53b4ca5c765ad79aba1ed refs/tags/1.2.1
+27bf188111d7ddc7475464baf324b8d3498ee12a refs/tags/1.2.1^{}
+b22db678dd5478759cafda2db446c216c5f5ec0e refs/tags/1.2.2
+8690b7a06ac2c559cf126eafcf0fc4c04f4b685b refs/tags/1.2.2^{}
+```
+
+The same three tag dates in UTC, to set beside the release feed, which gives UTC:
+
+```
+$ TZ=UTC git -C ../agora-theme for-each-ref --format='%(refname:short) %(creatordate:format-local:%Y-%m-%d %H:%M:%S) UTC' 'refs/tags/1.2.*'
+1.2.0 2026-09-20 18:32:58 UTC
+1.2.1 2026-09-24 00:32:11 UTC
+1.2.2 2026-09-24 16:45:18 UTC
+```
+
+The theme's releases, from its release feed with a plain GET at 2026-09-25 01:39 UTC, parsed rather
+than grepped (I-022):
+
+```
+$ curl -s https://updates.drupal.org/release-history/agora_theme/current | python3 -c '
+import sys, time, xml.etree.ElementTree as E
+r = E.fromstring(sys.stdin.buffer.read())
+rs = list(r.iter("release"))
+print("supported:", r.findtext("supported_branches"), "| releases:", len(rs))
+for x in rs:
+    if x.findtext("version").startswith("1.2."):
+        t = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(int(x.findtext("date"))))
+        print(x.findtext("version"), x.findtext("status"), t)
+'
+supported: 1.2. | releases: 10
+1.2.1 published 2026-09-24 15:09:06 UTC
+1.2.0 published 2026-09-23 05:28:42 UTC
+```
+
+The template's tags, and the theme's tag total:
+
+```
+$ git ls-remote drupalcode 'refs/tags/*' | wc -l
+0
+$ git -C ../agora-theme ls-remote drupalcode 'refs/tags/*' | grep -v '\^{}' | wc -l
+13
+```
+
+The theme's tags with no release — its tags on drupalcode, less the tags its release feed lists:
+
+```
+$ comm -23 <(git -C ../agora-theme ls-remote drupalcode 'refs/tags/*' | grep -v '\^{}' | sed 's#.*refs/tags/##' | sort) <(curl -s https://updates.drupal.org/release-history/agora_theme/current | python3 -c '
+import sys, xml.etree.ElementTree as E
+for x in E.fromstring(sys.stdin.buffer.read()).iter("release"): print(x.findtext("tag"))' | tr -d '\r' | sort)
+1.0.4
+1.0.8
+1.2.2
+```
+
+**So `1.2.2` is a tag pushed to drupalcode at `8690b7a`, with no release** — one of three tags with
+no release, among thirteen.
+
+**What the dates say, and nothing more:**
+
+| UTC | event | read from |
+|---|---|---|
+| 2026-09-20 18:32:58 | tag `1.2.0` | the tag |
+| 2026-09-23 05:28:42 | release `1.2.0` | the feed |
+| 2026-09-24 00:32:11 | tag `1.2.1` | the tag |
+| 2026-09-24 15:09:06 | release `1.2.1` | the feed |
+| 2026-09-24 16:45:18 | tag `1.2.2` | the tag |
+| — | no release of `1.2.2` | the feed |
+
+`1.2.0` was tagged on 2026-09-20 and released on 2026-09-23. `1.2.1` and `1.2.2` were both tagged on
+2026-09-24, in UTC and in git's +0200 alike, and `1.2.1`'s release carries that date too, between
+the two tags.
+
+**4 · [ejecutor]'s reading — how the two rulings are applied. It is a reading, not his words.**
+
+- **Both projects.** His 2026-09-24 words name no project, and his 2026-09-20 instruction — no more
+  big tags — names none either, although its numbers and its reason are the theme's. [ejecutor]
+  applies both rulings to the theme and to the template alike: the stricter reading.
+- **"Necessary" means that something cannot proceed without a published release.** That is his own
+  last clause, <!-- cspell:disable -->*"a menos que la necesites para continuar"*<!-- cspell:enable -->
+  ("unless you need one in order to continue"). Even then, [ejecutor] asks him first and says why.
+- **Fixes accumulate on `1.x`** in both repositories, each push verified by its CI job list, as
+  before (D-023(5)).
+- **His 2026-09-20 words set no end point.** The reading applied since then says patch-only "until
+  the launch", and that end point is not in those words: it comes from his 2026-09-24 words,
+  <!-- cspell:disable -->*"hasta salir oficialmente"*<!-- cspell:enable -->, which bound the pause
+  on new versions.
+- **A pushed tag is never deleted.** `1.2.2` stays a tag with no release, as `1.0.4` and `1.0.8` do.
+
+**5 · What the rulings narrow.**
+
+- **D-050 part 1.** *"Semantic versioning is the rule for both packages"* gives way to patch-only
+  steps. Part 1 priced this itself: *"Under patch-only versioning that constraint would have to be a
+  three-component one, which rule 1 makes awkward"* — the constraint being the template's floor on
+  the theme, `^1.1` in `composer.json` today.
+- **D-050 part 2.** The Wednesday rule is dormant while no minor is cut. D-050's mechanism computes
+  the branch row from the version string alone, and a patch release keeps its first two numbers —
+  the theme's `1.2.` — so it lands on the row that already exists: no second supported row appears,
+  and there is nothing to uncheck. Dormant is not repealed — the rule binds again the day a minor is
+  cut, as D-070's option C would.
+- **D-050 part 3's amendment of 2026-09-12 — consistent with his words of that day, and one sentence
+  of its reading narrows.** Those words hold the template's first stable version back until it is
+  finished, and release nothing for now; the 2026-09-24 words hold every version back until the
+  launch. Neither sets a date, and neither contradicts the other. What narrows is the amendment's
+  own reading that the pre-release phase *"stays available the moment a pre-release would buy
+  something"*: a pre-release is a version like any other, paused until the launch unless one is
+  necessary to continue, and even then [andres] is asked first. Paused is not forbidden, so that
+  amendment's warning stands — part 3 was not narrowed to forbid pre-releases.
+- **Non-negotiable rule 10 of the project instructions**, *"commits, pushes and tags are yours"*, is
+  narrowed in time. Until the launch, [ejecutor] cuts no tag in either project unless one is
+  necessary to continue, and then only after asking [andres]. Commits and pushes are unchanged, and
+  so is who does what: a tag, when one is cut, is [ejecutor]'s; a release is [andres]'s. Rule 10 now
+  ends with a pointer to this entry.
+
+**6 · What this does not decide:** which event "the launch" is (**D-071**), and the version numbers
+it carries (**D-070**). Both are open in `specs/007-publication/open-questions.md`, and both are
+[andres]'s.

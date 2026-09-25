@@ -133,6 +133,8 @@ noise), publishable (everything meets the marketplace terms from day 1).
     ⚠️ The practical consequence is that **a release now needs release NOTES from you**, not a
     command for him to run - if you cut a tag and hand over nothing to paste into the form, you
     have moved the work rather than done it.
+    ⚠️ **NARROWED 2026-09-24 by [andres]: no tag, no release of either project until the official launch
+    unless one is strictly necessary to continue, and then ask him first** (D-050, amended 2026-09-25).
 
 ## Repository structure
 
