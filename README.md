@@ -111,6 +111,8 @@ person.
 **No conformance with any WCAG level is claimed.** The shipped accessibility statement carries the
 full account, with the denominators.
 
+The author's attestation, keyboard walkthrough included, is [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+
 ## Requirements
 
 * **A plain Drupal site, not a Drupal CMS one.** The installation flow below starts from
@@ -255,7 +257,7 @@ before you run them.
 
 ## What it ships
 
-The packaged release holds **thirteen** top-level entries, and the whole tarball is **376 entries**.
+The packaged release holds **fourteen** top-level entries, and the whole tarball is **377 entries**.
 They are not transcribed by hand here, because that is how two earlier versions of this paragraph
 went wrong — they are derived, and the derivation is one command anybody reading this can re-run:
 
@@ -263,7 +265,7 @@ went wrong — they are derived, and the derivation is one command anybody readi
 git archive HEAD | tar -t | sed 's#/.*#/#' | sort -u
 ```
 
-Measured 2026-09-25, it prints, in that order: `.gitattributes`, `AGENTS.md`,
+Measured 2026-09-25, it prints, in that order: `.gitattributes`, `ACCESSIBILITY.md`, `AGENTS.md`,
 `LICENCE-MANIFEST.md`, `LICENSE.txt`, `README.md`, `SECURITY.md`, `composer.json`, `config/`,
 `content/`, `logo.png`, `recipe.yml`, `recommended.yml`, `screenshot.webp`. Both figures above are now read out of `git archive` by
 `tests/bin/packaged-claims` on every push, so the commit that changes what the tarball holds is the
@@ -540,7 +542,7 @@ table it summarises, one sentence further from the measurement.
 
 **What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
 stayed closed across five changes of denominator. Measured 2026-09-25 by
-`bash tests/bin/spellcheck`: **480 tracked or stage-able files offered to cspell, 439 checked,
+`bash tests/bin/spellcheck`: **481 tracked or stage-able files offered to cspell, 440 checked,
 `Issues found: 0`** — plus two the CI runner generates and this repository does not track
 (`.editorconfig`, `gitlab_templates_version.txt`), which is why the job's own count reads two
 higher. The script prints both numbers every time it runs, so this paragraph is checkable rather
@@ -548,7 +550,8 @@ than quotable. ⚠️ It read **70 tracked · 65 opened** here until 2026-09-12;
 grown a content model and a media corpus, and the figures were carried rather than re-run.
 It read **472 · 431** from 2026-09-21 until 2026-09-25, one file behind the script from 2026-09-23
 and three from 2026-09-24: only the subtraction below is bound, so nothing here could see it.
-It read **476 · 435** earlier on 2026-09-25, until four planning files were added under `specs/`.
+It read **476 · 435** earlier on 2026-09-25, until four planning files were added under `specs/`,
+and **480 · 439** from then until `ACCESSIBILITY.md` joined the package root the same day.
 
 **The 41 files not opened, all 41 of them.** The accounting is given in full because an enumeration
 that does not add up to its own denominator reads as an explanation — that exact mistake stood in

@@ -175,6 +175,11 @@ PRODUCT_ERE='Ágora|Agora|agora_transparency'
 # the same way: `findings: 1`, the first time the closed world ran over it. A
 # reporter opens it with no other context - the GitHub mirror shows it as the
 # repository's security policy, and a reviewer finds it at the tarball's root.
+#
+# ACCESSIBILITY.md joined later the same day (T-0617) by the same test, and it
+# was caught the same way: `findings: 1`, the first time the closed world ran
+# over it. It is the author's WCAG attestation, addressed to a reviewer who opens
+# it at the tarball's root with no other context.
 IDENTITY_FILES='recipe.yml
 composer.json
 README.md
@@ -182,6 +187,7 @@ AGENTS.md
 recommended.yml
 LICENCE-MANIFEST.md
 SECURITY.md
+ACCESSIBILITY.md
 content/PEOPLE.md
 content/MEDIA-LICENCES.md'
 

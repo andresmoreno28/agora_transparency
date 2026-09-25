@@ -51,7 +51,7 @@ trust, which is the opposite of what it is for.
 
 ## 1 · This package's own files — GPL-2.0-or-later
 
-**326 files in the packaged release are covered by `GPL-2.0-or-later`.** That is every configuration
+**327 files in the packaged release are covered by `GPL-2.0-or-later`.** That is every configuration
 object, every content export, every line of prose and every piece of packaging metadata: everything
 the tarball holds that is not a media file.
 

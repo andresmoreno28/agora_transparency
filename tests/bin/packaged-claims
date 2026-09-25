@@ -107,6 +107,10 @@
 #   SECURITY.md
 #     security_window    the acknowledgement time vs  the D-064 heading that set it, in DECISIONS.md
 #
+#   ACCESSIBILITY.md
+#     (none)             it states no figure this script registers; every one-copy detector runs
+#                        over it instead, so a registered figure written into it is refused
+#
 #   the accessibility statement (content/node/<uuid>.yml, rendered at /accessibility-statement)
 #     a11y_pages         the scanned page count   vs  the pages AccessibilityTest declares
 #     a11y_declared_const  DECLARED_PAGES in the test vs  those same pages (source vs source)
@@ -225,7 +229,12 @@ LICENCES='LICENCE-MANIFEST.md'
 # reporter waits for an acknowledgement, and that figure binds a named person to a named time. It is
 # compared below against the decision that set it, and every one-copy detector runs over it.
 SECURITY_MD='SECURITY.md'
-PACKAGED_FILES="$README $MANIFEST $STATEMENT $RECIPE $COMPOSER $RECOMMENDED $LICENCES $SECURITY_MD"
+# T-0617. The WCAG attestation. A SUBJECT with no comparison of its own, on purpose: it states no
+# figure this script registers and points at the accessibility statement and the public job logs
+# for every result. It is here for the one-copy rule - every detector below runs over it, so the
+# day it restates the page count the statement quotes, the guard says so by name.
+ACCESSIBILITY_MD='ACCESSIBILITY.md'
+PACKAGED_FILES="$README $MANIFEST $STATEMENT $RECIPE $COMPOSER $RECOMMENDED $LICENCES $SECURITY_MD $ACCESSIBILITY_MD"
 
 # Sources that are NOT packaged and are read only as the measured side.
 RUNNER1='tests/bin/gate-a-wave1.sh'
@@ -307,6 +316,7 @@ ARCHIVE_N=$(printf '%s\n' "$ARCHIVE_LIST" | grep -v '^$' | wc -l | tr -d '[:spac
 # environments and not between claims.
 TEXT_README=''; TEXT_MANIFEST=''; TEXT_STATEMENT=''
 TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''; TEXT_LICENCES=''; TEXT_SECURITY=''
+TEXT_ACCESSIBILITY=''
 # A SECOND, FLOWED VARIANT OF EVERY SUBJECT, and it is not a convenience. README.md is hard-
 # wrapped at 100 columns, so almost every sentence carrying a figure is split across two lines -
 # and `grep` reads a line at a time. A pattern written for the sentence would therefore match
@@ -317,6 +327,7 @@ TEXT_RECIPE=''; TEXT_COMPOSER=''; TEXT_RECOMMENDED=''; TEXT_LICENCES=''; TEXT_SE
 # text directly and say so.
 FLOW_README=''; FLOW_MANIFEST=''; FLOW_STATEMENT=''
 FLOW_RECIPE=''; FLOW_COMPOSER=''; FLOW_RECOMMENDED=''; FLOW_LICENCES=''; FLOW_SECURITY=''
+FLOW_ACCESSIBILITY=''
 
 load_packaged() { # <var-suffix> <path>
   local path="$2" body flow
@@ -343,6 +354,7 @@ load_packaged COMPOSER    "$COMPOSER"
 load_packaged RECOMMENDED "$RECOMMENDED"
 load_packaged LICENCES    "$LICENCES"
 load_packaged SECURITY    "$SECURITY_MD"
+load_packaged ACCESSIBILITY "$ACCESSIBILITY_MD"
 
 text_of() { # <var-suffix> -> that file's CR-stripped text, line structure intact
   eval "printf '%s' \"\$TEXT_$1\""
@@ -360,6 +372,7 @@ path_of() { # <var-suffix> -> that file's path
     RECOMMENDED) printf '%s' "$RECOMMENDED" ;;
     LICENCES) printf '%s' "$LICENCES" ;;
     SECURITY) printf '%s' "$SECURITY_MD" ;;
+    ACCESSIBILITY) printf '%s' "$ACCESSIBILITY_MD" ;;
     *) printf '%s' "$1" ;;
   esac
 }
@@ -453,7 +466,7 @@ compare() { # <label> <claimed> <measured> <source>
 one_home() { # <label> <home-list-or-EXTERNAL> <detector ERE> <why the home is the home>
   local label="$1" home="$2" ere="$3" why="$4" hits='' who path rc expect n want
   ONE_COPY=$((ONE_COPY + 1))
-  for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES SECURITY; do
+  for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES SECURITY ACCESSIBILITY; do
     flow_of "$who" | grep -qE "$ere"
     rc=$?
     case $rc in
@@ -471,7 +484,7 @@ one_home() { # <label> <home-list-or-EXTERNAL> <detector ERE> <why the home is t
     # The declared homes, in the same fixed order the scan visits them, so the two lists are
     # comparable as strings rather than as sets.
     want=''
-    for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES SECURITY; do
+    for who in README MANIFEST STATEMENT RECIPE COMPOSER RECOMMENDED LICENCES SECURITY ACCESSIBILITY; do
       case " $home " in *" $who "*) want="$want $who" ;; esac
     done
     want=${want# }
@@ -1483,6 +1496,7 @@ NOT_CHECKED=(
 "The route SECURITY.md gives: the project page it links, the name of the sidebar link on that page, and what the link opens - a new work item on git.drupalcode.org with confidentiality switched on, behind a Drupal.org sign-in. Verified at source on 2026-09-25: the page answered HTTP 200 and carried the link with issue[confidential]=true pre-set, and the new-item address answered with a redirect to sign-in. They are facts about Drupal.org's pages, which can change without a commit here. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND in this pass."
 "The coverage sentence in SECURITY.md - that stable releases are covered by Drupal's security advisory policy. It rests on the project's opt-in, which is a setting on Drupal.org and not a file in this package: its API reported field_security_advisory_coverage = covered on 2026-09-25, unchanged since 2026-09-24 15:14 UTC, and the project page says the same in its sidebar. Withdrawing the opt-in needs no commit here, and would leave the sentence false in every package that carries it. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND: reading a Drupal.org field would add a figure to --online, which is a decision of its own."
 "The sentence in SECURITY.md that a site template's requirements are copied into the site's own composer.json when Composer adds it to a Drupal CMS site. It describes another project: drupal/cms 2.1.6 requires drupal/core-recipe-unpack ^11.3.10 and allows it as a plugin, read from its project template at that tag on 2026-09-25, and specs/000-project/DECISIONS.md records the flattening as measured in a rig. A later Drupal CMS could drop the plugin or switch it off, and nothing offline here would see it."
+"What ACCESSIBILITY.md says beyond the one-copy rule. It states no figure this script registers, by design, and every one-copy detector above runs over it. Its account of the keyboard walkthrough - the dates, the two builds, what the machine found and what the person confirmed - is a record of two dated events whose evidence lives in specs/, which is not packaged; and its sentences about Gin, coffee, the consent banner and the sign-in page describe other projects' behaviour on the sites that were walked. READABLE AND DELIBERATELY NOT BOUND."
 )
 
 printf '\nNOT CHECKED - named, with a reason, because a guard that silently covers half its subject\n'

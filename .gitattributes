@@ -42,11 +42,11 @@
 #
 #   entries in the tarball
 #     git archive --worktree-attributes HEAD | tar -t | wc -l
-#     -> 376 with these two lines, 378 without
+#     -> 377 with these two lines, 379 without
 #
 #   files at the packaged root
 #     git archive --worktree-attributes HEAD | tar -t | grep -cvE '/'
-#     -> 11 with these two lines, 13 without
+#     -> 12 with these two lines, 14 without
 #
 # Both sides were measured on 2026-09-25 by commenting the two lines out, re-running
 # each command, and putting them back - not by adding 2 to the number already here.
@@ -58,6 +58,8 @@
 # above them can rot. Removing a line here still turns the gate red rather than
 # quietly restoring the noise. They read `375` and `10` from 2026-09-23 until
 # `SECURITY.md` joined the packaged root on 2026-09-25, in the commit that moved them.
+# They read `376` and `11` from then until `ACCESSIBILITY.md` joined it later the
+# same day, again in the commit that moved them.
 #
 # ⚠️ This does NOT reach the `Drupal CMS` CI job, and that is a property worth knowing
 # rather than a gap: that job installs this package through a Composer PATH REPOSITORY,

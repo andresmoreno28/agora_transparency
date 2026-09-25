@@ -170,6 +170,7 @@ LICENCE-MANIFEST.md
 .gitignore
 .gitlab-ci.yml
 .mailmap
+ACCESSIBILITY.md
 AGENTS.md
 CLAUDE.md
 LICENSE.txt

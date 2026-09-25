@@ -410,6 +410,34 @@
 # comparison added makes the guard say MORE, and the G11 checks assert `> 0` rather than a
 # length, so wave 1 stays at 100 checks.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-25 (T-0617, the WCAG attestation), the packaged-claims record,
+# the same four steps in order.
+#
+#   1. tests/bin/ported-drift FIRST, before the edit was decided: 3 records compared, 3 read,
+#      3 provenance verified, **0 behind** 1.x at 6eff3f91, oldest drift 0 day(s), 0 past the
+#      cap, 0 findings, network READ anonymously. claims-match-readme has not moved since
+#      a0f4cdf, so there was nothing upstream to take and no per-hunk decision to make.
+#   2. What changed HERE: packaged-claims gained ACCESSIBILITY.md as a ninth packaged
+#      subject with NO extraction and NO comparison of its own - it states no registered
+#      figure by design, and every one-copy detector now runs over it - and ONE NOT CHECKED
+#      entry naming what it says that nothing binds. Nothing came from agora_theme; files
+#      8 -> 9, claims 36, comparisons 49 and one-copy checks 9 unchanged, the list 18 -> 19.
+#      Watched reaching the new subject, in a throwaway worktree: a registered figure planted
+#      in it - the page count, then the acknowledgement window - gave TWO COPIES naming
+#      ACCESSIBILITY.md and exit 2, each time.
+#   3. local_sha256 re-derived with sha256sum from the file on disk and substituted by
+#      command, never typed: c2135dae... -> c5fa7fe9.... source_sha256 and source_commit
+#      UNCHANGED and not retyped, because step 1 proved the source has not moved, so
+#      DECLARED_COMMITS in ported-copies does not move either.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0; ported-copies 3
+#      verified, 3 source commits on disk and 3 declared, 0 findings.
+#
+# ⚠️ WATCHED REFUSING THE EDIT BEFORE THE RECORD MOVED: with the script edited and this
+# record not yet regenerated, ported-copies printed EDITED for packaged-claims,
+# `verified: 2`, `findings: 1`, exit 1. The G11 checks assert `> 0` rather than a
+# length, so wave 1 stays at 100 checks.
+#
 # script            role       status    local_sha256                                                    source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -472,7 +500,7 @@ preflight          preflight  adapted   e1ce157c4c1a406140ca4f6b84ad26afb4344222
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   c2135dae5c0a7456a7f3edcd5424eefdf7dc6a30bdf918a6f4b6016fdbbb3fbf tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
+packaged-claims    invariant  adapted   c5fa7fe9073c94c9b1c411db660727ea07ea2d18c4751a9a129a2eb729a297f2 tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
 #
 # -----------------------------------------------------------------------------------------
 # THE SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own
