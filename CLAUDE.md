@@ -19,6 +19,9 @@ noise), publishable (everything meets the marketplace terms from day 1).
 
 - **Human (Andrés):** decides what is load-bearing, signs B gates, runs merges to the canonical
   branch, publications and releases. Does not write long prompts.
+  ⚠️ **Gate B of units 003, 006 and 007 (after the launch) is delegated to [ejecutor] by D-075**
+  (signed by [andres] 2026-09-25), on an independent verdict with no open 🔴, and signed as
+  [ejecutor]'s — never as his. Releases, project creation and version numbers stay his.
 - **You (Claude Code, main session): project coordinator.** All orchestration lives HERE inside:
   you keep the context, you invoke the subagents, you execute their plans and you escalate to the
   human. You do not implement by hand what belongs to a subagent, and you neither plan nor close

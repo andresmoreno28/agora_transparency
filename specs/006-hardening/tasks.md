@@ -497,6 +497,9 @@ file's own command prints. Run it rather than reading either number.
     visits to [andres]'s live preview. The evidence of record is the rig research of 2026-09-23,
     plus T-0710's launch-day re-measurement of the same two stops on the released theme. No rule is
     loosened by them: later readings are taken on rigs. The tool used for them is not recorded here.
+    ⚠️ **Recorded 2026-09-25:** `playwright-core` 1.63.0 driving the installed Google Chrome,
+    headless, anonymous, GET-only — real `Tab` key presses from a fresh load, then the focused
+    element's outline box compared with the table scroller's visible box and the viewport.
 - **Person:** [andres] on the preview, 2026-09-25 — item 1 of his answers of that day, quoted
   verbatim in `specs/000-project/DECISIONS.md`.
 
