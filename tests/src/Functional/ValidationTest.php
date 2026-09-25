@@ -94,8 +94,9 @@ class ValidationTest extends BrowserTestBase {
    * IS WORTH KNOWING BEFORE ANYONE TOUCHES IT. `recipe.yml` deliberately did
    * NOT set `agora_theme.settings:hero_image_path`, because the config object
    * holding it existed in no published theme release, and core's
-   * `SimpleConfigUpdate::apply()` throws on a config object that is absent -
-   * with no `?` optionality available for `config.actions`. This test asserted
+   * `SimpleConfigUpdate::apply()` throws on a config object that is absent.
+   * (A `?` prefix would have skipped it silently instead; `recipe.yml` says
+   * why this action carries none.) This test asserted
    * the WITHHOLDING, so that landing the action would fail here rather than on
    * somebody's clean install. It was watched failing with the action in place.
    *

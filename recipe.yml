@@ -147,13 +147,15 @@ install:
   - stark
   # Ágora's own front-end theme. It lives in a SEPARATE Drupal.org project,
   # `drupal/agora_theme` (D-014, option B), and is declared in `composer.json`'s
-  # `require` as `^1.0` — never bundled here, because a site template may contain
+  # `require` — never bundled here, because a site template may contain
   # no extension code of its own: the package ships zero `*.info.yml` files and is
   # installed outside the docroot, where Drupal does not even scan for extensions.
   # Composer therefore places the theme in the docroot and this line enables it;
   # `system.theme` below makes it the default.
-  # The caret is what carries the theme's later releases into new installs, which
-  # is the only update path a site template has: recipes apply once.
+  # The constraint is a caret range — its floor, and why it is no lower, is
+  # explained beside the `agora_theme.settings` action below — and the caret is
+  # what carries the theme's later releases into new installs, which is the only
+  # update path a site template has: recipes apply once.
   - agora_theme
   # -- area: publishing ---------------------------------------------------------
   # (empty by decision: unit 004 is deferred past the first release — D-060)
@@ -236,11 +238,19 @@ config:
       - block.block.agora_theme_messages
       # THE FOUR BELOW ARE WHY A SITE INSTALLED FROM THIS PACKAGE HAD NO HEADER
       # BRANDING AND NO FOOTER AT ALL, and they were added on 2026-08-27 the day
-      # theme 1.0.2 published them - not before, because a recipe importing a
-      # config entity that its resolved release does not contain fails the
-      # install outright. That ordering is the whole lesson: the theme ships the
+      # theme 1.0.2 published them - not before. NOT because naming a placement
+      # early breaks the install: it does not. Measured on 2026-09-25 with
+      # `drush recipe`, a recipe naming a placement its resolved release does
+      # not ship applies, reports success and places nothing - no warning, no
+      # log entry - because core silently drops every listed name the extension
+      # does not ship. That silence is why the ordering is still the whole
+      # lesson: named before its release, a placement is a block this file
+      # promises and no install receives, the same failure the paragraph below
+      # describes for a name that is not listed at all. The theme ships the
       # placement, the release makes it resolvable, and only then may the recipe
-      # name it.
+      # name it. What DOES fail outright is a different mistake: an action with
+      # no `?` on an object that is absent, or an `import:` keyed by an
+      # extension the codebase does not contain.
       #
       # A recipe SKIPS config entities on install unless they are named here
       # (I-086). The four above were named; these four were not, so every clean
@@ -253,9 +263,9 @@ config:
       - block.block.agora_theme_footer_branding
       - block.block.agora_theme_footer_menu
       - block.block.agora_theme_powered_by
-      # THE NINTH, added 2026-08-27 the day theme 1.0.3 published it. Same
-      # ordering rule as the four above: the theme ships the placement, the
-      # release makes it resolvable, and only then may the recipe name it.
+      # THE NINTH, added 2026-08-27 the day theme 1.0.3 published it, under the
+      # same rule and for the same reason as the four above: named any sooner,
+      # it would have been dropped without a word and never placed.
       # It renders on every page except the front page, where core returns an
       # empty trail and the block does not render at all - which is correct: a
       # breadcrumb reading only "Home" on the home page is noise.
@@ -407,10 +417,13 @@ config:
     # exist in NO 1.0.x release - the newest published on that branch is
     # 1.0.7 - and core's `SimpleConfigUpdate::apply()` throws `Config
     # agora_theme.settings does not exist so can not be updated` on a config
-    # object that is absent. Unlike `import:`, there is NO `?` optionality for
-    # `config.actions`: `RecipeRunner::processConfiguration()` applies every
-    # entry unconditionally. So this action on a site that resolved 1.0.7 is a
-    # hard `drush recipe` failure, not a missing picture. The dependency is
+    # object that is absent. This action carries NO `?` prefix, on purpose. A
+    # `?` is how `config.actions` makes an entry optional - core's
+    # `ConfigActionManager::applyAction()` returns without applying anything
+    # when a `?` name's object does not exist, and the four
+    # `?canvas.component.sdc.agora_theme.*` actions further down rely on it -
+    # so without one, this action on a site that resolved 1.0.7 is a hard
+    # `drush recipe` failure, not a missing picture. The dependency is
     # therefore `drupal/agora_theme: ^1.1`. Release 1.1.0 - published
     # 2026-09-05 22:21 UTC (the `<date>` epoch in the release history, which
     # is 00:21 on the 6th in this repository's own +0200), security-covered,
