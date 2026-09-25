@@ -25,6 +25,8 @@
 #     summary: 'A short description of the project.'
 #   packageName: drupal/example
 #
-# Consuming this list also requires installing `project_browser` and pointing
-# `project_browser.admin_settings` at a permanent URL for this file, in
-# `recipe.yml`. Neither is done yet.
+# Project Browser is installed on every Ágora site: `recipe.yml` applies the
+# `drupal_cms_admin_ui` recipe, which installs it. What `recipe.yml` does not do
+# is point `project_browser.admin_settings` at a permanent URL for this file,
+# and that is deliberate while this file lists nothing: there is nothing in it
+# for Project Browser to offer.

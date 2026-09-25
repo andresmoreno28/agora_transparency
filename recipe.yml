@@ -574,29 +574,35 @@ config:
     # this as a relapse: it does not say "never a `?`", it says a `?` that is
     # NEVER NEEDED is dropped, because it hides a skip nobody can count. These
     # four were resolved the same way the sixteen were - against a clean install
-    # carrying this template's exact dependency closure - and the measurement
-    # came back the other way round: 0 of 4 exist. So the `?` is kept, on the
-    # same evidence that removed the other sixteen.
+    # carrying this template's exact dependency closure - and the measurement,
+    # taken while 1.1.0 was the newest theme release, came back the other way
+    # round: 0 of 4 exist. Measured again on 2026-09-25, on a clean install
+    # that resolved 1.2.1: 4 of 4 exist, all enabled. So the `?` is kept, on the
+    # same evidence that removed the other sixteen: an install that resolves
+    # 1.1.0 still gets the first result.
     #
-    # WHY THEY ARE ABSENT, and it is a fact about release timing rather than
+    # WHEN THEY ARE ABSENT, and it is a fact about release timing rather than
     # about the components. They live in `agora_theme`, a SEPARATE Drupal.org
-    # project (D-014), and `composer.json` requires `^1.1`. The newest published
-    # release is 1.1.0, and `git ls-tree -r 1.1.0 -- components/` in that
-    # repository lists ZERO files: the components landed after it and are in no
-    # tag. Until a release carries them, `drupal/agora_theme` on a clean install
-    # provides no SDC at all and these four config objects do not exist.
+    # project (D-014), and `composer.json` requires `^1.1`. The components first
+    # shipped in 1.2.0: `git ls-tree -r <tag> -- components/` in that repository
+    # lists ZERO files at 1.1.0 and at every earlier tag, and twelve at 1.2.0
+    # and at 1.2.1 - four components, three files each. An install that
+    # resolves a release carrying them - 1.2.0 and 1.2.1 both do - gets all
+    # four. `^1.1` still admits 1.1.0, and an install that resolves 1.1.0 gets
+    # no SDC from the theme at all and none of these four config objects. Which
+    # is why the four `?` prefixes stay while the constraint admits 1.1.0.
     #
-    # ⚠️ WITHOUT THE `?`, EVERY CLEAN INSTALL OF THIS TEMPLATE WOULD FAIL TODAY.
-    # Measured on a rig, not predicted. The same name WITHOUT the prefix aborts
-    # the apply: `Entity canvas.component.sdc.agora_theme.section does not
-    # exist`, thrown from `Exists.php` line 39, exit 1. And shipping the four
-    # config objects under `config/` instead fails harder and earlier - it
-    # aborts `site:install` itself with `The "agora_theme:group" plugin does not
+    # ⚠️ WITHOUT THE `?`, ANY CLEAN INSTALL THAT RESOLVES 1.1.0 WOULD FAIL.
+    # Measured on a rig while 1.1.0 was the newest release, not predicted. On
+    # such an install the same name WITHOUT the prefix aborts the apply:
+    # `Entity canvas.component.sdc.agora_theme.section does not exist`, thrown
+    # from `Exists.php` line 39, exit 1. And shipping the four config objects
+    # under `config/` instead fails there harder and earlier - it aborts
+    # `site:install` itself with `The "agora_theme:group" plugin does not
     # exist. Valid plugin IDs for Drupal\canvas\Plugin\ComponentPluginManager
     # are: canvas:image, navigation:message, navigation:badge,
     # navigation:toolbar-button, navigation:title`, exit 1. Which is why this
-    # row ships four actions and NO `config/` files, and why the object count
-    # in `tests/bin/config-inventory` stays at 130.
+    # row ships four actions and NO `config/` files for them.
     #
     # ⚠️ AND A SHIPPED FILE WOULD WIN, which is the second reason not to ship
     # one. `config.strict` is `false`, so an object that already exists wins -
@@ -632,8 +638,9 @@ config:
     # it is no action at all, since a bare name cannot be shipped. A `?` hides
     # exactly what shipping nothing hides, and repairs a case shipping nothing
     # cannot. `ValidationTest::testCanvasComponentReview()` pins the count at
-    # four and asserts each one is enabled the moment it exists, so the day a
-    # theme release carries the components this stops being vacuous by itself.
+    # four and asserts each one is enabled the moment it exists, so wherever a
+    # release carrying the components is resolved that assertion fires by
+    # itself, and it is vacuous only where 1.1.0 is.
     ?canvas.component.sdc.agora_theme.section:
       enable: []
     ?canvas.component.sdc.agora_theme.group:
