@@ -255,6 +255,105 @@ CI workflow passes it for the same reason. Any `ddev composer` command run after
 re-mirrors the path repository and deletes the tests again, so keep the copy as the last step
 before you run them.
 
+## Make it yours
+
+The recipe installs one working example — Fuentelclaro's demonstration corpus — so a clean install
+has something to look at rather than an empty shell. This is what a body publishing its own records
+changes before it goes live, in the order it usually comes up. Every path and every count below was
+walked on a clean install, not written from memory of the code.
+
+* **Site name.** Configuration → System → Basic site settings
+  (`/admin/config/system/site-information`). Drupal core's own "Site name" field; nothing in this
+  package sets it.
+* **Logo.** Appearance → Settings, on the Ágora Transparency theme's own settings page. Drupal
+  core's own "Logo image settings", above which this theme puts its own fields: untick "Use the
+  logo supplied by the theme" and upload the institution's mark.
+* **Masthead image.** Same page, "Front-page masthead": "Path to the masthead image" for a file
+  already on the server, or "Upload a masthead image" for one that is not. Leave both empty and the
+  band stays flat navy — the theme ships no photograph of its own to fall back on.
+* **The masthead's opening line.** Same fieldset, "Opening line": the sentence under the front-page
+  heading. The shipped sentence names a council; clear the field for no line at all, or write the
+  institution's own. This setting ships on `drupal/agora_theme`'s `1.x` branch ahead of a numbered
+  release naming it; it is not in every tagged release yet.
+* **Currency.** Same settings page, the read-only panel under the theme's own fieldset: it lists
+  every field it finds on the site that can carry a currency prefix or suffix, each with a direct
+  link to its own edit form. The panel writes nothing — the currency is set once per field, not once
+  for the whole site, and this is where to find every place that needs changing together.
+* **Social links.** Structure → Menus → "Follow us". Four placeholder links ship, each pointing at
+  a social network's own front page rather than an account; edit each to the institution's real
+  account, or delete the ones that do not apply. The theme shows a brand mark for the network it
+  recognises from the link's own domain; a network it does not carry a mark for, or any other link,
+  renders as a plain text item in the same row.
+* **The accessibility statement and the legal pages.** `/accessibility-statement` carries four
+  sections marked "To be completed": what has been separately verified about this installation, how
+  to report a barrier, the enforcement procedure for this jurisdiction, and the date and method of
+  the last review. The Legal notice, Privacy notice, Cookies and Privacy policy pages ship from
+  Drupal CMS's own privacy recipe and need the same kind of attention — an address, a contact route
+  and a jurisdiction that are the institution's own.
+* **Trash.** Deleting content does not remove it outright: this site enables Drupal core's Trash
+  module for content, so a deleted register record moves to Content → Trash
+  (`/admin/content/trash`) and stays there — nothing purges it on its own — until it is emptied.
+  `drush trash:purge --all -y` empties it in one call; the Trash page offers the same action one
+  item at a time. Media and files are not Trash-covered on this site, so deleting one of those
+  removes it at once.
+* **Canvas page regions.** If Drupal Canvas is installed, its own settings appear on the theme
+  settings page: a checkbox reading "Use Drupal Canvas for page templates in this theme." Leave it
+  unticked unless the plan is to rebuild the header and footer from scratch in Canvas. Ticking it
+  replaces this theme's own header and footer — built from ordinary block placements — with empty
+  Canvas-managed regions, silently: no error, no warning, nothing a test would catch, and the
+  statutory bar, the footer's column layout and the social row go with them.
+* **Removing the demonstration records.** In order: Content (`/admin/content`), select every
+  document, person, contract, agreement, grant and dataset record, "Delete content"; Content →
+  Media (`/admin/content/media`), select the demonstration documents, "Delete media" and tick "Also
+  delete the associated files?" before confirming. Then, from the project root:
+
+  ```shell
+  ddev drush trash:purge --all -y
+  ```
+
+  empties the trash the first step left behind. Eleven files ship attached directly to a record
+  rather than through a media item — the dataset distributions and the elected members' asset
+  declarations, by file format rather than by media wrapper — so deleting the records above does
+  not remove them; this cleans up exactly those eleven, by UUID, and only the ones no longer in
+  use (their per-format counts are in
+  [`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md), which does not restate them here):
+
+  ```shell
+  ddev drush php:eval '
+  $uuids = [
+    "1303ba70-7644-566e-8f6a-531e3ae9f9b4", "34a26985-1f6a-5c06-acc3-d25192efdad9",
+    "37581c03-6cec-5b93-93bc-fb1215b30cb4", "49763496-7ef0-5dba-9b15-330481d8ee07",
+    "4eeb8798-0a79-5d60-879e-b6c91d135df7", "54c17258-9efe-5c77-91f0-3f946edc1282",
+    "7ca8185e-daa9-5190-b9d3-d55299325ee3", "87d36bf0-1f2f-5c0d-b710-268c15045c7e",
+    "a33ad178-9649-5db1-acc1-00a1a52684ed", "dbafc2a2-955e-54b9-8d06-fab433c3849c",
+    "e02588e5-c81c-52d8-96dc-a7a9d9b1e203",
+  ];
+  $repo = \Drupal::service("entity.repository");
+  $usage = \Drupal::service("file.usage");
+  foreach ($uuids as $uuid) {
+    $file = $repo->loadEntityByUuid("file", $uuid);
+    if (!$file || $usage->listUsage($file)) { continue; }
+    echo $file->getFileUri() . PHP_EOL;
+    $file->delete();
+  }
+  '
+  ```
+
+  Measured end to end on a clean install: this sequence leaves exactly four files —
+  `hero-wide.webp` (`recipe.yml`'s own hero image), `login-wallpaper.png` (`gin_login`'s),
+  `default-avatar.svg` (`drupal_cms_authentication`'s) and media's own `generic.png` icon — none of
+  them the demonstration's, all four held by configuration rather than by content. The taxonomy
+  terms, the menu links and the two Canvas pages (the front page and "The institution") are not
+  demonstration content either: they are the categories, the navigation and the landing pages the
+  content model itself is built from, and removing the records above leaves every one of them in
+  place. One sentence naming Fuentelclaro remains after this, because it is fixed text rather than
+  something the register computes: Structure → Views → "All publications" → the "Key indicators
+  block" display → Header. Edit or clear it there.
+* **The Config Guardian baseline.** Configuration → Development → Config Guardian → Sync → Export
+  Configuration writes the site's current configuration to the sync directory, as the starting
+  point every later change is compared against. This needs **Config Guardian 1.0.5 or later**:
+  earlier releases fail this specific export on PHP versions before 8.4.
+
 ## What it ships
 
 The packaged release holds **fourteen** top-level entries, and the whole tarball is **377 entries**.
