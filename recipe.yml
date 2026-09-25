@@ -6,7 +6,7 @@ name: Ágora Transparency
 # (drupal.org/project/agora), and Drupal.org's name check treats the two as one.
 
 # A short description that will be visible in the Drupal CMS installer.
-description: 'A transparency and open government site template for Drupal CMS, for councils, public bodies and organisations that publish accountability information. In development — see README.md for what is implemented today.'
+description: 'A transparency and open government site template for Drupal CMS, for councils, public bodies and organisations that publish accountability information.'
 
 # All site templates must have the `Site` type (case-sensitive); don't change this.
 type: Site
@@ -749,3 +749,11 @@ extra:
   recipe_installer_kit:
     # Send users to the dashboard (provided by drupal_cms_admin_ui) after installation.
     finish_url: '/admin/dashboard/welcome'
+  # The card the Drupal CMS installer shows for this template (D-074). One link,
+  # to the project page rather than to a demo: a demo is built from a released
+  # package (D-072) and cannot exist yet when this file names the version to tag.
+  # No `creator` — this is a community template, not a vendor's.
+  drupal_cms_installer:
+    links:
+      - text: 'Learn more'
+        url: 'https://www.drupal.org/project/agora_transparency'
