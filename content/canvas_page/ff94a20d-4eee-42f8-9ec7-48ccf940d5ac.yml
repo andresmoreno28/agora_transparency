@@ -69,6 +69,14 @@ default:
         label_display: visible
         views_label: 'What this portal publishes'
         items_per_page: null
+    -
+      uuid: d58fc63f-055e-459d-afca-a4232c944e86
+      component_id: sdc.agora_theme.text
+      inputs:
+        text: '<p>Fuentelclaro is a fictional Spanish municipality: the demonstration records are invented, they are published in English, and the six registers follow the categories Spanish transparency law requires a municipality to publish.</p>'
+        text_size: base
+        text_tone: default
+        measure: readable
   path:
     -
       alias: /home

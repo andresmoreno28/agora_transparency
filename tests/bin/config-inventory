@@ -364,7 +364,7 @@ FRONT=${FRONT#\'}
 FRONT=${FRONT%\'}
 if [ -n "$FRONT" ]; then
   ROUTES=$((ROUTES + 1))
-  printf '  %-15s marker: theme only (main.agora-page__main) - the Canvas page carries no body field of its own; the D-041 frame sentence it serves comes from a view header\n' "$FRONT"
+  printf '  %-15s marker: theme only (main.agora-page__main) - the D-041 frame sentence the Canvas page serves is its own last component (T-0722(ii)), not a view header\n' "$FRONT"
 else
   finding "$RECIPE_FILE" "0" "no page.front declared; the front page is not a route this template owns"
 fi

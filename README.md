@@ -17,7 +17,7 @@ as a working portal, ready for a body to replace the demonstration content with 
 * Installs a working Drupal CMS site: administrative back end, media, basic SEO, basic privacy and
   consent, anti-spam, authentication tweaks and HTML email.
 * Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
-  this template requires at `^1.1` — and makes it the site's default theme.
+  this template requires at `^1.2` — and makes it the site's default theme.
 * Sets a Canvas landing page as the home page, carrying **five** blocks from the template's own
   views, with the service-area cards on `/publications` beside the register they filter.
 * Ships the demonstration corpus described in the next section: six registers of invented records
@@ -328,8 +328,8 @@ walked on a clean install, not written from memory of the code.
   demonstration content either: they are the categories, the navigation and the landing pages the
   content model itself is built from, and removing the records above leaves every one of them in
   place. One sentence naming Fuentelclaro remains after this, because it is fixed text rather than
-  something the register computes: Structure → Views → "All publications" → the "Key indicators
-  block" display → Header. Edit or clear it there.
+  something the register computes: it is the last block on the front page, in Canvas. Delete it
+  and publish.
 * **The Config Guardian baseline.** Configuration → Development → Config Guardian → Sync → Export
   Configuration writes the site's current configuration to the sync directory, as the starting
   point every later change is compared against. This needs **Config Guardian 1.0.5 or later**:

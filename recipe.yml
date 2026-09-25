@@ -435,6 +435,16 @@ config:
     # install 1.0.7, at which point this line breaks every clean install - the
     # exact failure the withholding existed to prevent.
     #
+    # RAISED AGAIN, TO `^1.2`, BY T-0722(ii) - a different action than this
+    # one, for a different reason. The front page's own content now PLACES
+    # the theme's `sdc.agora_theme.text` component (see the four
+    # `?canvas.component.sdc.agora_theme.*` actions further down), and that
+    # config object ships in no release before 1.2.0. Unlike those four
+    # actions, a content placement carries no `?`: it is not a recipe action
+    # that can be skipped, it is a component reference that fails to resolve
+    # if the object is absent. `^1.1` still admitted 1.1.0, where the
+    # component does not exist; `^1.2` does not admit it.
+    #
     # THE THROW IS A FEATURE, which is why `simpleConfigUpdate` is the right
     # action here and a create-if-missing one would be wrong. Should the
     # settings object ever be absent again, the apply fails loudly at that
@@ -596,14 +606,21 @@ config:
     #
     # WHEN THEY ARE ABSENT, and it is a fact about release timing rather than
     # about the components. They live in `agora_theme`, a SEPARATE Drupal.org
-    # project (D-014), and `composer.json` requires `^1.1`. The components first
+    # project (D-014), and `composer.json` requires `^1.2`. The components first
     # shipped in 1.2.0: `git ls-tree -r <tag> -- components/` in that repository
     # lists ZERO files at 1.1.0 and at every earlier tag, and twelve at 1.2.0
     # and at 1.2.1 - four components, three files each. An install that
     # resolves a release carrying them - 1.2.0 and 1.2.1 both do - gets all
-    # four. `^1.1` still admits 1.1.0, and an install that resolves 1.1.0 gets
-    # no SDC from the theme at all and none of these four config objects. Which
-    # is why the four `?` prefixes stay while the constraint admits 1.1.0.
+    # four. An install that resolved 1.1.0 got no SDC from the theme at all
+    # and none of these four config objects - which is why the four `?`
+    # prefixes were kept while the constraint admitted 1.1.0.
+    #
+    # THE CONSTRAINT NO LONGER ADMITS 1.1.0 (T-0722(ii) raised it to `^1.2`,
+    # for the unrelated reason recorded beside `agora_theme.settings` above),
+    # so this particular gap is closed. The four `?` prefixes stay regardless
+    # - see WHAT THE ACTIONS BUY, below: Canvas's disable-and-never-re-enable
+    # behaviour is a reason to keep them that has nothing to do with which
+    # releases the constraint admits.
     #
     # ⚠️ WITHOUT THE `?`, ANY CLEAN INSTALL THAT RESOLVES 1.1.0 WOULD FAIL.
     # Measured on a rig while 1.1.0 was the newest release, not predicted. On

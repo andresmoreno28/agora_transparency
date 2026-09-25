@@ -2720,12 +2720,19 @@ class ValidationTest extends BrowserTestBase {
    * supplied by the placement and not by the view.
    *
    * THE THIRD GROUP OF ASSERTIONS LOOKS UNRELATED AND IS THE REASON THIS
-   * METHOD EXISTS. `block_2` carries D-041's frame sentence in its `header`
-   * area, and that sentence is the only place the served site declares
-   * itself fictional. Moving a neighbouring block is exactly how a sentence
-   * nobody re-reads disappears. It is read out of config and asserted on the
-   * rendered page, so deleting the sentence fails the read and deleting the
-   * block fails the page.
+   * METHOD EXISTS. D-041's frame sentence is the only place the served site
+   * declares itself fictional, and moving a neighbouring block is exactly
+   * how a sentence nobody re-reads disappears.
+   *
+   * ⚠️ T-0722(ii) MOVED THE SENTENCE ITSELF, out of block_2's header into a
+   * Canvas `text` component placed LAST on the front page - so a site owner
+   * sees it as an obvious, deletable block, rather than inside a Views
+   * display's header setting that a content wipe leaves untouched and
+   * unnoticed. This group now asserts both ends of that move: block_2
+   * carries no header any more, and the front page's own last component is
+   * the theme's `text` SDC, carrying the sentence. It is read out of the
+   * live component tree and asserted on the rendered page, so deleting the
+   * sentence fails the read and deleting the component fails the page.
    */
   public function testServiceAreaCardsMoveToTheRegister(): void {
     $this->applyRecipe(self::getRecipePath());
@@ -2781,8 +2788,34 @@ class ValidationTest extends BrowserTestBase {
     // just as well on a front page that rendered nothing at all.
     $assert->elementsCount('css', $control, 1);
 
-    $frame = trim(strip_tags((string) ($registers['header']['area_text_custom']['content'] ?? '')));
-    $this->assertNotSame('', $frame, "block_2 must still carry D-041's frame sentence in its header area: it is the only place the served site declares itself fictional.");
+    // T-0722(ii): block_2 must not carry a header any more - the sentence
+    // moved out of it.
+    $this->assertArrayNotHasKey('header', $registers, "block_2 must not carry a header any more: D-041's frame sentence moved to a Canvas component (T-0722(ii)).");
+
+    // Read the front page's own component tree, never typed here: the
+    // system path behind its `/home` alias is resolved the same way
+    // testFrontPageRoundTrip() resolves it, so a rename of either fails
+    // there first rather than silently loading the wrong entity here.
+    $front_aliases = \Drupal::entityTypeManager()->getStorage('path_alias')->loadByProperties(['alias' => '/home']);
+    $this->assertCount(1, $front_aliases, 'The /home alias must exist on a clean install.');
+    $front_path = reset($front_aliases)->getPath();
+    $this->assertTrue(str_starts_with($front_path, '/page/'), 'The front page must be a Canvas page.');
+    $front_page = \Drupal::entityTypeManager()->getStorage('canvas_page')->load(substr($front_path, strlen('/page/')));
+    $this->assertNotNull($front_page, 'The front page Canvas page must have been imported by the recipe.');
+
+    $tree = $front_page->get('components')->getValue();
+    $this->assertNotSame([], $tree, 'The front page must carry at least one component.');
+    $last = end($tree);
+    $this->assertSame('sdc.agora_theme.text', $last['component_id'], "The front page's LAST component must be the theme's `text` SDC, carrying D-041's frame sentence: it is the only place the served site declares itself fictional.");
+
+    // `inputs` comes back from storage as a JSON string, not an array: the
+    // field's own typed data decodes it lazily, and this reads the raw
+    // column the same way the recipe's own content YAML states it, rather
+    // than reach for a Canvas-internal accessor that is not this template's
+    // API to depend on.
+    $inputs = json_decode((string) $last['inputs'], TRUE) ?? [];
+    $frame = trim(strip_tags((string) ($inputs['text'] ?? '')));
+    $this->assertNotSame('', $frame, "The front page's final text component must still carry D-041's frame sentence.");
     $assert->pageTextContains($frame);
   }
 
@@ -2799,6 +2832,25 @@ class ValidationTest extends BrowserTestBase {
 
     $included_components = (new FileStorage(self::getRecipePath() . '/config'))
       ->listAll('canvas.component.');
+
+    // ⚠️ THE FOUR SDC COMPONENTS `agora_theme` PROVIDES ARE A DELIBERATE
+    // EXCEPTION TO "ship a config file for every component you use", not a
+    // gap this check should close. `recipe.yml`'s own `config.actions` block
+    // explains why they are never shipped as `canvas.component.*.yml` files:
+    // Canvas mints them itself on discovery, and `config.strict: false`
+    // means a shipped file would win over Canvas's own future correction.
+    // `testCanvasComponentReview()` already audits this exact family by the
+    // same name. T-0722(ii) placed one of them (`sdc.agora_theme.text`) on
+    // the front page, so this loop's own denominator is widened for that one
+    // family, by reading the same recipe actions that method reads, rather
+    // than loosened in general.
+    $recipe = Yaml::decode(file_get_contents(self::getRecipePath() . '/recipe.yml'));
+    foreach (array_keys($recipe['config']['actions']) as $name) {
+      $bare = ltrim((string) $name, '?');
+      if (str_starts_with($bare, 'canvas.component.sdc.agora_theme.')) {
+        $included_components[] = $bare;
+      }
+    }
 
     foreach ($entity_types as $entity_type) {
       $entities = \Drupal::entityTypeManager()
