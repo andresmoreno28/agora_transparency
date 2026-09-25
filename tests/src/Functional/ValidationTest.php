@@ -685,6 +685,76 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
+   * Checks that an empty register shows no date, not the Unix epoch.
+   *
+   * `agora_base_publications`'s block_3 aggregates `changed` with `MAX()`,
+   * with no grouping column, so the query returns exactly one summary row
+   * even when it matches nothing. `MAX()` over zero rows is SQL NULL, and
+   * the field's own rewrite formatted whatever it was handed as a date
+   * regardless, printing "1 January 1970" on a site with nothing published
+   * (T-0722(i)).
+   *
+   * BOTH HALVES REQUIRED, as in testContractsByProcedureType() above: the
+   * absent epoch alone would be satisfied by a page that rendered nothing
+   * and said nothing about why, and the restored date alone would not show
+   * that the epoch had ever been there to remove (I-062).
+   */
+  public function testNoEpochDateOnAnEmptyRegister(): void {
+    $this->applyRecipe(self::getRecipePath());
+    $this->drupalLogin($this->drupalCreateUser(['access content']));
+    $assert = $this->assertSession();
+
+    // Read the bundles from block_3's own filter, never typed: a filter that
+    // grew a third bundle would otherwise leave one kind of record published
+    // and unaccounted for, so the corpus this test empties would no longer
+    // be the one the block aggregates.
+    $view = View::load('agora_base_publications');
+    $this->assertNotNull($view, 'The publications view must have been imported by the recipe.');
+    $bundles = array_keys($view->getDisplay('block_3')['display_options']['filters']['type']['value']);
+    $this->assertNotEmpty($bundles, "block_3 must filter on at least one bundle, or the epoch it aggregates is not the one this test empties.");
+
+    $storage = \Drupal::entityTypeManager()->getStorage('node');
+    $nodes = $storage->loadByProperties(['type' => $bundles, 'status' => 1]);
+    $this->assertNotEmpty($nodes, 'There must be published contracts or grants to unpublish, or the empty state below is not the state being tested.');
+
+    // The date the block must show today: MAX(changed) over the same set,
+    // formatted by the exact service the field's own Twig rewrite calls, so
+    // a timezone or format mismatch cannot make this assertion pass for the
+    // wrong reason.
+    $latest = 0;
+    foreach ($nodes as $node) {
+      $latest = max($latest, (int) $node->getChangedTime());
+    }
+    $this->assertGreaterThan(0, $latest, 'A published contract or grant must carry a real changed timestamp, or there is nothing for the restored date below to be.');
+    $expected_date = \Drupal::service('date.formatter')->format($latest, 'custom', 'j F Y');
+
+    // -- (1) The positive control: today's real date, not the epoch ---------
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $assert->pageTextContains($expected_date);
+    $assert->pageTextNotContains('1970');
+
+    // -- (2) The genuinely empty state ----------------------------------------
+    foreach ($nodes as $node) {
+      $node->setUnpublished()->save();
+    }
+    $this->assertSame(0, $this->publishedCount($bundles), 'Every contract and grant must now be unpublished.');
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $assert->pageTextNotContains('1970');
+
+    // -- (3) And back, because neither state alone says they differ ---------
+    foreach ($nodes as $node) {
+      $node->setPublished()->save();
+    }
+    $this->assertSame(count($nodes), $this->publishedCount($bundles), 'Every contract and grant must be published again.');
+    $this->drupalGet('<front>');
+    $assert->statusCodeEquals(200);
+    $assert->pageTextContains($expected_date);
+    $assert->pageTextNotContains('1970');
+  }
+
+  /**
    * Counts the shipped contracts by procedure, from `content/` alone.
    *
    * NO DATABASE, NO VIEW AND NO QUERY. This is the independent route the

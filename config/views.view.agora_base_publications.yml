@@ -489,7 +489,7 @@ display:
           label: 'Last updated'
           alter:
             alter_text: true
-            text: "{{ changed|format_date('custom', 'j F Y') }}"
+            text: "{% if changed %}{{ changed|format_date('custom', 'j F Y') }}{% endif %}"
           separator: ''
           set_precision: false
           precision: 0
