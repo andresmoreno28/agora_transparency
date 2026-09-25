@@ -126,6 +126,13 @@ apply.
 | 4 | **D-072 and D-074 ruled** | both change files before the tag |
 | 5 | **T-0704 measured on the day** | the current Drupal CMS, the theme's `1.x` tip, the constraint's floor |
 | 6 | **[andres] available for 14 days from the release** | D-064's acknowledgement window starts binding against real users; D-071 |
+| 7 | **`agora_core` 1.0.0 released and covered** — added 2026-09-25, pending [andres]'s yes | unit 005's T-0522: D-054 leaves the project, its name and its coverage opt-in to him, and a new project waits 10 days before it may opt in |
+| 8 | **Config Guardian 1.0.5 released** — added 2026-09-25, pending [andres]'s yes | unit 005's T-0541: the tag after his yes, and his release; T-0542 then raises the template's floor to `^1.0.5` |
+
+Rows 7 and 8 come from [andres]'s mandates of 2026-09-25 (`specs/000-project/DECISIONS.md`) and
+both are pending his yes: row 7 on whether `1.0.0` waits for `agora_core` 1.0.0 (D-071's open
+half), row 8 on Config Guardian's 1.0.5 tag. The launch order puts both releases on days before
+the theme's and the template's.
 
 ### The order of acts — one sitting
 

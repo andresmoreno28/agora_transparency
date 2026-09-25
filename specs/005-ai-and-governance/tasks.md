@@ -25,6 +25,9 @@ counting regex breaking twice precisely because ids and waves were coupled, and 
 bounded at **both** ends.
 
 Glyphs: `✓` done · `○` open · `⏸` blocked · `👤` needs [andres].
+Repo (legend added 2026-09-25): `T` the site template (`agora_transparency`) · `H` the theme
+(`agora_theme`) · `G` `drupal/config_guardian` (sibling `config-guardian`) · `A` `drupal/agora_core`
+(sibling `agora-core`).
 
 ---
 
@@ -126,11 +129,11 @@ wave-23 row and remains open), and every file in `agora_theme`.
 
 | # | Repo | Task | Success criterion (falsifiable) | Blocked by |
 |---|---|---|---|---|
-| T-0522 ⏸ 👤 | T | **If the ruling is yes:** create the third package — project page, CI pipeline, security-coverage opt-in, SBOM line | The project resolves on the GitLab API → 200 (I-012: the API is the only valid oracle). Its pipeline's **job list read from the API**, every job `success`, every `allow_failure` false, count printed | the module ruling |
+| T-0522 ⏸ 👤 | T | **If the ruling is yes:** create the third package — project page, CI pipeline, security-coverage opt-in, SBOM line | The project resolves on the GitLab API → 200 (I-012: the API is the only valid oracle). Its pipeline's **job list read from the API**, every job `success`, every `allow_failure` false, count printed<br>**WIDENED 2026-09-25, 0 new rows:** the project page he creates; first push; default branch `1.x`; its job list; the security-coverage opt-in on day 10 or later; the tag after his yes; his release. | the module ruling |
 | T-0523 ⏸ | T | **If yes:** `drupal/ai ^1.4` into `require` with its `DECISIONS.md` line; **no provider** | `sbom-check` green naming `ai` at **1.4.9**, `covered="1"`. `no-experimental-modules` green: **no experimental submodule is in `install:`**, asserted by name | T-0522, T-0513 |
 | T-0524 ⏸ | T | **If yes:** the citation guarantee of plan §4 — strip pipeline plus server-side citation rendering | `CitationRenderTest`: stubbed provider returns 3 fabricated URLs and a fake title; rendered answer contains **0** anchors; citation block contains **exactly** the stub's entity URLs by equality; empty retrieval set → **0** provider calls. **Falsified in both directions**: remove stripping → red; remove the short-circuit → call count 1 | T-0523 |
 | T-0525 ⏸ | T | **If yes:** `tests/bin/no-model-authored-links` to plan §4 | Prints templates, render paths, sanctioned uses, findings; templates > 0; findings 0. Dirty case: one raw render of provider output → exit 1 naming file and line | T-0524 |
-| T-0526 ⏸ | T | **If yes:** the `gin_login` route alter of D-052, which becomes free once a module exists | Proven by **rendering `/user/login` and asserting the theme**, never by quoting the hook's documentation — D-052 §3 names three behaviours the hook does not switch off, and each is checked and its state recorded | T-0522 |
+| T-0526 ⏸ | T | **If yes:** the `gin_login` route alter of D-052, which becomes free once a module exists | Proven by **rendering `/user/login` and asserting the theme**, never by quoting the hook's documentation — D-052 §3 names three behaviours the hook does not switch off, and each is checked and its state recorded<br>**WIDENED 2026-09-25, 0 new rows:** the local package, its tests and the rig proof (`/user/login` served by the front theme, 1 `<h1>`, 1 reset link); Repo becomes A. | T-0522 |
 | T-0527 ⏸ 👤 | T | **If the ruling is no:** `recommended.yml` filled by criterion rather than brand, and the README and AGENTS claims **narrowed** | Every entry verified stable and `covered="1"` with its version printed. ⚠️ Consuming the list needs `project_browser`, which is **beta** — so either it is not added (and the file's header says so) or a rule-1 exception is signed. **A `recommended.yml` nothing can read is documentation and must be labelled as documentation** | the module ruling |
 | T-0528 ⏸ | T | The AI disclosure surface: what is generated, by which provider, what is sent where | Present on every page carrying a generated answer, asserted by string. Passes axe as part of T-0519's page. Names the provider **from configuration, never hard-coded** — asserted by changing the provider in config and re-reading the page | T-0524 or T-0527 |
 
@@ -244,3 +247,28 @@ above left the ceiling to be re-set with this ruling; **D-054 records the overru
 re-setting the ceiling upward to fit**, because a ceiling moved to meet the count after the work is
 chosen measures nothing. The one number that can genuinely bind — at most 4 rows resting on neither
 D-044 necessity nor a signature from [andres] — is unchanged at **0** spent.
+
+---
+
+## Rows added 2026-09-25 · Config Guardian 1.0.5 and the companion module
+
+Each row rests on what its task cell's closing clause names. *The mandates* is the entry
+"[andres]'s mandates of 2026-09-25 (late morning), verbatim" in `specs/000-project/DECISIONS.md`;
+*the record* is that file's "[andres]'s answers of 2026-09-25, verbatim", whose item 1(6) is his
+sixth answer under item 1: Impact Analysis takes more than 10 seconds to open.
+
+| # | Repo | Task | Success criterion (falsifiable) | Blocked by |
+|---|---|---|---|---|
+| T-0533 ○ | G | Config Guardian's CI pins `_PHPUNIT_CONCURRENT: '0'` and `--fail-on-empty-test-suite`, and makes its lint jobs blocking; its kernel test classes declare `#[RunTestsInSeparateProcesses]`. *Rests on: necessity (I-116).* | Pushed job list: 8 jobs, all `success`, none permissive; the `phpunit` trace shows `_PHPUNIT_CONCURRENT=0` and the flag in the executed command, with totals printed | — |
+| T-0534 ○ | G | The impact analysis reads each configuration object once: a single-pass dependency index; graph nodes unique. *Rests on: his words, record item 1(6).* | Read-count tests: active reads == N and sync reads == S for any number of changes; on the 669-object rig, 2,781,103 → 669 reads and identical findings (MEDIUM 42/100; 669 rows) | — |
+| T-0535 ○ | G | Empty or invalid sync: the page says why and analyses nothing. *Rests on: D-075, signed by [ejecutor] (the mandates' (c)).* | Functional test: the sentence appears once, 0 change rows, no graph frame; the export link only for a reader who may export | — |
+| T-0536 ○ | G | The Impact Analysis page renders before the analysis ends (BigPipe placeholder with a `role="status"` preview; finished state announced; no focus moved; works without JS). *Rests on: record item 1(6).* | Functional tests in the three modes plus a FunctionalJavascript announce test; the page's first flush carries the preview | — |
+| T-0537 ○ | G | The dependency-graph frame reuses its page's graph, and its two fields are labelled. *Rests on: record item 1(6); labels under the mandates' (c).* | Frame test: `?source=parent` carries no node payload; `label[for]` ×2 | — |
+| T-0538 ○ | G | The dashboard shows the warnings and totals it computes; pages offer only the actions their reader may take. *Rests on: necessity (D-059's role reaches 7 routes that answer 403; the dashboard withholds its own warning).* | A closed-world functional test as the auditor: every Config Guardian link GETs without 403, count > 0 printed; the empty-sync warning appears exactly once | — |
+| T-0539 ○ | G | Dashboard text meets WCAG 2.2 AA contrast (the 7 nodes this template's gate declares). *Rests on: the mandates' (c).* | axe on the dashboard: 0 `color-contrast` in Config Guardian's markup | — |
+| T-0540 ○ | G | CHANGELOG and README for 1.0.5; the template's suite on a rig against Config Guardian's tip, measuring the new declared violation set; release notes drafted, never committed. *Rests on: necessity.* | Rig: `OK (22 tests, <m>)`, with the new set recorded; notes handed over | T-0533 to T-0539 |
+| T-0541 ○ 👤 | G | Tag 1.0.5 after his yes; he creates the release. *Rests on: his signature.* | The tag's pipeline is 10/10-shaped (all its jobs green, none permissive); the release feed lists 1.0.5 | T-0540, his yes |
+| T-0542 ○ | T | The template requires `drupal/agora_core: ^1.0` and `config_guardian: ^1.0.5`; `recipe.yml` installs `agora_core`; SBOM line; `/user/login` in `AccessibilityTest`; `ValidationTest` asserts the theme that serves `/user/login`; README and statement updated. *Rests on: D-054 plus the mandates.* | Job list 10/10; `Locking drupal/agora_core (1.0.0)` in the `Drupal CMS` trace; phpunit totals predicted and matched | T-0522, T-0526, T-0541 |
+| T-0543 ○ | T | `tests/bin/doctor` and the project instructions know the four working copies (template, theme, `agora-core`, `config-guardian`). *Rests on: necessity.* | Doctor's group 6 prints each, with its branch and push remotes, and warns on `origin` | — |
+
+**Accounting, 2026-09-25, [andres]'s mandates of the same day (I-105): 43 known rows · stated ceiling 28 (module branch, D-054) — over by 15, recorded rather than re-set** (D-044; D-054 refused to re-set). +11 rows (T-0533–T-0543); T-0522 and T-0526 widened with 0. New contrib dependencies: **+1**, `drupal/agora_core` (ours). Config Guardian's floor moves `^1.0` → `^1.0.5` when T-0542 lands. New invariants: **0**. What the overrun displaces: nothing in this unit's own queue — the rows run in two other repositories or after releases — but calendar before the launch: T-0542 cannot land before `agora_core`'s coverage day.

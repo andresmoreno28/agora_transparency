@@ -5587,3 +5587,44 @@ Visual regression stays where D-009 C(2) put it — GitHub Actions on the templa
 informative, never a gate — and T-1202 is carried past `1.0.0` with that home. The struck
 prerequisite stays struck (D-045's amendment, item 1). He reopens it by ruling B. This closes the 🔴
 T-1205's audit carried (`specs/003-demo-content/tasks.md:1564`).
+
+---
+
+## [andres]'s mandates of 2026-09-25 (late morning), verbatim — Config Guardian and the companion module
+
+Two fragments of a message [andres] sent in the late morning of 2026-09-25, quoted verbatim in the
+original Spanish (rule 6), each followed by its translation. The words left out are marked `[…]`.
+
+- <!-- cspell:disable -->*"Tienes mi permiso para trabajar en Config Guardian"*<!-- cspell:enable -->
+  — "You have my permission to work on Config Guardian".
+- <!-- cspell:disable -->*"Lo del módulo propio para todo lo que necesitamos me parece bien, lo metes […] y manejas su integración correcta y completa"*<!-- cspell:enable -->
+  — "Our own module for everything we need is fine with me; you add it […] and you handle its
+  correct and complete integration".
+
+**(a)** Config Guardian (`drupal/config_guardian`) is [andres]'s own project: the same drupal.org
+author uid as this one. The work is done in its own repository, at the sibling working copy
+`config-guardian`, on branch `1.0.x`.
+
+**(b)** The companion module is D-054's module. The machine name proposed to him is `agora_core`,
+free on drupalcode and drupal.org on 2026-09-25. Creating the drupal.org project, choosing the name
+and opting into security coverage stay his (D-054). A new project cannot opt in before its tenth
+day, so if he creates it on 2026-09-25 the earliest opt-in is 2026-10-05.
+
+**(c)** Three details of Config Guardian's fix are signed by [ejecutor] under D-075's "sign for me,
+sensibly":
+
+- with an empty sync directory — or one without `core.extension` — the Impact Analysis page shows
+  the module's own sentence "The sync directory is empty. Export the active configuration to
+  initialize it." (plus an export link for a reader allowed to export) and analyses nothing;
+- the 7 dashboard contrast nodes and the two unlabelled graph-frame fields are fixed in the same
+  release;
+- Config Guardian's README disclosure becomes the D-069 sentence adapted to its name: *"Config
+  Guardian is developed with AI coding assistants as part of its tooling, under the maintainer's
+  direction and held to the project's automated checks; the maintainer is accountable for every
+  release."*
+
+**(d)** Put to him the same day, not decided here:
+
+- whether `1.0.0` waits for `agora_core` 1.0.0 (D-071's open half);
+- the Config Guardian 1.0.5 tag;
+- whether D-075 extends to unit 005's Gate B.
