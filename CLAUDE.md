@@ -795,9 +795,11 @@ moving the working copy a session is running in, on the day wave 5 starts.
   closing it. It is closed.
 
 - ⚠️ **A green linter is a statement about the set it opened, and most do not print it.**
-  `bash tests/bin/spellcheck` offers **481** tracked files to cspell, which **checks 440** and
-  finds 0 issues (re-measured 2026-09-25 after T-0617 added `ACCESSIBILITY.md`, **both figures
-  predicted from disk before the run: +1 each, gap held at 41**; it read **480/439** earlier the
+  `bash tests/bin/spellcheck` offers **479** tracked files to cspell, which **checks 438** and
+  finds 0 issues (re-measured 2026-09-25 after T-0705 deleted `.tugboat/`, **both figures
+  predicted from disk before the run: −2 each, gap held at 41**; it read **481/440** earlier the
+  same day, after T-0617 added `ACCESSIBILITY.md`, when both figures were predicted from disk the
+  same way: +1 each; it read **480/439** earlier the
   same day, after unit 007's scaffold added four tracked text files under `specs/007-publication/`,
   when both figures were predicted from disk the same way: +4 each; it read **476/435** earlier the same day, after T-0618 added `SECURITY.md`, when
   both figures were predicted from disk the same way: +1 each; it read **475/434** from 2026-09-24, after
@@ -838,7 +840,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   enumeration, and the shortfall this paragraph used to admit is closed.** **37** are binaries
   cspell does not read — **34 PDF, 2 WebP and 1 PNG** — and **4** are matched by the upstream
   ignore globs (`.eslintrc.json` by `**/.*.json`, `.gitignore` by `.*ignore`, `LICENSE.txt` and
-  `composer.json` by name). **37 + 4 = 41**, and 481 − 41 = **440**, the number cspell prints.
+  `composer.json` by name). **37 + 4 = 41**, and 479 − 41 = **438**, the number cspell prints.
   ⚠️ **This line read `456 − 41 = 415` until 2026-09-21 — stale by SIXTEEN, three denominators
   behind the bullet above it**, which is the same defect its own next paragraph describes and is
   why that paragraph is no longer the worst instance in this file.
@@ -1036,7 +1038,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   indistinguishable from one that was ever checked.**
 
 - **`tests/bin/` runs on every push.** `agora-invariants` executes both gate runners — `gate-a-wave1.sh`
-  (100 checks · 0 failures) and `gate-a-wave3.sh` (**67** checks · 0 failures), **25** invariants in total —
+  (99 checks · 0 failures) and `gate-a-wave3.sh` (**67** checks · 0 failures), **25** invariants in total —
   not only when a human types them. Closed by **T-221** → **T-219** → **T-202**, all signed.
   ⚠️ **`95 · 67 · 24` became `100 · 67 · 25` on 2026-09-24 (unit 006, T-0635), and this time a new
   GROUP moves `invariants`**: wave 1's **G15** runs `tests/bin/no-usage-reporting`, five checks — exit,
@@ -1282,8 +1284,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   predicted — `agora_theme` pipeline `950124` was red for a full push cycle behind a green local
   gate. ⚠️ **`28` WAS NEVER A MEASUREMENT OF ANYTHING, and that is a different defect from drift.**
   The invariant printed `scripts: 30 with a shebang on line 1` on the day it was written and
-  prints `examined: 481 tracked file(s)` · `scripts: 38` · `findings: 0` today, re-run 2026-09-25
-  (T-0617 added `ACCESSIBILITY.md`, which is not a script, so only the examined count moved; it
+  prints `examined: 479 tracked file(s)` · `scripts: 38` · `findings: 0` today, re-run 2026-09-25
+  (T-0705 deleted `.tugboat/`, two tracked files with no shebang, so only the examined count
+  moved; it read `481` and `38` earlier the same day, after T-0617 added `ACCESSIBILITY.md`, which
+  is not a script, so only the examined count moved; it
   read `480` and `38` earlier the same day, when unit 007's scaffold added four markdown files,
   none of them a script; it read `476` and `38` earlier still, when T-0618 added `SECURITY.md`, which is not
   a script; it read `475` and `38` from 2026-09-24, when T-0635 added one script, `tests/bin/no-usage-reporting`, and

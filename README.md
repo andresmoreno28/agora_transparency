@@ -404,7 +404,7 @@ program computes its hashes is worse than one that is noisy.
 1. Run `bash tests/bin/toolchain-floor` on the Mac and paste the whole output back. That fills the
    empty column above and is the only step that needs a Mac in front of a human.
 2. Run `bash tests/bin/doctor` there; it must reach `READY`.
-3. Run both wave runners and reproduce the counts this repository quotes — **100 checks · 0
+3. Run both wave runners and reproduce the counts this repository quotes — **99 checks · 0
    failures** and **67 checks · 0 failures**. ⚠️ **Re-run them rather than trusting this line.**
    It read `61` and `37` until 2026-09-12 and `67` and `49` until 2026-09-21, which was six
    invariants and twenty-seven checks behind by the end: the runners grew and the sentence did not,
@@ -542,7 +542,7 @@ table it summarises, one sentence further from the measurement.
 
 **What the green does not tell you.** The 36-versus-63 gap reported earlier is closed, and has
 stayed closed across five changes of denominator. Measured 2026-09-25 by
-`bash tests/bin/spellcheck`: **481 tracked or stage-able files offered to cspell, 440 checked,
+`bash tests/bin/spellcheck`: **479 tracked or stage-able files offered to cspell, 438 checked,
 `Issues found: 0`** — plus two the CI runner generates and this repository does not track
 (`.editorconfig`, `gitlab_templates_version.txt`), which is why the job's own count reads two
 higher. The script prints both numbers every time it runs, so this paragraph is checkable rather
@@ -551,7 +551,8 @@ grown a content model and a media corpus, and the figures were carried rather th
 It read **472 · 431** from 2026-09-21 until 2026-09-25, one file behind the script from 2026-09-23
 and three from 2026-09-24: only the subtraction below is bound, so nothing here could see it.
 It read **476 · 435** earlier on 2026-09-25, until four planning files were added under `specs/`,
-and **480 · 439** from then until `ACCESSIBILITY.md` joined the package root the same day.
+and **480 · 439** from then until `ACCESSIBILITY.md` joined the package root, and **481 · 440**
+from then until `.tugboat/` left the package the same day.
 
 **The 41 files not opened, all 41 of them.** The accounting is given in full because an enumeration
 that does not add up to its own denominator reads as an explanation — that exact mistake stood in

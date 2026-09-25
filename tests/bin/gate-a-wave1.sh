@@ -105,7 +105,7 @@
 # project, 18 requests from 9 sites per run, twice per push. The guard is a trait
 # in tests/src; this group is what stops the next test class leaving it out.
 #
-# GATE-CLAIM: checks=100 invariants=7
+# GATE-CLAIM: checks=99 invariants=7
 #
 # Usage: tests/bin/gate-a-wave1.sh   (run from anywhere; it cd's to the repo root)
 
@@ -415,7 +415,7 @@ check 'files DEFINING CI_ALLOW_DEV' "$CIALLOW" '0'
 # InstallTest.php gained its first four lines that day (T-0635), the guard that
 # stops its test site reporting usage to Drupal.org, which can only live inside
 # the class.
-group 'G6 - Starter kit files present (T-101) - 13/13'
+group 'G6 - Starter kit files present (T-101) - 12/12'
 for f in \
   recipe.yml \
   composer.json \
@@ -425,7 +425,6 @@ for f in \
   README.md \
   .gitlab-ci.yml \
   .github/workflows/phpunit.yml \
-  .tugboat/config.yml \
   .gitattributes \
   tests/src/Functional/InstallTest.php \
   tests/src/Functional/ValidationTest.php \

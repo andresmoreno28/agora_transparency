@@ -17,10 +17,6 @@
 /.gitlab-ci.yml export-ignore
 /tests export-ignore
 
-# Tugboat configuration is used to generate live previews of the site template, but isn't needed
-# by end users.
-/.tugboat export-ignore
-
 # --- Development tooling --------------------------------------------------------------
 # Linter configuration for this repository; not part of the delivered template.
 /.eslintrc.json export-ignore
