@@ -169,7 +169,7 @@ install:
   # configuration", which is why it is a dependency rather than a suggestion.
   #
   # Declared in `composer.json` as `drupal/config_guardian: ^1.0` with its SBOM
-  # line at D-059 (CLAUDE.md rule 2). Verified at source on the day it was
+  # line at D-059 (rule 2 of the project's SBOM policy). Verified at source on the day it was
   # added: 4 releases, newest STABLE 1.0.3, `<security covered="1">`, core
   # `^10.5 || ^11 || ^12`, licence GPL-2.0-or-later. Its `info.yml` declares
   # `dependencies: [drupal:config, drupal:file]` — two CORE modules — so this

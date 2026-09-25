@@ -5,7 +5,7 @@
 #
 # NOTE: `export-ignore` only affects the packaged tarball. Everything below stays fully
 # available to anyone who clones the repository from git — which is deliberate, see
-# README.md, "Development process".
+# README.md, "How Ágora is built".
 #
 
 # --- Starter kit defaults -------------------------------------------------------------
@@ -65,10 +65,9 @@
 /.gitignore export-ignore
 /.mailmap export-ignore
 
-# --- Ágora process layer (D-015.2) ----------------------------------------------------
-# The methodology behind this template: instructions for the assistants used to build it,
-# and the signed decision record. Public in the repository as disclosure of method, but it
-# does not belong inside a release the end user installs.
+# --- Process layer (D-015.2) ----------------------------------------------------------
+# How this template is built: the project's working rules and its signed decision record.
+# Public in the repository, but not part of a release the end user installs.
 /CLAUDE.md export-ignore
 /.claude export-ignore
 /specs export-ignore

@@ -3,9 +3,8 @@
 This codebase is a Composer-managed Drupal site. Local development uses `ddev`.
 
 > **Audience.** This file is for AI assistants working on a Drupal site **built with the Ágora
-> Transparency site template** (`drupal/agora_transparency`) — not on the template itself. If you
-> are developing or maintaining that template, `CLAUDE.md` in its repository governs and this file
-> does not apply to you. Do not read the notes below as instructions for changing the template.
+> Transparency site template** (`drupal/agora_transparency`) — not on the template itself. Do not
+> read the notes below as instructions for changing the template.
 
 ## Local environment (DDEV)
 

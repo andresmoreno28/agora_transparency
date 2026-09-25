@@ -461,7 +461,7 @@ from the set of jobs the template could in principle run:
 It stood at pipeline `934387` from 2026-08-24, a ninth job (`Drupal CMS`) was appended below it in
 its own dated table rather than merged in, and a **tenth** — `phpunit-pgsql`, added on 2026-08-27
 under D-040(2) — appeared in neither and was named nowhere in this file. The two old tables are
-folded into the single one above for the reason `CLAUDE.md` merged its own pair: two observations of
+folded into the single one above for the reason the project's own records merged theirs: two observations of
 one list, split by the commit that produced each, get harder to read as one thing with every
 addition, and the second one is the copy nobody refreshes. **The names are what carry meaning, not
 the total** — see "The tenth job" below for why a count alone would have hidden the thing worth
@@ -519,9 +519,10 @@ The job also demonstrates a trap worth carrying elsewhere: it prints the databas
 once as the **unexpanded literal** every job in the phpunit family echoes and once as the real
 value, and it exits non-zero if the real value is not `pgsql`. A criterion that grepped the log for
 the expected string would have matched the literal and passed a PostgreSQL job that never touched
-PostgreSQL. Those two lines are quoted in full in D-040(2), read there with the maintainer's token;
-⚠️ **they cannot be re-read from here**, because `/api/v4/.../jobs/<id>/trace` answers **401** to an
-anonymous request — verified 2026-09-12. The **job list** is public and is what this section quotes.
+PostgreSQL. Those two lines are quoted in full in D-040(2), and anyone can re-read them without an
+account: a job's whole log is public at
+`https://git.drupalcode.org/project/agora_transparency/-/jobs/<id>/raw` (follow the redirect),
+although the API's `/jobs/<id>/trace` endpoint answers **401** to an anonymous request.
 
 **The gate is the list of jobs, never the pipeline's status field.** This is not a preference. An
 earlier pipeline reported `success` while the spell check inside it had failed: four of the seven
@@ -551,7 +552,7 @@ It read **476 · 435** earlier on 2026-09-25, until four planning files were add
 
 **The 41 files not opened, all 41 of them.** The accounting is given in full because an enumeration
 that does not add up to its own denominator reads as an explanation — that exact mistake stood in
-`CLAUDE.md` across three re-measurements, where five named files were offered against a gap of
+the project's own records across three re-measurements, where five named files were offered against a gap of
 thirty-nine, and nobody did the subtraction.
 
 * **37 are binaries `cspell` does not open** — every file under `content/file/` that is neither a
@@ -640,26 +641,9 @@ Neither published Drupal CMS site template ships such a manifest. The measuremen
 sentence — which files were examined and how many matched — is stated once, in the manifest
 itself, and is not repeated here.
 
-## Development process
+## How Ágora is built
 
-Ágora is built with a human-in-the-loop process, and the artefacts of that process are kept in the
-open rather than tidied away before release.
-
-* **Decisions are signed before they are implemented.** Every load-bearing choice — the package
-  name, the recipe architecture, where the theme lives, the dependency policy, the publication
-  route — is recorded as a numbered, append-only entry in
-  [`specs/000-project/DECISIONS.md`](specs/000-project/DECISIONS.md) and approved by a human
-  before any code depends on it. Signed entries are never rewritten: they are amended or superseded.
-* **Work is planned in units and waves.** Each unit under [`specs/`](specs/) carries a plan, an
-  explicit task list and a verification gate that has to pass with real counts — an exit code of
-  zero on its own does not close anything.
-* **AI assistance is used, and disclosed.** Parts of this repository were drafted with AI coding
-  assistants working under human direction and review. The instructions those assistants operate
-  under are in `CLAUDE.md` and `.claude/`, in this repository, for anyone to read. A human reviews
-  and signs every decision and every gate and is accountable for what is released. Commits are
-  attributed to their human author, with no AI co-authorship trailers.
-* **The process layer does not ship.** `CLAUDE.md`, `.claude/` and `specs/` are marked
-  `export-ignore` in `.gitattributes`: they stay visible to anyone who clones the repository, but
-  they are not part of the packaged release an end user installs. `AGENTS.md` is the deliberate
-  exception — it is product, and documents how AI assistants should work on a site built *with*
-  this template.
+Ágora is developed with AI coding assistants as part of its tooling, under the maintainer's
+direction and held to the project's automated checks; the maintainer is accountable for every
+release, and the project's decisions are recorded, with their reasoning, in its
+[public repository](https://git.drupalcode.org/project/agora_transparency/-/tree/1.x/specs).
