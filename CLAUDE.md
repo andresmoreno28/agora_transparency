@@ -133,8 +133,10 @@ noise), publishable (everything meets the marketplace terms from day 1).
     ⚠️ The practical consequence is that **a release now needs release NOTES from you**, not a
     command for him to run - if you cut a tag and hand over nothing to paste into the form, you
     have moved the work rather than done it.
-    ⚠️ **NARROWED 2026-09-24 by [andres]: no tag, no release of either project until the official launch
-    unless one is strictly necessary to continue, and then ask him first** (D-050, amended 2026-09-25).
+    ⚠️ **NARROWED 2026-09-24 by [andres]: no more versions until the official launch, unless one is
+    necessary to continue.** [ejecutor] reads that as covering tags as well as releases, in both
+    projects, and as asking him first; D-050, amended 2026-09-25, keeps his words and that reading
+    apart.
 
 ## Repository structure
 
@@ -289,10 +291,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `974214`, ref `1.x`, commit `9bf2432`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/974214/jobs` on 2026-09-24 —
+- **Observed inventory — the site template.** Pipeline `975876`, ref `1.x`, commit `ddece66`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/975876/jobs` on 2026-09-25 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ⚠️ **Owed since `6dc1d06`, which changed the packaged file set and a gate's denominator and left
+  this row where it was.** `SECURITY.md` took the packaged set to **376** entries, and with
+  `5b22880`'s four spec files `cspell` went 436 → **441**. The theme lock went 1.2.0 → **1.2.1**
+  because [andres] released 1.2.1 on 2026-09-24, not because of any commit here. `phpunit` holds at
+  **2643** on both databases, and both traces name `updates.drupal.org` **0** times.
+  (It stood at `974214` / `9bf2432` / 2026-09-24 — the paragraph below.)
   ✅ **THE FIRST PIPELINE WHOSE TEST SITES DO NOT REPORT USAGE TO DRUPAL.ORG** (T-0635). Until
   `9bf2432` every functional test site in this suite ran cron with core `update` installed and
   requested `release-history` carrying a `site_key` — measured at **18 attempts from 9 test sites per
@@ -407,9 +415,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
   | job | the line its trace printed |
   |---|---|
-  | `Drupal CMS` | `Locking drupal/agora_theme (1.2.0)` |
+  | `Drupal CMS` | `Locking drupal/agora_theme (1.2.1)` |
   | `Drupal CMS` | `OK (1 test, 1 assertion)` |
-  | `cspell` | `Files checked: 436, Issues found: 0` |
+  | `cspell` | `Files checked: 441, Issues found: 0` |
   | `phpunit` | `OK (22 tests, 2643 assertions)` |
   | `phpunit-pgsql` | `OK (22 tests, 2643 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
