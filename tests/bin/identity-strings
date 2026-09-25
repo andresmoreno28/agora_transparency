@@ -192,11 +192,13 @@ content/PEOPLE.md
 content/MEDIA-LICENCES.md'
 
 # Prose-only: packaged files that legitimately mention the product below a
-# surface that has already named it, or in a comment addressed to a maintainer
-# rather than to an evaluator. Adding a file here is a DECLARATION, and it is
-# printed on every run so it cannot be made quietly.
+# surface that has already named it, in a comment addressed to a maintainer
+# rather than to an evaluator, or in a machine identifier rather than in
+# natural-language prose naming the product as a brand. Adding a file here is
+# a DECLARATION, and it is printed on every run so it cannot be made quietly.
 PROSE_ONLY='.gitattributes
-.gitignore'
+.gitignore
+content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml'
 
 # The two quote characters as variables, so no pattern below needs a backslash.
 SQ="'"

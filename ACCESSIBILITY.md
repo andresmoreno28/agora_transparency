@@ -16,14 +16,52 @@ they are measured.
 Every push to the project's repository on git.drupalcode.org runs this package's accessibility
 test, and the pipeline fails when the test does. The test applies the package to a fresh Drupal
 site and runs axe-core in Chrome: as an anonymous visitor over pages of that site, and signed in
-over the Config Guardian dashboard.
+over the Config Guardian dashboard. The figures below are those reported by the most recent run at
+the time this text was written. The shipped accessibility statement, at `/accessibility-statement`
+([`content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml`](content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml)),
+points here for this account instead of repeating it.
 
-Which pages it reads, what it finds and what it does not reach are stated once, in the
-accessibility statement this package installs at `/accessibility-statement`. Its source is
-[`content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml`](content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml).
-The same statement describes the separate check that `drupal/agora_theme`, the theme this package
-installs, runs on pages of its own. Neither result is copied here, because each moves whenever its
-project changes.
+* **Automated accessibility testing of the pages this site serves.** axe-core runs over nine pages
+  of the site as it is installed: the two composed landing pages, the front page as a visitor meets
+  it, four of the eight listing routes (two of the six registers, the cross-type listing and the
+  document library), one published record rendered through its own page, and the page-not-found
+  screen. They are scanned **as an anonymous visitor**, because that is what a member of the public
+  is served: the same pages scanned while signed in report findings in the administrative toolbar,
+  which no visitor ever sees and which this site does not own. Result: **0 violations**. The number
+  of rules actually applied is recorded for each page rather than assumed, because a rule that never
+  ran cannot have passed; and each of them is checked to be a different page, because a site serving
+  one page under several paths would otherwise pass.
+* **Target size.** WCAG 2.2 success criterion 2.5.8 asks that a link or control be large enough, or
+  far enough from its neighbours, to be hit reliably. axe-core measures this with a rule that it
+  ships switched off. The scan of the pages above switches that rule on by name, so their links and
+  controls are measured against the minimum size and spacing the criterion sets, apart from links
+  inside a line of text, which the criterion exempts; a target that falls short fails the check.
+  Where axe-core cannot decide whether a target meets the criterion, it reports that target for
+  review instead of passing it, and those targets are left to a person. The measurement is taken at
+  a single window size, so a target that shrinks only on a narrower screen is not measured.
+* **Automated accessibility testing of the theme on its own.** The theme this site uses is a
+  separate package with a gate of its own, and axe-core runs there over ten pages: a composed front
+  page, a hand-built data table with rows, a second one in its empty state, a view rendering a real
+  register table, a register with an exposed filter, a prose page with links and a pager, a content
+  record page, a page of nested layout components, a dataset record whose distributions are drawn as
+  tables, and the core sign-in form. Result: **90 rules applied per page, 0 violations**. **Those
+  pages are test fixtures, not pages of this site.** They exist so that a template can be made to
+  fail on its own, and a clean run over them says nothing about what a visitor here reads.
+* **Colour contrast.** Every foreground and background pair declared in the colour tokens of the
+  theme is measured against the threshold that pair declares. Result: **68 pairs checked, 0 below
+  threshold**.
+* **Data tables.** Every table the template renders carries a caption naming what the table holds,
+  and header cells marked as headers, so that a screen reader can announce the row and the column a
+  figure belongs to. A table too wide for the screen sits inside a scrolling region that can be
+  reached and moved with the keyboard alone.
+* **Page structure.** Each page carries exactly one first-level heading, asserted as exactly one: a
+  page with none and a page with two are both defects, and a check that accepts *at least one* hides
+  the second.
+* **Bypassing the navigation.** Every key route - the listing routes and the front page - is checked
+  to render the target a skip link needs: an anchor at the start of the main content, able to
+  receive focus. **That the link itself is the first thing a keyboard reaches, and that following it
+  moves focus, are not checked automatically**; they are listed below with the rest of what a person
+  has to confirm.
 
 Every job's whole log is public and opens without an account:
 

@@ -108,22 +108,24 @@
 #     security_window    the acknowledgement time vs  the D-064 heading that set it, in DECISIONS.md
 #
 #   ACCESSIBILITY.md
-#     (none)             it states no figure this script registers; every one-copy detector runs
-#                        over it instead, so a registered figure written into it is refused
-#
-#   the accessibility statement (content/node/<uuid>.yml, rendered at /accessibility-statement)
+#     (this package's own CI figures moved here from the shipped statement by D-077/T-0723;
+#     the five theme figures beside them are checked only with --online, below)
 #     a11y_pages         the scanned page count   vs  the pages AccessibilityTest declares
-#     a11y_declared_const  DECLARED_PAGES in the test vs  those same pages (source vs source)
 #     canvas_pages       the landing page count   vs  git ls-files content/canvas_page/*.yml
 #     listing_total      the listing route count  vs  git ls-files config/views.view.agora_base_*
 #     listing_scanned    the scanned subset       vs  VIEW_PAGES in AccessibilityTest
+#     a11y_rule_by_name      the rule the "Target size." item names  vs  AXE_RULE_ENABLED_BY_NAME
+#     registers          the register count       vs  the distinct agora_base_* node bundles
+#                        (a bound duplicate with README.md, see below)
+#
+#   the accessibility statement (content/node/<uuid>.yml, rendered at /accessibility-statement)
+#     a11y_declared_const  DECLARED_PAGES in the test vs  those same pages (source vs source)
 #     admin_dashboard_module  the dashboard named vs  the install: list of recipe.yml
 #     admin_checked_page     the page gated       vs  DASHBOARD_ROUTE in AccessibilityTest
 #     admin_checked_role     the role it is read as  vs  the label of the role LOGGED_IN_ROLE names
 #     admin_contrast_owner   who the contrast failures belong to  vs  the declared set's owners
 #     admin_landmark_owners  who the landmark findings belong to  vs  the declared set's owners
 #     admin_checked_only     "no other page"      vs  DECLARED_LOGGED_IN_PAGES in that test
-#     a11y_rule_by_name      the rule the "Target size." item names  vs  AXE_RULE_ENABLED_BY_NAME
 #     a11y_rule_every_run    every window.axe.run( in the test  vs  those passing __AXE_OPTIONS__
 #     a11y_rule_options_built  the options builder  vs  one line enabling that constant, by name
 #
@@ -134,9 +136,9 @@
 # WHAT IS CHECKED WITH --online - the figures ONLINE_FIGURES names, which exist only in another
 # project's CI log, and the ones SITE_FIGURES names, which exist only in this package's own
 # (T-0613, beside its block below). How many that is, this header does not say: the two lists are
-# the count, and every run prints each figure by name. The accessibility statement this package
-# ships describes the THEME's gate in a paragraph of its own, and says in as many words that its
-# figures are "those reported by the most recent run".
+# the count, and every run prints each figure by name. ACCESSIBILITY.md describes the THEME's gate
+# in a paragraph of its own, and says in as many words that its figures are "those reported by the
+# most recent run" (moved there from the shipped statement by D-077/T-0723).
 # So the most recent run is what --online reads: the newest TERMINAL, SUCCESSFUL pipeline on
 # `agora_theme`'s 1.x, its `nightwatch` trace for the axe summary and its `agora-invariants`
 # trace for the contrast summary. A pipeline still running, or a red one, is NOT READ and never a
@@ -204,9 +206,9 @@ for _arg in "$@"; do
     -h|--help)
       printf 'usage: %s [--online]\n' "$(basename -- "$0")"
       printf '  (no flag)  offline comparisons against this repository. No network.\n'
-      printf '  --online   also re-reads the figures the shipped accessibility statement quotes\n'
-      printf '             from a CI trace: five about the theme, and two about this package own\n'
-      printf '             phpunit job. The gate never passes this.\n'
+      printf '  --online   also re-reads the figures ACCESSIBILITY.md quotes from a CI trace:\n'
+      printf '             five about the theme, and two about this package own phpunit job.\n'
+      printf '             The gate never passes this.\n'
       exit 0 ;;
     *) printf 'FATAL: unknown argument "%s". Try --help.\n' "$_arg" >&2; exit 2 ;;
   esac
@@ -787,10 +789,10 @@ printf -- '---------------------------------------------------------------------
 
 [ -r "$A11Y_TEST" ] || fatal "$A11Y_TEST is not readable; the page count the statement gives has nothing to be compared against."
 
-claim_once 'a11y scope' STATEMENT 'axe-core runs over [a-z]+ pages of the site as it is installed: the [a-z]+ composed landing pages'
+claim_once 'a11y scope' ACCESSIBILITY 'axe-core runs over [a-z]+ pages of the site as it is installed: the [a-z]+ composed landing pages'
 A_PAGES=$(to_num "$(field 1 '.*over ([a-z]+) pages.*')")
 A_CANVAS=$(to_num "$(field 1 '.*the ([a-z]+) composed landing pages.*')")
-claim_once 'a11y listings' STATEMENT '[a-z]+ of the [a-z]+ listing routes \(two of the [a-z]+ registers'
+claim_once 'a11y listings' ACCESSIBILITY '[a-z]+ of the [a-z]+ listing routes \(two of the [a-z]+ registers'
 A_SCANNED=$(to_num "$(field 1 '([a-z]+) of the [a-z]+ listing.*')")
 A_LISTINGS=$(to_num "$(field 1 '[a-z]+ of the ([a-z]+) listing.*')")
 A_REGISTERS=$(to_num "$(field 1 '.*two of the ([a-z]+) registers.*')")
@@ -994,19 +996,19 @@ compare 'readme_login_only' '1' "$T_LOGGED_IN_PAGES" \
 # way: the next change to the test cannot leave the prose saying 2.5.8 is measured when it is not.
 #
 # THE RULE'S NAME IS DERIVED FROM THE PROSE in both files, never typed here - a typed name would
-# compare a constant against a constant. The statement's item is titled "Target size.", which
+# compare a constant against a constant. ACCESSIBILITY.md's item is titled "Target size.", which
 # lower-cases and hyphenates to the rule id; README names the rule in backticks.
 #
 # WHAT THIS CANNOT SEE: whether the rule MEASURED anything on a real page. That is a fact about a
 # run, and the test asserts it itself - more than zero targets measured on every page it scans,
 # logged-in page included - because a run is the only place it can be asked.
-claim_once 'target size checked' STATEMENT \
-  '<li><strong>[A-Z][a-z]+ [a-z]+\.</strong> WCAG 2\.2 success criterion 2\.5\.8 asks'
-A_RULE=$(field 1 '.*<li><strong>([A-Z][a-z]+ [a-z]+)\.</strong> WCAG 2\.2 success criterion 2\.5\.8.*' \
+claim_once 'target size checked' ACCESSIBILITY \
+  '\* \*\*[A-Z][a-z]+ [a-z]+\.\*\* WCAG 2\.2 success criterion 2\.5\.8 asks'
+A_RULE=$(field 1 '.*\* \*\*([A-Z][a-z]+ [a-z]+)\.\*\* WCAG 2\.2 success criterion 2\.5\.8.*' \
   | tr 'A-Z ' 'a-z-')
 # Extracted and not compared: reword it away from "on by name" and this FATALs in the same commit,
 # the way 'admin scope' does for the dashboard's scoping sentence.
-claim_once 'target size on by name' STATEMENT \
+claim_once 'target size on by name' ACCESSIBILITY \
   'The scan of the pages above switches that rule on by name'
 T_RULE=$(printf '%s\n' "$A11Y_SRC" \
   | sed -nE "s/^ +private const AXE_RULE_ENABLED_BY_NAME = '([a-z0-9-]+)';.*/\\1/p" | head -1)
@@ -1170,17 +1172,17 @@ compare 'security_window' "$S_WINDOW" "$D_WINDOW" "the D-064 heading that set it
 printf '\nONE COPY - every registered figure has exactly one home in the packaged set (T-0609)\n'
 printf -- '---------------------------------------------------------------------------------------------------------\n'
 
-one_home 'site_axe_pages' STATEMENT \
+one_home 'site_axe_pages' ACCESSIBILITY \
   "($NUM pages of the site|$NUM pages are scanned|axe-core runs over $NUM pages)" \
-  'The number of pages this package scans belongs in the document a visitor is actually served, which has to be readable on its own; README points at it rather than restating it.'
+  "The number of pages this package scans is a fact about the package's own CI, and ACCESSIBILITY.md is the maintainer-facing account of it (D-077); the shipped statement points at it rather than restating it."
 
-one_home 'listing_scanned' STATEMENT \
+one_home 'listing_scanned' ACCESSIBILITY \
   "$NUM of the $NUM listing routes" \
-  'The scanned-subset figure belongs beside the list of what is NOT covered, which is in the statement.'
+  'The scanned-subset figure belongs beside the rest of what every push checks, which is in ACCESSIBILITY.md since D-077.'
 
-one_home 'theme_axe_gate' STATEMENT \
+one_home 'theme_axe_gate' ACCESSIBILITY \
   "(axe-core runs there over $NUM pages|$NUM fixture pages|$NUM of $NUM fixture)" \
-  'The theme is a separate project whose gate moves on its own schedule. The statement keeps ONE description of it, in the paragraph that also says those pages are fixtures and not pages of this site; anywhere else it is a copy that goes stale within hours, which is exactly what happened on 2026-09-20.'
+  'The theme is a separate project whose gate moves on its own schedule. ACCESSIBILITY.md keeps ONE description of it, in the paragraph that also says those pages are fixtures and not pages of this site; anywhere else it is a copy that goes stale within hours, which is exactly what happened on 2026-09-20.'
 
 one_home 'pdf_count' MANIFEST \
   "$NUM (generated )?PDFs" \
@@ -1206,11 +1208,12 @@ one_home 'security_window' SECURITY \
   'How long a reporter waits is a promise, and it is made in one place, the security policy. A second statement of it elsewhere is a second promise that can drift from the first, read by somebody who never opens the policy.'
 
 # THE ONE DELIBERATELY BOUND DUPLICATE, and the reason the third home kind exists. Deleting
-# either of these would cost a reader something: README's status paragraph and the statement's
-# scope sentence are read by different people, neither of whom has the other file open. Both
-# copies are compared against the same measured source above - `registers` and
-# `registers_stated` - so a change to the content model fails BOTH, and neither can drift alone.
-one_home 'registers' 'README STATEMENT' \
+# either of these would cost a reader something: README's status paragraph and ACCESSIBILITY.md's
+# scope sentence (moved there from the shipped statement by D-077) are read by different people,
+# neither of whom has the other file open. Both copies are compared against the same measured
+# source above - `registers` and `registers_stated` - so a change to the content model fails BOTH,
+# and neither can drift alone.
+one_home 'registers' 'README ACCESSIBILITY' \
   "$NUM registers" \
   'Bound rather than deleted: both copies are compared against the distinct agora_base_* node bundles, above, in the same run.'
 
@@ -1218,7 +1221,7 @@ one_home 'registers' 'README STATEMENT' \
 ONLINE_FIGURES='theme_axe_pages theme_axe_rules theme_axe_violations theme_contrast_pairs theme_contrast_below'
 THEME_PROJECT='agora_theme'
 
-printf '\nONLINE - the theme figures the statement quotes, re-read from the theme CI traces\n'
+printf '\nONLINE - the theme figures ACCESSIBILITY.md quotes, re-read from the theme CI traces\n'
 printf -- '---------------------------------------------------------------------------------------------------------\n'
 
 not_read() { # <reason> - every online figure is unreachable for this one reason
@@ -1233,13 +1236,13 @@ not_read() { # <reason> - every online figure is unreachable for this one reason
 
 # The claims are extracted whether or not --online runs, so the offline pass still refuses a
 # figure stated twice and a reader of the offline output can see what --online would fetch.
-claim_once 'theme axe' STATEMENT 'axe-core runs there over [a-z]+ pages'
+claim_once 'theme axe' ACCESSIBILITY 'axe-core runs there over [a-z]+ pages'
 T_PAGES=$(to_num "$(field 1 '.*over ([a-z]+) pages.*')")
-claim_once 'theme axe result' STATEMENT '<strong>[0-9]+ rules applied per page, [0-9]+ violations</strong>'
-T_RULES=$(field 1 '.*<strong>([0-9]+) rules.*')
+claim_once 'theme axe result' ACCESSIBILITY '\*\*[0-9]+ rules applied per page, [0-9]+ violations\*\*'
+T_RULES=$(field 1 '.*\*\*([0-9]+) rules.*')
 T_VIOL=$(field 1 '.*per page, ([0-9]+) violations.*')
-claim_once 'theme contrast' STATEMENT '<strong>[0-9]+ pairs checked, [0-9]+ below threshold</strong>'
-T_PAIRS=$(field 1 '.*<strong>([0-9]+) pairs.*')
+claim_once 'theme contrast' ACCESSIBILITY '\*\*[0-9]+ pairs checked, [0-9]+ below threshold\*\*'
+T_PAIRS=$(field 1 '.*\*\*([0-9]+) pairs.*')
 T_BELOW=$(field 1 '.*checked, ([0-9]+) below.*')
 
 if [ "$ONLINE" -ne 1 ]; then
@@ -1364,8 +1367,11 @@ fi
 # ================================================================== ONLINE - THIS PACKAGE ==
 # T-0613. The figure this package quotes about ITSELF, re-read from this project's own CI trace.
 #
-# WHY THIS BLOCK EXISTS, and it is the plainest gap this unit found. The shipped accessibility
-# statement tells a citizen how many pages of the installed site axe scans. That number came from
+# WHY THIS BLOCK EXISTS, and it is the plainest gap this unit found. THE FIGURE NAMED BELOW MOVED
+# FROM THE SHIPPED STATEMENT TO ACCESSIBILITY.md BY D-077/T-0723; the block and its reasoning did
+# not move with it, because the check is about the number being TRUE, not about who reads it. At
+# the time this paragraph was written, the shipped accessibility statement told a citizen how many
+# pages of the installed site axe scans. That number came from
 # an assertion MESSAGE, and PHPUnit emits an assertion message only when the assertion FAILS -
 # measured on pipeline 969787, job 12330735, green: `grep -c "pages scanned"` over the trace
 # returned 0, and the junit.xml artefact of the same job carries a self-closing <testcase> with no
@@ -1496,7 +1502,7 @@ NOT_CHECKED=(
 "The route SECURITY.md gives: the project page it links, the name of the sidebar link on that page, and what the link opens - a new work item on git.drupalcode.org with confidentiality switched on, behind a Drupal.org sign-in. Verified at source on 2026-09-25: the page answered HTTP 200 and carried the link with issue[confidential]=true pre-set, and the new-item address answered with a redirect to sign-in. They are facts about Drupal.org's pages, which can change without a commit here. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND in this pass."
 "The coverage sentence in SECURITY.md - that stable releases are covered by Drupal's security advisory policy. It rests on the project's opt-in, which is a setting on Drupal.org and not a file in this package: its API reported field_security_advisory_coverage = covered on 2026-09-25, unchanged since 2026-09-24 15:14 UTC, and the project page says the same in its sidebar. Withdrawing the opt-in needs no commit here, and would leave the sentence false in every package that carries it. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND: reading a Drupal.org field would add a figure to --online, which is a decision of its own."
 "The sentence in SECURITY.md that a site template's requirements are copied into the site's own composer.json when Composer adds it to a Drupal CMS site. It describes another project: drupal/cms 2.1.6 requires drupal/core-recipe-unpack ^11.3.10 and allows it as a plugin, read from its project template at that tag on 2026-09-25, and specs/000-project/DECISIONS.md records the flattening as measured in a rig. A later Drupal CMS could drop the plugin or switch it off, and nothing offline here would see it."
-"What ACCESSIBILITY.md says beyond the one-copy rule. It states no figure this script registers, by design, and every one-copy detector above runs over it. Its account of the keyboard walkthrough - the dates, the two builds, what the machine found and what the person confirmed - is a record of two dated events whose evidence lives in specs/, which is not packaged; and its sentences about Gin, coffee, the consent banner and the sign-in page describe other projects' behaviour on the sites that were walked. READABLE AND DELIBERATELY NOT BOUND."
+"What ACCESSIBILITY.md says beyond the figures registered above and the one-copy rule that runs over all of it. Its account of the keyboard walkthrough - the dates, the two builds, what the machine found and what the person confirmed - is a record of two dated events whose evidence lives in specs/, which is not packaged; and its sentences about Gin, coffee, the consent banner and the sign-in page describe other projects' behaviour on the sites that were walked. READABLE AND DELIBERATELY NOT BOUND."
 )
 
 printf '\nNOT CHECKED - named, with a reason, because a guard that silently covers half its subject\n'
