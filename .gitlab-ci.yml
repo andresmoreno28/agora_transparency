@@ -186,6 +186,12 @@ variables:
 # recipe.yml exists at the root (include.drupalci.main.yml:61-62).
 ################
   _AUTORUN_DRUPAL_CMS: 'all'
+  # The Drupal core release CI installs. The CI templates' default ref (1.17.0)
+  # sets 11.4.6, which cannot render a page once Composer resolves twig/twig
+  # 3.30.0 (core issue 3625969); 11.4.8 carries the fix. Overriding the included
+  # value redefines no upstream job. Remove it once the default ref's
+  # CORE_STABLE is 11.4.8 or later: from then on it would hold CI back.
+  CORE_STABLE: '11.4.8'
 
 
 ################
