@@ -294,10 +294,30 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `975876`, ref `1.x`, commit `ddece66`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/975876/jobs` on 2026-09-25 —
+- **Observed inventory — the site template.** Pipeline `978389`, ref `1.x`, commit `7c8132c`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/978389/jobs` on 2026-09-26 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ✅ **THE FIRST GREEN AFTER TWIG 3.30.0.** From 2026-09-25 13:20 UTC every page-rendering job was
+  red: Twig 3.30.0 broke rendering on core up to 11.4.7 (core issue 3625969). Core 11.4.8 fixed it
+  that evening, but the CI templates' default ref still tests 11.4.6, so `7c8132c` sets
+  `CORE_STABLE: '11.4.8'` in `.gitlab-ci.yml` until they catch up; the `composer` job now locks
+  core 11.4.8 with twig v3.30.0. ⚠️ **Three figures moved and each is accounted for.** `phpunit`
+  went 22 → 23 tests and 2643 → 2652 assertions, identically on both databases: the new test is
+  `testNoEpochDateOnAnEmptyRegister` (`ad8bf86`), and the assertions moved with it and with the
+  Drupal CMS 2.2 work in `f7eebd0` and `e057e08`. `cspell` went 441 → 440: T-0705 deleted
+  `.tugboat/`'s two text files and T-0617 added `ACCESSIBILITY.md`. The `Drupal CMS` job's result
+  line changed shape from pipeline `977862` onwards, and **not because of this package**, although
+  the timing matches `c8a3556`. `drupal/cms` 2.1.4 requires `drupal_cms_installer: ^2`, which has
+  resolved to 2.2.0 since that was released on 2026-09-25. While building its site-template form,
+  that installer creates a Composer instance with `COMPOSER_HOME` pointing into the project root
+  (`src/SiteTemplate.php:381`), and the job runs PHPUnit as `www-data`, which cannot create that
+  folder. Three PHP warnings follow, all raised inside Composer's `Factory::createConfig()`.
+  **Reproduced on a rig built from the job's own images:** the same three warnings appear with an
+  empty recipe in place of this package, on Drupal CMS 2.1.4 and 2.2.0 alike, and the line is
+  `OK (1 test, 1 assertion)` once `COMPOSER_HOME` is writable. So this job's "2.1.4" build already
+  runs the 2.2.0 installer.
+  (It stood at `975876` / `ddece66` / 2026-09-25 — the paragraph below.)
   ⚠️ **Owed since `6dc1d06`, which changed the packaged file set and a gate's denominator and left
   this row where it was.** `SECURITY.md` took the packaged set to **376** entries, and with
   `5b22880`'s four spec files `cspell` went 436 → **441**. The theme lock went 1.2.0 → **1.2.1**
@@ -419,10 +439,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | job | the line its trace printed |
   |---|---|
   | `Drupal CMS` | `Locking drupal/agora_theme (1.2.1)` |
-  | `Drupal CMS` | `OK (1 test, 1 assertion)` |
-  | `cspell` | `Files checked: 441, Issues found: 0` |
-  | `phpunit` | `OK (22 tests, 2643 assertions)` |
-  | `phpunit-pgsql` | `OK (22 tests, 2643 assertions)` |
+  | `Drupal CMS` | `Tests: 1, Assertions: 1, Warnings: 3.` |
+  | `cspell` | `Files checked: 440, Issues found: 0` |
+  | `phpunit` | `OK (23 tests, 2652 assertions)` |
+  | `phpunit-pgsql` | `OK (23 tests, 2652 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
@@ -473,10 +493,19 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `974098`, ref `1.x`, commit `27bf188`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/974098/jobs` on 2026-09-24. **Ten jobs, every
-  one `success`, every one `allow_failure: false`.** `27bf188` is the commit tagged **`1.2.1`**, whose
-  own tag pipeline `974112` is also ten for ten.
+- **Observed inventory — the theme.** Pipeline `978399`, ref `1.x`, commit `fa210b0`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/978399/jobs` on 2026-09-26. **Ten jobs, every
+  one `success`, every one `allow_failure: false`.** Like the site template's, it tests core 11.4.8
+  through a `CORE_STABLE` override (`acfb4a2`) until the CI templates catch up.
+  ⚠️ **Two figures moved and both are accounted for.** `nightwatch` went 812 → 940 assertions:
+  two suites are new since `27bf188`, Bands (`b3054dc`) and Logo (`531049c`, fixed in `fa210b0` to
+  find the theme under `themes/custom` on the runner rather than a typed `themes/contrib` path), and
+  the trace itself prints Axe 835, Bands 73 and Logo 22 per suite. `phpunit` went 203 → 215 tests
+  and 959 → 981 assertions: the logo-ratio and masthead-opening-line tests `531049c` added to
+  `ThemeHelpersTest` and `ThemeSettingsTest`. Pages, the 90-90 rule range and the 0 violations
+  held.
+  (It stood at `974098` / `27bf188` / 2026-09-24, the commit tagged `1.2.1`, whose own tag pipeline
+  `974112` is also ten for ten — the paragraph below.)
   ✅ **Its figures are in the trace-figures table below and are NOT restated here any more.** They
   stood in this sentence as a second copy until 2026-09-24, beside the table that `--online` re-reads,
   and this block's own lesson is to stop making the second copy rather than to refresh both.
@@ -606,7 +635,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `stylelint` | validate | success | false |
 
   **Trace figures — the theme.** Same mechanism as the site template's table above, same
-  credential-free `/-/jobs/<id>/raw` route, read from pipeline `974098`'s own jobs.
+  credential-free `/-/jobs/<id>/raw` route, read from pipeline `978399`'s own jobs.
   ⚠️ **`agora-invariants` read `35` until 2026-09-21 and the trace says `44`, which is nine
   checks of drift in a figure whose whole subject is a gate runner's own arithmetic.** It was found
   by REFRESHING the observation above and re-running `--online`, not by anything watching: the
@@ -624,8 +653,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `agora-invariants` | `44 checks — 0 failures` |
   | `nightwatch` | `10 pages scanned, 90-90 axe rules run per page, 0 violations` |
   | `nightwatch` | `heading-order reported on 10 of 10 pages` |
-  | `nightwatch` | `812 total assertions` |
-  | `phpunit` | `OK (203 tests, 959 assertions)` |
+  | `nightwatch` | `940 total assertions` |
+  | `phpunit` | `OK (215 tests, 981 assertions)` |
 
   ⚠️ **A TABLE CAN NEVER NAME ITS OWN COMMIT'S PIPELINE, and that is structural rather than an
   oversight.** The pipeline is produced *by* the commit that carries the table, so every
