@@ -48,6 +48,9 @@ Seam rules (mandatory from day 1, zero cost):
 > the declared Drupal CMS chain brings its stock `basic_editorial` workflow and that none of the six
 > bundles is moderated. The same decision reaches §3's *Participation* page, §5's out-of-scope list
 > and §6's step `004`.
+> ⚠️ **AMENDED 2026-09-27 (T-0627, on T-0626's audit):** *"none of the six bundles is moderated"*
+> stopped being true with `f7eebd0` (D-078). Drupal CMS 2.2.0's `basic_editorial` workflow now
+> moderates all six, and the demonstration content ships `moderation_state: published`.
 
 **Outside this repository — `drupal/agora_theme` (D-014):** sober institutional aesthetics, AA contrast
 tokens, free-licensed typography (OFL) **self-hosted**, own/CC0 images, everything in the license

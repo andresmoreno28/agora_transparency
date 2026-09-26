@@ -223,3 +223,7 @@ waits on him**:
 | 3 | **T-0616** and **T-0633** — the two keyboard walkthroughs, by a person | Both `⏸ 👤`; what each has left is `research/2026-09-23-keyboard-measurability.md` §6. T-0617 waits on T-0616, and T-0603's keyboard half is T-0633's |
 | 4 | **T-0618** — one answer | Whether the opt-in to Drupal's security advisory coverage at 15:14 UTC on 2026-09-24 was deliberate. Recorded in T-0618's own row, and not decided here |
 | 5 | **Gate B** | Unchanged — T-0627's HOLD |
+
+**AMENDED 2026-09-27 (T-0627, on T-0626's audit): all five are resolved.** D-054 is signed (option
+B); D-045 is closed; T-0616 and T-0633 are done; T-0618 is answered; and Gate B is delegated to
+[ejecutor] by D-075 and signed at T-0627.

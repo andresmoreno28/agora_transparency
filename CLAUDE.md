@@ -307,8 +307,12 @@ moving the working copy a session is running in, on the day wave 5 starts.
   `testNoEpochDateOnAnEmptyRegister` (`ad8bf86`), and the assertions moved with it and with the
   Drupal CMS 2.2 work in `f7eebd0` and `e057e08`. `cspell` went 441 → 440: T-0705 deleted
   `.tugboat/`'s two text files and T-0617 added `ACCESSIBILITY.md`. The `Drupal CMS` job's result
-  line changed shape from pipeline `977862` onwards, and **not because of this package**, although
-  the timing matches `c8a3556`. `drupal/cms` 2.1.4 requires `drupal_cms_installer: ^2`, which has
+  line changed shape from pipeline `977712` onwards (commit `2ebd396`, job `12460463`), **not because
+  of this package**, and before `c8a3556` touched its requirements: the pipeline before it, `976734`
+  (job `12445247`), locked the installer at 2.1.6 and printed `OK (1 test, 1 assertion)`. This job
+  builds a Drupal CMS 2.1.4 project whose `^2` constraints resolve the installer, the helper and the
+  base recipe at 2.2.0 (corrected at T-0627 on T-0626's audit, which found the first such pipeline;
+  this sentence named `977862` until then). `drupal/cms` 2.1.4 requires `drupal_cms_installer: ^2`, which has
   resolved to 2.2.0 since that was released on 2026-09-25. While building its site-template form,
   that installer creates a Composer instance with `COMPOSER_HOME` pointing into the project root
   (`src/SiteTemplate.php:381`), and the job runs PHPUnit as `www-data`, which cannot create that
@@ -497,10 +501,13 @@ moving the working copy a session is running in, on the day wave 5 starts.
   `/api/v4/projects/project%2Fagora_theme/pipelines/978399/jobs` on 2026-09-26. **Ten jobs, every
   one `success`, every one `allow_failure: false`.** Like the site template's, it tests core 11.4.8
   through a `CORE_STABLE` override (`acfb4a2`) until the CI templates catch up.
-  ⚠️ **Two figures moved and both are accounted for.** `nightwatch` went 812 → 940 assertions:
-  two suites are new since `27bf188`, Bands (`b3054dc`) and Logo (`531049c`, fixed in `fa210b0` to
-  find the theme under `themes/custom` on the runner rather than a typed `themes/contrib` path), and
-  the trace itself prints Axe 835, Bands 73 and Logo 22 per suite. `phpunit` went 203 → 215 tests
+  ⚠️ **Two figures moved and both are accounted for.** `nightwatch` went 812 → 940 assertions,
+  all 128 of them named: 812 was the Axe suite's 21 tests and 809 assertions plus 3 suite guards;
+  940 is Axe's 24 tests and 835 (+26, from `ec2c990` and `8690b7a`), the new Bands suite's 19 tests
+  and 73 plus 4 guards (`b3054dc`), and the new Logo suite's 5 tests and 22 plus 3 guards (`531049c`,
+  fixed in `fa210b0` to find the theme under `themes/custom` on the runner rather than a typed
+  `themes/contrib` path). The per-test lines sum to 930; the other 10 are guards printed outside any
+  test (corrected at T-0627 on T-0626's audit; until then this explained 95 of the 128). `phpunit` went 203 → 215 tests
   and 959 → 981 assertions: the logo-ratio and masthead-opening-line tests `531049c` added to
   `ThemeHelpersTest` and `ThemeSettingsTest`. Pages, the 90-90 rule range and the 0 violations
   held.
