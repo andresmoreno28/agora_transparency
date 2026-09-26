@@ -32,7 +32,7 @@ feature list:
 |---|---|
 | ~~Content model: documents, officials, contracts, budget lines, public calls~~ **DONE, unit 002** | six bundles ship in `config/` |
 | ~~Demo content — English only, see below — and the real screenshot~~ **DONE, unit 003** | 60 records, and `screenshot.webp` is a real 500×400 capture |
-| Editorial workflow and freedom-of-information requests — **deferred past the first release** (D-060) | unit 004, after the first release |
+| Freedom-of-information requests and a review workflow of Ágora's own — **deferred past the first release** (D-060). Records already follow Drupal CMS's draft → published workflow (D-078) | unit 004, after the first release |
 | ~~Configuration auditing~~ **DONE, unit 005** | `drupal/config_guardian` in `require`, installed by `recipe.yml`, with its settings and a governance-auditor role in `config/` |
 | AI assistant with citations | unit 005 |
 

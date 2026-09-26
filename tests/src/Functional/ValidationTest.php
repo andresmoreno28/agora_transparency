@@ -769,7 +769,17 @@ class ValidationTest extends BrowserTestBase {
     $this->assertSame(count($nodes), $this->publishedCount($bundles), 'Every contract and grant must be published again.');
     $this->drupalGet('<front>');
     $assert->statusCodeEquals(200);
-    $assert->pageTextContains($expected_date);
+    // Publishing again is a new revision, and a new revision moves `changed`
+    // to the moment of the save, so the date the block shows now is the
+    // republish time rather than the one read in (1). It is read again the
+    // same way, from the same set, and formatted by the same service.
+    $storage->resetCache();
+    $republished = 0;
+    foreach ($storage->loadMultiple(array_keys($nodes)) as $node) {
+      $republished = max($republished, (int) $node->getChangedTime());
+    }
+    $this->assertGreaterThanOrEqual($latest, $republished, 'Publishing again cannot move the latest change backwards.');
+    $assert->pageTextContains(\Drupal::service('date.formatter')->format($republished, 'custom', 'j F Y'));
     $assert->pageTextNotContains('1970');
   }
 
@@ -2400,6 +2410,13 @@ class ValidationTest extends BrowserTestBase {
    * export because it rides inside the landing page's own `path` field rather
    * than as a standalone `path_alias` entity.
    *
+   * FROM DRUPAL CMS 2.2.0 THE CONVERSION NO LONGER HAPPENS, measured on
+   * 2026-09-26: the helper's RecipeSubscriber stopped touching the front page,
+   * so an installed site keeps `/home` exactly as declared. On a 2.2.0 install
+   * `/` still renders the landing page and the theme still marks it as the
+   * front page, so the assertions below accept either form and then check
+   * that recognition directly.
+   *
    * So the ruling is to keep `/home` and assert the ROUND TRIP, rather than
    * declaring `/page/1`: an entity ID is not stable, and `site:export` would
    * rewrite it back to the alias on every export, which means declaring it
@@ -2453,16 +2470,19 @@ class ValidationTest extends BrowserTestBase {
     $this->assertCount(1, $aliases, "The declared alias $declared must exist on a clean install; if it does not, the landing page was exported without its path field.");
     $alias = reset($aliases);
 
+    // Which of the two forms page.front holds depends on the Drupal CMS
+    // release, and both are correct. Up to Drupal CMS 2.1,
+    // drupal_cms_helper's RecipeSubscriber rewrote the declared alias to the
+    // system path it points at when the recipe was applied; from 2.2.0 that
+    // subscriber no longer touches the front page, and the alias is stored
+    // as declared. Core serves `/` through either form, and the theme still
+    // marks the page as the front page, which is asserted at the end. So
+    // this accepts exactly the two values that have an explanation.
     $installed = \Drupal::config('system.site')->get('page.front');
-    $this->assertSame(
-      $alias->getPath(),
+    $this->assertContains(
       $installed,
-      'system.site page.front must hold the SYSTEM PATH the declared alias points at — that is the recipe-side half of the round trip.',
-    );
-    $this->assertNotSame(
-      $declared,
-      $installed,
-      'The conversion must actually have happened; page.front still holding the alias would mean RecipeSubscriber did not run.',
+      [$declared, $alias->getPath()],
+      "system.site page.front must hold the declared alias or the system path it points at, not '$installed'.",
     );
 
     // -- The chain a visitor sees --------------------------------------------
@@ -2515,6 +2535,11 @@ class ValidationTest extends BrowserTestBase {
     // statement about the front page rather than about any 200 at all.
     $this->drupalGet('<front>');
     $this->assertSession()->statusCodeEquals(200);
+    // It must also be RECOGNISED as the front page: the theme's hero band and
+    // its section tints key on that. With page.front holding an alias, this
+    // is the assertion that catches a front page that renders without being
+    // treated as one.
+    $this->assertSession()->elementExists('css', '.agora-page--front');
   }
 
   /**
