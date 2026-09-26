@@ -24,7 +24,8 @@
 # The process layer (specs/, .claude/, CLAUDE.md, tests/) is `export-ignore`d
 # (D-015.2) and is therefore out of scope by construction, not by exclusion.
 # That matters: `drupal_cms_site_template_base` appears legitimately in prose
-# inside `specs/` and `IDIOMS.md`. If this script ever reports a hit there, the
+# inside `specs/` and `IDIOMS.md` (and, since 2026-09-26, as a dependency in the
+# packaged tree too - see the eighth term below). If this script ever reports a hit there, the
 # SCOPE is wrong and must be fixed - never add an exclusion for it.
 #
 # Contract:
@@ -151,10 +152,21 @@ MY_SITE_TEMPLATE_NAME
 my-site-template
 Site Template Starter Kit
 my amazing site template
-drupal_cms_site_template_base
+"name": "drupal/drupal_cms_site_template_base"
 drupal-site-template
 EOF
 )
+# ------------------------------------ the eighth term, narrowed (2026-09-26) --
+# Until 2026-09-26 this term was the bare project name, which could only ever
+# mean a leftover of the starter kit. Drupal CMS 2.2.0 made the same drupal.org
+# project the home of "Drupal CMS Basics", the recipe that replaced the six
+# retired base recipes, and this package now REQUIRES it (D-018, amended
+# 2026-09-26). The bare name is therefore correct content in composer.json,
+# recipe.yml, README.md and LICENCE-MANIFEST.md, and matching it would turn
+# this invariant red on the truth: pipeline 977862 read 32 such findings.
+# The term is NARROWED, not deleted, per the FORBIDDEN clause above: it now
+# matches the kit's name only where the kit left it, as this package's OWN
+# name in composer.json. The list stays at nine terms.
 # --------------------------------------------------- the ninth term (T-703) --
 # NEW COVERAGE, not a revert. The wave-1 rider's "adjusted check" was never in
 # this file: it was the `.extra["drupal-site-template"]` tripwire in
