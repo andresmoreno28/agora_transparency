@@ -5833,3 +5833,18 @@ rather than 41.
 - **D-018 · second amendment, 2026-09-26 — `tests/bin/no-boilerplate`'s eighth deny term is narrowed, not deleted.** The term was the bare name `drupal_cms_site_template_base`, which until Drupal CMS 2.2.0 could only mean a leftover of the site-template starter kit. Since 2.2.0 the same drupal.org project also publishes "Drupal CMS Basics", which this package now requires (the first amendment above), so the bare name is correct content in `composer.json`, `recipe.yml`, `README.md` and `LICENCE-MANIFEST.md`. Pipeline 977862, commit `e057e08`, read 32 findings of it, every one of them true content. The invariant's own rule says a term leaves the list only when the string it guards can no longer be reintroduced, with the reasoning recorded here. The leftover it guards CAN still be reintroduced, so the term stays, narrowed to the one form the kit leaves behind: `"name": "drupal/drupal_cms_site_template_base"`, this package's own name in `composer.json`. The list stays at nine terms. Signed by [ejecutor] under D-075 and [andres]'s standing instruction of 2026-09-25.
 
 - **D-072 · second half, SIGNED by [andres] 2026-09-26 — the demo is L, a live Drupal site on his VPS.** He took [ejecutor]'s recommendation over the audit's S, in his words <!-- cspell:disable -->*"prepara el script e instrucciones para montarlo en mi VPS"*<!-- cspell:enable -->. D-072's first half and T-0635's boundary stand: it is a real installation, so it reports usage as one site and receives security notices like any other. The build is two host scripts, a setup and a release-day update; they are host operations rather than package content, so they live outside this repository, on a private page for him. The real build follows the template's tag (T-0711). Implemented by T-0719, widened the same day. Cost of being wrong: a site to patch on release days, and S stays available as a rebuild.
+
+- **T-0624 · the SBOM on the day, 2026-09-26 — six projects, re-read at source, all stable and covered.** `bash tests/bin/sbom-check` exits 0 after querying `updates.drupal.org/release-history/<project>/current` for the six `drupal/*` entries in `require`: 6 queried, 6 with a stable release, 6 with security coverage, 6 with a D-NNN line, 0 findings. This table is new and dated; the D-018 table stays as it was (rule 8).
+
+  | project | constraint | newest stable, 2026-09-26 | coverage | decision |
+  |---|---|---|---|---|
+  | `drupal/agora_theme` | `^1.2` | 1.2.1 | covered | D-034 |
+  | `drupal/config_guardian` | `^1.0` | 1.0.3 | covered | D-059 |
+  | `drupal/drupal_cms_helper` | `^2` | 2.2.0 | covered | D-018 |
+  | `drupal/drupal_cms_site_template_base` | `^2` | 2.2.0 | covered | D-018, amended 2026-09-26 |
+  | `drupal/easy_email_express` | `^1` | 1.0.4 | covered | D-018 |
+  | `drupal/site_template_helper` | `^1.0.3` | 1.0.4 | covered | D-018 |
+
+  **What moved** since the dry run of 2026-09-24: `agora_theme` 1.2.0 → 1.2.1 (released 2026-09-24); `drupal_cms_helper` 2.1.4 → 2.2.0 (released with Drupal CMS 2.2.0 on 2026-09-25); `drupal_cms_site_template_base` entered at 2.2.0 while the six base recipes Drupal CMS retired left (the D-018 amendment of the same day). `config_guardian`, `easy_email_express` and `site_template_helper` read the versions their D-059 and D-018 rows record.
+
+  **`site_template_helper` stays.** The question the D-033 audit left for this sweep, whether to keep a Composer plugin whose remaining function serves a translation-download URL this project does not use today, is answered: kept. Removing it is an SBOM change with no gain for a site owner today, and the plugin is stable and covered. Signed by [ejecutor] under D-075 and [andres]'s standing instruction of 2026-09-25.
