@@ -15,7 +15,7 @@ as a working portal, ready for a body to replace the demonstration content with 
 **What the template does today**
 
 * Installs a working Drupal CMS site: administrative back end, media, basic SEO, basic privacy and
-  consent, anti-spam, authentication tweaks and HTML email.
+  consent, authentication tweaks and HTML email.
 * Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
   this template requires at `^1.2` — and makes it the site's default theme.
 * Sets a Canvas landing page as the home page, carrying **five** blocks from the template's own
