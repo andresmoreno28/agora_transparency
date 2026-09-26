@@ -209,3 +209,21 @@ and the signed entries, not this file, say what he ruled.
   it is a static snapshot or a live Drupal site, and where it is served, is not ruled.
 - **D-073's timing was put to him the same day**: asking the Drupal CMS team before the launch
   rather than after it. If he does not answer, C stands as signed.
+
+---
+
+## D-079 · Which Drupal CMS the clean-install job builds — proposed 2026-09-27; [ejecutor] rules it under D-075 after T-0727's replay
+
+*Context in one line:* the `Drupal CMS` job builds `drupal/cms` at the CI templates' `CMS_STABLE`, which `default-ref` (templates 1.17.0) sets to **2.1.4** while **2.2.0** is current — and that build already runs 2.2.0's installer, helper and base recipe through their `^2` constraints (job 12469707).
+
+| | option | cost |
+|---|---|---|
+| **A** | Pin `_DRUPAL_CMS_TAG` to the current release in `.gitlab-ci.yml` | One line, and the gate builds the current Drupal CMS. A second temporary override beside `CORE_STABLE`, to move at each Drupal CMS release until the default catches up, then remove (T-0726). Red on its first push if the job's own sequence fails at 2.2.0 — unknown until measured |
+| **B** | Leave the default | Nothing to maintain. The job moves to 2.2.0 by itself at the templates' next release — `main` already reads `CMS_STABLE: '2.2.0'` — on a day nobody here picks; if that sequence fails, the red arrives with no commit here to answer it. Until then 2.2.0 is measured only on rigs (T-0724, T-0710) |
+| **C ★** | Replay the job's exact sequence at 2.2.0 on a guarded rig first (T-0727), then rule A or B on the result | One rig session. The job's own compatibility test is never run on a rig (plan §6), so the replay stops at the install |
+
+★ **C** — one unknown decides both whether A is red on its first push and whether B turns red later; it is measured once, before the launch commit.
+
+⚠️ A pin that holds the job **behind** the current Drupal CMS to keep it green is a gate weakening, not an option.
+
+**Cost of being wrong:** A → a red job to diagnose on an ordinary push. B → a red delivered from upstream on a day nobody chose, possibly launch day.
