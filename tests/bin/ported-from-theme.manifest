@@ -471,6 +471,40 @@
 # says exactly as much as before, relocated to where the prose it binds now lives - and wave 1
 # stands at 99 checks since T-0705 removed .tugboat/'s G6 line, which this record did not move.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-26 (T-0724: Drupal CMS 2.2.0 consolidates six base recipes into
+# `drupal/drupal_cms_site_template_base`), the packaged-claims record, the same four steps.
+#
+#   1. tests/bin/ported-drift: 3 records compared, 3 read, 3 provenance verified, **0 behind**
+#      1.x at 24a187e4, oldest drift 0 day(s), 0 past the cap, 0 findings, network READ
+#      anonymously. claims-match-readme has not moved since a0f4cdf, so there was nothing
+#      upstream to take and no per-hunk decision to make.
+#   2. What changed HERE: the T-0614 comment naming which line of THIS package's own
+#      recipe.yml applies the admin-UI recipe moved (68 -> 82) because that recipe's own name
+#      changed length, and the Config Guardian and governance-block line numbers moved with
+#      it (196 -> 211, 711-727 -> 766-780); and the NOT CHECKED entry about Gin/Coffee/
+#      Navigation was reworded to name `drupal_cms_site_template_base` and its OWN line
+#      numbers for coffee/gin/navigation/admin:gin (21/40/55/352), re-verified at source
+#      against that recipe's 2.2.0 tag rather than the six retired 2.1.x ones. No extraction,
+#      no comparison and no one-copy detector was added or removed. Nothing came from
+#      agora_theme; files, claims, comparisons and one-copy checks unchanged at 9 / 36 / 49 / 9.
+#      (Separately, `content/MEDIA-LICENCES.md`'s sibling document `LICENCE-MANIFEST.md`
+#      needed its own fix in the same commit - `required_projects` fell 11 -> 6 when six
+#      `require` entries collapsed into one - but that comparison reads its figure from
+#      composer.json directly, so nothing here moved because of it.)
+#   3. local_sha256 re-derived with sha256sum from the file on disk and substituted by
+#      command, never typed: c502a276... -> 22e298d6.... source_sha256 and source_commit
+#      UNCHANGED and not retyped, because step 1 proved the source has not moved, so
+#      DECLARED_COMMITS in ported-copies does not move either.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0; ported-copies 3 verified,
+#      3 source commits on disk and 3 declared, 0 findings.
+#
+# ⚠️ WATCHED REFUSING THE EDIT BEFORE THE RECORD MOVED: with the script edited and this
+# record not yet regenerated, ported-copies printed EDITED for packaged-claims,
+# `verified: 2`, `findings: 1`, exit 1 - and, in the same run, `packaged-claims` itself
+# printed a genuine, unrelated MISMATCH (LICENCE-MANIFEST.md's stale `required_projects`
+# count), which is why that file is fixed in this same commit rather than left for later.
+#
 # script            role       status    local_sha256                                                    source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -533,7 +567,7 @@ preflight          preflight  adapted   e1ce157c4c1a406140ca4f6b84ad26afb4344222
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   c502a27606dcad6a3c61eec6eb5ee40de27aed32cb06fd981825fadae012a218 tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
+packaged-claims    invariant  adapted   22e298d64d72da90de86a03066759fb6d02ae0f0a22438b5763fae1fa4890a59 tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
 #
 # -----------------------------------------------------------------------------------------
 # THE SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

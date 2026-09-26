@@ -78,10 +78,16 @@ repository more than once. `tests/bin/packaged-claims` performs the same subtrac
 
 ## 2 · The projects this template requires — GPL-2.0-or-later
 
-**11 projects** are named in `composer.json`'s `require`, and **every one of them is a project
+**6 projects** are named in `composer.json`'s `require`, and **every one of them is a project
 hosted on Drupal.org**, where the licensing policy makes `GPL-2.0-or-later` a condition of hosting.
 None is vendored: Composer resolves them all at install time and none of their files is inside this
 tarball.
+
+⚠️ **This count moved 11 → 6 on 2026-09-26.** Drupal CMS 2.2.0 consolidated six of the projects this
+template required — `drupal_cms_admin_ui`, `drupal_cms_anti_spam`, `drupal_cms_authentication`,
+`drupal_cms_media`, `drupal_cms_privacy_basic` and `drupal_cms_seo_basic` — into one,
+`drupal/drupal_cms_site_template_base`, also GPL-2.0-or-later and hosted on Drupal.org. See the
+amendment to D-018 in `specs/000-project/DECISIONS.md`.
 
 What is checked here, and what is not, because the difference matters:
 

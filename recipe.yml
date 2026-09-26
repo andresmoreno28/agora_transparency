@@ -63,20 +63,27 @@ recipes:
   #
   # ### Recommended recipes from Drupal CMS:
   #
-  # Sets up the administrative backend, with a nice theme and useful modules
-  # providing helpful site management functionality.
-  - drupal_cms_admin_ui
-  # Basic anti-spam protection.
-  - drupal_cms_anti_spam
-  # Useful tweaks to user authentication.
-  - drupal_cms_authentication
-  # A set of basic media types and configuration.
-  - drupal_cms_media
-  # Basic privacy and consent management tools.
-  - drupal_cms_privacy_basic
-  # Basic SEO tools and configuration.
-  - drupal_cms_seo_basic
-  # Configures Drupal to send nice-looking HTML emails.
+  # Drupal CMS 2.2.0 consolidated six base recipes - admin UI, anti-spam,
+  # authentication, media, privacy/consent and SEO - into this one
+  # ("Drupal CMS Basics"). The six are `project_status: unsupported` as of
+  # 2.2.0 (frozen at their last 2.1.6 release); see the amendment to D-018 at
+  # the end of DECISIONS.md. It also installs `canvas` directly - previously
+  # reached transitively through `drupal_cms_privacy_basic` ->
+  # `drupal_cms_content_type_base` - which is what still makes our front page,
+  # a Canvas page, resolvable; the four `?canvas.component.sdc.agora_theme.*`
+  # actions further down are unaffected, because those name components
+  # `agora_theme` ships, not anything this recipe's own `import: canvas: '*'`
+  # touches.
+  #
+  # ⚠️ ANTI-SPAM IS NOT PART OF THIS CHAIN. `captcha`, `friendlycaptcha` and
+  # `honeypot` are not in its `install:` list. Ágora wires none of them to any
+  # form today, and public forms are deferred past v1 (D-060), so this is a
+  # recorded gap for unit 004 to fill, not a regression to patch here.
+  - drupal_cms_site_template_base
+  # Configures Drupal to send nice-looking HTML emails. ALREADY applied by
+  # `drupal_cms_site_template_base`'s own `recipes:` list (2.2.0) - kept
+  # explicit for the same reason as the transitive guarantees below: a
+  # transitive guarantee is a guarantee about somebody else's recipe.
   - easy_email_express
   # -- area: publishing ---------------------------------------------------------
   # (empty by decision: unit 004, editorial workflow with ECA, is deferred past
@@ -97,6 +104,9 @@ recipes:
 install:
   # -- area: base ---------------------------------------------------------------
   # Provides useful tools for site template creators, and polyfills functionality that is not yet in Drupal core.
+  # ALREADY installed by `drupal_cms_site_template_base`'s own `install:` list
+  # (2.2.0) - kept explicit for the same reason as the transitive guarantees
+  # below: a transitive guarantee is a guarantee about somebody else's recipe.
   - drupal_cms_helper
   # Core module. Supplies the `daterange` field type used by
   # `field.storage.node.field_agora_base_period` — the `periodo` of the three
@@ -108,12 +118,14 @@ install:
   # Core, so it adds nothing to `composer.json` and needs no SBOM line.
   - datetime_range
   # Core module. The six per-bundle table views (T-615) are `views.view.*` config and
-  # cannot import without it. It is ALREADY provided three times over by the declared
-  # chain - `drupal_cms_media` and `drupal_cms_seo_basic` both install it, and
-  # `drupal_cms_admin_ui` installs `views_ui` - so this line changes nothing today.
+  # cannot import without it. It is ALREADY provided by the declared chain -
+  # `drupal_cms_site_template_base` installs both `views` and `views_ui` directly
+  # (2.2.0; it consolidates the three recipes - `drupal_cms_media`,
+  # `drupal_cms_seo_basic` and `drupal_cms_admin_ui` - that used to carry this
+  # guarantee separately) - so this line changes nothing today.
   # It is here because a transitive guarantee is a guarantee about somebody else's
-  # recipe: the day one of those three drops it, our views fail to import and the
-  # cause is three files away. Declared for the same reason `datetime_range` above is.
+  # recipe: the day that recipe drops it, our views fail to import and the
+  # cause is one file away. Declared for the same reason `datetime_range` above is.
   # Core, so it adds nothing to `composer.json` and needs no SBOM line.
   - views
   # Core module. `config/user.role.agora_base_reviewer.yml` (T-602) declares a
@@ -135,10 +147,11 @@ install:
   # does not exist, the six content files import nothing, and the home page's
   # first section is silently empty - the same shape of failure I-086 records
   # for config entities. Like `views` and `content_moderation` above it is
-  # ALREADY provided by the declared chain (`drupal_cms_admin_ui` and
-  # `drupal_cms_seo_basic` both pull it in), so this line changes nothing
-  # today; it is here because a transitive guarantee is a guarantee about
-  # somebody else's recipe.
+  # ALREADY provided by the declared chain (`drupal_cms_site_template_base`
+  # pulls it in directly, 2.2.0; it consolidates the two recipes -
+  # `drupal_cms_admin_ui` and `drupal_cms_seo_basic` - that used to pull it in
+  # separately), so this line changes nothing today; it is here because a
+  # transitive guarantee is a guarantee about somebody else's recipe.
   # Core, so it adds nothing to `composer.json` and needs no SBOM line.
   - menu_link_content
   # By default, Drupal installs Stark as the default theme. It must be listed here, at
@@ -704,7 +717,9 @@ config:
     #
     # `setSettings` merges (`$settings + $this->settings`), so the extensions,
     # the directory and the size cap the media module set are all preserved.
-    # No `?` prefix: `drupal_cms_media` is in `recipes:` above, so the field
+    # No `?` prefix: `document_media_type` (the module `field_media_document`
+    # belongs to) is applied by `drupal_cms_site_template_base` (2.2.0;
+    # formerly by `drupal_cms_media`) in `recipes:` above, so the field
     # exists by the time actions run — and this file's own policy is that a `?`
     # nobody needs is a permanent blind spot.
     field.field.media.document.field_media_document:
@@ -713,10 +728,11 @@ config:
     # -------------------------------------------------------------------------
     # THE COOKIE BANNER'S OWN PRIVACY LINK, WHICH POINTED AT A 404 ON EVERY
     # INSTALL OF THIS TEMPLATE UNTIL THIS LINE EXISTED. Measured on the rig, not
-    # inferred: `drupal_cms_privacy_basic` - applied above, in `recipes:` -
-    # installs `klaro` and sets `klaro.texts` `consentModal.privacyPolicy.url`
-    # to `internal:/privacy-policy`. That alias belongs to the node the SAME
-    # recipe ships, node 1, `Privacy policy`, which it ships UNPUBLISHED with a
+    # inferred: `drupal_cms_site_template_base` - applied above, in `recipes:`
+    # (2.2.0; formerly `drupal_cms_privacy_basic`) - installs `klaro` and sets
+    # `klaro.texts` `consentModal.privacyPolicy.url` to `internal:/privacy-policy`.
+    # That alias belongs to the node the SAME recipe ships, node 1, `Privacy
+    # policy`, which it ships UNPUBLISHED with a
     # body reading "This content needs to be edited before publishing". So
     # `/privacy-policy` answers 404 to an anonymous request, and the consent
     # modal - the one dialogue every first-time visitor is shown - offered a
@@ -724,16 +740,17 @@ config:
     #
     # ⚠️ THE UPSTREAM NODE IS LEFT EXACTLY AS IT IS, and it is not amendable
     # from here even if that were wanted: `RecipeRunner` imports content with
-    # `Existing::Skip`, and `drupal_cms_privacy_basic` runs BEFORE this recipe's
-    # own content, so a file of ours carrying that node's uuid would be skipped
-    # in silence. Publishing it was the other option and it is worse: it would
-    # ship a page whose text says it needs to be edited before publishing.
+    # `Existing::Skip`, and `drupal_cms_site_template_base` runs BEFORE this
+    # recipe's own content, so a file of ours carrying that node's uuid would
+    # be skipped in silence. Publishing it was the other option and it is
+    # worse: it would ship a page whose text says it needs to be edited before
+    # publishing.
     #
     # So the banner is pointed at the privacy notice this package DOES publish
     # (T-1312). A site owner who prefers to write their own may repoint this in
     # the Klaro settings UI, and may delete the unpublished upstream stub.
     #
-    # No `?` prefix: `drupal_cms_privacy_basic` is in `recipes:` above, so
+    # No `?` prefix: `drupal_cms_site_template_base` is in `recipes:` above, so
     # `klaro.texts` exists by the time actions run - and this file's own policy
     # is that a `?` nobody needs is a permanent blind spot.
     klaro.texts:
@@ -764,7 +781,8 @@ config:
 
 extra:
   recipe_installer_kit:
-    # Send users to the dashboard (provided by drupal_cms_admin_ui) after installation.
+    # Send users to the dashboard (provided by drupal_cms_site_template_base,
+    # 2.2.0; formerly by drupal_cms_admin_ui) after installation.
     finish_url: '/admin/dashboard/welcome'
   # The card the Drupal CMS installer shows for this template (D-074). One link,
   # to the project page rather than to a demo: a demo is built from a released

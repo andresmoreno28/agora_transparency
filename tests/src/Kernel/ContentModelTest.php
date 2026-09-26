@@ -1183,7 +1183,8 @@ final class ContentModelTest extends KernelTestBase {
 
     // -- The document file is a media reference, restricted to documents -----
     // `media.type.document` is not ours: it comes from core's
-    // `document_media_type` recipe, applied by `drupal_cms_media`, which
+    // `document_media_type` recipe, applied by `drupal_cms_site_template_base`
+    // (2.2.0; formerly by `drupal_cms_media`), which
     // recipe.yml lists under `recipes:`. That is why the reference resolves on
     // a clean install without this repository shipping a media type.
     $media_storage = $storage->read('field.storage.node.field_agora_base_document_file');

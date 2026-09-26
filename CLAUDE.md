@@ -759,6 +759,13 @@ moving the working copy a session is running in, on the day wave 5 starts.
   fact rather than a suspicion** — the site template pins nothing, so what a clean install actually
   receives is decided by `packages.drupal.org` at install time and is knowable only by reading it.
 
+  ⚠️ **AMENDED 2026-09-26: this job is not evidence about Drupal CMS 2.2.0.** It builds
+  `_DRUPAL_CMS_TAG` from upstream's `$CMS_STABLE`, which read **`2.1.4`** on 2026-09-26 (job
+  `12460463`, trace lines 108-109) — a full minor behind the current Drupal CMS, **2.2.0**, released
+  the day before. Until that variable moves, a green `Drupal CMS` job here says nothing about
+  2.2.0; the amendment to D-018 records what changed underneath it and how that was verified
+  instead — on a rig built directly at `drupal/cms:2.2.0`.
+
 - **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
   non-negotiable rule 9's second sentence and D-006 on this point):
   > *Green when, and only when: the pipeline's **job list** is read from the API; `jobs >= 7`;

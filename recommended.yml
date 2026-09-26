@@ -26,7 +26,8 @@
 #   packageName: drupal/example
 #
 # Project Browser is installed on every Ágora site: `recipe.yml` applies the
-# `drupal_cms_admin_ui` recipe, which installs it. What `recipe.yml` does not do
+# `drupal_cms_site_template_base` recipe (2.2.0; formerly `drupal_cms_admin_ui`),
+# which installs it. What `recipe.yml` does not do
 # is point `project_browser.admin_settings` at a permanent URL for this file,
 # and that is deliberate while this file lists nothing: there is nothing in it
 # for Project Browser to offer.

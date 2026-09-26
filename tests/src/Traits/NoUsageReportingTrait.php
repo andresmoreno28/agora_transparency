@@ -5,7 +5,8 @@ declare(strict_types=1);
 /**
  * Stops every site this suite installs from reporting usage to Drupal.org.
  *
- * THE LEAK. This recipe applies `drupal_cms_admin_ui`, which installs core's
+ * THE LEAK. This recipe applies `drupal_cms_site_template_base` (2.2.0;
+ * formerly `drupal_cms_admin_ui`), which installs core's
  * `update` module, and `core_recommended_maintenance`, which installs
  * `automated_cron`. The first web request a test makes once both are present
  * runs cron, and `update` then asks the release-history server about every

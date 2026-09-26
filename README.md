@@ -322,7 +322,8 @@ walked on a clean install, not written from memory of the code.
 
   Measured end to end on a clean install: this sequence leaves exactly four files —
   `hero-wide.webp` (`recipe.yml`'s own hero image), `login-wallpaper.png` (`gin_login`'s),
-  `default-avatar.svg` (`drupal_cms_authentication`'s) and media's own `generic.png` icon — none of
+  `default-avatar.svg` (`drupal_cms_site_template_base`'s, 2.2.0; formerly
+  `drupal_cms_authentication`'s) and media's own `generic.png` icon — none of
   them the demonstration's, all four held by configuration rather than by content. The taxonomy
   terms, the menu links and the two Canvas pages (the front page and "The institution") are not
   demonstration content either: they are the categories, the navigation and the landing pages the
@@ -380,13 +381,15 @@ Recipes, in the order `recipe.yml` applies them:
 | `core/recipes/administrator_role` | A generic administrator role with all permissions |
 | `core/recipes/core_recommended_maintenance` | Core modules that help with site maintenance |
 | `core/recipes/core_recommended_performance` | Core modules that improve performance |
-| `drupal_cms_admin_ui` | The administrative back end, with its theme and site management modules |
-| `drupal_cms_anti_spam` | Basic anti-spam protection |
-| `drupal_cms_authentication` | Tweaks to user authentication |
-| `drupal_cms_media` | Basic media types and configuration |
-| `drupal_cms_privacy_basic` | Basic privacy and consent management |
-| `drupal_cms_seo_basic` | Basic SEO tools and configuration |
+| `drupal_cms_site_template_base` | Drupal CMS's foundational recipe (2.2.0): admin back end and theme, authentication tweaks, media types, privacy/consent, SEO, and Canvas |
 | `easy_email_express` | HTML email |
+
+`drupal_cms_site_template_base` consolidates six recipes Drupal CMS 2.2.0 marked
+`project_status: unsupported` — admin UI, anti-spam, authentication, media, privacy/consent and
+SEO — into one. It does **not** include anti-spam (`captcha`, `friendlycaptcha`, `honeypot`):
+Ágora wires none of them to any form today, and public forms are deferred past v1, so this is a
+recorded gap for a later unit rather than a regression. See the amendment to D-018 in
+`specs/000-project/DECISIONS.md`.
 
 It also installs `drupal_cms_helper`, the `stark` theme and `agora_theme` — Ágora's own theme, a
 separate Drupal.org project rather than code bundled here — and makes `agora_theme` the site's

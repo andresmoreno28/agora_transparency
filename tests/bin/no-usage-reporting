@@ -10,7 +10,8 @@
 # update.settings:fetch.url to a loopback address.
 #
 # WHY IT EXISTS. This recipe installs core's `update` module (through
-# drupal_cms_admin_ui) and `automated_cron`. The first web request a functional
+# drupal_cms_site_template_base, 2.2.0; formerly through drupal_cms_admin_ui)
+# and `automated_cron`. The first web request a functional
 # test makes after that runs cron, and `update` sends a site_key and the list of
 # enabled modules to https://updates.drupal.org/release-history - the requests
 # Drupal.org counts installs from. Measured 2026-09-24 against a recording stub:

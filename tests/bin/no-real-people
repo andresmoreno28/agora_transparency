@@ -124,8 +124,11 @@ HELPER="$SCRIPT_DIR/no-real-people.py"
 PERSON_BEARING='node/agora_base_person'
 
 # `node/page` is the upstream basic-page bundle, which arrives from
-# `drupal_cms_content_type_base` by way of `drupal_cms_privacy_basic`. This
-# package ships four of them and they are the four legal statements the footer
+# `drupal_cms_site_template_base`'s own `config/node.type.page.yml` (2.2.0;
+# formerly from `drupal_cms_content_type_base` by way of
+# `drupal_cms_privacy_basic`, both project_status: unsupported since 2.2.0 -
+# see the amendment to D-018). This package ships four of them and they are
+# the four legal statements the footer
 # links (T-1105, T-1311, T-1312): accessibility, legal notice, privacy, cookies.
 # They are declared NON-person-bearing because they carry no person record and
 # name no individual - deliberately so. Every place they would otherwise have to

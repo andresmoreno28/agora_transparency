@@ -15,12 +15,17 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * Measured on a clean install carrying this template's exact dependency
  * closure, that is RED ON ARRIVAL and through no fault of this row:
  * `content_editor` holds three of them. The provenance is exact rather than
- * suspected — `administer menu` and `administer url aliases` come from
+ * suspected — RE-MEASURED 2026-09-26 against Drupal CMS 2.2.0's consolidated
+ * base recipe: `administer menu`, `administer redirects` and `administer url
+ * aliases` ALL THREE now come from `drupal_cms_site_template_base/
+ * recipe.yml:390-392`. The two-recipe path that used to grant them
+ * separately - `administer menu` and `administer url aliases` from
  * `drupal_cms_content_type_base/recipe.yml:109-110`, reaching Ágora
- * transitively through `drupal_cms_privacy_basic`; `administer redirects`
- * comes from `drupal_cms_seo_basic/recipe.yml:46`. Core's own
+ * transitively through `drupal_cms_privacy_basic`, and `administer redirects`
+ * from `drupal_cms_seo_basic/recipe.yml:46` - no longer exists in this
+ * template's dependency tree. Core's own
  * `content_editor_role` recipe grants NONE of the three, so this is not
- * Drupal's default being lax; it is two upstream recipes Ágora lists
+ * Drupal's default being lax; it is one upstream recipe Ágora lists
  * deliberately.
  *
  * That left two dishonest ways to green — strip permissions from an upstream

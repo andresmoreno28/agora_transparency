@@ -1297,8 +1297,9 @@ class ValidationTest extends BrowserTestBase {
    * Transcribed for the reason MENU_ROUTES is. ⚠️ These four are the reason
    * the row exists: T-1215 deliberately shipped NO privacy, accessibility or
    * contact link because none of the three had a destination that answered,
-   * and `/privacy-policy` - the page `drupal_cms_privacy_basic` ships
-   * unpublished - answered 404. A link that goes nowhere is the defect that
+   * and `/privacy-policy` - the page `drupal_cms_site_template_base` ships
+   * unpublished (2.2.0; formerly `drupal_cms_privacy_basic`) - answered 404.
+   * A link that goes nowhere is the defect that
    * decision refused to ship, so the test asserts the destinations ANSWER
    * rather than that the links exist (T-1311, T-1312, T-1105).
    */
@@ -1684,8 +1685,9 @@ class ValidationTest extends BrowserTestBase {
     }
 
     // ⚠️ THE UPSTREAM PRIVACY STUB IS ASSERTED STILL ABSENT, not merely left
-    // alone. `drupal_cms_privacy_basic` ships node 1, `Privacy policy`,
-    // UNPUBLISHED, its body reading "This content needs to be edited before
+    // alone. `drupal_cms_site_template_base` ships node 1, `Privacy policy`
+    // (2.2.0; formerly `drupal_cms_privacy_basic`), UNPUBLISHED, its body
+    // reading "This content needs to be edited before
     // publishing"; `RecipeRunner` imports content with `Existing::Skip` and
     // that recipe runs first, so nothing this package ships can amend it.
     // Publishing it would ship a page that says it needs to be edited. If it
@@ -2064,14 +2066,19 @@ class ValidationTest extends BrowserTestBase {
   /**
    * The inherited `^administer ` grants T-602 records as a dated exception.
    *
-   * MEASURED 2026-08-24 on a clean install, RE-MEASURED 2026-08-25, and named
-   * with provenance rather than merely tolerated:
-   *  - `administer menu` and `administer url aliases` come from
-   *    `drupal_cms_content_type_base/recipe.yml:109-110`, which reaches Ágora
-   *    TRANSITIVELY through `drupal_cms_privacy_basic`;
-   *  - `administer redirects` comes from `drupal_cms_seo_basic/recipe.yml:46`.
+   * MEASURED 2026-08-24 on a clean install, RE-MEASURED 2026-08-25, and
+   * RE-MEASURED AGAIN 2026-09-26 against Drupal CMS 2.2.0's consolidated base
+   * recipe, and named with provenance rather than merely tolerated:
+   *  - `administer menu`, `administer redirects` and `administer url aliases`
+   *    ALL THREE now come from one place, `drupal_cms_site_template_base/
+   *    recipe.yml:390-392` (2.2.0). The two-recipe path that used to grant
+   *    them separately - `administer menu` and `administer url aliases` from
+   *    `drupal_cms_content_type_base/recipe.yml:109-110`, reached
+   *    TRANSITIVELY through `drupal_cms_privacy_basic`, and `administer
+   *    redirects` from `drupal_cms_seo_basic/recipe.yml:46` - no longer
+   *    exists in this template's dependency tree.
    * Core's own `content_editor_role` recipe grants none of the three, so this
-   * is not Drupal being lax — it is two recipes this template lists on purpose.
+   * is not Drupal being lax — it is one recipe this template lists on purpose.
    *
    * The list is ASSERTED rather than written in a comment because an exception
    * nobody checks is an exception that rots. If upstream fixes one, adds a

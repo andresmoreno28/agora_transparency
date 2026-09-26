@@ -5700,3 +5700,72 @@ and a "To be completed" note for the owner's own review. Implemented by T-0723.
 
 **Why B:** the statement belongs to whoever operates the site, and the attestation is the
 author's statement for reviewers.
+
+### Amendment to D-018 — Drupal CMS 2.2.0 consolidates six base recipes into one — SIGNED by [ejecutor]
+
+**What changed, verified at source 2026-09-26.** Drupal CMS 2.2.0 (released 2026-09-25) merged six
+of the nine `drupal/*` packages D-018 approved as a baseline — `drupal_cms_admin_ui`, `drupal_cms_anti_spam`,
+`drupal_cms_authentication`, `drupal_cms_media`, `drupal_cms_privacy_basic` and
+`drupal_cms_seo_basic` — into one recipe, `drupal/drupal_cms_site_template_base` ("Drupal CMS
+Basics"). The six are now `project_status: unsupported` on drupal.org, frozen at their last
+release, 2.1.6; `tests/bin/sbom-check` went red on pipeline 977712 with 6 findings the day this was
+found. `drupal_cms_starter` 2.2.0 and the published site template `haven` both now require
+`drupal/drupal_cms_site_template_base: ^2` in their place — the supported migration, not a route
+Ágora is choosing alone.
+
+**The six rows D-018 signed are struck by reference — the table above is not edited (rule 8):**
+`drupal/drupal_cms_admin_ui`, `drupal/drupal_cms_anti_spam`, `drupal/drupal_cms_authentication`,
+`drupal/drupal_cms_media`, `drupal/drupal_cms_privacy_basic`, `drupal/drupal_cms_seo_basic` — all
+six struck.
+
+**The replacement, verified 2026-09-26** against `updates.drupal.org/release-history/
+drupal_cms_site_template_base/current` (method: I-022) and the project's D7 API node
+(`field_security_advisory_coverage: covered`, maintenance status term "Actively maintained"):
+
+| Decision | Package | Constraint | Verified stable | Coverage | Maintenance on drupal.org | What it contributes |
+|---|---|---|---|---|---|---|
+| `D-018` | `drupal/drupal_cms_site_template_base` | `^2` | 2.2.0 | `covered="1"` | Actively maintained | Drupal CMS's foundational recipe: admin UI/theme (Gin, Coffee, Navigation, dashboard), authentication tweaks, media types, privacy/consent tooling (Klaro), SEO basics, and Canvas — consolidates the six rows struck above |
+
+**What it does NOT contribute — a recorded gap, not filled here.** `captcha`, `friendlycaptcha` and
+`honeypot` — the anti-spam trio the old `drupal_cms_anti_spam` installed — are absent from
+`drupal_cms_site_template_base`'s `install:` list, verified by reading its `recipe.yml` at tag
+2.2.0 line by line. Ágora wires none of the three to any form today, and public forms
+(freedom-of-information requests, unit 004) are deferred past v1 (D-060). **This gap is unit 004's
+to fill, not a regression this amendment patches.**
+
+**Where Canvas comes from now, reconciled on disk.** The front page is a Canvas page, so something
+must install the `canvas` module. Before this amendment it arrived transitively:
+`drupal_cms_privacy_basic` → `drupal_cms_content_type_base`, which installs `canvas`,
+`canvas_stark` and `canvas_page_template_component`. `drupal_cms_content_type_base` is absent from
+`drupal_cms_site_template_base`'s own `recipes:` list entirely — its config (including
+`node.type.page.yml`, the "Page" bundle the four legal pages use) was folded directly into the new
+recipe's own `config/`, and `canvas`, `canvas_stark` and `canvas_page_template_component` are now
+in its own `install:` list instead. **The four `?canvas.component.sdc.agora_theme.*` actions in
+`recipe.yml` behave identically to before**: they name components `agora_theme` ships, not
+anything `drupal_cms_site_template_base`'s own `import: canvas: '*'` (a wildcard over `canvas`
+module's own optional config, keyed by extension name) reaches, and Canvas discovers and enables
+them from `agora_theme` on cache rebuild independently of which recipe turned the `canvas` module
+on. Measured on a clean rig at Drupal CMS 2.2.0: all four present, `status: true`.
+
+🔴 **A REAL REGRESSION WAS FOUND WHILE MEASURING THIS, AND IT IS NOT CLOSED BY THIS AMENDMENT.**
+On the same 2.2.0 rig, all six of Ágora's own node bundles — `agora_base_agreement`, `-contract`,
+`-dataset`, `-document`, `-grant`, `-person` — plus core's `page`, are swept into the
+`basic_editorial` content moderation workflow, and every imported node lands in its `draft` state
+regardless of the content file's own `status: true` (measured: 28 total `agora_base_document`
+nodes, 0 published). The paragraph above this one, in `recipe.yml`, states plainly that "none of
+them is moderated" — that stopped being true at 2.2.0. Neither this package's `recipe.yml` nor
+either half of the retired six-recipe chain ever set that workflow's bundle list; only
+`core/recipes/content_editor_role` does, and it is identical in both chains, so the cause is
+upstream and outside a clean fix here. See T-0724's own row for the full measurement; it is left
+open rather than patched blind.
+
+**Implemented by T-0724** (`specs/007-publication/tasks.md`): `composer.json` and `recipe.yml`
+updated; every live citation of the six retired recipe names in `tests/`, `README.md`,
+`recommended.yml` and `.cspell-project-words.txt` corrected to name the new recipe (each keeping
+the old name as a dated "formerly" reference where the sentence is otherwise about history);
+`tests/bin/sbom-check` re-run.
+
+Signed by [ejecutor] 2026-09-26, on [andres]'s standing instruction of 2026-09-25 ("sign for me,
+with sense"): Option A of the read-only research of 2026-09-26. Rests on necessity — the
+marketplace requires templates to work within the current versions of Drupal CMS, and the six
+recipes D-018 named stopped being that the day 2.2.0 shipped.
