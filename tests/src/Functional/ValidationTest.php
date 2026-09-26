@@ -348,7 +348,13 @@ class ValidationTest extends BrowserTestBase {
     // -- The fixture: one node per bundle, every field populated -------------
     $titles = [];
     foreach (self::TABLE_VIEWS as $view_id => $bundle) {
-      $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1];
+      // `status` alone no longer makes a new node published (D-078): these
+      // bundles are under content moderation, a new entity with no explicit
+      // `moderation_state` gets the workflow's own default (`draft`), and
+      // `EntityOperations::entityPresave()` then computes `status` FROM that
+      // default, silently discarding the `1` below. `moderation_state` is the
+      // one that actually decides it.
+      $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1, 'moderation_state' => 'published'];
       $definitions = \Drupal::service('entity_field.manager')
         ->getFieldDefinitions('node', $bundle);
       $populated = 0;
@@ -415,8 +421,12 @@ class ValidationTest extends BrowserTestBase {
     $storage = \Drupal::entityTypeManager()->getStorage('node');
     $nodes = $storage->loadByProperties(['type' => self::TABLE_VIEWS[$smallest]]);
     $this->assertNotEmpty($nodes, 'The bundle chosen for the empty-state check must actually have nodes to unpublish.');
+    // `setUnpublished()` alone is reverted on save under content moderation
+    // (D-078): `status` is recomputed from `moderation_state`, which these
+    // nodes still carry as `published`. Setting the field the workflow
+    // actually reads is what makes the unpublish stick.
     foreach ($nodes as $node) {
-      $node->setUnpublished()->save();
+      $node->set('moderation_state', 'unpublished')->save();
     }
     $this->assertSame(0, $this->publishedCount([self::TABLE_VIEWS[$smallest]]), 'Every node of the chosen bundle must now be unpublished, or the empty state below is not the state being tested.');
     $this->assertEmptyState($paths[$smallest], [], $empty_text[$smallest]);
@@ -425,7 +435,7 @@ class ValidationTest extends BrowserTestBase {
     // states are genuinely different rather than one of them being rendered
     // all the time - neither state alone can say that.
     foreach ($nodes as $node) {
-      $node->setPublished()->save();
+      $node->set('moderation_state', 'published')->save();
     }
     $this->drupalGet($paths[$smallest]);
     $assert->statusCodeEquals(200);
@@ -667,8 +677,10 @@ class ValidationTest extends BrowserTestBase {
     $storage = \Drupal::entityTypeManager()->getStorage('node');
     $nodes = $storage->loadByProperties(['type' => self::STATISTIC_BUNDLE]);
     $this->assertNotEmpty($nodes, 'There must be contracts to unpublish, or the empty state below is not the state being tested.');
+    // See testTableViews()'s identical fix: under content moderation (D-078)
+    // `status` follows `moderation_state`, so that is what must be set.
     foreach ($nodes as $node) {
-      $node->setUnpublished()->save();
+      $node->set('moderation_state', 'unpublished')->save();
     }
     $this->assertSame(0, $this->publishedCount([self::STATISTIC_BUNDLE]), 'Every contract must now be unpublished.');
     $this->drupalGet($path);
@@ -678,7 +690,7 @@ class ValidationTest extends BrowserTestBase {
 
     // -- (10) And back, because neither state alone says they differ --------
     foreach ($nodes as $node) {
-      $node->setPublished()->save();
+      $node->set('moderation_state', 'published')->save();
     }
     $restored = $this->assertStatisticTable($path, $caption, $labels, $empty_text);
     $this->assertSame($rendered, $restored, 'The breakdown must come back exactly as it was: a table that renders in both states is not rendering either of them.');
@@ -735,8 +747,15 @@ class ValidationTest extends BrowserTestBase {
     $assert->pageTextNotContains('1970');
 
     // -- (2) The genuinely empty state ----------------------------------------
+    // `setUnpublished()` alone stopped being enough the day these bundles came
+    // under content moderation (D-078): `EntityOperations::entityPresave()`
+    // recomputes the `status` base field from `moderation_state` on every
+    // save, so a plain `status` change is silently reverted and the node
+    // stays published. The transition's real target state is `unpublished`
+    // (workflow `basic_editorial`) — not `draft`, which is for revisions
+    // pending review and would leave the published default revision in place.
     foreach ($nodes as $node) {
-      $node->setUnpublished()->save();
+      $node->set('moderation_state', 'unpublished')->save();
     }
     $this->assertSame(0, $this->publishedCount($bundles), 'Every contract and grant must now be unpublished.');
     $this->drupalGet('<front>');
@@ -745,7 +764,7 @@ class ValidationTest extends BrowserTestBase {
 
     // -- (3) And back, because neither state alone says they differ ---------
     foreach ($nodes as $node) {
-      $node->setPublished()->save();
+      $node->set('moderation_state', 'published')->save();
     }
     $this->assertSame(count($nodes), $this->publishedCount($bundles), 'Every contract and grant must be published again.');
     $this->drupalGet('<front>');
@@ -1441,7 +1460,9 @@ class ValidationTest extends BrowserTestBase {
     // search below a title that is unique and certain to exist.
     $titles = [];
     foreach (self::TABLE_VIEWS as $bundle_view => $bundle) {
-      $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1];
+      // See testTableViews()'s identical fixture for why `moderation_state`,
+      // not `status`, is what decides publication under D-078.
+      $values = ['type' => $bundle, 'title' => 'Fixture ' . $bundle, 'status' => 1, 'moderation_state' => 'published'];
       $definitions = \Drupal::service('entity_field.manager')
         ->getFieldDefinitions('node', $bundle);
       foreach ($definitions as $field_name => $definition) {
@@ -2170,7 +2191,13 @@ class ValidationTest extends BrowserTestBase {
     $reviewer->addRole('agora_base_reviewer')->save();
 
     $bundle = 'agora_base_contract';
-    $unpublished = $this->drupalCreateNode(['type' => $bundle, 'status' => 0]);
+    // `moderation_state` kept explicit rather than relied on by default
+    // (D-078): a bare `status => 0` happens to still produce an unpublished
+    // node here, because a new entity with no stated `moderation_state` gets
+    // the workflow's own default (`draft`, also unpublished) — but that is
+    // this workflow's default, not a promise, and the two are set together
+    // everywhere else this package creates a node for the same reason.
+    $unpublished = $this->drupalCreateNode(['type' => $bundle, 'status' => 0, 'moderation_state' => 'unpublished']);
 
     // The reviewer's direction: sees what is not yet public, changes nothing.
     $this->assertTrue($unpublished->access('view', $reviewer), 'A reviewer must be able to read an unpublished record; that is the whole job.');
@@ -2184,14 +2211,19 @@ class ValidationTest extends BrowserTestBase {
     $this->assertFalse($unpublished->access('view', $editor), "An editor must NOT see another author's unpublished record, or the reviewer role grants nothing distinguishable.");
     $this->assertFalse($unpublished->access('delete', $editor), 'No role this recipe creates may delete a record.');
 
-    // And the reason there is no third role: neither can touch `status`.
+    // Neither role can touch the `status` field DIRECTLY, even now that these
+    // bundles are under content moderation (D-078).
     // `NodeAccessControlHandler::checkFieldAccess()` gates it on
     // `administer node published status` OR `administer nodes` — both
-    // `^administer `, and the first is site-wide and `restrict access: true`.
+    // `^administer `, and the first is site-wide and `restrict access: true` —
+    // and content moderation does not change that field's own access, it adds
+    // a separate one. Publication moves through `use basic_editorial
+    // transition …` instead, which `agora_base_editor` holds since D-078 and
+    // `agora_base_reviewer` still does not.
     foreach (['agora_base_editor' => $editor, 'agora_base_reviewer' => $reviewer] as $id => $account) {
       $this->assertFalse(
         $unpublished->get('status')->access('edit', $account),
-        "$id must not be able to change a record's published status; expressing publication is content moderation's job and unit 004's row.",
+        "$id must not be able to change a record's published status through the `status` field directly.",
       );
     }
   }

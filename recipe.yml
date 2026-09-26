@@ -136,9 +136,18 @@ install:
   # by the declared chain (the upstream `content_editor` role and
   # `workflows.workflow.basic_editorial` both depend on it), so this line changes
   # nothing today; it is here because that is a guarantee about somebody else's
-  # recipe. NOTE the scope: declaring the module is not putting Ágora's six bundles
-  # under moderation — none of them is moderated, and the editorial workflow is
-  # unit 004's row, not this one.
+  # recipe. ⚠️ NOTE THE SCOPE, CORRECTED BY D-078 (2026-09-26): this line does
+  # not put Ágora's six bundles under moderation by itself — until Drupal CMS
+  # 2.2.0 that was true and this comment said so ("none of them is moderated").
+  # It stopped being true the day 2.2.0 shipped: its own ECA model
+  # `eca.eca.auto_enable_moderation` reacts to `config:save` of every node
+  # type, ours included, and adds it to `workflows.workflow.basic_editorial`
+  # on any install, with no action from this recipe. All six bundles, plus
+  # core's `page`, are moderated as a result. `content/node/*.yml` ships
+  # `moderation_state: published` accordingly, and `agora_base_editor` (the
+  # only shipped role meant to create, edit and get its own content live)
+  # holds the three `use basic_editorial transition …` permissions that now
+  # requires. See D-078.
   # Core, so it adds nothing to `composer.json` and needs no SBOM line.
   - content_moderation
   # Core module. `content/menu_link_content/` ships the six quick-access links

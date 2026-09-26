@@ -12,6 +12,7 @@ dependencies:
     - taxonomy.vocabulary.agora_base_document_type
     - taxonomy.vocabulary.agora_base_financial_year
   module:
+    - content_moderation
     - node
     - taxonomy
 id: agora_base_editor
@@ -44,6 +45,9 @@ permissions:
   - 'revert agora_base_document revisions'
   - 'revert agora_base_grant revisions'
   - 'revert agora_base_person revisions'
+  - 'use basic_editorial transition create_new_draft'
+  - 'use basic_editorial transition publish'
+  - 'use basic_editorial transition unpublish'
   - 'view agora_base_agreement revisions'
   - 'view agora_base_contract revisions'
   - 'view agora_base_dataset revisions'

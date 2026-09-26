@@ -66,6 +66,25 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * 004 puts these bundles under a workflow, a publisher becomes expressible as
  * a transition permission and can be added then, honestly.
  *
+ * ⚠️ THE WORKFLOW ARRIVED 2026-09-26, VIA D-078, NOT VIA UNIT 004 — Drupal CMS
+ * 2.2.0's own ECA model puts Ágora's six bundles under `basic_editorial`
+ * automatically, on every install, whether this recipe asks for it or not.
+ * "On a site whose bundles are not under content moderation" above is
+ * therefore no longer true of any install; it is kept because it is the
+ * correct account of why the two roles were shaped this way at the time. A
+ * third `publisher` role is STILL not created — that would be widening this
+ * role model on a defect fix, and nothing here asked for a new role — but the
+ * two existing roles now differ in exactly the way this docblock already
+ * argued a `publisher` would: `agora_base_editor` holds all three
+ * `use basic_editorial transition …` permissions (create_new_draft, publish,
+ * unpublish), because before D-078 an editor's own content went live with no
+ * separate approval step and the least invasive fix is to keep that true
+ * rather than silently invent a mandatory review gate a small municipality
+ * may not have staff for. `agora_base_reviewer` holds none of the three,
+ * because before D-078 it could not alter publication state either — it only
+ * ever held `view any unpublished content` — and giving it a transition now
+ * would be a new grant of power this row was not asked to make.
+ *
  * WHAT THE TWO ROLES ARE FOR, and that they differ in BOTH directions — a
  * subset would not be worth a second role. Measured on a clean install with a
  * node of each bundle saved unpublished:
@@ -138,6 +157,9 @@ final class RolesAndPermissionsTest extends KernelTestBase {
         'revert agora_base_document revisions',
         'revert agora_base_grant revisions',
         'revert agora_base_person revisions',
+        'use basic_editorial transition create_new_draft',
+        'use basic_editorial transition publish',
+        'use basic_editorial transition unpublish',
         'view agora_base_agreement revisions',
         'view agora_base_contract revisions',
         'view agora_base_dataset revisions',
@@ -390,9 +412,15 @@ final class RolesAndPermissionsTest extends KernelTestBase {
     // why `publisher` is not among them — that argument is untouched. The third
     // role belongs to the `governance` area rather than to `base`:
     // `agora_governance_auditor` (T-0511, D-059). 39 + 2 = 41.
+    // ⚠️ FORTY-FOUR SINCE 2026-09-26 (D-078), NOT 41. `agora_base_editor`
+    // gained the three `use basic_editorial transition …` permissions
+    // (create_new_draft, publish, unpublish) it now needs to get its own
+    // content live, once Drupal CMS 2.2.0's ECA model put Ágora's six bundles
+    // under the `basic_editorial` workflow. 31 + 3 = 34 for the editor;
+    // 34 + 8 + 2 = 44.
     $this->assertSame(3, $roles_inspected, 'This template creates exactly three roles: two for the base content model and one for governance.');
     $assertions++;
-    $this->assertSame(41, $permissions_inspected, 'The three shipped roles grant 41 permissions between them.');
+    $this->assertSame(44, $permissions_inspected, 'The three shipped roles grant 44 permissions between them.');
     $assertions++;
 
     $this->assertGreaterThan(0, $assertions, 'This method must actually assert something.');

@@ -5769,3 +5769,63 @@ Signed by [ejecutor] 2026-09-26, on [andres]'s standing instruction of 2026-09-2
 with sense"): Option A of the read-only research of 2026-09-26. Rests on necessity — the
 marketplace requires templates to work within the current versions of Drupal CMS, and the six
 recipes D-018 named stopped being that the day 2.2.0 shipped.
+
+### D-078 · The six bundles are moderated like every Drupal CMS content type, and demo content ships published — SIGNED by [ejecutor] on [andres]'s standing instruction of 2026-09-25 ("sign for me, with sense")
+
+**Context.** T-0724's own row found this while measuring the D-018 amendment, and left it open
+rather than patched blind. Drupal CMS 2.2.0's `drupal_cms_site_template_base` ships the ECA model
+`eca.eca.auto_enable_moderation` ("Enable moderation for new content types"), verified at source at
+`https://git.drupalcode.org/project/drupal_cms/-/raw/2.2.0/recipes/drupal_cms_site_template_base/
+config/eca.eca.auto_enable_moderation.yml`: on `config:save` of a node type it calls `addNodeTypes`
+on `workflows.workflow.basic_editorial` (`default_moderation_state: draft`), with no action from
+this package's own `recipe.yml`. This package's own config import creates the six bundles AFTER
+that model already exists, so all six — `agora_base_agreement`, `-contract`, `-dataset`,
+`-document`, `-grant`, `-person` — plus core's `page`, land under moderation on every install, and
+every imported node defaulted to `draft` regardless of the content file's own `status: true`.
+Measured on `~/agora-cms22`: 28 `agora_base_document` nodes, 0 published, and the package's own
+PHPUnit suite red on 9 of 22 tests.
+
+**Options considered.**
+- **Option A — opt the six bundles out of the workflow**, by excluding them from
+  `workflows.workflow.basic_editorial`'s bundle list or by fighting the ECA model with a second one
+  that undoes what the first adds. Rejected: it means permanently overriding a default
+  `drupal_cms_site_template_base` sets for every content type on every Drupal CMS site, maintained
+  against an upstream automation that can change at any release with no changelog entry naming this
+  package, and it leaves Ágora's six bundles as the one content type on a Drupal CMS 2.2 install
+  with no editorial workflow at all — the opposite of "work within the current versions of Drupal
+  CMS" (non-negotiable rule 1).
+- **Option B — adopt it.** Ship the six bundles moderated, like every other Drupal CMS content
+  type; ship demo content already `published` via `moderation_state`; grant the transition
+  permissions the workflow now requires to the role meant to create, edit and get its own content
+  live, and grant none to a role that must not publish.
+
+**Choice: Option B.** `haven` — a site template already published on the marketplace at Drupal CMS
+2.2.0 — makes the same choice: every node file in its `content/` carries `moderation_state: value:
+published` inside `default:`, immediately after `revision_translation_affected`
+(`https://git.drupalcode.org/project/haven/-/raw/1.x/content/node/
+082cdda8-e10a-46e6-a9b3-774ad4f4f9ae.yml`) — the exact position and format this package's own four
+pre-existing `page`-bundle nodes already used before this decision, confirmed on disk. Fighting a
+default that ships for every Drupal CMS content type is not a fight a site template wins for good.
+
+**Signed by [ejecutor]** on [andres]'s standing instruction of 2026-09-25 ("sign for me, with
+sense"). Rests on necessity — a site template fighting a default every other Drupal CMS content
+type carries is not "working within the current version of Drupal CMS" — and on the precedent
+`haven` 1.x already sets at the same Drupal CMS version.
+
+**What changes for a site owner.** Records created through the UI now go `draft` → `published` (or
+`→ unpublished`) like every other Drupal CMS content type, instead of publishing the moment they
+are saved. `agora_base_editor` can still take a record all the way to published by itself, holding
+all three `use basic_editorial transition …` permissions (`create_new_draft`, `publish`,
+`unpublish`) — unchanged in effect from before this decision, when nothing gated its content
+becoming visible either. `agora_base_reviewer` gains none of the three and still cannot change
+publication state by any route, unchanged in effect from before this decision, when it held no way
+to do so either. `agora_governance_auditor` gains none, as before. See
+`tests/src/Kernel/RolesAndPermissionsTest.php` for the reasoning kept beside the permission sets.
+
+**Implemented by T-0724** (`specs/007-publication/tasks.md`): `content/node/*.yml` (56 of 60 files;
+the other 4 already carried it) ships `moderation_state: published`; `recipe.yml`'s comment
+corrected; `config/user.role.agora_base_editor.yml` gains `content_moderation` as a module
+dependency and the three transition permissions; `tests/src/Functional/ValidationTest.php` and
+`tests/src/Kernel/RolesAndPermissionsTest.php` updated to set `moderation_state` rather than
+`status` wherever a test creates, unpublishes or republishes a node, and to expect 44 permissions
+rather than 41.
