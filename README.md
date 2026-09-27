@@ -299,11 +299,13 @@ walked on a clean install, not written from memory of the code.
 * **The accessibility statement and the legal pages.** `/accessibility-statement` carries four
   sections marked "To be completed": what has been separately verified about this installation, how
   to report a barrier, the enforcement procedure for this jurisdiction, and the date and method of
-  the last review. The Legal notice, Privacy notice, Cookies and Privacy policy pages ship from
-  Drupal CMS's own privacy recipe and need the same kind of attention — an address, a contact route
-  and a jurisdiction that are the institution's own.
-* **Trash.** Deleting content does not remove it outright: this site enables Drupal core's Trash
-  module for content, so a deleted register record moves to Content → Trash
+  the last review. The Legal notice, Privacy notice and Cookies pages ship with this package; only
+  the Privacy policy page comes from Drupal CMS, shipped by its `drupal_cms_site_template_base`
+  recipe (2.2.0). All four need the same kind of attention — an address, a contact route and a
+  jurisdiction that are the institution's own.
+* **Trash.** Deleting content does not remove it outright. Trash is the contributed `drupal/trash`
+  module, not a core one: Drupal CMS's `drupal_cms_site_template_base` recipe (2.2.0) installs it
+  and turns it on for content, so a deleted register record moves to Content → Trash
   (`/admin/content/trash`) and stays there — nothing purges it on its own — until it is emptied.
   `drush trash:purge --all -y` empties it in one call; the Trash page offers the same action one
   item at a time. Media and files are not Trash-covered on this site, so deleting one of those
