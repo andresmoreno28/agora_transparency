@@ -30,9 +30,10 @@
 #                                                                       [top_level_entries]
 #   * README.md gave the spell-check denominators as "451 ... 410". They were
 #     467 and 426. NOT BOUND: both come from tests/bin/spellcheck's own filter,
-#     which needs inputs it fetches from the CI job's configuration. What IS
-#     compared here is the SUBTRACTION between them, which the same paragraph
-#     states as 37 + 4 = 41.                                     [cspell_gap, cspell_split]
+#     which needs inputs it fetches from the CI job's configuration. Since
+#     T-0706 README.md states neither, and cspell_gap - which compared their
+#     subtraction with the 37 + 4 = 41 the same paragraph states - went with
+#     them. That accounting is still bound.          [cspell_split, cspell_binaries]
 #
 # And the case this guard's cross-file rule is shaped around is not hypothetical either. From
 # 2026-09-20 17:56 until the following morning README.md stated the THEME's axe gate as "nine
@@ -82,7 +83,7 @@
 #     recipes_applied    the recipe table rows    vs  the `recipes:` list in recipe.yml
 #     job_names          the CI job table         vs  EXPECTED_agora_transparency in watch-gate
 #     jobs_total         "Ten jobs"               vs  the rows of its own table
-#     cspell_gap         offered minus checked    vs  the 37 + 4 the same section states
+#     cspell_split       the 41 files not opened  vs  the 37 + 4 the same sentence adds
 #     cspell_binaries    that 37                  vs  the binaries cspell cannot open
 #     readme_login_page  the page gated signed in vs  DASHBOARD_ROUTE in AccessibilityTest
 #     readme_login_only  "the only page"          vs  DECLARED_LOGGED_IN_PAGES in that test
@@ -718,22 +719,18 @@ claim_once 'jobs total' README "\\*\\*[A-Za-z]+ jobs $DASH all blocking"
 compare 'jobs_total' "$(to_num "$(field 1 '.*\*\*([A-Za-z]+) jobs.*')")" "$R_JOB_N" 'README job table rows'
 
 # -- the spell-check accounting, checked as arithmetic rather than as a denominator ----------
-# The two absolute figures come from tests/bin/spellcheck's own filter and need its fetched
-# inputs, so they are named in NOT CHECKED. What IS checkable here is that the section's own
-# subtraction holds, and that the 37 it attributes to binaries is the number of binaries cspell
-# cannot open.
-claim_once 'cspell totals' README '\*\*[0-9]+ tracked or stage-able files offered to cspell, [0-9]+ checked'
-S_OFFERED=$(field 1 '.*\*\*([0-9]+) tracked.*')
-S_CHECKED=$(field 1 '.*cspell, ([0-9]+) checked.*')
+# The two absolute figures - files offered, files checked - come from tests/bin/spellcheck's own
+# filter and need its fetched inputs, so no offline read here can produce them. Since T-0706
+# README.md does not state them at all: every tracked text file added anywhere in the repository
+# moved both, and so forced an edit to packaged prose. cspell_gap compared their subtraction with
+# the 41 below, and it left with them - it compared two numbers README stated against a third,
+# and with the two gone there is nothing for it to compare. What IS checkable here is that the
+# section's own accounting adds up, and that the 37 it attributes to binaries is the number of
+# binaries cspell cannot open.
 claim_once 'cspell split' README '[0-9]+ \+ [0-9]+ = [0-9]+, and the list was derived'
 S_BIN=$(field 1 '([0-9]+) \+ [0-9]+ = [0-9]+.*')
 S_GLOB=$(field 1 '[0-9]+ \+ ([0-9]+) = [0-9]+.*')
 S_SUM=$(field 1 '[0-9]+ \+ [0-9]+ = ([0-9]+).*')
-if [ -n "$S_OFFERED" ] && [ -n "$S_CHECKED" ]; then
-  compare 'cspell_gap' "$S_SUM" "$((S_OFFERED - S_CHECKED))" 'offered minus checked, in README itself'
-else
-  compare 'cspell_gap' "$S_SUM" '' 'offered minus checked, in README itself'
-fi
 if [ -n "$S_BIN" ] && [ -n "$S_GLOB" ]; then
   compare 'cspell_split' "$S_SUM" "$((S_BIN + S_GLOB))" 'README binaries + globbed'
 else
@@ -1077,11 +1074,11 @@ compare 'recommended_empty' '0' "$REC_ENTRIES" 'uncommented package keys in reco
 #
 # WHAT IT DELIBERATELY DOES NOT STATE, because the absence is the design. The size of the packaged
 # set lives once in README.md and the media row count lives once in content/MEDIA-LICENCES.md; the
-# licence manifest quotes neither, and states instead the SUBTRACTION between them. That is the
-# same construction as cspell_gap above: where the two absolute figures have homes of their own,
-# the derived one is the only number a third document may carry, and it is compared to both
-# sources at once. A copy of either absolute figure appearing in the licence manifest is caught by
-# the one-copy detectors below, which run over it like every other subject.
+# licence manifest quotes neither, and states instead the SUBTRACTION between them. The rule it
+# follows: where the two absolute figures have homes of their own, the derived one is the only
+# number a third document may carry, and it is compared to both sources at once. A copy of
+# either absolute figure appearing in the licence manifest is caught by the one-copy detectors
+# below, which run over it like every other subject.
 printf '\nLICENCE-MANIFEST.md - the package-level licence manifest against the package\n'
 printf -- '---------------------------------------------------------------------------------------------------------\n'
 
@@ -1486,7 +1483,7 @@ fi
 # ======================================================================= NOT CHECKED ==
 # Named with a reason that is TRUE, and the length of this list is asserted non-empty below.
 NOT_CHECKED=(
-"The two absolute cspell denominators - files offered and files checked. They come from tests/bin/spellcheck's own filter, which needs the three inputs it fetches from the CI job's own configuration, so no offline read here can produce them. The script prints both on every run, and the SUBTRACTION between them is compared above."
+"The two absolute cspell denominators - files offered and files checked - and with them the 41 README.md gives as their difference. They come from tests/bin/spellcheck's own filter, which needs the three inputs it fetches from the CI job's own configuration, so no offline read here can produce them. Since T-0706 README.md states neither and says the script prints both on every run; what IS compared above is the 41's own arithmetic, 37 + 4, and its 37 against the binaries in the tracked set. The 4 it attributes to the upstream ignore globs is compared against nothing."
 "The template's own axe result, OFFLINE. It is now printed by AccessibilityTest::tearDownAfterClass() and reaches the phpunit job's trace on a GREEN run (T-0613), so it is read and compared - but only under --online, which the gate never passes. The entry stays because the replacement is narrower and still true: no offline read here can produce the number of pages actually SCANNED, the rules axe ran or the violations found. What IS offline is the DECLARED count, compared above against both the package and the constant the test asserts."
 "The 78 steps, 58 non-core modules and 'Tests: 3, Assertions: 38' of the 2026-08-23 clean install. README marks them as predating the theme swap and says a dated measurement is replaced only by another measurement. A guard that refreshed them would destroy the record they exist to be."
 "Historical and superseded figures throughout the packaged prose: every figure a packaged file attributes to an earlier state of the package rather than to its current one - a sentence saying what it read until a date, every struck value. The category is named rather than sampled, because a sample has to be refreshed whenever such a sentence is added or removed, and this entry's sample had gone stale in both directions: by 2026-09-24 the thirteen-entry packaging count and the axe page progression it named were in no packaged file, while 'read until' sentences it did not name were. Same reason: these are frozen records of past measurements, and rule 8 keeps them."

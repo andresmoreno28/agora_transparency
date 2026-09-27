@@ -622,12 +622,14 @@ All **ten** jobs are blocking now, with no exceptions —
 stage stop the pipeline, and the two jobs outside that stage arrived blocking on their own. Read
 the job list; the status field is the one that can lie.
 
-**What the green does not tell you.** Measured by `bash tests/bin/spellcheck`: **479 tracked or
-stage-able files offered to cspell, 438 checked, `Issues found: 0`** — plus two the CI runner
-generates and this repository does not track (`.editorconfig`, `gitlab_templates_version.txt`),
-which is why the job's own count reads two higher. The script prints both numbers every time it
-runs, so this paragraph is checkable rather than quotable, and it is the number to re-run rather
-than to trust carried forward.
+**What the green does not tell you.** `bash tests/bin/spellcheck` prints two numbers every time it
+runs: how many tracked or stage-able files it offers to cspell, and how many cspell actually
+checks. The job's own count reads two higher, because the CI runner also checks two files it
+generates and this repository does not track (`.editorconfig`, `gitlab_templates_version.txt`).
+Neither number is copied here: both move whenever a tracked text file is added anywhere in the
+repository, so the ones to trust are the ones the script just printed. The difference between
+them moves only when a file cspell does not open is added or removed, and it is accounted for
+below.
 
 **The 41 files not opened, all 41 of them.** The accounting is given in full because an enumeration
 that does not add up to its own denominator reads as an explanation rather than as a check.
@@ -676,8 +678,8 @@ unreadable output it always printed.
 in shell the same transformations `scripts/prepare-cspell.php` applies in the job. It reads
 **tracked and stage-able files both**, because a file about to be committed is a file the job will
 read. Verified equivalent against pipeline `934329` on 2026-08-24: same verdict before the fix, and
-a clean run after it. **The denominator is deliberately not repeated here** — it is stated once, in
-"What the green does not tell you" above, and the script prints it on every run. It is a replica,
+a clean run after it. **The denominator is deliberately not written down in this file** — the
+script prints it on every run, which is where to read it. It is a replica,
 not the job — it pins nothing about the runner's Node version, and upstream can change
 `prepare-cspell.php` without this file noticing.
 The first run needs network for those three inputs and caches them in `.cspell-cache/`, which is
