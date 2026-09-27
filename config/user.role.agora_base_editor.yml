@@ -11,6 +11,7 @@ dependencies:
     - taxonomy.vocabulary.agora_base_area
     - taxonomy.vocabulary.agora_base_document_type
     - taxonomy.vocabulary.agora_base_financial_year
+    - workflows.workflow.basic_editorial
   module:
     - content_moderation
     - node

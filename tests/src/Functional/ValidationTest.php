@@ -17,6 +17,7 @@ use Drupal\media\Entity\MediaType;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\views\Entity\View;
+use Drupal\workflows\Entity\Workflow;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 require_once __DIR__ . '/../Traits/NoUsageReportingTrait.php';
@@ -2144,6 +2145,10 @@ class ValidationTest extends BrowserTestBase {
    * permission that grants nothing — the failure mode of a typo, and of
    * `view any unpublished content` if these bundles had turned out to be
    * outside its reach — still LOOKS correct in a YAML file.
+   *
+   * (4) THE EDITOR TAKES ALL THREE TRANSITIONS AND THE REVIEWER NONE (D-078).
+   * Asked of content moderation's own transition validation, on real nodes,
+   * for the reason (3) gives: a transition permission is a string too.
    */
   public function testRolesOnAnInstalledSite(): void {
     $this->applyRecipe(self::getRecipePath());
@@ -2236,6 +2241,66 @@ class ValidationTest extends BrowserTestBase {
         "$id must not be able to change a record's published status through the `status` field directly.",
       );
     }
+
+    // -- (4) The three transitions, as content moderation answers them -------
+    // D-078 granted `agora_base_editor` the three `use basic_editorial
+    // transition …` permissions. They are strings of the kind (3) warns
+    // about: right-looking in YAML, and granting nothing if the workflow or a
+    // transition id moves upstream. So the transitions are read off the
+    // workflow entity, and each is put to content moderation's own
+    // `content_moderation.state_transition_validation` — the service behind
+    // the moderation widget — about a real node in a state the transition
+    // leaves from, for both roles on the same node. The editor is asked
+    // first: once the editor may take it, the transition is reachable from
+    // that node, so a refusal for the reviewer can only be the permission.
+    $workflow = Workflow::load('basic_editorial');
+    $this->assertNotNull($workflow, 'The basic_editorial workflow must exist on an installed site (D-078).');
+    $plugin = $workflow->getTypePlugin();
+    $granted = ['create_new_draft', 'publish', 'unpublish'];
+    $transitions = array_intersect_key($plugin->getTransitions(), array_flip($granted));
+    $missing = array_values(array_diff($granted, array_keys($transitions)));
+    $this->assertSame([], $missing, 'The basic_editorial workflow must define every transition agora_base_editor holds; missing: ' . implode(', ', $missing) . '.');
+    $this->assertSame(
+      'basic_editorial',
+      \Drupal::service('content_moderation.moderation_information')->getWorkflowForEntityTypeAndBundle('node', $bundle)?->id(),
+      "$bundle must be moderated by basic_editorial, or no transition applies to it (D-078).",
+    );
+
+    $validation = \Drupal::service('content_moderation.state_transition_validation');
+    $node_storage = \Drupal::entityTypeManager()->getStorage('node');
+    $states = $plugin->getConfiguration()['states'];
+    $nodes = [];
+    // Each role's account, and whether it may take a transition at all.
+    $accounts = [
+      'agora_base_editor' => [$editor, TRUE],
+      'agora_base_reviewer' => [$reviewer, FALSE],
+    ];
+    $checked = ['agora_base_editor' => 0, 'agora_base_reviewer' => 0];
+    foreach ($transitions as $transition_id => $transition) {
+      // Any state the transition leaves from would do. `from()` is sorted by
+      // weight, so the first one gives the same fixture on every run.
+      $from = array_key_first($transition->from());
+      if (!isset($nodes[$from])) {
+        $created = $this->drupalCreateNode([
+          'type' => $bundle,
+          'status' => (int) $states[$from]['published'],
+          'moderation_state' => $from,
+        ]);
+        // Read back from storage, so the state asserted below is the one
+        // content moderation recorded rather than the one asked for here.
+        $nodes[$from] = $node_storage->loadUnchanged($created->id());
+      }
+      $node = $nodes[$from];
+      $this->assertSame($from, $node->get('moderation_state')->value, "The '$transition_id' fixture must be stored in '$from', or the question below is asked from the wrong state.");
+      foreach ($accounts as $id => [$account, $may]) {
+        $verb = $may ? 'must' : 'must NOT';
+        $valid = $validation->getValidTransitions($node, $account);
+        $this->assertSame($may, isset($valid[$transition_id]), "$id $verb be able to take the basic_editorial transition '$transition_id' from a real $bundle node in '$from' (D-078).");
+        $checked[$id]++;
+      }
+    }
+    // A loop over an empty set asserts nothing and passes (I-028).
+    $this->assertSame(['agora_base_editor' => 3, 'agora_base_reviewer' => 3], $checked, 'Each role must have been asked about all three transitions.');
   }
 
   /**
