@@ -5916,3 +5916,31 @@ contrast findings exactly, in both directions. Publishing 1.0.5 first would turn
 declaration exact for both versions (two declared sets, chosen by the installed version through
 `Composer\InstalledVersions`) lands and goes green first. Making the declared entries optional
 was considered and refused: it turns an exact set into an upper bound.
+
+### The same day, afternoon: four rulings on the audit of `5bbd3ae`, and D-079's upstream fix
+
+Taken by [ejecutor] under D-075 as amended for unit 005's Gate B, each the independent read-only
+audit's recommendation.
+
+1. **The packaged passages that Config Guardian 1.0.5 makes false are made true before its tag.**
+   The shipped statement's dashboard paragraph and `ACCESSIBILITY.md:118-120` say that Config
+   Guardian's own markup fails contrast. On 1.0.5 the scan finds only two `region` nodes, which axe
+   tags best-practice, not WCAG, and the template requires `^1.0`, so every fresh install gets 1.0.5
+   the day it is published. Option A: before the tag, both passages become true under 1.0.3 and
+   1.0.5 alike, and `packaged-claims` drops the comparison that only the old set could satisfy
+   (T-0541, widened). Leaving it to T-0542 would leave the text false for at least eight days,
+   with nothing to catch it.
+2. **Installing a module outside a recipe on an offline Drupal CMS site is not agora_core's to
+   document.** Automatic Updates runs its status checks after such an install and throws, which is
+   automatic_updates issue 3506894, open since 2025-02-15; it affects every module, and the route
+   Ágora uses, a recipe, is exempt, which T-0526's rig measured. Nothing lands in agora_core; the
+   lesson is recorded beside I-117. A comment on the upstream issue is [andres]'s option.
+3. **`/user/login` gets the machine keyboard walk as well as axe** once T-0542 makes it an Ágora
+   page, so that `ACCESSIBILITY.md`'s walk claim stays true (T-0542, widened).
+4. **The red-run wording of the logged-in axe summary is fixed in T-0542**, which rewrites the same
+   line anyway.
+
+**D-079, amended: `drupal_cms#3591473` is fixed upstream.** `drupal_cms_installer` 2.2.1, released
+on 2026-09-27, carries `e0bdb015`, and the template's `Drupal CMS` job locks it: job 12476785 in
+pipeline 978901 prints `OK (1 test, 1 assertion)` again, with no warning. The same merge request
+closed `drupal_cms#3591472`; no release carrying that half has been observed yet.

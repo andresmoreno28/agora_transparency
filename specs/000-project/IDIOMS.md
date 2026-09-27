@@ -1377,3 +1377,14 @@
   that something cannot happen, read the code that would make it happen — the callee, not only the
   loop that calls it — and search the repository for a counter-example.** Recorded 2026-09-25 with
   T-0702.
+
+- I-122 · **I-117's exception also fires when a module is installed on an offline Drupal CMS site,
+  and a recipe is the route that avoids it.** Installing `agora_core` with the module installer on
+  a guarded rig, whose `update.settings` fetch URL points nowhere, throws
+  `RuntimeException: The project 'drupal' can not be updated because its status is not-fetched`,
+  because Automatic Updates runs its status checks after any install outside a recipe, the
+  installer or a configuration sync; the module is installed anyway. A recipe installs in syncing
+  mode, which Automatic Updates skips, and that route gave a clean install (T-0526, run R6b). It is
+  upstream's: automatic_updates issue 3506894, open since 2025-02-15. ⚠️ **On a guarded or offline
+  site, install modules through a recipe, and read an exception here as the guard working, not as
+  the module failing.** Recorded 2026-09-27 with T-0526.
