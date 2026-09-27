@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Composer\InstalledVersions;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 use Drupal\FunctionalTests\Core\Recipe\RecipeTestTrait;
@@ -362,6 +363,49 @@ class AccessibilityTest extends WebDriverTestBase {
       ['region', '.coffee-form-wrapper', 'coffee'],
     ],
   ];
+
+  /**
+   * The same declaration for Config Guardian 1.0.5 and later (T-0541).
+   *
+   * WHY THERE ARE TWO SETS. The template requires drupal/config_guardian ^1.0,
+   * so a clean install receives the newest release and no commit here decides
+   * which. Until 1.0.5 is published that is 1.0.3 - 1.0.4 is a tag with no
+   * release - and on it CI pipeline 978490 (phpunit job 12470435) measured
+   * the set above: nine nodes over two rules. On Config Guardian's 1.0.x
+   * branch at 051b154, in a replica of that job that swapped only Config
+   * Guardian, the seven color-contrast nodes are gone and nothing new
+   * appears: two nodes over one rule, the two entries below, each byte for
+   * byte the entry with the same rule, selector and owner in the set above.
+   * The first pipeline after 1.0.5 is published installs it, so neither set
+   * alone is true of both releases, and ::scanTheGovernanceDashboard()
+   * asserts the one that matches the version Composer installed.
+   *
+   * AN EXACT SET PER VERSION, NEVER ONE LOOSER SET. Making the seven entries
+   * optional was considered and refused: a declared entry allowed to be
+   * absent turns an exact set into an upper bound, and any of the seven
+   * could come back in a later release with this gate still green.
+   *
+   * TEMPORARY BY DESIGN. T-0542 raises the template's floor to ^1.0.5, and
+   * that change deletes INSTALLED_MARKUP_VIOLATIONS and the version branch.
+   * tests/bin/packaged-claims reads that constant by name, so its reader
+   * moves in the same commit.
+   */
+  private const INSTALLED_MARKUP_VIOLATIONS_FROM_1_0_5 = [
+    'config-guardian-dashboard' => [
+      ['region', '#primary-tabs-title', 'gin'],
+      ['region', '.coffee-form-wrapper', 'coffee'],
+    ],
+  ];
+
+  /**
+   * The Composer package whose installed version chooses the declared set.
+   */
+  private const CONFIG_GUARDIAN_PACKAGE = 'drupal/config_guardian';
+
+  /**
+   * The first Config Guardian release the second declared set is for.
+   */
+  private const CONFIG_GUARDIAN_SECOND_SET_FROM = '1.0.5';
 
   /**
    * Returns the absolute path of the recipe this test is for.
@@ -1125,10 +1169,14 @@ class AccessibilityTest extends WebDriverTestBase {
    * this page was written by other projects. The criterion has two halves:
    * zero violations in markup this package owns - counted conservatively, as
    * every violation that cannot be shown to sit inside an installed project's
-   * own markup - and every other violation matched one by one against
-   * INSTALLED_MARKUP_VIOLATIONS. IT IS NOT A CLAIM THAT THE PAGE CONFORMS. It
-   * does not: Config Guardian's own palette puts seven text nodes under the
-   * AA contrast floor, and the summary says so on every run, green included.
+   * own markup - and every other violation matched one by one against the
+   * set declared for the Config Guardian installed (T-0541), which is
+   * INSTALLED_MARKUP_VIOLATIONS below 1.0.5 and
+   * INSTALLED_MARKUP_VIOLATIONS_FROM_1_0_5 from 1.0.5 on. IT IS NOT A CLAIM
+   * THAT THE PAGE CONFORMS. It does not: on Config Guardian 1.0.3 its own
+   * palette puts seven text nodes under the AA contrast floor, Gin and Coffee
+   * put one node each outside every landmark, and the summary says so on
+   * every run, green included.
    *
    * WHY IT WAITS FOR CRON. Five of the seven are the header cells of a table
    * the dashboard renders only once a snapshot exists, and on a new site the
@@ -1139,7 +1187,9 @@ class AccessibilityTest extends WebDriverTestBase {
    * snapshot exists. The nine anonymous scans normally cover that gap many
    * times over, but "normally" is timing, and a gate must not depend on timing.
    * So the run waits for the first cron run to finish, and then asserts the
-   * table has a row before axe is asked about it (I-062).
+   * table has a row before axe is asked about it (I-062). From 1.0.5 on no
+   * declared entry is in that table and the wait stays: header cells expected
+   * to pass can be shown to pass only by a scan of a table that was rendered.
    *
    * @param string $axe_source
    *   The contents of core's axe-core bundle.
@@ -1162,11 +1212,37 @@ class AccessibilityTest extends WebDriverTestBase {
       $declared,
       self::DECLARED_LOGGED_IN_PAGES,
     ));
+    // WHICH DECLARED SET, CHOSEN BY THE CONFIG GUARDIAN INSTALLED (T-0541).
+    // The version is read from Composer's own record of what it installed,
+    // and that reading is asserted twice before a set is chosen: a package
+    // that is not there, or a version that is not a release, fails here by
+    // name. A development version such as 1.0.x-dev names a branch rather
+    // than a commit, so neither set can be said to be true of it, and
+    // version_compare() would order it below 1.0.5 and choose the older set
+    // without a word. The two sets are explained where they are declared.
+    $this->assertTrue(InstalledVersions::isInstalled(self::CONFIG_GUARDIAN_PACKAGE), sprintf(
+      '%s is not installed according to Composer, so no version can choose which declared set of installed-markup violations the dashboard is held to.',
+      self::CONFIG_GUARDIAN_PACKAGE,
+    ));
+    $cg_version = (string) InstalledVersions::getPrettyVersion(self::CONFIG_GUARDIAN_PACKAGE);
+    $this->assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $cg_version, sprintf(
+      '%s is installed at "%s", which is not a release number such as 1.0.3. The declared set the dashboard is held to is chosen by release, and a development version names a branch rather than a commit, so neither set can be chosen for it. Install a release, or declare the version in the Composer repository that provides the package.',
+      self::CONFIG_GUARDIAN_PACKAGE,
+      $cg_version,
+    ));
+    if (version_compare($cg_version, self::CONFIG_GUARDIAN_SECOND_SET_FROM, '>=')) {
+      $set_name = 'INSTALLED_MARKUP_VIOLATIONS_FROM_1_0_5';
+      $declared_set = self::INSTALLED_MARKUP_VIOLATIONS_FROM_1_0_5;
+    }
+    else {
+      $set_name = 'INSTALLED_MARKUP_VIOLATIONS';
+      $declared_set = self::INSTALLED_MARKUP_VIOLATIONS;
+    }
     // Every declared page has an expectation set of its own, and no set is
     // left over for a page that stopped being scanned.
     $this->assertSame(
       array_column($pages, 'name'),
-      array_keys(self::INSTALLED_MARKUP_VIOLATIONS),
+      array_keys($declared_set),
       'Every logged-in page must have exactly one declared set of installed-markup violations, and every set a page.',
     );
 
@@ -1242,7 +1318,7 @@ class AccessibilityTest extends WebDriverTestBase {
       $this->assertSame($admin_theme, $structure['theme'], sprintf('%s: rendered by the administration theme "%s" (found "%s").', $name, $admin_theme, $structure['theme']));
       $this->assertNotSame($default_theme, $structure['theme'], "$name: must not be rendered by the theme this template ships, or its chrome is this package's own markup and the ownership split does not hold.");
       $this->assertGreaterThan(self::TEXT_FLOOR, $structure['text'], sprintf('%s: the page has content to be accessible about (%d characters of rendered text, floor %d).', $name, $structure['text'], self::TEXT_FLOOR));
-      $this->assertGreaterThanOrEqual(1, $structure['snapshotRows'], "$name: the recent-snapshots table has a row before axe is asked about it. Five declared violations are its header cells, and without a snapshot the table is not rendered at all.");
+      $this->assertGreaterThanOrEqual(1, $structure['snapshotRows'], sprintf('%s: the recent-snapshots table has a row before axe is asked about it. Below Config Guardian %s five declared violations are its header cells, and from %s on those cells are expected to pass; either way, without a snapshot the table is not rendered at all.', $name, self::CONFIG_GUARDIAN_SECOND_SET_FROM, self::CONFIG_GUARDIAN_SECOND_SET_FROM));
 
       // -- axe: the same bundle, the same options and the same three
       // definitions as ::scanPage(): `rules` is the sum of the four buckets,
@@ -1340,7 +1416,7 @@ class AccessibilityTest extends WebDriverTestBase {
       }
       $expected = array_map(
         static fn (array $entry): string => sprintf('%s @ %s [%s]', $entry[0], $entry[1], $entry[2]),
-        self::INSTALLED_MARKUP_VIOLATIONS[$name],
+        $declared_set[$name],
       );
       sort($installed);
       sort($expected);
@@ -1362,7 +1438,9 @@ class AccessibilityTest extends WebDriverTestBase {
     // So a failure carries it as its message and a pass hands it to the
     // reporting hook. Its prefix deliberately differs from the nine's line:
     // tests/bin/packaged-claims reads that one from the trace and requires
-    // exactly one of it.
+    // exactly one of it. This line also names the Config Guardian version
+    // installed and the declared set that version chose (T-0541), so a green
+    // log says which of the two sets the page was held to.
     $scanned_count = count($results);
     $rules = array_column($results, 'rules');
     $by_owner = [];
@@ -1375,7 +1453,7 @@ class AccessibilityTest extends WebDriverTestBase {
     $targets = array_column($results, 'targets');
     $targets_measured = array_column($targets, 'measured');
     $summary = sprintf(
-      'agora_transparency axe gate, logged in: %d of %d declared pages scanned (%s), as a user holding only the %s role, %d-%d axe rules run per page, heading-order reported on %d of %d pages, %s (WCAG 2.5.8) measured %d targets on %d of %d pages at a %s viewport, %d of them left incomplete; %d violation nodes over %d rules - %d in markup this package owns, %d in installed markup it did not write, matched by rule, selector and owner against the %d declared (%s). %d routes are named config_guardian.* and this gate scans %d of them.',
+      'agora_transparency axe gate, logged in: %d of %d declared pages scanned (%s), as a user holding only the %s role, %d-%d axe rules run per page, heading-order reported on %d of %d pages, %s (WCAG 2.5.8) measured %d targets on %d of %d pages at a %s viewport, %d of them left incomplete; %d violation nodes over %d rules - %d in markup this package owns, %d in installed markup it did not write, matched by rule, selector and owner against the %d declared (%s) in %s, the set chosen because %s %s is installed. %d routes are named config_guardian.* and this gate scans %d of them.',
       $scanned_count,
       $declared,
       implode(', ', array_column($pages, 'path')),
@@ -1400,6 +1478,9 @@ class AccessibilityTest extends WebDriverTestBase {
         array_keys($by_owner),
         $by_owner,
       )) : 'none',
+      $set_name,
+      self::CONFIG_GUARDIAN_PACKAGE,
+      $cg_version,
       $module_routes,
       $scanned_count,
     );
