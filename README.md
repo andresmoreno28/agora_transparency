@@ -244,8 +244,9 @@ That is a trap with a green face on it: point PHPUnit at the installed package a
 finds nothing, prints `No tests executed!` and **exits 0**.
 
 Running the tests also needs two things the plain install does not: PHPUnit itself, and the two
-environment variables Drupal's functional tests read. Both belong to the setup step above, before
-the `composer require` that installs the template:
+environment variables Drupal's functional tests read. Both belong to the checkout sequence above,
+before its `composer require` that installs the template; the tests themselves come from that
+checkout, so this is that route's step, not the community route's:
 
 ```shell
 ddev config --web-environment-add='SIMPLETEST_BASE_URL=$DDEV_PRIMARY_URL'
