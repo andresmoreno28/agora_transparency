@@ -134,6 +134,10 @@ both are pending his yes: row 7 on whether `1.0.0` waits for `agora_core` 1.0.0 
 half), row 8 on Config Guardian's 1.0.5 tag. The launch order puts both releases on days before
 the theme's and the template's.
 
+⚠️ **Answered.** Row 7: yes on 2026-09-25 (D-071, amended), and agora_core 1.0.0's own yes on
+2026-09-27; its release waits for the coverage opt-in, possible from 2026-10-05. Row 8: yes on
+2026-09-25, repeated on 2026-09-27. Both answers are in `specs/000-project/DECISIONS.md`.
+
 ### The order of acts — one sitting
 
 **Theme before template**, because every intermediate state must be a coherent public state: a theme

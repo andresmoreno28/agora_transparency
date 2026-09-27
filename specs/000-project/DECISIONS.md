@@ -5870,3 +5870,49 @@ It fails before this package is touched. The cause is Drupal CMS 2.2.0's own `"d
 **Cost of being wrong:** a red on a day nobody here chose, already diagnosed in this record.
 
 - **D-079 · the upstream issues are filed, 2026-09-27.** [andres] opened them from his own account the same day: `drupal_cms#3591472` (recipe unpacking drops `drupal/canvas_translate`'s `@alpha`, so a fresh 2.2.0 project refuses every `composer require`), `gitlab_templates#3572441` (the `Drupal CMS` job should run `minimum-stability dev` before `require drupal/core-dev -W`), and `drupal_cms#3591473` (the 2.2.0 installer writes into the project root's `.composer`, the origin of the job's three warnings). All three are public issues on git.drupalcode.org.
+
+## [andres]'s yes of 2026-09-27, and five rulings under D-075 — Config Guardian 1.0.5 and agora_core 1.0.0
+
+**His words**, translated from Spanish: *"Ah, so once you finish, the new releases for Config
+Guardian and agora_core can be created? If so, perfect, go ahead."* They answer the question put to
+him the same day: whether to tag Config Guardian 1.0.5 and agora_core 1.0.0 once both are verified,
+with the template already green against both Config Guardian versions. For Config Guardian this
+repeats the yes of 2026-09-25. For agora_core 1.0.0 it is new, and it is the yes T-0522 waits for.
+
+**What agora_core 1.0.0 is:** the module as it stands at `a2493f1`, which gives the sign-in page
+back to the site's default theme under Gin Login (D-052's option C, below), and nothing else. The
+question he answered on 2026-09-25 described the module as also carrying the cited assistant; that
+half is unit 005's open generative rows (T-0523 to T-0525, T-0528), and it is not in 1.0.0, as
+`specs/007-publication/plan.md` §4 already says. [ejecutor] reads his yes as covering the module as
+it stands, and told him so the same day. If he answers otherwise, the tag is not cut.
+
+**D-052, amended: its LATER half is no longer unscheduled.** Its status table says option C
+*"cannot be scheduled yet"*, because it needed a module. The module exists (D-054, option B):
+`agora_core`'s `5968d6c` implements `hook_gin_login_route_definitions_alter()` and removes
+`user.login` from Gin Login's routes, and `f78b561` proves it on a site with Gin Login, green in
+pipeline 978676. The proof on an Ágora install is T-0526's, and T-0542 keeps it.
+
+**Five rulings by [ejecutor] under D-075 as amended for unit 005's Gate B**, each the independent
+audit's recommendation of the same day:
+
+1. A new finding in Config Guardian's own dashboard markup under 1.0.5 is fixed in Config Guardian
+   before the tag, not declared in the template.
+2. Config Guardian's CHANGELOG and README are made true at the tip before the tag, because a
+   released CHANGELOG is permanent.
+3. The `extra.drupal` block in Config Guardian's `composer.json` (a literal `1.0.x-dev` version and
+   an empty date stamp, which packages.drupal.org published for 1.0.3) is removed in a commit of its
+   own before the tag.
+4. T-0534 closes on its CI read-count tests and on `f9c1424`'s measurement, once
+   `CHANGELOG.md:40-42` states what was measured. The 669-object rig figure is not re-created: an
+   empty sync directory is no longer analysed at all.
+5. agora_core is released only after the security-coverage opt-in, so that its `SECURITY.md` is
+   true on the day the release exists. One addition by [ejecutor]: the tag waits for the proof on
+   an Ágora install, because a tag is not taken back.
+
+**The ordering constraint the audit rated 🔴.** The template's CI locks Config Guardian **1.0.3**
+today, because 1.0.4 is a tag with no release, and `AccessibilityTest` declares Config Guardian's 7
+contrast findings exactly, in both directions. Publishing 1.0.5 first would turn `phpunit` and
+`phpunit-pgsql` red on the template's next pipeline. So the template change that keeps the
+declaration exact for both versions (two declared sets, chosen by the installed version through
+`Composer\InstalledVersions`) lands and goes green first. Making the declared entries optional
+was considered and refused: it turns an exact set into an upper bound.
