@@ -294,10 +294,15 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `978389`, ref `1.x`, commit `7c8132c`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/978389/jobs` on 2026-09-26 —
+- **Observed inventory — the site template.** Pipeline `978481`, ref `1.x`, commit `e76f98b`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/978481/jobs` on 2026-09-27 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ⚠️ **One figure moved, and it was predicted before the push:** `phpunit` and `phpunit-pgsql`
+  went 2652 → 2665 assertions on 23 tests, the +13 that T-0725 (`e76f98b`) adds to
+  `testRolesOnAnInstalledSite` to put the editor's three `basic_editorial` transitions to core's
+  own validator on real nodes. Every other trace figure held.
+  (It stood at `978389` / `7c8132c` / 2026-09-26 — the paragraph below.)
   ✅ **THE FIRST GREEN AFTER TWIG 3.30.0.** From 2026-09-25 13:20 UTC every page-rendering job was
   red: Twig 3.30.0 broke rendering on core up to 11.4.7 (core issue 3625969). Core 11.4.8 fixed it
   that evening, but the CI templates' default ref still tests 11.4.6, so `7c8132c` sets
@@ -445,8 +450,8 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `Drupal CMS` | `Locking drupal/agora_theme (1.2.1)` |
   | `Drupal CMS` | `Tests: 1, Assertions: 1, Warnings: 3.` |
   | `cspell` | `Files checked: 440, Issues found: 0` |
-  | `phpunit` | `OK (23 tests, 2652 assertions)` |
-  | `phpunit-pgsql` | `OK (23 tests, 2652 assertions)` |
+  | `phpunit` | `OK (23 tests, 2665 assertions)` |
+  | `phpunit-pgsql` | `OK (23 tests, 2665 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
