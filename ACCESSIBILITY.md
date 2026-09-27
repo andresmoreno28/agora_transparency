@@ -115,10 +115,11 @@ that date.
 No level of conformance is claimed for it.
 
 Every push measures one page of it: the Config Guardian dashboard, which this package installs, read
-by a user holding only the Governance auditor role, which this package ships. The accessibility
-statement reports what axe finds there and whose markup each finding sits in — Config Guardian's,
-the Gin administration theme's and `coffee`'s — and the test fails if that set of findings changes.
-No other administrative page is checked on any push.
+by a user holding only the Governance auditor role, which this package ships. Each finding axe
+reports there sits in markup this package does not write: the Gin administration theme's and
+`coffee`'s, which the accessibility statement reports, and, on Config Guardian releases before
+1.0.5, Config Guardian's own. The test fails if that set of findings changes. No other
+administrative page is checked on any push.
 
 The keyboard walk of 2026-09-23 found failures on the same surface, every one in markup this
 package does not write: focus carried out of sight by `coffee`'s search box and by Config Guardian's

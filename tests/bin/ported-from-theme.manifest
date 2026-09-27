@@ -537,6 +537,43 @@
 # comparison removed had lost its subject, and every check on what the package still says
 # stands as it was.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-09-27 (T-0541, widened: the packaged passages Config Guardian 1.0.5
+# makes false are made true before its tag), the packaged-claims record, the same four steps.
+#
+#   1. tests/bin/ported-drift FIRST, before the edit was decided: 3 records compared, 3 read,
+#      3 provenance verified, **0 behind** 1.x at 20ae1f7e, oldest drift 0 day(s), 0 past the
+#      cap, 0 findings, network READ anonymously. claims-match-readme has not moved since
+#      a0f4cdf, so there was nothing upstream to take and no per-hunk decision to make.
+#   2. What changed HERE: the shipped statement no longer says the dashboard scan finds colour
+#      contrast failures in markup Config Guardian itself provides. That is true of 1.0.3 and
+#      false of 1.0.5, whose branch was measured with the seven color-contrast nodes gone, and
+#      a fresh install receives 1.0.5 once it is published. packaged-claims followed its
+#      subject: one extraction (`admin contrast finding`), one comparison
+#      (`admin_contrast_owner`) and the one NOT CHECKED entry that existed only for that
+#      sentence - Config Guardian's stylesheet tokens - are removed, with the comparison's lines
+#      in the header's catalogue and in the D-061 block, which now counts three sentences and
+#      says why in a dated note. The `admin landmark finding` pattern moves with its sentence,
+#      which opens "The scan finds" where it read "The same scan also finds"; the comparison it
+#      feeds, `admin_landmark_owners`, is unchanged. Nothing came from agora_theme. Predicted
+#      before the run and then printed: claims 35 -> 34, comparisons 48 -> 47, the list
+#      19 -> 18; files and one-copy checks unchanged at 9 / 9, findings 0.
+#   3. local_sha256 re-derived with sha256sum from the file on disk and substituted by
+#      command, never typed: 8e7d083e... -> 8bcbd84a.... source_sha256 and source_commit
+#      UNCHANGED and not retyped, because step 1 proved the source has not moved, so
+#      DECLARED_COMMITS in ported-copies does not move either.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0; ported-copies 3 verified,
+#      3 source commits on disk and 3 declared, 0 findings.
+#
+# WATCHED REFUSING THE EDIT BEFORE THE RECORD MOVED: with the script edited and this record
+# not yet regenerated, ported-copies printed EDITED for packaged-claims, `verified: 2`,
+# `findings: 1`, exit 1. And the moved pattern was watched binding, in a throwaway worktree:
+# the sentence reworded back to "The same scan also finds" FATALs naming the pattern, exit 2,
+# and Coffee renamed Navigation in it gives an admin_landmark_owners MISMATCH, exit 1. The
+# direction is the one D-028 permits: the only comparison removed had lost its subject on the
+# release every fresh install is about to receive, every other check stands as it was, and
+# the G11 checks assert `> 0` rather than a length, so wave 1 stays at 99 checks.
+#
 # script            role       status    local_sha256                                                    source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -599,7 +636,7 @@ preflight          preflight  adapted   e1ce157c4c1a406140ca4f6b84ad26afb4344222
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   8e7d083e74735597d0ce1f9635a473690085ec110a2eba9aaabb4983d7644c31 tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
+packaged-claims    invariant  adapted   8bcbd84a18295b2411bc8692f4b7ce98e1953ee1beddc90e6977dcfea87eadd9 tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
 #
 # -----------------------------------------------------------------------------------------
 # THE SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own
