@@ -294,10 +294,19 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `978481`, ref `1.x`, commit `e76f98b`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/978481/jobs` on 2026-09-27 —
+- **Observed inventory — the site template.** Pipeline `978901`, ref `1.x`, commit `5bbd3ae`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/978901/jobs` on 2026-09-27 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
   `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  ⚠️ **Two figures moved: one predicted before the push, one from upstream.** `phpunit` and
+  `phpunit-pgsql` went 2665 → 2667 assertions on 23 tests: the two assertions `dca80c7` (T-0541)
+  adds before the dashboard scan chooses its declared set by the Config Guardian release
+  installed; the logged-in line now ends `the set chosen because drupal/config_guardian 1.0.3 is
+  installed`. The `Drupal CMS` job prints `OK (1 test, 1 assertion)` again instead of `Tests: 1,
+  Assertions: 1, Warnings: 3.`: it locks `drupal_cms_installer` 2.2.1, released that morning with
+  `e0bdb015`, the fix for `drupal_cms#3591473`, which [andres] had filed the same day (D-079).
+  No commit here caused that change.
+  (It stood at `978481` / `e76f98b` / 2026-09-27 — the paragraph below.)
   ⚠️ **One figure moved, and it was predicted before the push:** `phpunit` and `phpunit-pgsql`
   went 2652 → 2665 assertions on 23 tests, the +13 that T-0725 (`e76f98b`) adds to
   `testRolesOnAnInstalledSite` to put the editor's three `basic_editorial` transitions to core's
@@ -448,10 +457,10 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | job | the line its trace printed |
   |---|---|
   | `Drupal CMS` | `Locking drupal/agora_theme (1.2.1)` |
-  | `Drupal CMS` | `Tests: 1, Assertions: 1, Warnings: 3.` |
+  | `Drupal CMS` | `OK (1 test, 1 assertion)` |
   | `cspell` | `Files checked: 440, Issues found: 0` |
-  | `phpunit` | `OK (23 tests, 2665 assertions)` |
-  | `phpunit-pgsql` | `OK (23 tests, 2665 assertions)` |
+  | `phpunit` | `OK (23 tests, 2667 assertions)` |
+  | `phpunit-pgsql` | `OK (23 tests, 2667 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
