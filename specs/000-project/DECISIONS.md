@@ -5868,3 +5868,5 @@ It fails before this package is touched. The cause is Drupal CMS 2.2.0's own `"d
 **Upstream.** [andres] files two issues from his own account: one to `drupal_cms`, for the unpacking that drops `@alpha`, and one to `gitlab_templates`, to run `minimum-stability dev` before `require drupal/core-dev -W`, which is shown green on the rig. If default-ref moves before either is fixed, the red is an upstream one, and a dated, owned exception under D-023(5) is his decision.
 
 **Cost of being wrong:** a red on a day nobody here chose, already diagnosed in this record.
+
+- **D-079 · the upstream issues are filed, 2026-09-27.** [andres] opened them from his own account the same day: `drupal_cms#3591472` (recipe unpacking drops `drupal/canvas_translate`'s `@alpha`, so a fresh 2.2.0 project refuses every `composer require`), `gitlab_templates#3572441` (the `Drupal CMS` job should run `minimum-stability dev` before `require drupal/core-dev -W`), and `drupal_cms#3591473` (the 2.2.0 installer writes into the project root's `.composer`, the origin of the job's three warnings). All three are public issues on git.drupalcode.org.
