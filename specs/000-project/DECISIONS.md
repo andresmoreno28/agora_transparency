@@ -5944,3 +5944,15 @@ audit's recommendation.
 on 2026-09-27, carries `e0bdb015`, and the template's `Drupal CMS` job locks it: job 12476785 in
 pipeline 978901 prints `OK (1 test, 1 assertion)` again, with no warning. The same merge request
 closed `drupal_cms#3591472`; no release carrying that half has been observed yet.
+
+**Config Guardian 1.0.5 is released, 2026-09-27.** [andres] created the release from the tag
+`1.0.5` (`d7aad45`, tag pipeline 978987, 8/8) the same day, on the notes handed to him. The release
+feed lists it as covered by the security advisory policy.
+
+**D-079, amended again: its cost is being removed upstream.** On `gitlab_templates#3572441` the
+maintainer adopted [andres]'s proposal the same day: merge request !526 moves the `Drupal CMS` job's
+own `composer config minimum-stability dev` step before `composer require drupal/core-dev -W`, and
+reports the downstream Drupal CMS jobs passing with it. There will be no full Drupal CMS 2.2.1
+release: 2.2.1 exists only for the installer and the multilingual recipe. Once !526 is in the
+templates' default ref, the red this entry priced for the day default-ref moves to Drupal CMS 2.2
+does not happen.
