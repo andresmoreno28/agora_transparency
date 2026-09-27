@@ -1388,3 +1388,12 @@
   upstream's: automatic_updates issue 3506894, open since 2025-02-15. ⚠️ **On a guarded or offline
   site, install modules through a recipe, and read an exception here as the guard working, not as
   the module failing.** Recorded 2026-09-27 with T-0526.
+
+- I-123 · **A row added from an audit's plan named states, mutations and a baseline that the plan
+  alone defined, and the plan was never saved.** T-1407's criterion asks for mutations M1 to M3, a
+  pixel-identical S0 and `≥ 16 paired`; its implementing rig ran before the row was committed, and
+  the audit plan it cites exists in neither repository. Two days later nobody could say what M1 to
+  M3 changed, which stylesheet the S0 baseline was taken on, or why the guard prints 14 where the
+  row says 16. ⚠️ **When a row is added from an audit's plan, the row itself defines every
+  identifier its criterion uses, in the same commit** — a figure with no definition beside it is a
+  claim nobody can check (I-036). Recorded 2026-09-27 with T-1407.
