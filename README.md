@@ -100,40 +100,70 @@ The author's attestation, keyboard walkthrough included, is [`ACCESSIBILITY.md`]
 
 ## Requirements
 
-* **A plain Drupal site, not a Drupal CMS one.** The installation flow below starts from
+* **A Drupal CMS project, which the first sequence below creates.** Nothing Drupal has to exist
+  beforehand: `composer create-project drupal/cms` makes the project, and Ágora is added to it. The
+  second sequence, for installing from a checkout of this repository, starts instead from
   `drupal/recommended-project` — a bare Drupal core 11 codebase — and it is Ágora's own
-  `composer.json` that pulls in the Drupal CMS recipes it composes, all constrained to `^2`. You do
-  not need a Drupal CMS site to begin; you end up with one because Ágora requires its pieces.
+  `composer.json` that pulls in the Drupal CMS recipes it composes, all constrained to `^2`.
 * **PHP:** whatever your Drupal CMS version requires. Ágora adds no constraint of its own; there is
   no `php` entry in its `composer.json`. Drupal core `11.4.5` itself needs PHP `8.3`–`8.5` and
   Composer `2.3.6` or later — see [Toolchain floor](#toolchain-floor) below for where those figures
   come from and what else was measured alongside them.
-* Composer. [DDEV](https://ddev.com) is recommended for a local environment; see
+* **PHP's `pdo_pgsql` extension, whatever database the site uses.** Drupal CMS requires
+  `drupal/ai_provider_amazeeio`, and the releases that fix a Critical SQL injection advisory in it,
+  SA-CONTRIB-2026-134 — 1.4.3 and 1.3.7 — both require that extension. On a PHP without it,
+  Composer 2.9 or later stops and names the missing extension; an older Composer, or one with its
+  security blocking switched off, finishes the install with an older release that the advisory
+  affects, and says nothing. DDEV's web container has the extension. The first sequence below ends
+  with the check, `composer audit`: it names SA-CONTRIB-2026-134 and exits non-zero when an
+  affected release was installed, and it exits 0 with `No security vulnerability advisories found.`
+  when nothing installed is affected by any advisory.
+* Composer. [DDEV](https://ddev.com) is recommended for a local environment, and the commands
+  below are written for it; see
   [DDEV's installation instructions](https://docs.ddev.com/en/stable/users/install).
 
 ## Installation
 
-The community route: inside a Drupal CMS project,
+The community route: create a Drupal CMS project, then add Ágora to it.
 
 ```shell
-composer require drupal/agora_transparency
+mkdir agora-site
+cd agora-site
+ddev config --project-type=drupal11 --docroot=web
+ddev start
+ddev composer create-project --no-install drupal/cms
+ddev composer install
+ddev composer require drupal/agora_transparency
+ddev composer audit
 ```
 
-then apply it either through the web installer, choosing **Ágora** at the site template step, or
-from the command line:
+`--no-install`, followed by a separate `composer install`, is what lets the `require` succeed. On
+Drupal CMS 2.2.0 a one-step `composer create-project drupal/cms` unpacks Drupal CMS's own recipes
+into the project as it installs them, and in doing so rewrites the project's
+`drupal/canvas_translate: @alpha` to `^1`; the alpha release it has just locked no longer satisfies
+that, and `composer require drupal/agora_transparency` fails. `composer audit` is the `pdo_pgsql`
+check described under [Requirements](#requirements).
+
+Then apply the template either through the web installer — `ddev launch`, and choose **Ágora** at
+the site template step — or from the command line:
 
 ```shell
-drush site:install --yes recipes/agora_transparency
+ddev drush site:install --site-name="Your institution" --yes recipes/agora_transparency
 ```
+
+`--site-name` is the name the site shows in its masthead and in its page titles; without it, Drush
+names the site `Drush Site-Install`. It can be changed afterwards, in one field — see
+[Make it yours](#make-it-yours).
 
 **This repository is not a site, and it cannot be brought up on its own.** It is a recipe package:
 a `recipe.yml`, its configuration and its metadata. There is no Drupal in it, so there is nothing
-here to start. The route above adds it to an existing Drupal CMS project; the sequence below instead
-builds a plain Drupal codebase from nothing and adds this package to it as a Composer *path
-repository* — which is how to install it from a local checkout, before it is tagged or after, rather
-than from the released package. It is the sequence in the project's own
-[`.github/workflows/phpunit.yml`](.github/workflows/phpunit.yml), which runs it on every push —
-that file, not this section, is the authority, because it is the copy that gets exercised.
+here to start. The route above creates a Drupal CMS project and adds the released package to it;
+the sequence below instead builds a plain Drupal codebase from nothing and adds this package to it
+as a Composer *path repository* — which is how to install it from a local checkout, before it is
+tagged or after, rather than from the released package. It is the sequence in the project's own
+[`.github/workflows/phpunit.yml`](https://git.drupalcode.org/project/agora_transparency/-/blob/1.x/.github/workflows/phpunit.yml),
+which runs it on every push — that file, not this section, is the authority, because it is the
+copy that gets exercised.
 
 Create the project directory and a Drupal codebase inside it, without installing the site yet:
 
@@ -183,7 +213,7 @@ ddev launch
 …or from the command line:
 
 ```shell
-ddev drush site:install --yes recipes/agora_transparency
+ddev drush site:install --site-name="Your institution" --yes recipes/agora_transparency
 ```
 
 Once the site is installed, `ddev exec drush status` reports `Drupal bootstrap : Successful`. Those
@@ -255,7 +285,7 @@ walked on a clean install, not written from memory of the code.
 * **The masthead's opening line.** Same fieldset, "Opening line": the sentence under the front-page
   heading. The shipped sentence names a council; clear the field for no line at all, or write the
   institution's own. This setting ships on `drupal/agora_theme`'s `1.x` branch ahead of a numbered
-  release naming it; it is not in every tagged release yet.
+  release naming it; no tagged release carries it yet.
 * **Currency.** Same settings page, the read-only panel under the theme's own fieldset: it lists
   every field it finds on the site that can carry a currency prefix or suffix, each with a direct
   link to its own edit form. The panel writes nothing — the currency is set once per field, not once
@@ -322,10 +352,9 @@ walked on a clean install, not written from memory of the code.
 
   Measured end to end on a clean install: this sequence leaves exactly four files —
   `hero-wide.webp` (`recipe.yml`'s own hero image), `login-wallpaper.png` (`gin_login`'s),
-  `default-avatar.svg` (`drupal_cms_site_template_base`'s, 2.2.0; formerly
-  `drupal_cms_authentication`'s) and media's own `generic.png` icon — none of
-  them the demonstration's, all four held by configuration rather than by content. The taxonomy
-  terms, the menu links and the two Canvas pages (the front page and "The institution") are not
+  `default-avatar.svg` (`drupal_cms_site_template_base`'s) and media's own `generic.png` icon —
+  none of them the demonstration's, all four held by configuration rather than by content. The
+  taxonomy terms, the menu links and the two Canvas pages (the front page and "The institution") are not
   demonstration content either: they are the categories, the navigation and the landing pages the
   content model itself is built from, and removing the records above leaves every one of them in
   place. One sentence naming Fuentelclaro remains after this, because it is fixed text rather than
