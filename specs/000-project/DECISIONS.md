@@ -5850,3 +5850,21 @@ rather than 41.
   **`site_template_helper` stays.** The question the D-033 audit left for this sweep, whether to keep a Composer plugin whose remaining function serves a translation-download URL this project does not use today, is answered: kept. Removing it is an SBOM change with no gain for a site owner today, and the plugin is stable and covered. Signed by [ejecutor] under D-075 and [andres]'s standing instruction of 2026-09-25.
 
 - **D-018 amendment · correction, 2026-09-27 (T-0627, on T-0626's audit).** *"Frozen at their last release, 2.1.6"* is true of `drupal_cms_admin_ui` only; the other five retired recipes stop at 2.1.2 (`updates.drupal.org`, read 2026-09-27). The packaged comment in `recipe.yml` that repeats the version is T-0706's to correct, in unit 007.
+
+---
+
+## D-079 · The clean-install job keeps the CI templates' default Drupal CMS — option B — [ejecutor] 2026-09-27, under D-075
+
+**Ruling: B.** Option A, pinning `_DRUPAL_CMS_TAG` to 2.2.0, is ruled out by measurement, as T-0727's own rule required. T-0727 replayed the `Drupal CMS` job's 47 steps, generated from `gitlab_templates` default-ref (1.17.0, `cc3ce7da`) and identical in order to job 12469707's, at `_DRUPAL_CMS_TAG=2.2.0`, on a guarded rig running the job's own image. Step 34, `composer require drupal/core-dev -W`, exits 2 in 2 of 2 runs:
+
+```
+drupal/canvas_translate is fixed to 1.0.0-alpha4 (lock file version) by a partial update but that version is rejected by your minimum-stability.
+```
+
+It fails before this package is touched. The cause is Drupal CMS 2.2.0's own `"drupal/canvas_translate": "@alpha"` losing its flag when `create-project` unpacks the multilingual recipe, which requires `^1` (T-0719's finding (a)). Two controls pass: restoring `^1@alpha` makes that step exit 0, and so does running the job's own `minimum-stability dev` step before it.
+
+**What B costs, now measured rather than guessed.** `gitlab_templates` `main` already sets `CMS_STABLE: '2.2.0'` with a job script identical to default-ref's. On the day default-ref moves, this job goes red at step 34 for every project that opts in, this one included, and no commit here can answer it. The replay is the prediction for that day. In a labelled continuation, steps 35 to 44 exit 0. The template then installs on Drupal CMS 2.2.0 (`drush site:install` exit 0 in 38 s), the front page answers 200, and watchdog holds 0 warnings and 0 errors. Either drupal.org host received 0 requests, and positive controls read 4 of 4.
+
+**Upstream.** [andres] files two issues from his own account: one to `drupal_cms`, for the unpacking that drops `@alpha`, and one to `gitlab_templates`, to run `minimum-stability dev` before `require drupal/core-dev -W`, which is shown green on the rig. If default-ref moves before either is fixed, the red is an upstream one, and a dated, owned exception under D-023(5) is his decision.
+
+**Cost of being wrong:** a red on a day nobody here chose, already diagnosed in this record.
