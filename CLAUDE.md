@@ -294,10 +294,19 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `978901`, ref `1.x`, commit `5bbd3ae`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/978901/jobs` on 2026-09-27 —
+- **Observed inventory — the site template.** Pipeline `996178`, ref `1.x`, commit `161e3a6`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/996178/jobs` on 2026-10-09 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
-  `allow_failure: false`**, on `drupal/cms (2.1.4)`.
+  `allow_failure: false`**, on `drupal/cms (2.2.0)`.
+  ⚠️ **The phpunit totals moved and two rows were added, all predicted before the push
+  (T-0542).** `phpunit` and `phpunit-pgsql` went 23 → 24 tests and 2667 → 2704 assertions,
+  identically per class on both databases (JUnit): `ValidationTest` +1 test and +16 (the sign-in
+  witness), `AccessibilityTest` 224 → 242 (the sign-in page, the tenth anonymous page) and
+  `RequirementsTest` 162 → 165 (a seventh `require` entry). The logged-in line now ends `against the 2 declared in
+  INSTALLED_MARKUP_VIOLATIONS (coffee 1, gin 1), with drupal/config_guardian 1.0.5 installed.`
+  The `Drupal CMS` job now builds Drupal CMS 2.2.0, because gitlab_templates 1.17.2 moved
+  `CMS_STABLE`, and it locks `drupal/agora_core (1.0.0)`. `cspell` held: T-0542 added no file.
+  (It stood at `978901` / `5bbd3ae` / 2026-09-27 — the paragraph below.)
   ⚠️ **Two figures moved: one predicted before the push, one from upstream.** `phpunit` and
   `phpunit-pgsql` went 2665 → 2667 assertions on 23 tests: the two assertions `dca80c7` (T-0541)
   adds before the dashboard scan chooses its declared set by the Config Guardian release
@@ -456,11 +465,13 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
   | job | the line its trace printed |
   |---|---|
+  | `Drupal CMS` | `Create Drupal CMS project using _DRUPAL_CMS_TAG 2.2.0` |
+  | `Drupal CMS` | `Locking drupal/agora_core (1.0.0)` |
   | `Drupal CMS` | `Locking drupal/agora_theme (1.2.1)` |
   | `Drupal CMS` | `OK (1 test, 1 assertion)` |
   | `cspell` | `Files checked: 440, Issues found: 0` |
-  | `phpunit` | `OK (23 tests, 2667 assertions)` |
-  | `phpunit-pgsql` | `OK (23 tests, 2667 assertions)` |
+  | `phpunit` | `OK (24 tests, 2704 assertions)` |
+  | `phpunit-pgsql` | `OK (24 tests, 2704 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
@@ -785,7 +796,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   drift as a number written down twice.
 
 - **The clean-install smoke runs on drupalcode and is observed, not merely declared.** The
-  `Drupal CMS` job builds a fresh `drupal/cms` at ~~`2.1.3`~~ **`2.1.4`**, installs **this package**
+  `Drupal CMS` job builds a fresh `drupal/cms` at ~~`2.1.3`~~ ~~`2.1.4`~~ **`2.2.0`**, installs **this package**
   into it through a Composer path repository, and runs Drupal CMS's own compatibility test against
   it — `OK (1 test, 1 assertion)` in job `12155536` on pipeline `958595`, read 2026-09-12 (it was
   job `11771967` at `2.1.3`). It is the clean-install smoke, and it runs **where a Drupal.org
@@ -812,9 +823,16 @@ moving the working copy a session is running in, on the day wave 5 starts.
   ⚠️ **AMENDED 2026-09-26: this job is not evidence about Drupal CMS 2.2.0.** It builds
   `_DRUPAL_CMS_TAG` from upstream's `$CMS_STABLE`, which read **`2.1.4`** on 2026-09-26 (job
   `12460463`, trace lines 108-109) — a full minor behind the current Drupal CMS, **2.2.0**, released
-  the day before. Until that variable moves, a green `Drupal CMS` job here says nothing about
-  2.2.0; the amendment to D-018 records what changed underneath it and how that was verified
+  the day before. ~~Until that variable moves, a green `Drupal CMS` job here says nothing about
+  2.2.0;~~ the amendment to D-018 records what changed underneath it and how that was verified
   instead — on a rig built directly at `drupal/cms:2.2.0`.
+  ✅ **DISCHARGED 2026-10-09: the variable moved, and this job is now evidence about Drupal CMS
+  2.2.0.** gitlab_templates 1.17.2, the default ref since 2026-10-06, sets `CMS_STABLE` to 2.2.0:
+  job `12772093` on pipeline `996178` builds 2.2.0 (trace line 109), locks
+  `drupal_cms_installer` 2.2.3, and passes Drupal CMS's own compatibility test. The tag the job
+  builds is now a row of the site template's trace-figures table, so the next move of
+  `CMS_STABLE` turns `--online` red instead of leaving this paragraph to go stale. The D-018 rig
+  stays the record of how 2.2.0 was verified before CI could.
 
 - **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
   non-negotiable rule 9's second sentence and D-006 on this point):
