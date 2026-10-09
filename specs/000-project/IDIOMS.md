@@ -1397,3 +1397,14 @@
   row says 16. ⚠️ **When a row is added from an audit's plan, the row itself defines every
   identifier its criterion uses, in the same commit** — a figure with no definition beside it is a
   claim nobody can check (I-036). Recorded 2026-09-27 with T-1407.
+
+- I-124 · **Drupal CMS can now send telemetry, and a rig must say no before it installs.**
+  `drupal_cms_helper` 2.2.2 and later carries an opt-in telemetry client (to
+  `api.eu.amplitude.com`). It sends nothing until a site opts in, and it returns early under the
+  test user agent, in previews and when CI is set, so the suite and CI are safe today; nothing in
+  this repository asserts that. A rig is safe only while nobody opts in, and the site-information
+  form's "Send anonymous usage data" box defaults to checked while the state is unset, so saving
+  that form opts the site in. ⚠️ **Every rig sets `DRUPAL_CMS_TELEMETRY=0` in the environment of
+  each process that applies a recipe (for DDEV, `web_environment` before `ddev drush recipe`),
+  reads `drush state:get drupal_cms_telemetry` afterwards, and never opens or saves
+  `/admin/config/system/site-information`.** Recorded 2026-10-09 with T-0542.
