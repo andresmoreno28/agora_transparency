@@ -73,19 +73,30 @@ Every job's whole log is public and opens without an account:
 
 A keyboard walkthrough answers what axe cannot: whether every control can be reached and left with
 the keyboard alone, in an order that makes sense, with focus visible wherever it lands. This one had
-two parts, on two different builds.
+three parts, on three different builds.
 
 **By machine, on 2026-09-23.** A script pressed real keys in Chrome — Tab through each page to its
 end, and Shift+Tab back — at two window sizes: 1280 × 800 CSS pixels, and 320 × 256, which is a
-1280-pixel-wide screen zoomed to 400 %. It walked every page the automated check reads as an
+1280-pixel-wide screen zoomed to 400 %. It walked every page the automated check then read as an
 anonymous visitor and, signed in as an administrator, every Config Guardian page that takes no
 argument. At each stop it recorded what received focus and the name the browser gave it,
 photographed the element with focus and without it to see whether an indicator appeared, and
-measured how much of it was out of sight. On the pages the automated check reads, it found every
+measured how much of it was out of sight. On the pages the automated check then read, it found every
 stop reachable, no keyboard trap, a visible indicator at every stop, the skip link working in use,
 no target failing axe's check for 2.5.8, and no page scrolling sideways at 320 pixels. What it found
 on the administrative pages is under *The administrative interface* below. The build was this
 package at commit `acd2a51`, applied to a fresh Drupal site, with `drupal/agora_theme` 1.2.0.
+
+**By machine, on 2026-10-09, the sign-in page.** On a clean install, the sign-in page is served by
+the site's own theme. It was walked by keyboard alone in a real browser at 1280 by 800 and at 320 by
+256. At both sizes every one of its 32 interactive elements was reached, focus never got stuck,
+every stop showed a visible focus indicator, none was hidden, the skip link worked, the page did not
+scroll sideways at 320 pixels wide, and no target was too small. The page opens with the cursor
+already in the Username field, as Drupal does on every site. From there, Tab carries on through the
+form and the footer, and Shift+Tab goes back through the header to the skip link. The
+password-reset page and the other account pages still use the administration theme and were not
+part of this walk. The build was this package at commit `58d84b2`, applied to a fresh Drupal site,
+with `drupal/agora_theme` 1.2.1, `drupal/agora_core` 1.0.0 and Config Guardian 1.0.5.
 
 **By a person, on 2026-09-25**, on what a machine cannot settle: whether an indicator that is there
 is noticed, and whether the order makes sense. The person confirmed that:
@@ -119,8 +130,7 @@ Every push measures one page of it: the Config Guardian dashboard, which this pa
 by a user holding only the Governance auditor role, which this package ships. Each finding axe
 reports there sits in markup this package does not write: the Gin administration theme's and
 `coffee`'s, which the accessibility statement reports. The test fails if that set of findings
-changes. No other
-administrative page is checked on any push.
+changes. No other administrative page is checked on any push.
 
 The keyboard walk of 2026-09-23 found failures on the same surface, every one in markup this
 package does not write: focus carried out of sight by `coffee`'s search box and by Config Guardian's
@@ -158,6 +168,11 @@ Named, so that silence is not read as a pass.
   them in the administration theme, not in `drupal/agora_theme`: `drupal/agora_core` hands only the
   sign-in page to the site's own theme. The password reset, registration, one-time sign-in and
   sign-out confirmation pages stay with Gin Login, and no check measures them.
+* **The sign-in page, by a person.** No person has yet confirmed it by keyboard or with a screen
+  reader; only the machine has walked it. Whether two of its behaviours are acceptable is also a
+  person's judgement, and both come from Drupal core rather than from this package: the page opens
+  with focus already in the Username field, and the password-reset link is reached from there only
+  by Shift+Tab.
 
 ## Method and date
 
@@ -172,7 +187,10 @@ Named, so that silence is not read as a pass.
   settle, answered on the preview site described above.
 * **Record.** The machine's transcript — every stop, at both widths, in both directions — is
   `specs/006-hardening/research/2026-09-23-keyboard-measurability.md`; the person's answers are in
-  `specs/006-hardening/tasks.md`, under *Keyboard walkthroughs, the person's half*. Both are in the
-  project's [public repository](https://git.drupalcode.org/project/agora_transparency/-/tree/1.x/specs),
-  and neither is part of this package.
-* **Date.** Written on 2026-09-25, about the package as it stood that day.
+  `specs/006-hardening/tasks.md`, under *Keyboard walkthroughs, the person's half*; the sign-in
+  page's walk of 2026-10-09 is recorded in T-0542's row of `specs/005-ai-and-governance/tasks.md`.
+  All three are in the project's
+  [public repository](https://git.drupalcode.org/project/agora_transparency/-/tree/1.x/specs), and
+  none is part of this package.
+* **Date.** Written on 2026-09-25, about the package as it stood that day; amended 2026-10-09 for
+  the sign-in page.
