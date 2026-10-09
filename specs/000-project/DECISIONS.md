@@ -5956,3 +5956,15 @@ reports the downstream Drupal CMS jobs passing with it. There will be no full Dr
 release: 2.2.1 exists only for the installer and the multilingual recipe. Once !526 is in the
 templates' default ref, the red this entry priced for the day default-ref moves to Drupal CMS 2.2
 does not happen.
+
+## D-080 · `drupal/agora_core` enters the SBOM — the companion module of D-054 — [ejecutor] 2026-10-09
+
+**Context in one line.** D-054 (option B, signed by [andres] 2026-09-25) created the module; this is its arrival in `composer.json`, under T-0542, with the rule-2 line it needs.
+
+| Decision | Package | Constraint | Verified stable | Coverage | Maintenance on drupal.org | What it contributes |
+|---|---|---|---|---|---|---|
+| `D-080` | `drupal/agora_core` | `^1.0` | 1.0.0 | `covered="1"` | Maintained by this project's author · core `^11.4` | Removes `user.login` from Gin Login's routes, so the site's default theme serves the sign-in page (D-052 option C) |
+
+**Method.** `updates.drupal.org/release-history/agora_core/current`, re-read on the day of the commit: 1 release, `1.0.0`, published 2026-10-09 14:10 UTC, `<security covered="1">`, `core_compatibility` `^11.4`; no dev, alpha, beta or rc release exists. packages.drupal.org: `extra.drupal.version` `1.0.0`, `security-coverage` `covered`, `require` `drupal/core: ^11.4` only. **Dependency closure:** `agora_core.info.yml` declares no dependencies and `composer.json` has no `require` (`gin_login`, `gin` and `agora_theme` are `require-dev` only), so the SBOM grows by one package and zero transitive packages; on a site without Gin Login the alter does nothing. Licence `GPL-2.0-or-later`. **Installed through this recipe, never the module installer**, because the latter throws on an offline Drupal CMS site (I-122, automatic_updates 3506894).
+
+- **D-059 amendment · the floor moves to `^1.0.5`, 2026-10-09 (T-0542).** `composer.json` requires `drupal/config_guardian: ^1.0.5`. Re-read at source on the day: 1.0.5 published 2026-09-27 15:50 UTC, `covered="1"`, core `^11.1 || ^12`; 1.0.4 is a tag with no release. Why: AccessibilityTest now declares one set of installed-markup violations, measured on 1.0.5 (pipeline 979001), and README's baseline export needs 1.0.5 on PHP before 8.4. The table row above (`^1.0`, 1.0.3) stays as written (rule 8).

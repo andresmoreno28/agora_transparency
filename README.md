@@ -68,8 +68,9 @@ What actually runs, and what it covers:
 
 * **In this repository**, `tests/src/FunctionalJavascript/AccessibilityTest.php` runs axe-core over
   the pages of the site as the template installs it — the composed landing pages, the front page as
-  a visitor meets it, several listing routes, a published record and the page-not-found screen —
-  **anonymously**, as a member of the public meets them. It is **blocking** in both PHPUnit jobs.
+  a visitor meets it, several listing routes, a published record, the page-not-found screen and the
+  sign-in page — **anonymously**, as a member of the public meets them. It is **blocking** in both
+  PHPUnit jobs.
   **The count, the breakdown and the result are stated once**, in the accessibility statement this
   package ships at `/accessibility-statement`: that is the document a visitor is actually served,
   and it has to be readable on its own.
@@ -423,11 +424,12 @@ SEO — into one. It does **not** include anti-spam (`captcha`, `friendlycaptcha
 recorded gap for a later unit rather than a regression. See the amendment to D-018 in
 `specs/000-project/DECISIONS.md`.
 
-It also installs `drupal_cms_helper`, the `stark` theme and `agora_theme` — Ágora's own theme, a
-separate Drupal.org project rather than code bundled here — and makes `agora_theme` the site's
-default. It points the front page at an empty Canvas landing page shipped in `content/`, and hides
-from the Canvas page builder a set of administrative components that are not useful for building
-pages.
+It also installs `drupal_cms_helper`, the `stark` theme, `agora_theme` — Ágora's own theme, a
+separate Drupal.org project rather than code bundled here — `agora_core`, Ágora's companion module,
+which hands the sign-in page to that theme, and `config_guardian`, which audits the site's own
+configuration; and it makes `agora_theme` the site's default. It points the front page at an empty
+Canvas landing page shipped in `content/`, and hides from the Canvas page builder a set of
+administrative components that are not useful for building pages.
 
 ## Known limitations
 

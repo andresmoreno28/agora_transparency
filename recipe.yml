@@ -176,6 +176,17 @@ install:
   # what carries the theme's later releases into new installs, which is the only
   # update path a site template has: recipes apply once.
   - agora_theme
+  # Ágora's companion module, `drupal/agora_core` (D-054). It removes `user.login`
+  # from Gin Login's routes, so the sign-in page is served by the site's default
+  # theme rather than by the administration theme; the password reset and the
+  # other account pages stay with Gin Login. Declared in `composer.json`'s
+  # `require` and justified at D-080 (rule 2 of the project's SBOM policy).
+  # Installed through this recipe ON PURPOSE: on an offline Drupal CMS site the
+  # module installer, called directly, throws from Automatic Updates' status
+  # checks (I-122, automatic_updates issue 3506894), and a recipe does not. It
+  # declares no dependencies, and on a site without Gin Login its alter does
+  # nothing.
+  - agora_core
   # -- area: publishing ---------------------------------------------------------
   # (empty by decision: unit 004 is deferred past the first release — D-060)
   # -- area: foi ----------------------------------------------------------------
@@ -187,8 +198,11 @@ install:
   # THE MECHANISM BEHIND THE PRODUCT CLAIM "the portal audits its own
   # configuration", which is why it is a dependency rather than a suggestion.
   #
-  # Declared in `composer.json` as `drupal/config_guardian: ^1.0` with its SBOM
-  # line at D-059 (rule 2 of the project's SBOM policy). Verified at source on the day it was
+  # Declared in `composer.json` as `drupal/config_guardian: ^1.0.5` with its SBOM
+  # line at D-059 (rule 2 of the project's SBOM policy); the floor is 1.0.5 because
+  # AccessibilityTest declares one set of installed-markup violations, measured on
+  # 1.0.5, and README's baseline export needs 1.0.5 on PHP before 8.4 (D-059's
+  # amendment of T-0542). Verified at source on the day it was
   # added: 4 releases, newest STABLE 1.0.3, `<security covered="1">`, core
   # `^10.5 || ^11 || ^12`, licence GPL-2.0-or-later. Its `info.yml` declares
   # `dependencies: [drupal:config, drupal:file]` — two CORE modules — so this

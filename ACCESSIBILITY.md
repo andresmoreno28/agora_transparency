@@ -21,12 +21,13 @@ the time this text was written. The shipped accessibility statement, at `/access
 ([`content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml`](content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml)),
 points here for this account instead of repeating it.
 
-* **Automated accessibility testing of the pages this site serves.** axe-core runs over nine pages
+* **Automated accessibility testing of the pages this site serves.** axe-core runs over ten pages
   of the site as it is installed: the two composed landing pages, the front page as a visitor meets
   it, four of the eight listing routes (two of the six registers, the cross-type listing and the
-  document library), one published record rendered through its own page, and the page-not-found
-  screen. They are scanned **as an anonymous visitor**, because that is what a member of the public
-  is served: the same pages scanned while signed in report findings in the administrative toolbar,
+  document library), one published record rendered through its own page, the page-not-found
+  screen, and the sign-in page, which the site's own theme serves through `drupal/agora_core`. They
+  are scanned **as an anonymous visitor**, because that is what a member of the public is served:
+  the same pages scanned while signed in report findings in the administrative toolbar,
   which no visitor ever sees and which this site does not own. Result: **0 violations**. The number
   of rules actually applied is recorded for each page rather than assumed, because a rule that never
   ran cannot have passed; and each of them is checked to be a different page, because a site serving
@@ -117,8 +118,8 @@ No level of conformance is claimed for it.
 Every push measures one page of it: the Config Guardian dashboard, which this package installs, read
 by a user holding only the Governance auditor role, which this package ships. Each finding axe
 reports there sits in markup this package does not write: the Gin administration theme's and
-`coffee`'s, which the accessibility statement reports, and, on Config Guardian releases before
-1.0.5, Config Guardian's own. The test fails if that set of findings changes. No other
+`coffee`'s, which the accessibility statement reports. The test fails if that set of findings
+changes. No other
 administrative page is checked on any push.
 
 The keyboard walk of 2026-09-23 found failures on the same surface, every one in markup this
@@ -153,9 +154,10 @@ Named, so that silence is not read as a pass.
   covers the focused element was not measured.
 * **Content added after installation**: pages, files, embedded maps, video players and widgets a
   site adds itself. Nothing here reaches them.
-* **The sign-in page.** On a Drupal CMS site it is served by the administration theme, not by
-  `drupal/agora_theme`, and no check measures it. A companion module is planned to hand it to the
-  site's own theme.
+* **The password reset page and the other account pages.** On a Drupal CMS site Gin Login serves
+  them in the administration theme, not in `drupal/agora_theme`: `drupal/agora_core` hands only the
+  sign-in page to the site's own theme. The password reset, registration, one-time sign-in and
+  sign-out confirmation pages stay with Gin Login, and no check measures them.
 
 ## Method and date
 

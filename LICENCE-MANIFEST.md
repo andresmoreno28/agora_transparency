@@ -78,7 +78,7 @@ repository more than once. `tests/bin/packaged-claims` performs the same subtrac
 
 ## 2 · The projects this template requires — GPL-2.0-or-later
 
-**6 projects** are named in `composer.json`'s `require`, and **every one of them is a project
+**7 projects** are named in `composer.json`'s `require`, and **every one of them is a project
 hosted on Drupal.org**, where the licensing policy makes `GPL-2.0-or-later` a condition of hosting.
 None is vendored: Composer resolves them all at install time and none of their files is inside this
 tarball.

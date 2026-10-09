@@ -574,6 +574,39 @@
 # release every fresh install is about to receive, every other check stands as it was, and
 # the G11 checks assert `> 0` rather than a length, so wave 1 stays at 99 checks.
 #
+# -----------------------------------------------------------------------------------------
+# REGENERATED AGAIN 2026-10-09 (T-0542: the template requires drupal/agora_core and
+# drupal/config_guardian ^1.0.5, and the sign-in page joins the anonymous axe scan), the
+# packaged-claims record, the same four steps.
+#
+#   1. tests/bin/ported-drift FIRST, before the record moved: 3 records compared, 3 read,
+#      3 provenance verified, **0 behind** 1.x at 5f751241, oldest drift 0 day(s), 0 past the
+#      cap, 0 findings, network READ anonymously. claims-match-readme has not moved since
+#      a0f4cdf, so there was nothing upstream to take and no per-hunk decision to make.
+#   2. What changed HERE: the single-surface count reads a fourth name, `sign-in`, beside
+#      `front`, `not-found` and `node:`, with its comment and its fatal saying four surfaces;
+#      the D-061 block's account of the two declared sets is put in the past tense and says
+#      what T-0542 did - the pre-1.0.5 set deleted, the 1.0.5 set renamed
+#      INSTALLED_MARKUP_VIOLATIONS - so the sed that reads the one set left did not change by a
+#      byte; the three recipe.yml line numbers in the T-0614 block are re-derived by grep
+#      (all three were already off at the parent commit); "five terms" becomes "six terms";
+#      and the ACCESSIBILITY.md NOT CHECKED entry names the account pages Gin Login still
+#      serves where it named the sign-in page. Nothing came from agora_theme. Predicted before
+#      the run and then printed: files 9, claims 34, comparisons 47, one-copy checks 9, not
+#      checked 18, findings 0 - every count unchanged, because no extraction or comparison was
+#      added or removed.
+#   3. local_sha256 re-derived with sha256sum from the file on disk and substituted by
+#      command, never typed: 8bcbd84a... -> ef96a98a.... source_sha256 and source_commit
+#      UNCHANGED and not retyped, because step 1 proved the source has not moved, so
+#      DECLARED_COMMITS in ported-copies does not move either.
+#   4. ported-drift re-run afterwards: same 3 / 3 / 3 / 0 / 0 / 0; ported-copies 3 verified,
+#      3 source commits on disk and 3 declared, 0 findings.
+#
+# WATCHED REFUSING THE EDIT BEFORE THE RECORD MOVED: with the script edited and this record
+# not yet regenerated, ported-copies printed EDITED for packaged-claims, `verified: 2`,
+# `findings: 1`, exit 1. The direction is the one D-028 permits: no check was removed or
+# loosened, and the one pattern that moved now counts one more surface.
+#
 # script            role       status    local_sha256                                                    source_path                     source_sha256                                                    source_commit
 #
 # -----------------------------------------------------------------------------------------
@@ -636,7 +669,7 @@ preflight          preflight  adapted   e1ce157c4c1a406140ca4f6b84ad26afb4344222
 # that well-documented. None of those nine mentions records WHICH COMMIT, so none of them
 # can be checked, and no mechanism could ever tell you the source had moved. That is the
 # difference between prose about provenance and provenance.
-packaged-claims    invariant  adapted   8bcbd84a18295b2411bc8692f4b7ce98e1953ee1beddc90e6977dcfea87eadd9 tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
+packaged-claims    invariant  adapted   ef96a98a6f454ab7ad7f2ae82383a939c84402a6f988d8160e148dfd4c7a06f1 tests/bin/claims-match-readme   8fe7bad3e5b89276a29009d1ab179acb2138ef6f68f0297684094be38d9a95b0 a0f4cdf13e3e72add7c9f6a09d8d3cf38b331e1b
 #
 # -----------------------------------------------------------------------------------------
 # THE SOURCE COMMITS, DECLARED RATHER THAN COUNTED. tests/bin/ported-copies carries its own

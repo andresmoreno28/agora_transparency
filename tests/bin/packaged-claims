@@ -796,13 +796,13 @@ A_REGISTERS=$(to_num "$(field 1 '.*two of the ([a-z]+) registers.*')")
 CANVAS_N=$(count_tracked 'content/canvas_page/*.yml')
 VIEW_N=$(sed -n "/private const VIEW_PAGES = \[/,/\];/p" "$A11Y_TEST" \
   | grep -E "^ +'agora_base_[a-z_]+'," | wc -l | tr -d '[:space:]')
-# The three surfaces AccessibilityTest declares individually rather than in a loop: the front
-# page, the one published record and the not-found screen. Counted from the PHP rather than
-# written here as a 3, so that deleting one moves this figure instead of leaving it asserting a
-# total nothing produces.
-SINGLE_N=$(grep -E "^ +'name' => '(front|not-found|node:)" "$A11Y_TEST" | wc -l | tr -d '[:space:]')
+# The four surfaces AccessibilityTest declares individually rather than in a loop: the front
+# page, the one published record, the not-found screen and, since T-0542, the sign-in page.
+# Counted from the PHP rather than written here as a 4, so that deleting one moves this figure
+# instead of leaving it asserting a total nothing produces.
+SINGLE_N=$(grep -E "^ +'name' => '(front|not-found|node:|sign-in)" "$A11Y_TEST" | wc -l | tr -d '[:space:]')
 [ "${VIEW_N:-0}" -gt 0 ] || fatal "VIEW_PAGES in $A11Y_TEST yielded 0 entries. The scanned-route figure would then be compared against a total assembled from nothing."
-[ "${SINGLE_N:-0}" -gt 0 ] || fatal "no single-surface page declarations found in $A11Y_TEST. The page total would be short by the front page, the record and the 404, and would still be a number."
+[ "${SINGLE_N:-0}" -gt 0 ] || fatal "no single-surface page declarations found in $A11Y_TEST. The page total would be short by the four surfaces declared one by one - the front page, the record, the 404 and the sign-in page - and would still be a number."
 
 compare 'canvas_pages' "$A_CANVAS" "$CANVAS_N" 'git ls-files content/canvas_page/*.yml'
 compare 'listing_scanned' "$A_SCANNED" "$VIEW_N" "VIEW_PAGES in $A11Y_TEST"
@@ -817,7 +817,7 @@ compare 'a11y_pages' "$A_PAGES" "$((CANVAS_N + VIEW_N + SINGLE_N))" \
 # that supplies nine, so a Canvas page could have stopped shipping, the run would have scanned
 # eight, every per-page assertion would have held, and the statement would have gone on saying
 # nine. The floor is now an equality against a named constant, and this reads that constant out of
-# the PHP and compares it against the same five terms the line above sums.
+# the PHP and compares it against the same six terms the line above sums.
 #
 # WHY IT IS HERE AND NOT ONLY IN THE TEST. The test can only fail where a rig exists - a Selenium
 # browser, a built Drupal, thirteen minutes. This comparison is offline, costs nothing, and fails
@@ -840,14 +840,17 @@ compare 'registers_stated' "$A_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_ba
 # The shipped statement excluded the administrative interface by saying it "is Drupal core"
 # until 2026-09-21. It is not. An Agora install's admin interface is the Gin THEME, core
 # `navigation` and contrib `coffee` - all three installed by the `drupal_cms_site_template_base`
-# recipe this package applies at recipe.yml:82 - plus the Config Guardian dashboard this package
-# installs itself at recipe.yml:211 and configures through its own
-# config/config_guardian.settings.yml. (recipe.yml:766-780 is a COMMENT explaining why those
+# recipe this package applies at recipe.yml:81 - plus the Config Guardian dashboard this package
+# installs itself at recipe.yml:231 and configures through its own
+# config/config_guardian.settings.yml. (recipe.yml:785-799 is a COMMENT explaining why those
 # settings are NOT a config action, which is a different thing from being the configuration.)
 # These three line numbers read 64, 190 and 705-721 until 2026-09-23, then 68, 196 and 711-727
 # until 2026-09-26 - true when written, moved each time (by a3695ff, then by the D-018
 # amendment consolidating six recipes - `drupal_cms_admin_ui` among them - into
 # `drupal_cms_site_template_base`) - and were re-derived by grep, not by adding the offset.
+# They then read 82, 211 and 766-780 until 2026-10-09, when T-0542 found all three already off
+# at its parent commit (81, 217 and 771-784 there) before its own agora_core lines and
+# config_guardian comment moved the last two again; re-derived by grep the same way.
 #
 # THE FIRST CLAIM IS AN EXTRACTION AND NOT A COMPARISON, and it is the one that matters most:
 # reword the sentence back and claim_once FATALs in the same commit, naming the pattern. A
@@ -905,17 +908,22 @@ compare 'admin_dashboard_module' "$A_DASH" "$RECIPE_DASH" \
 # IT SAID FOUR THINGS UNTIL 2026-09-27 (T-0541), AND THE FOURTH WAS ABOUT TO GO FALSE WITHOUT
 # BEING EDITED, the way the paragraph above once did. It said the scan finds colour contrast
 # failures in markup Config Guardian itself provides, bound as admin_contrast_owner to the
-# color-contrast entries of INSTALLED_MARKUP_VIOLATIONS. That constant now declares only the
+# color-contrast entries of INSTALLED_MARKUP_VIOLATIONS. That constant then declared only the
 # releases BEFORE 1.0.5: on Config Guardian's 1.0.x branch, measured before its 1.0.5 tag, the
-# seven color-contrast nodes are gone, and AccessibilityTest asserts
-# INSTALLED_MARKUP_VIOLATIONS_FROM_1_0_5 on 1.0.5 and later. composer.json requires ^1.0, so
-# every fresh install receives 1.0.5 once it is published, and admin_contrast_owner - reading the
-# pre-1.0.5 constant by name - would have stayed green over a sentence false on all of them. The
-# sentence left the statement, which now claims no level of conformance for the dashboard, and
-# the comparison and the NOT CHECKED entry about Config Guardian's stylesheet left with it.
-# admin_landmark_owners reads that same constant by name and is true of both releases, because
-# both sets declare the same two region entries, owned by gin and coffee. T-0542 deletes the
-# constant, and this reader moves with it.
+# seven color-contrast nodes were gone, and AccessibilityTest asserted
+# INSTALLED_MARKUP_VIOLATIONS_FROM_1_0_5 on 1.0.5 and later. composer.json required ^1.0, so
+# every fresh install received 1.0.5 once it was published, and admin_contrast_owner - reading
+# the pre-1.0.5 constant by name - would have stayed green over a sentence false on all of them.
+# The sentence left the statement, which now claims no level of conformance for the dashboard,
+# and the comparison and the NOT CHECKED entry about Config Guardian's stylesheet left with it.
+# admin_landmark_owners read that same constant by name and was true of both releases, because
+# both sets declared the same two region entries, owned by gin and coffee.
+#
+# WHAT T-0542 DID, 2026-10-09: composer.json now requires ^1.0.5, so no supported install can
+# receive a release before it. The pre-1.0.5 set and AccessibilityTest's choice between the two
+# were deleted, and INSTALLED_MARKUP_VIOLATIONS_FROM_1_0_5 was renamed INSTALLED_MARKUP_VIOLATIONS:
+# the one set left is the two region entries, measured on 1.0.5. This reader reads the one set
+# left, by the name it now holds, so the sed below did not change by a byte.
 #
 # NO NUMERAL IS BOUND, BECAUSE THE PROSE CARRIES NONE, DELIBERATELY. The node, rule and route
 # counts are printed by the gate on every green run; they are facts about other projects' markup
@@ -1506,7 +1514,7 @@ NOT_CHECKED=(
 "The route SECURITY.md gives: the project page it links, the name of the sidebar link on that page, and what the link opens - a new work item on git.drupalcode.org with confidentiality switched on, behind a Drupal.org sign-in. Verified at source on 2026-09-25: the page answered HTTP 200 and carried the link with issue[confidential]=true pre-set, and the new-item address answered with a redirect to sign-in. They are facts about Drupal.org's pages, which can change without a commit here. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND in this pass."
 "The coverage sentence in SECURITY.md - that stable releases are covered by Drupal's security advisory policy. It rests on the project's opt-in, which is a setting on Drupal.org and not a file in this package: its API reported field_security_advisory_coverage = covered on 2026-09-25, unchanged since 2026-09-24 15:14 UTC, and the project page says the same in its sidebar. Withdrawing the opt-in needs no commit here, and would leave the sentence false in every package that carries it. READABLE OVER THE NETWORK AND DELIBERATELY NOT BOUND: reading a Drupal.org field would add a figure to --online, which is a decision of its own."
 "The sentence in SECURITY.md that a site template's requirements are copied into the site's own composer.json when Composer adds it to a Drupal CMS site. It describes another project: drupal/cms 2.1.6 requires drupal/core-recipe-unpack ^11.3.10 and allows it as a plugin, read from its project template at that tag on 2026-09-25, and specs/000-project/DECISIONS.md records the flattening as measured in a rig. A later Drupal CMS could drop the plugin or switch it off, and nothing offline here would see it."
-"What ACCESSIBILITY.md says beyond the figures registered above and the one-copy rule that runs over all of it. Its account of the keyboard walkthrough - the dates, the two builds, what the machine found and what the person confirmed - is a record of two dated events whose evidence lives in specs/, which is not packaged; and its sentences about Gin, coffee, the consent banner and the sign-in page describe other projects' behaviour on the sites that were walked. READABLE AND DELIBERATELY NOT BOUND."
+"What ACCESSIBILITY.md says beyond the figures registered above and the one-copy rule that runs over all of it. Its account of the keyboard walkthrough - the dates, the two builds, what the machine found and what the person confirmed - is a record of two dated events whose evidence lives in specs/, which is not packaged; and its sentences about Gin, coffee, the consent banner and the account pages Gin Login still serves describe other projects' behaviour on the sites that were walked. READABLE AND DELIBERATELY NOT BOUND."
 )
 
 printf '\nNOT CHECKED - named, with a reason, because a guard that silently covers half its subject\n'

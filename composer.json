@@ -4,8 +4,9 @@
     "type": "drupal-recipe",
     "license": "GPL-2.0-or-later",
     "require": {
+        "drupal/agora_core": "^1.0",
         "drupal/agora_theme": "^1.2",
-        "drupal/config_guardian": "^1.0",
+        "drupal/config_guardian": "^1.0.5",
         "drupal/drupal_cms_helper": "^2",
         "drupal/drupal_cms_site_template_base": "^2",
         "drupal/easy_email_express": "^1",

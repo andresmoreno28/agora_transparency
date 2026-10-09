@@ -2824,6 +2824,125 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
+   * The sign-in page is served by the front theme; the reset page is not.
+   *
+   * T-0542. Drupal CMS installs Gin Login, whose theme negotiator hands the
+   * sign-in page and its neighbouring account routes to the administration
+   * theme. The recipe installs `agora_core`, which removes `user.login`, and
+   * only that route, from Gin Login's list (D-052 option C, D-054, D-080). So
+   * the sign-in page must be rendered by `agora_theme`, and the password reset
+   * page must still be rendered by Gin: the second half is what says the
+   * module took one route and not the whole group.
+   *
+   * THE STYLESHEETS ARE THE WITNESS, ported from the rig test that proved
+   * T-0526 on an Ágora install (run R6b). A theme's own CSS is served from its
+   * own folder, and the page's `<link rel="stylesheet">` tags name those
+   * folders. The expected theme must be among them, and every theme folder
+   * must belong to that theme's own chain - the theme and its base themes,
+   * read from the themes' info - so a page styled by two unrelated themes
+   * fails. Measured there: the sign-in page loaded stylesheets from
+   * `agora_theme` only, and the reset page from `gin` and `claro`, Gin's base
+   * theme, only.
+   *
+   * AGGREGATION WOULD MAKE THIS FAIL, NOT PASS. An aggregated stylesheet is
+   * served from the files directory, which names no theme folder, so the
+   * expected theme would be missing from the folders read and the assertion
+   * naming it fails. The count of stylesheet links is asserted first, so a
+   * page with none fails on that count rather than on a folder list that is
+   * empty for a different reason. `drupalSettings` is not read: core writes
+   * its theme only for a theme that is not the default, so it could
+   * corroborate one of the two pages and never the other.
+   *
+   * ANONYMOUS THROUGHOUT, because that is who reads a sign-in page.
+   */
+  public function testSignInPageIsServedByTheFrontTheme(): void {
+    $this->applyRecipe(self::getRecipePath());
+
+    $modules = \Drupal::moduleHandler();
+    $this->assertTrue($modules->moduleExists('agora_core'), 'The recipe must install agora_core, the module that hands the sign-in page to the front theme.');
+    $this->assertTrue($modules->moduleExists('gin_login'), 'Drupal CMS installs gin_login, which is what takes the sign-in page; without it this method proves nothing about agora_core.');
+    $themes = $this->config('system.theme');
+    $this->assertSame('agora_theme', $themes->get('default'), 'On an Ágora install the front theme is agora_theme.');
+    $this->assertSame('gin', $themes->get('admin'), 'Drupal CMS sets Gin as the administration theme.');
+
+    // -- The sign-in page: agora_theme's, and nothing of Gin's on it --------
+    $this->drupalGet('user/login');
+    $this->assertSession()->statusCodeEquals(200);
+    $folders = $this->assertRenderedBy('agora_theme', '/user/login');
+    $page = $this->getSession()->getPage();
+    $context = sprintf('/user/login, stylesheet theme folders: %s.', implode(', ', $folders));
+    $this->assertCount(1, $page->findAll('css', 'main.agora-page__main'), "One main landmark of agora_theme's own page. $context");
+    $this->assertCount(1, $page->findAll('css', 'h1'), "Exactly one <h1>. $context");
+    $this->assertCount(0, $page->findAll('css', '.gin-login'), "Nothing on the page may carry gin_login's class. $context");
+
+    // -- The password reset page: still Gin Login's -------------------------
+    $this->drupalGet('user/password');
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertRenderedBy('gin', '/user/password');
+  }
+
+  /**
+   * Asserts which theme rendered the current page, from its stylesheets.
+   *
+   * Three assertions: the page loads at least one stylesheet, the theme's own
+   * folder is among the folders they are served from, and no folder lies
+   * outside that theme's chain. ::testSignInPageIsServedByTheFrontTheme()
+   * explains why the stylesheets are the witness.
+   *
+   * @param string $theme
+   *   The machine name of the theme expected to have rendered the page.
+   * @param string $path
+   *   The path that was read, for the assertion messages.
+   *
+   * @return string[]
+   *   The theme folders the page's stylesheets are served from.
+   */
+  protected function assertRenderedBy(string $theme, string $path): array {
+    $html = $this->getSession()->getPage()->getContent();
+    $links = 0;
+    $folders = [];
+    preg_match_all('#<link\b[^>]*>#i', $html, $tags);
+    foreach ($tags[0] as $tag) {
+      if (!preg_match('#\brel="stylesheet"#i', $tag) || !preg_match('#\bhref="([^"]+)"#i', $tag, $href)) {
+        continue;
+      }
+      $links++;
+      if (preg_match('#/(?:core/)?themes/(?:contrib/|custom/)?([a-z0-9_]+)/#', $href[1], $folder)) {
+        $folders[$folder[1]] = TRUE;
+      }
+    }
+    $folders = array_keys($folders);
+    sort($folders);
+    $chain = $this->themeChain($theme);
+    $context = sprintf('%s: expected %s (theme chain: %s); stylesheet links: %d; theme folders: %s.', $path, $theme, implode(' > ', $chain), $links, $folders ? implode(', ', $folders) : 'none');
+    $this->assertGreaterThan(0, $links, "The page loads no stylesheet at all, so no theme can be read from it. $context");
+    $this->assertContains($theme, $folders, "The page loads no stylesheet from the $theme folder. If the links are aggregated, they name no theme folder and this fails by design. $context");
+    $this->assertSame([], array_values(array_diff($folders, $chain)), "The page loads stylesheets from a theme outside the chain of $theme. $context");
+    return $folders;
+  }
+
+  /**
+   * The theme and its base themes, nearest first, read from the themes' info.
+   *
+   * @param string $theme
+   *   The machine name of a theme.
+   *
+   * @return string[]
+   *   The theme followed by each of its base themes.
+   */
+  protected function themeChain(string $theme): array {
+    $info = \Drupal::service('extension.list.theme')->getAllAvailableInfo();
+    $chain = [];
+    $current = $theme;
+    while (is_string($current) && $current !== '' && !in_array($current, $chain, TRUE)) {
+      $chain[] = $current;
+      $base = $info[$current]['base theme'] ?? FALSE;
+      $current = is_string($base) ? $base : NULL;
+    }
+    return $chain;
+  }
+
+  /**
    * The service-area cards sit beside the register, not on the landing page.
    *
    * T-1310. `block_6` was the fifth of SEVEN components on the Canvas front
