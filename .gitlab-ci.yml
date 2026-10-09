@@ -179,19 +179,14 @@ variables:
 # and that exception list is empty as of 2026-08-24. Do not paper over it.
 #
 # What the job actually does, so a later reader need not guess: it creates a
-# fresh `drupal/cms` project at $_DRUPAL_CMS_TAG (default CMS_STABLE, '2.1.3' as
-# of 2026-08-24), adds THIS package as a Composer path repository, and runs
-# drupal_cms's own DrupalCmsCompatibilityTest against it
-# (include.drupalci.main.yml:884-930). PROJECT_TYPE resolves to "recipe" because
-# recipe.yml exists at the root (include.drupalci.main.yml:61-62).
+# fresh `drupal/cms` project at $_DRUPAL_CMS_TAG (default CMS_STABLE, '2.2.0' on
+# the CI templates' default ref as of 2026-10-09), adds THIS package as a
+# Composer path repository, and runs drupal_cms's own DrupalCmsCompatibilityTest
+# against it (include.drupalci.main.yml:884-930). PROJECT_TYPE resolves to
+# "recipe" because recipe.yml exists at the root
+# (include.drupalci.main.yml:61-62).
 ################
   _AUTORUN_DRUPAL_CMS: 'all'
-  # The Drupal core release CI installs. The CI templates' default ref (1.17.0)
-  # sets 11.4.6, which cannot render a page once Composer resolves twig/twig
-  # 3.30.0 (core issue 3625969); 11.4.8 carries the fix. Overriding the included
-  # value redefines no upstream job. Remove it once the default ref's
-  # CORE_STABLE is 11.4.8 or later: from then on it would hold CI back.
-  CORE_STABLE: '11.4.8'
 
 
 ################
