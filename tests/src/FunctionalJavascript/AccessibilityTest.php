@@ -285,8 +285,8 @@ class AccessibilityTest extends WebDriverTestBase {
   /**
    * The root element of Config Guardian's dashboard template.
    *
-   * `<div class="config-guardian-dashboard">`, line 16 of
-   * templates/config-guardian-dashboard.html.twig in config_guardian 1.0.3.
+   * `<div class="config-guardian-dashboard">`, line 21 of
+   * templates/config-guardian-dashboard.html.twig in config_guardian 1.1.0.
    * It is the wait target, part of the page-identity check and the ownership
    * anchor for that module's markup, so it is written once.
    */
@@ -330,23 +330,23 @@ class AccessibilityTest extends WebDriverTestBase {
    *
    * Each is rule, axe selector and owner, asserted EXACTLY (D-061, option B).
    *
-   * MEASURED ON CONFIG GUARDIAN 1.0.5, which is the floor composer.json
-   * requires (D-059, amended by T-0542). Two nodes over one rule, the same two
-   * on every scan: Gin's primary-tabs heading and the wrapper of Coffee's
-   * search form, each placed outside every landmark by its own project's
-   * markup (OWNERSHIP_ANCHORS says where each one's markup begins). First
-   * measured on Config Guardian's 1.0.x branch at 051b154, before the 1.0.5
-   * tag, in a replica of the pipeline's phpunit job that swapped only Config
-   * Guardian (T-0541, run R2); then by CI pipeline 979001, the first after the
-   * release was published, whose composer job locked 1.0.5 and whose two
-   * phpunit jobs each found exactly these two and nothing else.
+   * MEASURED ON CONFIG GUARDIAN 1.1.0, which is the floor composer.json
+   * requires (D-059, amended by T-0729 under D-081). Two nodes over one rule,
+   * the same two on every scan: Gin's primary-tabs heading and the wrapper of
+   * Coffee's search form, each placed outside every landmark by its own
+   * project's markup (OWNERSHIP_ANCHORS says where each one's markup begins).
+   * Measured on 1.1.0 in a replica of the pipeline's phpunit job (T-0729, rig
+   * ~/agora-t0729), which found exactly these two and nothing else - the same
+   * two that 1.0.5 gave, first measured on Config Guardian's 1.0.x branch at
+   * 051b154 (T-0541, run R2) and then by CI pipeline 979001. 1.1.0 rewrote
+   * part of the dashboard template and added no finding to it.
    *
    * ONE SET, BECAUSE ONE RELEASE LINE IS ALLOWED IN. Releases before 1.0.5
    * also put seven of Config Guardian's own text nodes under the AA contrast
    * floor, and while the template accepted them this file declared a second
    * set and chose between the two by the version installed. With the floor at
-   * 1.0.5 no supported install can receive those releases, so the second set
-   * and the choice left together.
+   * 1.1.0 no supported install can receive those releases, so the second set
+   * and the choice stay gone.
    *
    * A SET AND NOT A TOTAL, because a total holds when one violation vanishes
    * and another arrives. A new entry fails; so does a declared entry that is

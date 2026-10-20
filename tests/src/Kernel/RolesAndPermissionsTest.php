@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Composer\InstalledVersions;
+use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Config\FileStorage;
 use Drupal\KernelTests\KernelTestBase;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -186,8 +188,8 @@ final class RolesAndPermissionsTest extends KernelTestBase {
     // is something a NON-administrator can witness: an administrator already
     // holds `view config snapshots` implicitly, so a product claim resting on
     // that alone would be a claim about the administrator, not about the
-    // portal. See config/user.role.agora_governance_auditor.yml for why the
-    // two unrestricted permissions it does NOT hold were declined.
+    // portal. See config/user.role.agora_governance_auditor.yml for why it
+    // holds one restricted permission by name and declines an unrestricted one.
     'agora_governance_auditor' => [
       'label' => 'Governance auditor',
       'permissions' => [
@@ -198,50 +200,76 @@ final class RolesAndPermissionsTest extends KernelTestBase {
   ];
 
   /**
-   * The seven `restrict access: true` permissions Config Guardian declares.
+   * The six `restrict access: true` permissions Config Guardian declares.
    *
-   * COUNTED AT SOURCE, in `config_guardian.permissions.yml` inside the
-   * published 1.0.3 tarball, on 2026-09-20: ELEVEN permissions, SEVEN of them
-   * carrying `restrict access: true`. They are listed here BY NAME rather than
-   * as a number for the reason T-0511's criterion gives in as many words — a
-   * count would still pass if upstream renamed one, and a role that quietly
-   * acquired a renamed restricted permission is exactly the drift this guard
-   * exists to refuse.
+   * COUNTED AT SOURCE, in `config_guardian.permissions.yml` at the 1.1.0 tag:
+   * EIGHT permissions, SIX of them `restrict access: true`. Listed here BY NAME
+   * rather than as a number, because a count still passes when upstream renames
+   * one, and a role that quietly acquired a renamed restricted permission is
+   * exactly the drift this guard exists to refuse.
    *
-   * ⚠️ THE LIST'S OWN LENGTH IS ASSERTED BELOW, because a deny-list somebody
-   * shortens passes by construction: zero restricted permissions checked
-   * against a role reports "0 held" precisely as seven do (I-028). That is the
-   * same guard `tests/bin/no-boilerplate`, `no-real-people` and
-   * `no-varchar-aggregate` put on their own deny-lists, arriving in PHP.
+   * ⚠️ AND THE LIST IS COMPARED WITH THE INSTALLED MODULE'S OWN FILE, in both
+   * directions (T-0729). Until 1.1.0 this list was re-checked by hand "when the
+   * constraint moves", and 1.1.0 arrived through a caret without anyone moving
+   * it: `view config snapshots` and `export config snapshots` became
+   * restricted, and this list still described 1.0.3. A list read against the
+   * release that is installed cannot describe another one.
+   *
+   * ⚠️ ITS LENGTH IS ASSERTED TOO, because a deny-list somebody shortens passes
+   * by construction: zero restricted permissions checked against a role
+   * reports "0 held" precisely as six do (I-028).
    */
   private const CONFIG_GUARDIAN_RESTRICTED = [
     'administer config guardian',
     'delete config snapshots',
-    'export configuration',
+    'export config snapshots',
     'import config snapshots',
-    'import configuration',
     'restore config snapshots',
+    'view config snapshots',
+  ];
+
+  /**
+   * The three restricted permissions of core's `config` module.
+   *
+   * Config Guardian 1.0.x declared these in its own permissions file, and this
+   * test listed them with its seven; 1.1.0 no longer does, and its Sync pages
+   * require them from core. The auditor must hold none of them: each one
+   * changes the configuration, or hands it out whole.
+   */
+  private const CORE_CONFIG_RESTRICTED = [
+    'export configuration',
+    'import configuration',
     'synchronize configuration',
   ];
 
   /**
-   * The two unrestricted Config Guardian permissions deliberately declined.
+   * The restricted permissions the auditor holds by name: one (D-081, A).
    *
-   * These are the interesting half: granting either would have been free, and
-   * neither is restricted, so nothing upstream would have objected.
-   *  - `create config snapshots` lets its holder fill the snapshot store on
-   *    demand, and both caps in `config_guardian.settings.yml` delete the
-   *    OLDEST automatic snapshots first — so an auditor with this permission
-   *    can push the history they exist to read off the end of the table.
-   *  - `export config snapshots` returns a file containing the site's entire
-   *    active configuration, which is the largest single disclosure surface
-   *    this module has. Reading the dashboard needs none of it.
+   * `view config snapshots` is the only permission that reaches the dashboard,
+   * the snapshot list, the comparison and the activity log, and the role
+   * exists to read them. Config Guardian restricts it from 1.1.0 because a
+   * comparison shows configuration values; D-081 answers that by keeping the
+   * configuration that holds credentials out of every snapshot
+   * (`config/config_guardian.settings.yml`, `exclude_patterns`). It is asserted
+   * HELD, so the exception cannot outlive the grant it excuses.
+   */
+  private const CONFIG_GUARDIAN_HELD_RESTRICTED = [
+    'view config snapshots',
+  ];
+
+  /**
+   * The unrestricted Config Guardian permission deliberately declined.
+   *
+   * `create config snapshots` writes a row to a database table on demand.
+   * Manual snapshots are never pruned and do not count against the automatic
+   * ones, so it can no longer push the history off the end of the table; but an
+   * auditor who writes to the store they audit is no longer only reading it.
    * Asserted as an ABSENCE, because least privilege is only real when what was
-   * left out is checked for.
+   * left out is checked for. `export config snapshots`, declined here until
+   * 1.1.0, is restricted now and checked with the list above.
    */
   private const CONFIG_GUARDIAN_DECLINED = [
     'create config snapshots',
-    'export config snapshots',
   ];
 
   /**
@@ -429,39 +457,67 @@ final class RolesAndPermissionsTest extends KernelTestBase {
   /**
    * Tests the governance auditor against Config Guardian's own permission list.
    *
-   * T-0511. The equality half of the criterion is already carried by the method
-   * above, which asserts every shipped role's permission set in BOTH
-   * directions. What this adds is the half equality cannot express: that the
-   * role holds NONE of the seven permissions Config Guardian declares
-   * `restrict access: true`, **listed by name**, so a restricted permission
-   * that upstream renames or adds cannot slip onto this role unnoticed.
+   * T-0511, rewritten for Config Guardian 1.1.0 by T-0729 (D-081). The equality
+   * half of the criterion is already carried by the method above, which
+   * asserts every shipped role's permission set in BOTH directions. What this
+   * adds is the half equality cannot express: that the role holds none of the
+   * permissions Config Guardian and core's `config` module declare
+   * `restrict access: true`, **listed by name**, except the one it holds by
+   * name, so a restricted permission that upstream renames or adds cannot slip
+   * onto this role unnoticed.
    *
-   * ⚠️ WHY A NAMED LIST AND NOT A COUNT. A count passes unchanged if upstream
-   * renames `restore config snapshots`; the role would then be checked against
-   * a permission that no longer exists while the one that does goes unexamined.
-   * The seven names are read out of `config_guardian.permissions.yml` in the
-   * published 1.0.3 and re-checked when the constraint moves.
+   * ⚠️ THE NAMED LIST IS READ AGAINST THE INSTALLED RELEASE. The restricted
+   * names are parsed out of the installed module's permissions file,
+   * `config_guardian.permissions.yml`, and compared with the list here, so a
+   * release that restricts, renames or drops a permission fails this method on
+   * the first pipeline that installs it, instead of the list going on
+   * describing an older release.
    *
-   * ⚠️ AND THE LIST'S OWN LENGTH IS ASSERTED FIRST. A deny-list emptied by an
+   * ⚠️ AND THE LISTS' OWN LENGTHS ARE ASSERTED FIRST. A deny-list emptied by an
    * edit reports "0 restricted permissions held" exactly as a correct one does
-   * (I-028), so the denominator is checked before it is used — the same shape
-   * the shell invariants put on their deny-lists, and the same shape the method
-   * above puts on `$shipped`.
+   * (I-028), and a parsed set that came back empty would make the comparison
+   * agree with an emptied list, so both denominators are checked before either
+   * is used.
    */
   public function testGovernanceAuditorHoldsNoRestrictedPermission(): void {
     $storage = new FileStorage(dirname(__FILE__, 4) . '/config');
     $assertions = 0;
 
     // -- The denominators, before anything is concluded from them ------------
-    $this->assertCount(7, self::CONFIG_GUARDIAN_RESTRICTED, 'Config Guardian 1.0.3 declares seven `restrict access: true` permissions; a shorter list here would check less and still report "0 held".');
+    $this->assertCount(6, self::CONFIG_GUARDIAN_RESTRICTED, 'Config Guardian 1.1.0 declares six `restrict access: true` permissions; a shorter list here would check less and still report "0 held".');
     $assertions++;
-    $this->assertCount(2, self::CONFIG_GUARDIAN_DECLINED, 'Two unrestricted Config Guardian permissions are deliberately declined; an empty list would assert nothing.');
+    $this->assertCount(3, self::CORE_CONFIG_RESTRICTED, 'Core\'s `config` module declares three restricted permissions; a shorter list would check less and still report "0 held".');
     $assertions++;
+    $this->assertCount(1, self::CONFIG_GUARDIAN_DECLINED, 'One unrestricted Config Guardian permission is deliberately declined; an empty list would assert nothing.');
+    $assertions++;
+    $restricted = array_merge(self::CONFIG_GUARDIAN_RESTRICTED, self::CORE_CONFIG_RESTRICTED);
     $this->assertSame(
-      self::CONFIG_GUARDIAN_RESTRICTED,
-      array_values(array_unique(self::CONFIG_GUARDIAN_RESTRICTED)),
-      'The restricted list must hold seven DISTINCT names; a duplicate would inflate the count while narrowing the check.',
+      $restricted,
+      array_values(array_unique($restricted)),
+      'The restricted lists must hold nine DISTINCT names; a duplicate would inflate the count while narrowing the check.',
     );
+    $assertions++;
+    $this->assertSame([], array_values(array_diff(self::CONFIG_GUARDIAN_HELD_RESTRICTED, self::CONFIG_GUARDIAN_RESTRICTED)), 'A permission held by name as an exception must be one of the restricted permissions; otherwise it excuses nothing.');
+    $assertions++;
+
+    // -- The named list against the release that is installed ----------------
+    $package = 'drupal/config_guardian';
+    $file = InstalledVersions::isInstalled($package) ? InstalledVersions::getInstallPath($package) . '/config_guardian.permissions.yml' : '';
+    $raw = $file !== '' && is_readable($file) ? file_get_contents($file) : FALSE;
+    if (!is_string($raw)) {
+      $this->fail(sprintf('%s is not installed according to Composer, or its config_guardian.permissions.yml cannot be read at "%s"; the restricted list cannot be compared with the release this site would install.', $package, $file));
+    }
+    $declared = Yaml::decode($raw);
+    $parsed = is_array($declared) ? array_keys(array_filter(
+      $declared,
+      static fn ($definition): bool => is_array($definition) && ($definition['restrict access'] ?? FALSE) === TRUE,
+    )) : [];
+    sort($parsed);
+    $this->assertNotEmpty($parsed, sprintf('%s yielded no `restrict access: true` permission. Compared with an empty set, the list above would be checked against nothing.', $file));
+    $assertions++;
+    $listed = self::CONFIG_GUARDIAN_RESTRICTED;
+    sort($listed);
+    $this->assertSame($parsed, $listed, sprintf('The restricted permissions named here must be exactly those the installed %s %s declares `restrict access: true`, compared in both directions.', $package, InstalledVersions::getPrettyVersion($package)));
     $assertions++;
 
     $data = $storage->read('user.role.agora_governance_auditor');
@@ -472,7 +528,7 @@ final class RolesAndPermissionsTest extends KernelTestBase {
     $this->assertNotEmpty($permissions, 'The auditor must hold at least one permission; a role granting nothing witnesses nothing.');
     $assertions++;
 
-    // -- The criterion: equality, then zero of the seven, by name ------------
+    // -- The criterion: equality, then none of the restricted, by name -------
     $expected = self::ROLES['agora_governance_auditor']['permissions'];
     sort($expected);
     $actual = $permissions;
@@ -481,21 +537,29 @@ final class RolesAndPermissionsTest extends KernelTestBase {
     $assertions++;
 
     $held_restricted = [];
-    foreach (self::CONFIG_GUARDIAN_RESTRICTED as $permission) {
+    foreach (array_diff($restricted, self::CONFIG_GUARDIAN_HELD_RESTRICTED) as $permission) {
       $this->assertNotContains(
         $permission,
         $permissions,
-        "The auditor must not hold `$permission`, which Config Guardian declares `restrict access: true`. An auditor who can restore, delete, import or synchronise configuration is not auditing it.",
+        "The auditor must not hold `$permission`, which is declared `restrict access: true`. An auditor who can restore, delete, import, export or synchronise configuration is not auditing it.",
       );
       $assertions++;
       if (in_array($permission, $permissions, TRUE)) {
         $held_restricted[] = $permission;
       }
     }
-    $this->assertSame([], $held_restricted, 'The auditor holds zero of the seven restricted permissions.');
+    foreach (self::CONFIG_GUARDIAN_HELD_RESTRICTED as $permission) {
+      $this->assertContains(
+        $permission,
+        $permissions,
+        "The auditor is excused for holding `$permission` and must hold it; an exception that outlives its grant would excuse whatever is granted next.",
+      );
+      $assertions++;
+    }
+    $this->assertSame([], $held_restricted, 'The auditor holds no restricted permission except the one held by name.');
     $assertions++;
 
-    // -- The two unrestricted ones declined on purpose, asserted as absences --
+    // -- The unrestricted one declined on purpose, asserted as an absence ----
     foreach (self::CONFIG_GUARDIAN_DECLINED as $permission) {
       $this->assertNotContains(
         $permission,

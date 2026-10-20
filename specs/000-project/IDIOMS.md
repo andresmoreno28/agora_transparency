@@ -1408,3 +1408,15 @@
   each process that applies a recipe (for DDEV, `web_environment` before `ddev drush recipe`),
   reads `drush state:get drupal_cms_telemetry` afterwards, and never opens or saves
   `/admin/config/system/site-information`.** Recorded 2026-10-09 with T-0542.
+
+- I-125 · **A recipe that ships a module's settings object is coupled to that object's shape at
+  every minor release, and a caret constraint delivers the next minor on the day it is tagged.**
+  The template ships `config_guardian.settings` whole, because a recipe's copy replaces the
+  module's own at install time (D-059). Config Guardian 1.1.0 replaced two keys of that object
+  with a retention policy per snapshot type, and `^1.0.5` admitted it: the next pipeline
+  (1008850) failed all 16 of its install tests with `SchemaIncompleteException`, on a commit that
+  changed no code here. The module and the template have the same maintainer, and the module's
+  own suite was green when it was tagged; nothing ran the template against it first.
+  ⚠️ **Before tagging a minor release of a module whose configuration this template ships, run the
+  template's suite against the tag's commit; and when the shape changes, move the template's
+  floor to that minor in the same change as the file.** Recorded 2026-10-20 with T-0729 (D-081).

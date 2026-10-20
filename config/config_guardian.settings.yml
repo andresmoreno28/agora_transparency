@@ -1,74 +1,108 @@
 # Config Guardian, configured for a transparency portal rather than left at the
-# module's defaults (T-0510, D-059).
+# module's defaults (T-0510, D-059; rewritten for Config Guardian 1.1.0 by T-0729,
+# D-081).
 #
-# WARNING: THIS OBJECT IS SHIPPED COMPLETE, WITH EVERY KEY THE SCHEMA DECLARES, AND A
-# PARTIAL COPY WOULD SILENTLY DISABLE THE FEATURE. `RecipeRunner::processInstall()`
-# hands the recipe's own `config/` to the config installer wrapped in a
-# `RecipeOverrideConfigStorage`, whose documented purpose is "allow the recipe to
-# override simple configuration from the modules" - so this file REPLACES
-# `config_guardian/config/install/config_guardian.settings.yml` wholesale at
-# module-install time; it does not merge with it. A key omitted here therefore
-# arrives as NULL, and `SettingsService::isAutoSnapshotEnabled()` reads
-# `(bool) $this->getSettings()->get('auto_snapshot_enabled')` with no `??`
-# fallback: NULL becomes FALSE, automatic snapshots stop, and nothing reports it.
-# Four of the seven getters do have a `?? default`; three do not. Ship all seven.
+# WARNING: THIS OBJECT IS SHIPPED COMPLETE, WITH EVERY KEY THE SCHEMA DECLARES.
+# `RecipeRunner::processInstall()` hands the recipe's own `config/` to the config
+# installer wrapped in a `RecipeOverrideConfigStorage`, whose documented purpose
+# is "allow the recipe to override simple configuration from the modules" - so
+# this file REPLACES `config_guardian/config/install/config_guardian.settings.yml`
+# wholesale at module-install time; it does not merge with it. A key omitted here
+# arrives as NULL, and in 1.1.0's `SettingsService` that means three different
+# things: `isAutoSnapshotEnabled()` and `isAutoSnapshotBeforeImport()` cast NULL
+# to FALSE and silently stop the automatic snapshots; `storesActivityIpAddresses()`
+# reads NULL as TRUE and records IP addresses; the retention getters fall back to
+# the module's own limits (50 snapshots and 90 days for the automatic types).
+# `ValidationTest::testApply()` asserts that every leaf key of the installed
+# schema is shipped here, and nothing else.
 #
-# WARNING: AND THE COMMENTS BELOW DO NOT SURVIVE A ROUND TRIP. `drush site:export`
+# WARNING: AND THE SHAPE BELONGS TO ONE MINOR RELEASE. 1.1.0 replaced 1.0.x's
+# `max_snapshots` and `retention_days` with `retention`, per snapshot type, and
+# dropped this object's `langcode`; a copy of 1.0.5's shape fails 1.1.0's schema
+# on install, and this one fails 1.0.5's. That is why `composer.json` requires
+# `^1.1` (D-081, I-125).
+#
+# WARNING: THE COMMENTS BELOW DO NOT SURVIVE A ROUND TRIP. `drush site:export`
 # regenerates `config/` from the active store, which has no comments. If this
 # object is ever re-exported, restore this header by hand - the reasons are the
-# deliverable T-0510 asked for, not decoration.
+# deliverable, not decoration.
 #
 # WHY NOT A `config.actions` ENTRY IN `recipe.yml` INSTEAD. An action would run
 # after the module had already created its own defaults, so the site would carry
 # the module's values for the length of one request and this file's afterwards -
 # two states where one will do. The override path above produces one.
-langcode: en
 
 # Automatic snapshots, on. The product claim this module carries is that the
 # portal audits its own configuration; a module installed with its scheduler
 # switched off would make that claim false on every install.
 #
-# WARNING: IT NEEDS CRON, and that is not measured. `ConfigGuardianHooks::cron()` is
-# the only automatic producer, so on a site whose cron never fires the interval
-# below describes nothing. Unit 005 plan section 6 holds "scheduled" as PROSE bounded
-# by R16 for exactly this reason, and R16 has no rig measurement yet (wave 22
-# ran with no Docker). Do not write "daily snapshots" into shipped text until it
-# has been observed.
+# WARNING: IT NEEDS CRON. `ConfigGuardianHooks::cron()` is the only producer of
+# `auto` snapshots, so on a site whose cron never fires the interval below
+# describes nothing.
 auto_snapshot_enabled: true
 
-# A snapshot before every configuration import, on. This is the one that earns
-# its place without cron: an import is when configuration actually changes, and
-# it is the moment a rollback target is worth having.
+# A snapshot before every configuration import, on. 1.1.0 makes it the first
+# step of every import core's `ConfigImporter` runs (`config_import_steps_alter`),
+# whichever form or command started it. This is the one that earns its place
+# without cron: an import is when configuration actually changes.
 auto_snapshot_before_import: true
 
-# WEEKLY, NOT THE MODULE'S `daily`, and the reason is arithmetic rather than
-# taste. `cron()` creates a snapshot every time the interval has elapsed,
-# whether or not anything changed - so `daily` on a site whose configuration is
-# stable produces ~365 near-identical full-configuration blobs a year. A small
-# council on shared hosting pays for those in database size, and an audit trail
-# of a config that did not change is not evidence of anything. The changes that
-# matter arrive through `auto_snapshot_before_import` above and through
-# snapshots taken by hand.
+# WEEKLY, NOT THE MODULE'S `daily`. 1.1.0 no longer stores an automatic snapshot
+# identical to the latest one of its type, so a stable configuration no longer
+# fills the table with copies; the interval is still weekly because of the
+# arithmetic below: 400 days at one a week is about 57 snapshots, inside the
+# count of 60, so the age cap and the count cap agree instead of one silently
+# overriding the other.
 auto_snapshot_interval: weekly
 
-# WARNING: TWO CAPS APPLY AND THE TIGHTER ONE WINS, so they are set to say which.
-# `cleanupOldSnapshots()` deletes by age first and then by count. At the weekly
-# interval above, 400 days is about 57 snapshots - so the AGE cap is the
-# operative one and `max_snapshots` is the ceiling behind it.
+# Retention, per snapshot type. `applyRetentionPolicy()` runs on every cron run
+# and applies each type's two limits independently: a snapshot is deleted when
+# it is older than `max_age_days` OR beyond the newest `max_count` of its type.
+# 0 means no limit. Pinned snapshots are never deleted and do not count, and the
+# newest pre-import snapshot is always kept.
 #
-# WARNING: AND `max_snapshots` COUNTS SNAPSHOTS IT WILL NOT DELETE: `getSnapshotCount()`
-# counts every row, while both deletes are restricted to `type = 'auto'`. Manual
-# snapshots therefore consume the budget permanently. 60 leaves room for a
-# handful of them without silently squeezing the automatic history to nothing.
-max_snapshots: 60
-
 # 400 DAYS, NOT THE MODULE'S 90, AND THIS IS THE `retention` HALF OF T-0510.
 # A transparency portal's configuration history is evidence ABOUT the portal:
 # "the register of contracts was published, and public, on the date the law
 # required" is a statement about a financial year, and a 90-day window cannot
 # answer it. 400 days is one year plus the five weeks it takes to notice that a
 # year has passed.
-retention_days: 400
+#
+# `manual` and `imported` are never pruned, the module's own default kept on
+# purpose: each is somebody's deliberate act, and a policy that deleted one
+# would be deleting a decision. They are not counted against the automatic
+# types either - each type has its own budget.
+retention:
+  auto:
+    max_count: 60
+    max_age_days: 400
+  pre_import:
+    max_count: 60
+    max_age_days: 400
+  pre_export:
+    max_count: 60
+    max_age_days: 400
+  pre_rollback:
+    max_count: 60
+    max_age_days: 400
+  manual:
+    max_count: 0
+    max_age_days: 0
+  imported:
+    max_count: 0
+    max_age_days: 0
+
+# The activity log, which records who took, pinned, exported, imported,
+# restored or deleted a snapshot, and every change to these settings.
+activity_log:
+  # The same 400 days as the snapshots it describes: an entry saying who
+  # restored a snapshot is worth as long as the snapshot is.
+  retention_days: 400
+  # NOT RECORDED (D-081, ruling 4). A public body's portal keeps the minimum
+  # about the people who administer it, and each entry still names its user.
+  # WARNING: THE KEY MUST BE PRESENT. `storesActivityIpAddresses()` returns
+  # TRUE when it is missing, so deleting this line turns recording ON.
+  store_ip_addresses: false
 
 # gzip, the module's default, kept deliberately rather than by omission.
 # `compressData()` supports none/gzip/bzip2; gzip is the only one of the three
@@ -77,29 +111,59 @@ retention_days: 400
 compression: gzip
 
 # THE `exclusions` HALF OF T-0510. Patterns are matched against config OBJECT
-# NAMES with glob semantics (`SnapshotManagerService::applyExclusions()`), and
-# the same list also filters what a ROLLBACK is allowed to write back
-# (`RollbackEngineService::filterExcludedConfigs()`) - which is what makes the
-# third entry a security boundary rather than housekeeping.
+# NAMES with glob semantics (`SnapshotManagerService::applyExclusions()`), at
+# the moment a snapshot is taken. 1.1.0 records the patterns in force inside
+# each snapshot, and a rollback leaves alone every name THAT SNAPSHOT's own list
+# matched (`RollbackEngineService`), so a pattern added here protects the
+# snapshots taken after it, not the ones already stored.
 exclude_patterns:
   # Module default, kept. `system.cron` stores `last`, a timestamp rewritten on
   # every cron run, so every snapshot would differ for a reason that is not a
   # configuration change. Excluding it is what keeps a diff readable.
   - 'system.cron'
-  # Module default, kept. A rollback that rewrote `core.extension` would
-  # uninstall modules - that is a site rebuild, not a configuration change, and
-  # it is the one rollback a clerk must never trigger by accident.
+  # Module default, kept. A rollback never changes `core.extension` in 1.1.0
+  # whatever this list says; excluding it here keeps the module list out of
+  # every snapshot's diff as well.
   - 'core.extension'
   # WARNING: THIS PACKAGE'S OWN, AND IT IS THE POINT OF THE WHOLE UNIT.
   # A snapshot is a gzipped blob in a database table that an export writes to a
-  # file and a rollback writes back into active configuration. The `key` module
-  # stores an API key's provider settings - and, with the default provider, the
-  # key itself - in a `key.key.*` config entity. This package ships none, which
-  # `tests/bin/no-key-material` asserts, but a site owner who later configures a
-  # generative provider will have one, and it must not enter a store this
-  # package told their site to create.
+  # file, that a comparison shows on screen, and that a rollback writes back
+  # into active configuration. The `key` module stores an API key's provider
+  # settings - and, with the default provider, the key itself - in a `key.key.*`
+  # config entity. This package ships none, which `tests/bin/no-key-material`
+  # asserts, but a site owner who later configures a generative provider will
+  # have one, and it must not enter a store this package told their site to
+  # create.
   #
   # The cost is stated rather than hidden: a snapshot that omits key entities
   # cannot show that a key was rotated. On a public body's portal, not leaking
   # one beats noticing one, and that trade is the whole reason for the line.
   - 'key.key.*'
+  # THE TWO BELOW WERE MEASURED, NOT GUESSED (T-0729, D-081 ruling 3). On a
+  # Drupal CMS 2.2.3 install of this template, these are the configuration
+  # objects whose schema has a key that holds a credential once a site owner
+  # sets up outgoing mail; every other key matching
+  # `pass|password|secret|token|api_key` on that install is a setting about
+  # passwords or a token placeholder, and D-081 names each one. Excluding them
+  # is what makes `view config snapshots` safe to hand to the governance
+  # auditor, who can compare snapshots and so read their values.
+  #
+  # Core's mailer DSN: `mailer_dsn.user` and `mailer_dsn.password`, empty on a
+  # new site.
+  - 'system.mail'
+  # The transports of `symfony_mailer_lite`, the module this install sends
+  # mail through: an SMTP transport stores `user` and `pass`, and a DSN
+  # transport a `dsn` string that can carry both. A new site has only the
+  # `native` transport, which holds neither. The cost is the same as above:
+  # a change of mail transport does not show in a snapshot.
+  - 'symfony_mailer_lite.symfony_mailer_lite_transport.*'
+
+# Refuse an import from Config Guardian's own import form when its pre-import
+# snapshot cannot be taken. It covers that form only: core's import form and
+# `drush config:import` take the automatic pre-import snapshot above, and go on
+# without it if it fails.
+require_pre_import_snapshot: true
+
+# The change-based risk model of 1.1.0, the module's default, kept: 1 exists only
+# to reproduce 1.0.x's scores for one minor release.
+risk_model: 2

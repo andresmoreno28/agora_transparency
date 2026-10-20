@@ -5968,3 +5968,98 @@ does not happen.
 **Method.** `updates.drupal.org/release-history/agora_core/current`, re-read on the day of the commit: 1 release, `1.0.0`, published 2026-10-09 14:10 UTC, `<security covered="1">`, `core_compatibility` `^11.4`; no dev, alpha, beta or rc release exists. packages.drupal.org: `extra.drupal.version` `1.0.0`, `security-coverage` `covered`, `require` `drupal/core: ^11.4` only. **Dependency closure:** `agora_core.info.yml` declares no dependencies and `composer.json` has no `require` (`gin_login`, `gin` and `agora_theme` are `require-dev` only), so the SBOM grows by one package and zero transitive packages; on a site without Gin Login the alter does nothing. Licence `GPL-2.0-or-later`. **Installed through this recipe, never the module installer**, because the latter throws on an offline Drupal CMS site (I-122, automatic_updates 3506894).
 
 - **D-059 amendment · the floor moves to `^1.0.5`, 2026-10-09 (T-0542).** `composer.json` requires `drupal/config_guardian: ^1.0.5`. Re-read at source on the day: 1.0.5 published 2026-09-27 15:50 UTC, `covered="1"`, core `^11.1 || ^12`; 1.0.4 is a tag with no release. Why: AccessibilityTest now declares one set of installed-markup violations, measured on 1.0.5 (pipeline 979001), and README's baseline export needs 1.0.5 on PHP before 8.4. The table row above (`^1.0`, 1.0.3) stays as written (rule 8).
+
+## D-081 · The template follows Config Guardian 1.1.0: its settings shape, its restricted permissions, and IP addresses not recorded — [ejecutor] 2026-10-20, under D-075
+
+**Signed by [ejecutor] under D-075 and [andres]'s standing instruction of 2026-09-25, open to his
+reversal.** T-0729 implements it.
+
+**Context.** Pipeline 1008850, at `b5630dc`, is red on the three jobs that install the template:
+`Drupal CMS` (job 12980484), `phpunit` (12980407) and `phpunit-pgsql` (12980408). Every one of their
+16 failures is the same exception:
+
+```
+SchemaIncompleteException: Schema errors for config_guardian.settings with the following errors:
+config_guardian.settings:max_snapshots missing schema, config_guardian.settings:retention_days missing schema
+```
+
+Config Guardian 1.1.0 was released on 2026-10-15 at 15:51 UTC, and `^1.0.5` resolves it: the
+`composer` job locks `drupal/config_guardian (1.1.0)`. Its `config_guardian_update_11102()` replaced
+`max_snapshots` and `retention_days` with a retention policy per snapshot type, so the template's
+copy of `config_guardian.settings`, which replaces the module's own at install time, no longer
+matches the schema. 1.1.0 also adds the activity-log settings, `require_pre_import_snapshot` and
+`risk_model`, drops the object's `langcode` (`config_guardian_update_11104()`), and declares
+`view config snapshots` and `export config snapshots` `restrict access: true`.
+
+**Rulings.**
+
+1. **`drupal/config_guardian: ^1.1`.** No one settings file is valid against both schemas: 1.0.5's
+   has no `retention` and 1.1.0's has no `max_snapshots`. Re-read at source on the day:
+   `release-history/config_guardian/current` lists 1.1.0, published 2026-10-15 15:51 UTC,
+   `<security covered="1">`, core `^11.1 || ^12`, supported branch `1.1.`; `config_guardian.info.yml`
+   at the tag still declares only `drupal:config` and `drupal:file`, and its `composer.json`
+   requires only `php: >=8.3`, which Drupal 11 already requires. The SBOM keeps its size.
+2. **The settings object, whole: every leaf key of 1.1.0's schema and no `langcode`.**
+   `auto_snapshot_enabled` true; `auto_snapshot_before_import` true; `auto_snapshot_interval`
+   weekly. Retention per type: `auto`, `pre_import`, `pre_export` and `pre_rollback` keep at most
+   60 snapshots for at most 400 days; `manual` and `imported` are never pruned (0 and 0), because
+   each is somebody's deliberate act. At weekly, 400 days is about 57 automatic snapshots, so the
+   two caps agree instead of one silently overriding the other. `activity_log.retention_days`
+   400; `activity_log.store_ip_addresses` false, written out, because a missing key reads as
+   true. `require_pre_import_snapshot` true; it applies to Config Guardian's own import form
+   only, and Drush and core's form are not affected. `risk_model` 2; `compression` gzip;
+   `exclude_patterns` keeps `system.cron`, `core.extension` and `key.key.*` and adds the patterns
+   ruling 3 measures.
+3. **Option A: the auditor keeps `view config snapshots`, now restricted, as a named exception.**
+   It is the one permission that reaches the dashboard, and the role exists to read it. What the
+   restriction warns about is that a comparison shows configuration values. So every installed
+   configuration object whose schema has a key matching `pass|password|secret|token|api_key` is
+   excluded from snapshots by a pattern, or named here with the reason it is not; the list
+   measured on the rig follows. The role still holds none of the other five restricted
+   permissions, and declines `create config snapshots`.
+4. **IP addresses are not recorded.** A public body's portal keeps the minimum about the people
+   who administer it. The activity log still records each entry's user.
+
+**Cost of being wrong.** An install that cannot apply the template at all, which is today's state;
+or, the other way, a comparison page showing a secret to the auditor, which ruling 3 measures
+rather than assumes.
+
+**What the rig measured for ruling 3**, on `~/agora-t0729`: Drupal CMS 2.2.3 (`create-project
+--no-install`, then `composer install`), core 11.4.10, Config Guardian 1.1.0, the template mirrored
+from the working copy, installed with `drush site:install` (exit 0, 50 s; 105 s on the second
+install below), 0 warnings and 0 errors in watchdog. Every one of the **715** installed
+configuration objects has a schema; walking their **38,176** stored keys and every schema
+definition the installed extensions declare finds **76** keys matching the pattern in **36**
+objects. Two hold a credential once a site owner sets up
+outgoing mail, and both are excluded:
+
+- `system.mail`: `mailer_dsn.user` and `mailer_dsn.password`, core's mailer DSN; both empty on a
+  new site.
+- `symfony_mailer_lite.symfony_mailer_lite_transport.*`: the SMTP transport's `user`, `pass` and
+  `pass_key`, and the DSN transport's `dsn`, which can carry both. Its schema reaches them through
+  a type chosen by the transport plugin, so the static walk could not see them; they were read in
+  the module's own schema file. A new site has only the `native` transport, which holds none.
+  The Mail System module's settings send every module's mail through this one.
+
+Named and not excluded, because none of them holds a credential: `user.settings`
+(`password_reset_timeout`, `password_strength`, `notify.password_reset`, the password policy),
+`user.mail` (`password_reset`, the text of an email), `pathauto.settings` (`safe_tokens`, names of
+placeholders), `redirect.settings` (`passthrough_querystring`), seven `eca.eca.*` models
+(`token_name`, `token_value`: replacement-token placeholders written by Drupal CMS's own recipes),
+31 keys across `views.view.*` (`tokenize`, `bypass_access`), and `core.extension` (the module names
+`token`, `token_or` and `view_password`), which is already excluded. `key`, `ai`, the AI providers,
+`easy_encryption` and `webform` are in the codebase and not installed; `key.key.*` stays excluded
+for the day they are.
+
+**Snapshot sizes**, read with `SELECT type, config_count, LENGTH(config_data) FROM
+config_guardian_snapshot` after Config Guardian's own cron hook took the first automatic snapshot
+and `drush config-guardian:snapshot` a manual one. With the three patterns shipped before this
+decision: 713 objects, **132,913** bytes of gzip each. With the two new ones, on a second clean
+install: 711 objects, **132,709** bytes each. The activity log held 2 entries, **0** of them
+carrying an IP address, and `drupal_cms_telemetry` read false on both installs.
+
+| Decision | Package | Constraint | Verified stable | Coverage | Maintenance on drupal.org | What it contributes |
+|---|---|---|---|---|---|---|
+| `D-081` | `drupal/config_guardian` | `^1.1` | 1.1.0 | `covered="1"` | Supported branch `1.1.` · core `^11.1 \|\| ^12` | Unchanged from D-059: snapshots, rollback and impact analysis |
+
+- **D-059 amendment · the floor moves to `^1.1`, 2026-10-20 (T-0729, D-081).** 1.1.0 changed the shape of `config_guardian.settings`, and no one shipped file is valid on both 1.0.5 and 1.1.0. The table rows above stay as written (rule 8).

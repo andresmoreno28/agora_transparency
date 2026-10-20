@@ -69,6 +69,20 @@ class ValidationTest extends BrowserTestBase {
    *
    * Further documentation on writing PHPUnit tests for Drupal can be found at
    * https://www.drupal.org/docs/develop/automated-testing/phpunit-in-drupal.
+   *
+   * CONFIG GUARDIAN'S SETTINGS, SHIPPED WHOLE (T-0729, D-081). This package
+   * ships `config_guardian.settings` complete, because a recipe's copy replaces
+   * the module's own at install time, and in 1.1.0 a missing key is not
+   * harmless: `auto_snapshot_enabled` reads as FALSE and
+   * `activity_log.store_ip_addresses` as TRUE. Config Guardian 1.1.0 then
+   * changed the object's shape, and the template's copy failed the schema on
+   * every install (pipeline 1008850). So three things are asserted on the
+   * installed site: the schema's leaf keys were read at all, every one of them
+   * is shipped and nothing else is - in both directions, so a key the next
+   * release adds fails here by name - and the active object is the shipped
+   * one. The keys core's `config_object` type gives every configuration object
+   * (`langcode`, `_core`) are read from that type and left out: 1.1.0 dropped
+   * the object's language code, and `_core` is written by the installer.
    */
   public function testApply(): void {
     $this->applyRecipe(self::getRecipePath());
@@ -78,6 +92,101 @@ class ValidationTest extends BrowserTestBase {
     // in content templates, page regions, patterns, landing pages, etc. This
     // method checks for that.
     $this->assertCanvasComponentsAreIncluded();
+
+    $name = 'config_guardian.settings';
+    $typed_config = \Drupal::service('config.typed');
+    $inherited = array_keys($typed_config->getDefinition('config_object')['mapping'] ?? []);
+    $schema_keys = self::schemaLeafKeys(array_diff_key($typed_config->getDefinition($name)['mapping'] ?? [], array_flip($inherited)), '');
+    sort($schema_keys);
+    $this->assertNotEmpty($schema_keys, "The installed schema of $name yielded no leaf key. Compared with an empty set, the shipped file would be checked against nothing.");
+
+    $shipped = (new FileStorage(self::getRecipePath() . '/config'))->read($name);
+    $shipped = is_array($shipped) ? $shipped : [];
+    $shipped_keys = self::dataLeafKeys($shipped, '');
+    sort($shipped_keys);
+    $this->assertSame($schema_keys, $shipped_keys, "config/$name.yml must ship every leaf key of the installed schema and no other key, compared in both directions: a missing key arrives as NULL, and Config Guardian reads NULL as FALSE for the automatic snapshots and as TRUE for recording IP addresses.");
+
+    $active = \Drupal::config($name)->getRawData();
+    unset($active['_core']);
+    $this->assertSame(self::sortedKeys($shipped), self::sortedKeys($active), "The installed $name must be the shipped object, value for value; anything else means the module's own defaults, or an update, overrode it.");
+  }
+
+  /**
+   * Lists the leaf keys of a configuration schema mapping, as dotted paths.
+   *
+   * A mapping element, inline or of a named type that is itself a mapping
+   * (`config_guardian.retention_limits`), is walked; anything else, a sequence
+   * included, is a leaf.
+   *
+   * @param array $mapping
+   *   The `mapping` of a schema definition.
+   * @param string $prefix
+   *   The dotted path of the mapping, with its trailing dot.
+   *
+   * @return string[]
+   *   The leaf keys.
+   */
+  private static function schemaLeafKeys(array $mapping, string $prefix): array {
+    $typed_config = \Drupal::service('config.typed');
+    $keys = [];
+    foreach ($mapping as $key => $element) {
+      $children = $element['mapping'] ?? (isset($element['type']) ? ($typed_config->getDefinition($element['type'])['mapping'] ?? NULL) : NULL);
+      if (is_array($children)) {
+        $keys = array_merge($keys, self::schemaLeafKeys($children, $prefix . $key . '.'));
+      }
+      else {
+        $keys[] = $prefix . $key;
+      }
+    }
+    return $keys;
+  }
+
+  /**
+   * Lists the leaf keys of configuration data, as dotted paths.
+   *
+   * @param array $data
+   *   The data.
+   * @param string $prefix
+   *   The dotted path of the data, with its trailing dot.
+   *
+   * @return string[]
+   *   The leaf keys; a list, such as `exclude_patterns`, is one leaf.
+   */
+  private static function dataLeafKeys(array $data, string $prefix): array {
+    $keys = [];
+    foreach ($data as $key => $value) {
+      if (is_array($value) && $value !== [] && !array_is_list($value)) {
+        $keys = array_merge($keys, self::dataLeafKeys($value, $prefix . $key . '.'));
+      }
+      else {
+        $keys[] = $prefix . $key;
+      }
+    }
+    return $keys;
+  }
+
+  /**
+   * Sorts the keys of every associative array in some data, lists left alone.
+   *
+   * Configuration is saved in its schema's key order, which a hand-written
+   * file need not follow; the values and the order of a list are what count.
+   *
+   * @param array $data
+   *   The data.
+   *
+   * @return array
+   *   The data, its mappings sorted by key.
+   */
+  private static function sortedKeys(array $data): array {
+    foreach ($data as $key => $value) {
+      if (is_array($value)) {
+        $data[$key] = self::sortedKeys($value);
+      }
+    }
+    if (!array_is_list($data)) {
+      ksort($data);
+    }
+    return $data;
   }
 
   /**

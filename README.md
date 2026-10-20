@@ -366,8 +366,7 @@ walked on a clean install, not written from memory of the code.
   and publish.
 * **The Config Guardian baseline.** Configuration → Development → Config Guardian → Sync → Export
   Configuration writes the site's current configuration to the sync directory, as the starting
-  point every later change is compared against. This needs **Config Guardian 1.0.5 or later**:
-  earlier releases fail this specific export on PHP versions before 8.4.
+  point every later change is compared against.
 
 ## What it ships
 
