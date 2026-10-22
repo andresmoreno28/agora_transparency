@@ -107,6 +107,8 @@ author's attestation, [`ACCESSIBILITY.md`](ACCESSIBILITY.md), keyboard walkthrou
 * Composer. [DDEV](https://ddev.com) is recommended for a local environment, and the commands
   below are written for it; see
   [DDEV's installation instructions](https://docs.ddev.com/en/stable/users/install).
+  The commands need DDEV 1.25.0 or later: since 2.2.3, Drupal CMS ships a `.ddev/config.yaml`
+  that requires it, and `composer create-project` writes it into the project.
 
 ## Installation
 
