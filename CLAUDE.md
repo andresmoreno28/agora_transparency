@@ -294,10 +294,17 @@ moving the working copy a session is running in, on the day wave 5 starts.
 ## Gate A (the drupalcode pipeline IS the gate — **job lists observed**, 2026-08-26, T-1204)
 
 - `composer validate` + clean install.
-- **Observed inventory — the site template.** Pipeline `996178`, ref `1.x`, commit `161e3a6`,
-  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/996178/jobs` on 2026-10-09 —
+- **Observed inventory — the site template.** Pipeline `1009012`, ref `1.x`, commit `8095e98`,
+  read from `/api/v4/projects/project%2Fagora_transparency/pipelines/1009012/jobs` on 2026-10-22 —
   not from the UI, not from the badge. **Ten jobs, every one `success`, every one
-  `allow_failure: false`**, on `drupal/cms (2.2.0)`.
+  `allow_failure: false`**, on `drupal/cms (2.2.3)`.
+  ⚠️ **Three figures moved: one predicted before the push, two from outside it.** `phpunit` and
+  `phpunit-pgsql` went 2704 → 2712 assertions on 24 tests, identically on both databases: T-0729's
+  +3 in `ValidationTest` and +5 in `RolesAndPermissionsTest`, predicted in its row. The `Drupal CMS`
+  job builds Drupal CMS 2.2.3 because gitlab_templates 1.17.3 moved `CMS_STABLE`, and it now also
+  locks `drupal/config_guardian (1.1.0)`, a new row below. `cspell` went 440 → 441 with `816240c`'s
+  one research file. The theme row still reads 1.2.1: this pipeline ran before 1.2.3 was released.
+  (It stood at `996178` / `161e3a6` / 2026-10-09 — the paragraph below.)
   ⚠️ **The phpunit totals moved and two rows were added, all predicted before the push
   (T-0542).** `phpunit` and `phpunit-pgsql` went 23 → 24 tests and 2667 → 2704 assertions,
   identically per class on both databases (JUnit): `ValidationTest` +1 test and +16 (the sign-in
@@ -465,13 +472,14 @@ moving the working copy a session is running in, on the day wave 5 starts.
 
   | job | the line its trace printed |
   |---|---|
-  | `Drupal CMS` | `Create Drupal CMS project using _DRUPAL_CMS_TAG 2.2.0` |
+  | `Drupal CMS` | `Create Drupal CMS project using _DRUPAL_CMS_TAG 2.2.3` |
   | `Drupal CMS` | `Locking drupal/agora_core (1.0.0)` |
   | `Drupal CMS` | `Locking drupal/agora_theme (1.2.1)` |
+  | `Drupal CMS` | `Locking drupal/config_guardian (1.1.0)` |
   | `Drupal CMS` | `OK (1 test, 1 assertion)` |
-  | `cspell` | `Files checked: 440, Issues found: 0` |
-  | `phpunit` | `OK (24 tests, 2704 assertions)` |
-  | `phpunit-pgsql` | `OK (24 tests, 2704 assertions)` |
+  | `cspell` | `Files checked: 441, Issues found: 0` |
+  | `phpunit` | `OK (24 tests, 2712 assertions)` |
+  | `phpunit-pgsql` | `OK (24 tests, 2712 assertions)` |
   | `phpunit-pgsql` | `_TARGET_DB_TYPE=pgsql - _TARGET_DB_VERSION=16` |
 
   ~~**Nine jobs · all blocking · zero named exceptions.**~~ **TEN as of 2026-08-27 — and the tenth
@@ -522,10 +530,12 @@ moving the working copy a session is running in, on the day wave 5 starts.
   a dated measurement, not a promise — the commit that changes the CI job list, the packaged file
   set or a gate's denominator is the commit that updates it.**
 
-- **Observed inventory — the theme.** Pipeline `978399`, ref `1.x`, commit `fa210b0`, read from
-  `/api/v4/projects/project%2Fagora_theme/pipelines/978399/jobs` on 2026-09-26. **Ten jobs, every
-  one `success`, every one `allow_failure: false`.** Like the site template's, it tests core 11.4.8
-  through a `CORE_STABLE` override (`acfb4a2`) until the CI templates catch up.
+- **Observed inventory — the theme.** Pipeline `1009501`, ref `1.x`, commit `3e0b767`, read from
+  `/api/v4/projects/project%2Fagora_theme/pipelines/1009501/jobs` on 2026-10-22. **Ten jobs, every
+  one `success`, every one `allow_failure: false`.** `3e0b767` is the commit tagged `1.2.3`, the
+  theme's launch release, and its tag pipeline `1009503` is also ten for ten with the same figures.
+  Every figure in the trace table held from `978399`.
+  (It stood at `978399` / `fa210b0` / 2026-09-26 — the paragraph below.)
   ⚠️ **Two figures moved and both are accounted for.** `nightwatch` went 812 → 940 assertions,
   all 128 of them named: 812 was the Axe suite's 21 tests and 809 assertions plus 3 suite guards;
   940 is Axe's 24 tests and 835 (+26, from `ec2c990` and `8690b7a`), the new Bands suite's 19 tests
@@ -667,7 +677,7 @@ moving the working copy a session is running in, on the day wave 5 starts.
   | `stylelint` | validate | success | false |
 
   **Trace figures — the theme.** Same mechanism as the site template's table above, same
-  credential-free `/-/jobs/<id>/raw` route, read from pipeline `978399`'s own jobs.
+  credential-free `/-/jobs/<id>/raw` route, read from pipeline `1009501`'s own jobs.
   ⚠️ **`agora-invariants` read `35` until 2026-09-21 and the trace says `44`, which is nine
   checks of drift in a figure whose whole subject is a gate runner's own arithmetic.** It was found
   by REFRESHING the observation above and re-running `--online`, not by anything watching: the
@@ -833,6 +843,9 @@ moving the working copy a session is running in, on the day wave 5 starts.
   builds is now a row of the site template's trace-figures table, so the next move of
   `CMS_STABLE` turns `--online` red instead of leaving this paragraph to go stale. The D-018 rig
   stays the record of how 2.2.0 was verified before CI could.
+  ⚠️ **2026-10-22: two patch releases behind again.** Pipeline `1009012` builds 2.2.3 under
+  gitlab_templates 1.17.3 while drupal.org's current Drupal CMS release is 2.2.5; T-0710's
+  launch-day rig is the record at 2.2.5.
 
 - **The gate is the job list, never the pipeline's status field** (D-023(5), superseding
   non-negotiable rule 9's second sentence and D-006 on this point):
