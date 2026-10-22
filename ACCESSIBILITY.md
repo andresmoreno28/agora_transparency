@@ -120,7 +120,7 @@ table to follow keyboard focus, and two later changes that keep all four sides o
 screen, inside tables and outside them; no release carried those two on 2026-09-25. On
 `agora_theme` 1.2.0 the machine had found both table links the person confirmed only partly in view
 when they received focus. Neither build is `agora_theme` 1.2.1, the newest release of the theme on
-that date.
+that date. Both later changes are in `agora_theme` 1.2.3, the lowest release this package admits.
 
 ## The administrative interface
 

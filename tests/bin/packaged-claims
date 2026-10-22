@@ -604,8 +604,8 @@ compare 'registers' "$R_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_base_* no
 compare 'content_files' "$R_CONTENT" "$(count_tracked 'content/')" 'git ls-files content/'
 compare 'config_objects' "$R_CONFIG" "$(count_tracked 'config/*.yml')" 'git ls-files config/*.yml'
 
-claim_once 'theme constraint' README 'this template requires at `\^[0-9]+\.[0-9]+`'
-R_THEME=$(field 1 '.*requires at .(\^[0-9]+\.[0-9]+).*')
+claim_once 'theme constraint' README 'this template requires at `\^[0-9]+\.[0-9]+(\.[0-9]+)?`'
+R_THEME=$(field 1 '.*requires at .(\^[0-9]+\.[0-9]+(\.[0-9]+)?).*')
 C_THEME=$(text_of COMPOSER | sed -nE 's/.*"drupal\/agora_theme": "([^"]+)".*/\1/p')
 compare 'theme_constraint' "$R_THEME" "$C_THEME" 'composer.json require'
 

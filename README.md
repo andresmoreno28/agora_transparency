@@ -17,7 +17,7 @@ as a working portal, ready for a body to replace the demonstration content with 
 * Installs a working Drupal CMS site: administrative back end, media, basic SEO, basic privacy and
   consent, authentication tweaks and HTML email.
 * Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
-  this template requires at `^1.2` — and makes it the site's default theme.
+  this template requires at `^1.2.3` — and makes it the site's default theme.
 * Sets a Canvas landing page as the home page, carrying **five** blocks from the template's own
   views, with the service-area cards on `/publications` beside the register they filter.
 * Ships the demonstration corpus described in the next section: six registers of invented records
@@ -30,10 +30,7 @@ feature list:
 
 | Planned | Where it is going |
 |---|---|
-| ~~Content model: documents, officials, contracts, budget lines, public calls~~ **DONE, unit 002** | six bundles ship in `config/` |
-| ~~Demo content — English only, see below — and the real screenshot~~ **DONE, unit 003** | 60 records, and `screenshot.webp` is a real 500×400 capture |
 | Freedom-of-information requests and a review workflow of Ágora's own — **deferred past the first release** (D-060). Records already follow Drupal CMS's draft → published workflow (D-078) | unit 004, after the first release |
-| ~~Configuration auditing~~ **DONE, unit 005** | `drupal/config_guardian` in `require`, installed by `recipe.yml`, with its settings and a governance-auditor role in `config/` |
 | AI assistant with citations | unit 005 |
 
 The first release is a transparency **publication** portal: it publishes registers of records and
@@ -71,17 +68,16 @@ What actually runs, and what it covers:
   a visitor meets it, several listing routes, a published record, the page-not-found screen and the
   sign-in page — **anonymously**, as a member of the public meets them. It is **blocking** in both
   PHPUnit jobs.
-  **The count, the breakdown and the result are stated once**, in the accessibility statement this
-  package ships at `/accessibility-statement`: that is the document a visitor is actually served,
-  and it has to be readable on its own.
-* **In `drupal/agora_theme`**, a `nightwatch` job runs axe over its fixture pages. **That figure is
-  not repeated anywhere in this package.** It moves whenever the theme adds a surface, it is
-  printed by the job itself, and the job's log is **public and readable without an account** — so
-  the number belongs where a reader can check it rather than in a second copy that goes stale. The
-  one place this package describes that gate is the shipped accessibility statement, in the
-  paragraph that also says those pages are fixtures and not pages of this site.
-  `tests/bin/packaged-claims` refuses a figure stated in two packaged files at once, which is why
-  it is not repeated here.
+  **The count, the breakdown and the result are stated once**, in
+  [`ACCESSIBILITY.md`](ACCESSIBILITY.md); the accessibility statement this package ships at
+  `/accessibility-statement`, the document a visitor is actually served, points there rather than
+  repeating them.
+* **In `drupal/agora_theme`**, a `nightwatch` job runs axe over its fixture pages. Its figures move
+  whenever the theme adds a surface, they are printed by the job itself, and the job's log is
+  **public and readable without an account**. The one place this package describes that gate is
+  [`ACCESSIBILITY.md`](ACCESSIBILITY.md), in the paragraph that also says those pages are fixtures
+  and not pages of this site. `tests/bin/packaged-claims` refuses a figure stated in two packaged
+  files at once, which is why none of them is repeated here.
 
 **What neither gate covers, stated because a gate's silence is not a pass:** everything behind a
 login except the Config Guardian dashboard, which is the only page the gate in this repository
@@ -94,10 +90,8 @@ page that gate scans has its links and controls measured against the criterion's
 spacing, except links inside a line of text, which the criterion exempts — at the single window
 size the gate runs at. What axe reports as undecided, and every other window size, is left to a
 person.
-**No conformance with any WCAG level is claimed.** The shipped accessibility statement carries the
-full account, with the denominators.
-
-The author's attestation, keyboard walkthrough included, is [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+**No conformance with any WCAG level is claimed.** The full account, with the denominators, is the
+author's attestation, [`ACCESSIBILITY.md`](ACCESSIBILITY.md), keyboard walkthrough included.
 
 ## Requirements
 
@@ -110,15 +104,6 @@ The author's attestation, keyboard walkthrough included, is [`ACCESSIBILITY.md`]
   no `php` entry in its `composer.json`. Drupal core `11.4.5` itself needs PHP `8.3`–`8.5` and
   Composer `2.3.6` or later — see [Toolchain floor](#toolchain-floor) below for where those figures
   come from and what else was measured alongside them.
-* **PHP's `pdo_pgsql` extension, whatever database the site uses.** Drupal CMS requires
-  `drupal/ai_provider_amazeeio`, and the releases that fix a Critical SQL injection advisory in it,
-  SA-CONTRIB-2026-134 — 1.4.3 and 1.3.7 — both require that extension. On a PHP without it,
-  Composer 2.9 or later stops and names the missing extension; an older Composer, or one with its
-  security blocking switched off, finishes the install with an older release that the advisory
-  affects, and says nothing. DDEV's web container has the extension. The first sequence below ends
-  with the check, `composer audit`: it names SA-CONTRIB-2026-134 and exits non-zero when an
-  affected release was installed, and it exits 0 with `No security vulnerability advisories found.`
-  when nothing installed is affected by any advisory.
 * Composer. [DDEV](https://ddev.com) is recommended for a local environment, and the commands
   below are written for it; see
   [DDEV's installation instructions](https://docs.ddev.com/en/stable/users/install).
@@ -142,8 +127,10 @@ ddev composer audit
 Drupal CMS 2.2.0 a one-step `composer create-project drupal/cms` unpacks Drupal CMS's own recipes
 into the project as it installs them, and in doing so rewrites the project's
 `drupal/canvas_translate: @alpha` to `^1`; the alpha release it has just locked no longer satisfies
-that, and `composer require drupal/agora_transparency` fails. `composer audit` is the `pdo_pgsql`
-check described under [Requirements](#requirements).
+that, and `composer require drupal/agora_transparency` fails. `composer audit` checks every package
+Composer installed against the published security advisories: it exits 0 with `No security
+vulnerability advisories found.` when none applies, and exits non-zero, naming the advisory, when
+one does.
 
 Then apply the template either through the web installer — `ddev launch`, and choose **Ágora** at
 the site template step — or from the command line:
@@ -286,8 +273,7 @@ walked on a clean install, not written from memory of the code.
   band stays flat navy — the theme ships no photograph of its own to fall back on.
 * **The masthead's opening line.** Same fieldset, "Opening line": the sentence under the front-page
   heading. The shipped sentence names a council; clear the field for no line at all, or write the
-  institution's own. This setting ships on `drupal/agora_theme`'s `1.x` branch ahead of a numbered
-  release naming it; no tagged release carries it yet.
+  institution's own.
 * **Currency.** Same settings page, the read-only panel under the theme's own fieldset: it lists
   every field it finds on the site that can carry a currency prefix or suffix, each with a direct
   link to its own edit form. The panel writes nothing — the currency is set once per field, not once
@@ -302,10 +288,15 @@ walked on a clean install, not written from memory of the code.
   to report a barrier, the enforcement procedure for this jurisdiction, and the date and method of
   the last review. The Legal notice, Privacy notice and Cookies pages ship with this package; only
   the Privacy policy page comes from Drupal CMS, shipped by its `drupal_cms_site_template_base`
-  recipe (2.2.0). All four need the same kind of attention — an address, a contact route and a
-  jurisdiction that are the institution's own.
+  recipe (2.2.6). That page arrives unpublished, at `/privacy-policy`, with a "Privacy policy"
+  link in Drupal's Footer menu, which this theme renders: a visitor sees neither, and a signed-in
+  administrator sees the link. Either delete the page, which takes its link with it once Trash is
+  emptied, or complete it, publish it and make it the cookie banner's privacy link — Configuration
+  → User interface → Klaro! → Texts, "Privacy policy" → "URL", which this package points at the
+  Privacy notice. All four need the same kind of attention — an address, a contact route and
+  a jurisdiction that are the institution's own.
 * **Trash.** Deleting content does not remove it outright. Trash is the contributed `drupal/trash`
-  module, not a core one: Drupal CMS's `drupal_cms_site_template_base` recipe (2.2.0) installs it
+  module, not a core one: Drupal CMS's `drupal_cms_site_template_base` recipe (2.2.6) installs it
   and turns it on for content, so a deleted register record moves to Content → Trash
   (`/admin/content/trash`) and stays there — nothing purges it on its own — until it is emptied.
   `drush trash:purge --all -y` empties it in one call; the Trash page offers the same action one
@@ -319,8 +310,10 @@ walked on a clean install, not written from memory of the code.
   statutory bar, the footer's column layout and the social row go with them.
 * **Removing the demonstration records.** In order: Content (`/admin/content`), select every
   document, person, contract, agreement, grant and dataset record, "Delete content"; Content →
-  Media (`/admin/content/media`), select the demonstration documents, "Delete media" and tick "Also
-  delete the associated files?" before confirming. Then, from the project root:
+  Media (`/admin/content/media`), select the demonstration documents, "Delete media", and confirm.
+  The confirmation offers no choice about the files: Drupal CMS's `drupal_cms_site_template_base`
+  recipe (2.2.6) sets media deletion to delete each item's file with it. Then, from the project
+  root:
 
   ```shell
   ddev drush trash:purge --all -y
@@ -432,9 +425,6 @@ administrative components that are not useful for building pages.
 
 ## Known limitations
 
-* ~~**`screenshot.webp` is a placeholder**, and says so on its face. It is not a picture of an
-  installed site.~~ **Replaced 2026-09-19: it is a 500×400 capture of the front page of an
-  installed site carrying the demonstration corpus.**
 * **The demo corpus is a fictional Spanish municipality published in English**, which is a
   deliberate frame rather than a gap — see
   ["The demo content is a fictional Spanish municipality, published in English"](#the-demo-content-is-a-fictional-spanish-municipality-published-in-english)
@@ -622,7 +612,8 @@ rolled up into a green result that hid them. The failure repeated in the opposit
 were correctly red and nobody read them, because the local pre-flight this README documented was
 unreadable. Both halves are the same lesson: a signal has to be both correct and read.
 All **ten** jobs are blocking now, with no exceptions —
-`_ALL_VALIDATE_ALLOW_FAILURE: '0'` in [`.gitlab-ci.yml`](.gitlab-ci.yml) is what makes the validate
+`_ALL_VALIDATE_ALLOW_FAILURE: '0'` in
+[`.gitlab-ci.yml`](https://git.drupalcode.org/project/agora_transparency/-/blob/1.x/.gitlab-ci.yml) is what makes the validate
 stage stop the pipeline, and the two jobs outside that stage arrived blocking on their own. Read
 the job list; the status field is the one that can lie.
 
@@ -690,7 +681,7 @@ The first run needs network for those three inputs and caches them in `.cspell-c
 git-ignored; later runs are offline, and a stale cache says so rather than pretending.
 
 Words that are genuinely words go in
-[`.cspell-project-words.txt`](.cspell-project-words.txt), one at a time, each with the reason it
+[`.cspell-project-words.txt`](https://git.drupalcode.org/project/agora_transparency/-/blob/1.x/.cspell-project-words.txt), one at a time, each with the reason it
 belongs there written beside it. A **verbatim quotation** is not vocabulary and does not go there:
 it is scoped where it sits, with `cspell:disable`/`cspell:enable` around a phrase or `cspell:ignore`
 for a long quoted passage — which is why the research file quoting four Spanish statutes carries
