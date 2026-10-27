@@ -6063,3 +6063,89 @@ carrying an IP address, and `drupal_cms_telemetry` read false on both installs.
 | `D-081` | `drupal/config_guardian` | `^1.1` | 1.1.0 | `covered="1"` | Supported branch `1.1.` · core `^11.1 \|\| ^12` | Unchanged from D-059: snapshots, rollback and impact analysis |
 
 - **D-059 amendment · the floor moves to `^1.1`, 2026-10-20 (T-0729, D-081).** 1.1.0 changed the shape of `config_guardian.settings`, and no one shipped file is valid on both 1.0.5 and 1.1.0. The table rows above stay as written (rule 8).
+
+## D-082 · Every account page an anonymous visitor reaches is the site theme's; only the logout confirmation stays with Gin Login — option A — SIGNED by [andres], 2026-10-27
+
+**Context in one line.** The WCAG 2.2 AA review of 2026-10-27
+(`specs/007-publication/research/2026-10-27-wcag22-aa-review.md`) found **3 failures, all on two
+account pages Gin Login hands to the administration theme**: `/user/password`, linked from the
+sign-in page, and `/user/register`, a 403 on a closed registration. They are 2.5.8 (Gin's
+show-password button, 24×16 px), 1.4.11 (Gin's focus halo, 2.27:1) and 2.4.6 (a 403 headed
+"Create new account"). The 30 sampled pages `agora_theme` renders show 0. `agora_core` removes
+only `user.login` from Gin Login's five routes (D-052 option C, D-054, D-080).
+
+**The options** are the ones the review's §7 and §9 name for its failures and advisories.
+
+| | option | cost |
+|---|---|---|
+| **A** | `agora_core` also removes `user.pass`, `user.register` and `user.reset.form`; `user.logout.confirm` stays with Gin Login | One hook line and its tests in `agora_core`, released as 1.0.1, and the template's floor raised to it. Fixes F1, F2 and F3, and advisory A11, on every page an anonymous visitor reaches. The logout confirmation is reached only when signed in, so it stays, and it is the control that shows the module still takes routes one by one rather than switching Gin Login off |
+| **B** | Fix it upstream, in Gin or Gin Login | The fixes would be right for every Drupal site, and their timing is not this project's; until they are released, the claim D-083 allows cannot be made |
+| **C** | Exclude the account pages from any claim | Nothing to build, and the first page the sign-in page links to stays outside the claim |
+
+**His ruling: A.** It amends the scope of D-052, whose option C named `user.login` alone; the
+direction D-052 signed is unchanged. `agora_core`'s change is `d077c61` on its `1.x`, pushed, with
+`AccountPagesTest` and the kernel route list `['user.logout.confirm']`; it is released as **1.0.1**
+(T-0736), and the template's floor moves to `^1.0.1` in T-0737.
+
+- **D-080 amendment · 2026-10-27 (D-082).** From 1.0.1, `drupal/agora_core` removes `user.login`,
+  `user.pass`, `user.register` and `user.reset.form` from Gin Login's routes; `user.logout.confirm`
+  stays with Gin Login. The table row in D-080 stays as written (rule 8).
+
+**Cost of being wrong.** A page a signed-out visitor reaches in the administration theme, which is
+today's state; or, the other way, the logout confirmation in the site theme, which nobody asked
+for and which the control in `AccountPagesTest` would show.
+
+---
+
+## D-083 · The accessibility statement may claim WCAG 2.2 AA for the public pages, once three conditions hold — yes, conditionally — SIGNED by [andres], 2026-10-27
+
+**Context in one line.** The shipped statement (node `542d60d9-f7b6-596c-9f15-7ee81964d139`) says,
+under *Conformance status*: *"No claim of full conformance is made here."* The review of
+2026-10-27 found that a claim cannot be made today for every public page, and that a claim scoped
+to exclude the two Gin pages and the demonstration PDFs is supportable, pending a screen reader
+pass.
+
+**The options** are the ones the review's §7 and §9 name for its failures and advisories.
+
+| | option | cost |
+|---|---|---|
+| **A** | Keep "no claim" | Nothing to maintain, and the listing's accessibility value stays below what the product delivers |
+| **B** | Claim now, excluding the Gin pages and the PDFs | Supportable today by the review, and the exclusions would be on the first page the sign-in page links to and on every document a visitor downloads |
+| **C** | Claim once D-082 and D-084 are implemented, his NVDA pass is done and a second WCAG-EM run finds 0 failures | Three steps before the statement changes; the claim then has no exclusion inside what an anonymous visitor reaches |
+
+**His ruling: C — yes, conditionally.** After the fixes (T-0731 to T-0734), his NVDA pass (T-0735)
+and a clean second WCAG-EM run with **0 failures** (T-0738), the statement claims **WCAG 2.2 Level
+AA for every page an anonymous visitor can reach on a clean install with the demonstration
+content**. The administrative interface and every page that needs an account are excluded, and
+the statement says so.
+
+- **Before**, on disk at `1.0.0`: *"No claim of full conformance is made here."*
+- **After**: a claim of that scope, in the statement node, written in T-0737. ⚠️ The exact
+  sentence is not recorded here: the plan on disk names the scope and not the words, so T-0737
+  writes the sentence within this scope and quotes it in its row.
+- **Not changed by this decision**: the statement itself. Until all three conditions hold, it
+  keeps its current text.
+
+**Cost of being wrong.** A claim that a page fails: a public body would repeat it in its own
+statement. That is why the claim waits for a second run rather than for the fixes alone.
+
+---
+
+## D-084 · The demonstration PDFs are tagged — option A — SIGNED by [andres], 2026-10-27
+
+**Context in one line.** Advisory A10 of the review: **0 of 28** published demonstration PDFs carry
+a structure tree, `MarkInfo`, `/Lang` or `DisplayDocTitle`. All 34 shipped PDFs (28 documents and 6
+declarations) are written by `tests/bin/generate-demo-media.py`.
+
+**The options** are the ones the review's §7 and §9 name for its failures and advisories.
+
+| | option | cost |
+|---|---|---|
+| **A** | Tag them in the generator: `/MarkInfo<</Marked true>>`, `/Lang(en)`, a `/StructTreeRoot` with one `/H1` and a `/P` per paragraph, `DisplayDocTitle`, `/StructParents` and `/Tabs/S` on the page; no XMP | 34 files regenerated and their sizes moved in 34 file records and 28 media descriptions; the output stays byte-deterministic. No XMP packet, because `tests/bin/no-secrets` level 3 refuses one in any packaged binary, so the files are tagged and do not claim PDF/UA |
+| **B** | Exclude the demonstration PDFs from the claim | Nothing to build, and a visitor's first download would sit outside the claim |
+
+**His ruling: A.** T-0733 implements it.
+
+**Cost of being wrong.** Small: the files are demonstration content that a site owner deletes. What
+they teach is the cost: a template whose own sample documents are untagged shows an untagged PDF as
+the normal case.
