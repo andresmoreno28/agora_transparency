@@ -26,5 +26,5 @@ default:
   field_media_document:
     -
       display: false
-      description: 'Minutes of the ordinary council meeting of 28 November 2024, PDF, 1,829 bytes'
+      description: 'Minutes of the ordinary council meeting of 28 November 2024, PDF, 3,257 bytes'
       entity: 627edd39-d40c-54ff-954d-822c628a8959

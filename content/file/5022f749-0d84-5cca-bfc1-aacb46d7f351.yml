@@ -18,7 +18,7 @@ default:
       value: application/pdf
   filesize:
     -
-      value: 1817
+      value: 3245
   status:
     -
       value: true

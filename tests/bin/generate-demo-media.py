@@ -115,6 +115,35 @@
 # operations, an Info dictionary, and a classic cross-reference table.
 #
 # -----------------------------------------------------------------------------
+# EVERY PDF IS TAGGED (T-0733, D-084 option A, signed by [andres] 2026-10-27)
+# -----------------------------------------------------------------------------
+# The WCAG 2.2 AA review of 2026-10-27 found 0 of 28 published PDFs tagged:
+# no structure tree, no language, no title shown by the reader (advisory A10 of
+# specs/007-publication/research/2026-10-27-wcag22-aa-review.md). A screen
+# reader then has to guess the reading order and the language of every file a
+# visitor downloads. So each file now also carries:
+#
+#   catalog   /MarkInfo <</Marked true>>, /Lang (en), a /StructTreeRoot, and
+#             /ViewerPreferences <</DisplayDocTitle true>>, so a reader shows
+#             the Info /Title rather than the file name
+#   page      /StructParents 0, and /Tabs /S (tab order follows the structure)
+#   stream    every text line inside a marked-content sequence, /H1 or /P,
+#             each sequence with its own MCID
+#   tree      a /Document element whose children are one /H1 - the title -
+#             and one /P per paragraph, in reading order, plus the parent tree
+#             that maps each MCID back to its element
+#
+# A paragraph is either one line that is a statement of its own ("Financial
+# year: 2023") or a block of wrapped prose, which is one /P across its lines.
+# The page itself does not change by one point: only the tagging differs.
+# /Tabs is a PDF 1.5 key, so the header says 1.5.
+#
+# ⚠️ NO XMP METADATA STREAM, although PDF/UA would want one for the title:
+# tests/bin/no-secrets level 3 refuses an XMP packet in any packaged binary,
+# and the Info /Title already carries the title DisplayDocTitle shows. These
+# files are tagged PDFs; they claim no PDF/UA conformance.
+#
+# -----------------------------------------------------------------------------
 # NO METADATA, AND NO CLOCK
 # -----------------------------------------------------------------------------
 # tests/bin/no-secrets level 3 sweeps EXIF, XMP and C2PA/JUMBF across every
@@ -166,8 +195,13 @@
 #   content/media/<uuid>.yml    `description` ("..., PDF, 1,789 bytes")
 #   content/MEDIA-LICENCES.md   no size, but one row per file
 # `--check` prints the delta for exactly this reason. `tests/bin/media-licence`
-# catches a missing row; nothing catches a stale `filesize`, so it is
-# named here.
+# catches a missing row. Until T-0733 nothing caught a stale `filesize`. Now
+# ValidationTest::testDemonstrationMastheadImageArrives() compares every
+# packaged file's bytes with the `filesize` its record ships and with the size
+# the imported entity holds, and every document media description's quoted
+# size with the bytes it names. Core's importer never reads `filesize` - it
+# copies the file first and `File::preSave()` measures it - which is why the
+# record is compared directly and not through the entity.
 #
 # Usage:
 #   python3 tests/bin/generate-demo-media.py            # check, writes nothing
@@ -181,7 +215,9 @@
 # was tried first (2026-08-27) and the words were still reported. Re-measured
 # 2026-09-25: the pair silences the four inside build_pdf(); the two left
 # are in this comment, which names them - so the ignore below is the fix.
-# cspell:ignore endobj startxref
+# `MCID`, the marked-content identifier the tagging writes (T-0733), is the
+# same kind of word and is scoped out the same way.
+# cspell:ignore endobj startxref MCID
 import hashlib
 import os
 import re
@@ -451,52 +487,96 @@ def esc(text):
     return out
 
 
-def lay_out(blocks):
-    """Blocks of lines -> (size, y, text) operations, top down.
+class Wrapped(list):
+    """A block whose lines are ONE paragraph of prose, wrapped to a width.
 
-    A block is a list of already-wrapped lines. Lines inside a block step by
-    LINE_STEP; the first line of each new block steps by BLOCK_STEP instead,
-    which is the only thing that separates a heading from what it heads.
+    Every other block is a list of lines that are each a statement of their
+    own - "Document type: ...", "Financial year: ..." - and is tagged one /P
+    per line. The difference is invisible on the page and is the whole of
+    what a screen reader hears: a wrapped summary tagged line by line is read
+    as paragraphs that break mid-sentence, and four labelled facts tagged as
+    one paragraph are read as one run-on sentence.
+    """
+
+
+def lay_out(blocks):
+    """Blocks of lines -> tagged paragraphs of (size, y, text) operations.
+
+    Returns a list of (tag, ops), top down: the title as the one /H1, then a
+    /P per line of a plain block and a /P per Wrapped block. Lines inside a
+    block step by LINE_STEP; the first line of each new block steps by
+    BLOCK_STEP instead, which is the only thing that separates a heading from
+    what it heads. The positions are exactly those of the untagged files.
     """
     if not blocks or not blocks[0]:
         raise Fatal('a page with no title block')
-    ops = [(TITLE_SIZE, TITLE_Y, blocks[0][0])]
+    paragraphs = [('H1', [(TITLE_SIZE, TITLE_Y, blocks[0][0])])]
     y = TITLE_Y - TITLE_GAP
     for block in blocks[1:]:
         if not block:
             continue
+        ops = []
         for line in block:
             ops.append((BODY_SIZE, y, line))
             y -= LINE_STEP
+        if isinstance(block, Wrapped):
+            paragraphs.append(('P', ops))
+        else:
+            paragraphs.extend(('P', [op]) for op in ops)
         # Undo the step the last line took and take a block-sized one instead.
         y -= BLOCK_STEP - LINE_STEP
-    return ops
+    return paragraphs
 
 
 def build_pdf(title, blocks):
     """The whole file, as bytes. Deterministic: no clock, no ids, no metadata."""
-    ops = lay_out(blocks)
-    # One text operation per line, and the stream ENDS with a newline that is
-    # counted in /Length: `endstream` follows the content directly, with no
-    # separator of its own. Getting that one byte wrong is the difference
-    # between a file a reader accepts and a file it repairs silently.
+    paragraphs = lay_out(blocks)
+    # One text operation per line, each paragraph's lines inside one marked
+    # content sequence whose MCID is the paragraph's index. The stream ENDS
+    # with a newline that is counted in /Length: `endstream` follows the
+    # content directly, with no separator of its own. Getting that one byte
+    # wrong is the difference between a file a reader accepts and a file it
+    # repairs silently.
     stream = ''.join(
-        'BT /F1 %d Tf %d %d Td (%s) Tj ET\n' % (size, LEFT_MARGIN, y, esc(text))
-        for size, y, text in ops
+        '/%s <</MCID %d>> BDC\n' % (tag, mcid)
+        + ''.join('BT /F1 %d Tf %d %d Td (%s) Tj ET\n'
+                  % (size, LEFT_MARGIN, y, esc(text))
+                  for size, y, text in ops)
+        + 'EMC\n'
+        for mcid, (tag, ops) in enumerate(paragraphs)
     )
     stream_bytes = stream.encode('cp1252')
 
+    # Objects 1-6 keep the numbers the untagged files gave them; the structure
+    # tree follows: 7 the root, 8 the /Document element, 9 the parent tree,
+    # and from 10 one element per paragraph, in reading order.
+    first_element = 10
+    elements = ' '.join('%d 0 R' % (first_element + index)
+                        for index in range(len(paragraphs)))
     objects = [
-        b'<</Type/Catalog/Pages 2 0 R>>',
+        b'<</Type/Catalog/Pages 2 0 R/StructTreeRoot 7 0 R'
+        b'/MarkInfo<</Marked true>>/Lang(en)'
+        b'/ViewerPreferences<</DisplayDocTitle true>>>>',
         b'<</Type/Pages/Kids[3 0 R]/Count 1>>',
         ('<</Type/Page/Parent 2 0 R/MediaBox[0 0 %d %d]/Resources<</Font<</F1 '
-         '4 0 R>>>>/Contents 5 0 R>>' % (PAGE_WIDTH, PAGE_HEIGHT)).encode('ascii'),
+         '4 0 R>>>>/Contents 5 0 R/StructParents 0/Tabs/S>>'
+         % (PAGE_WIDTH, PAGE_HEIGHT)).encode('ascii'),
         b'<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>',
         None,  # the content stream, assembled below
         ('<</Producer (%s)/Title (%s)>>' % (esc(PRODUCER), esc(title))).encode('cp1252'),
+        b'<</Type/StructTreeRoot/K 8 0 R/ParentTree 9 0 R/ParentTreeNextKey 1>>',
+        ('<</Type/StructElem/S/Document/P 7 0 R/K[%s]>>' % elements).encode('ascii'),
+        # Key 0 is the page's /StructParents; entry N of its array is the
+        # element that owns MCID N, which here is paragraph N itself.
+        ('<</Nums[0[%s]]>>' % elements).encode('ascii'),
+    ] + [
+        ('<</Type/StructElem/S/%s/P 8 0 R/Pg 3 0 R/K %d>>'
+         % (tag, mcid)).encode('ascii')
+        for mcid, (tag, _ops) in enumerate(paragraphs)
     ]
+    info = 6
 
-    out = bytearray(b'%PDF-1.4\n')
+    out = bytearray(b'%PDF-1.5\n')
     offsets = []
     for number, body in enumerate(objects, 1):
         offsets.append(len(out))
@@ -517,7 +597,7 @@ def build_pdf(title, blocks):
         out += ('%010d 00000 n \n' % offset).encode('ascii')
     out += b'trailer\n'
     out += ('<</Size %d/Root 1 0 R/Info %d 0 R>>\n'
-            % (len(objects) + 1, len(objects))).encode('ascii')
+            % (len(objects) + 1, info)).encode('ascii')
     out += b'startxref\n'
     out += ('%d\n' % startxref).encode('ascii')
     out += b'%%EOF\n'
@@ -525,8 +605,8 @@ def build_pdf(title, blocks):
 
 
 def wrap(text, width):
-    return textwrap.wrap(text, width=width,
-                         break_long_words=False, break_on_hyphens=False)
+    return Wrapped(textwrap.wrap(text, width=width,
+                                 break_long_words=False, break_on_hyphens=False))
 
 
 def standing_blocks():

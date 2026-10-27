@@ -220,6 +220,17 @@ class ValidationTest extends BrowserTestBase {
    * settings object, and the action would throw on exactly the installs the
    * withholding existed to protect. If this assertion is ever reverted, the
    * constraint goes back with it or neither moves.
+   *
+   * WIDENED BY T-0733 FROM ONE FILE TO EVERY PACKAGED FILE. The size check
+   * below was the photograph's alone, and the 34 demonstration PDFs changed
+   * size when they were tagged. Each size is written in three places that
+   * nothing regenerates: the file record's `filesize`, the size the imported
+   * entity holds, and, for a document, the byte count its media description
+   * quotes - which is the download link's accessible name, so a stale one is
+   * read aloud. All three are compared with the packaged bytes. The record is
+   * read directly, not through the entity: core's importer copies the file
+   * before it saves the entity, and `File::preSave()` measures the copy, so
+   * the entity can never show a stale `filesize`.
    */
   public function testDemonstrationMastheadImageArrives(): void {
     $this->applyRecipe(self::getRecipePath());
@@ -273,6 +284,53 @@ class ValidationTest extends BrowserTestBase {
     $this->assertFileExists($from_setting, 'The file named by hero_image_path must exist on disk.');
     $this->drupalGet(\Drupal::service('file_url_generator')->generateString($setting));
     $this->assertSession()->statusCodeEquals(200);
+
+    // -- T-0733: every packaged file, and every size this package quotes -----
+    // The set first, in both directions: a record whose file is missing and a
+    // file with no record would each leave the loop below with less to read.
+    $directory = self::getRecipePath() . '/content/file';
+    $records = glob($directory . '/*.yml') ?: [];
+    $this->assertNotEmpty($records, 'The package must ship file records, or every comparison below is vacuous.');
+    $packaged = array_values(array_filter(
+      scandir($directory) ?: [],
+      static fn (string $name): bool => is_file("$directory/$name") && !str_ends_with($name, '.yml'),
+    ));
+    $named = [];
+    $shipped = [];
+    foreach ($records as $record) {
+      $data = Yaml::decode((string) file_get_contents($record));
+      $named[] = $data['default']['filename'][0]['value'];
+      $shipped[] = $data['default'];
+    }
+    sort($named);
+    sort($packaged);
+    $this->assertSame($packaged, $named, 'Every packaged file must have exactly one record under content/file/, and every record a packaged file.');
+
+    $bytes_by_uri = [];
+    $file_storage = \Drupal::entityTypeManager()->getStorage('file');
+    foreach ($shipped as $record) {
+      $name = $record['filename'][0]['value'];
+      $record_uri = $record['uri'][0]['value'];
+      $bytes = (int) filesize("$directory/$name");
+      // What ships: the record's own number, which the importer never reads.
+      $this->assertSame($bytes, $record['filesize'][0]['value'], "The filesize in the record of $name must be its packaged size.");
+      // What lands.
+      $landed = $file_storage->loadByProperties(['uri' => $record_uri]);
+      $this->assertCount(1, $landed, "Exactly one file entity must live at $record_uri.");
+      $this->assertSame($bytes, (int) reset($landed)->getSize(), "The imported file entity of $name must hold its packaged size.");
+      $bytes_by_uri[$record_uri] = $bytes;
+    }
+
+    // What is read aloud: the document media descriptions name their size.
+    $documents = \Drupal::entityTypeManager()->getStorage('media')->loadByProperties(['bundle' => 'document']);
+    $this->assertNotEmpty($documents, 'The package must ship document media, or the description check below is vacuous.');
+    foreach ($documents as $document) {
+      $item = $document->get('field_media_document')->first();
+      $description = (string) $item->get('description')->getValue();
+      $this->assertSame(1, preg_match('/, ([0-9]{1,3}(?:,[0-9]{3})*) bytes$/', $description, $match), "The description of media {$document->uuid()} must end with its size in bytes: \"$description\".");
+      $uri = File::load($item->get('target_id')->getValue())->getFileUri();
+      $this->assertSame($bytes_by_uri[$uri] ?? NULL, (int) str_replace(',', '', $match[1]), "The size quoted in \"$description\" must be the packaged size of $uri.");
+    }
   }
 
   /**
