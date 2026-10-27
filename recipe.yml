@@ -750,6 +750,30 @@ config:
       setSettings:
         description_field: true
     # -------------------------------------------------------------------------
+    # A DOCUMENT RECORD READ "File, Document" BEFORE ITS DOWNLOAD LINK (T-0734).
+    # The record shows its file under its own "File" label, and inside it core's
+    # document media display adds the media field's label, "Document", as
+    # `visually_hidden`: invisible, and still read aloud, so a screen reader
+    # heard two labels for one link. Advisory A12 of the WCAG 2.2 AA review of
+    # 2026-10-27. `hidden` leaves the label out of the markup; the link keeps
+    # its accessible name, the description set above.
+    #
+    # `setComponent` replaces the component's options whole, so every option of
+    # core's `document_media_type` display is restated and only `label` moves.
+    # No `?` prefix: `drupal_cms_site_template_base`, in `recipes:` above,
+    # applies `document_media_type`, so the display exists by the time actions
+    # run.
+    core.entity_view_display.media.document.default:
+      setComponent:
+        name: field_media_document
+        options:
+          type: file_default
+          label: hidden
+          settings: {  }
+          third_party_settings: {  }
+          weight: 1
+          region: content
+    # -------------------------------------------------------------------------
     # THE COOKIE BANNER'S OWN PRIVACY LINK, WHICH POINTED AT A 404 ON EVERY
     # INSTALL OF THIS TEMPLATE UNTIL THIS LINE EXISTED. Measured on the rig, not
     # inferred: `drupal_cms_site_template_base` - applied above, in `recipes:` -

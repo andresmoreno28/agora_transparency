@@ -331,6 +331,35 @@ class ValidationTest extends BrowserTestBase {
       $uri = File::load($item->get('target_id')->getValue())->getFileUri();
       $this->assertSame($bytes_by_uri[$uri] ?? NULL, (int) str_replace(',', '', $match[1]), "The size quoted in \"$description\" must be the packaged size of $uri.");
     }
+
+    // -- T-0734: a document record reads one label before its file -----------
+    // Core's document media display rendered the media field's label as
+    // `visually_hidden`: unseen, and read aloud after the record's own label
+    // for the same link. `recipe.yml` sets it to `hidden`. The labels are read
+    // from the field definitions, not typed here, and the record's own label
+    // must be found, so the absence below cannot pass on a page that renders
+    // no labels at all.
+    $display = EntityViewDisplay::load('media.document.default');
+    $this->assertSame('hidden', $display?->getComponent('field_media_document')['label'] ?? NULL, 'The document media display must leave the field label out of the markup, not hide it visually.');
+    $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties([
+      'type' => 'agora_base_document',
+      'status' => 1,
+    ]);
+    $this->assertNotEmpty($nodes, 'The package must ship a published document record to read.');
+    ksort($nodes);
+    $node = reset($nodes);
+    $media = $node->get('field_agora_base_document_file')->entity;
+    $link_text = (string) $media->get('field_media_document')->first()->get('description')->getValue();
+    $record_label = FieldConfig::loadByName('node', 'agora_base_document', 'field_agora_base_document_file')->getLabel();
+    $media_label = FieldConfig::loadByName('media', 'document', 'field_media_document')->getLabel();
+
+    $this->drupalGet($node->toUrl());
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->linkExists($link_text);
+    $labelled = '//main//*[normalize-space(text())="%s"]';
+    $page = $this->getSession()->getPage();
+    $this->assertNotEmpty($page->findAll('xpath', sprintf($labelled, $record_label)), "The record's own \"$record_label\" label must be rendered, or the check below proves nothing.");
+    $this->assertCount(0, $page->findAll('xpath', sprintf($labelled, $media_label)), "A document record must not render the media field's \"$media_label\" label, visible or not.");
   }
 
   /**
