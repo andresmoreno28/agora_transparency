@@ -842,7 +842,7 @@ compare 'registers_stated' "$A_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_ba
 # `navigation` and contrib `coffee` - all three installed by the `drupal_cms_site_template_base`
 # recipe this package applies at recipe.yml:81 - plus the Config Guardian dashboard this package
 # installs itself at recipe.yml:231 and configures through its own
-# config/config_guardian.settings.yml. (recipe.yml:785-799 is a COMMENT explaining why those
+# config/config_guardian.settings.yml. (recipe.yml:814-828 is a COMMENT explaining why those
 # settings are NOT a config action, which is a different thing from being the configuration.)
 # These three line numbers read 64, 190 and 705-721 until 2026-09-23, then 68, 196 and 711-727
 # until 2026-09-26 - true when written, moved each time (by a3695ff, then by the D-018
@@ -851,6 +851,9 @@ compare 'registers_stated' "$A_REGISTERS" "$REGISTER_BUNDLES" 'distinct agora_ba
 # They then read 82, 211 and 766-780 until 2026-10-09, when T-0542 found all three already off
 # at its parent commit (81, 217 and 771-784 there) before its own agora_core lines and
 # config_guardian comment moved the last two again; re-derived by grep the same way.
+# They then read 81, 231 and 785-799 until 2026-10-27. The first two still held; the range was
+# 790-804 from 1d8abf7 (2026-10-22) and is 814-828 since T-0734's media display action
+# (8bdaa15). Re-derived by grep the same way.
 #
 # THE FIRST CLAIM IS AN EXTRACTION AND NOT A COMPARISON, and it is the one that matters most:
 # reword the sentence back and claim_once FATALs in the same commit, naming the pattern. A
