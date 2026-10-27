@@ -6078,7 +6078,7 @@ only `user.login` from Gin Login's five routes (D-052 option C, D-054, D-080).
 
 | | option | cost |
 |---|---|---|
-| **A** | `agora_core` also removes `user.pass`, `user.register` and `user.reset.form`; `user.logout.confirm` stays with Gin Login | One hook line and its tests in `agora_core`, released as 1.0.1, and the template's floor raised to it. Fixes F1, F2 and F3, and advisory A11, on every page an anonymous visitor reaches. The logout confirmation is reached only when signed in, so it stays, and it is the control that shows the module still takes routes one by one rather than switching Gin Login off |
+| **A** | `agora_core` also removes `user.pass`, `user.register` and `user.reset.form`; `user.logout.confirm` stays with Gin Login | Three lines in `agora_core`'s hook, and their tests, released as 1.0.1, and the template's floor raised to it. Fixes F1, F2 and F3, and advisory A11, on every page an anonymous visitor reaches. The logout confirmation is reached only when signed in, so it stays, and it is the control that shows the module still takes routes one by one rather than switching Gin Login off |
 | **B** | Fix it upstream, in Gin or Gin Login | The fixes would be right for every Drupal site, and their timing is not this project's; until they are released, the claim D-083 allows cannot be made |
 | **C** | Exclude the account pages from any claim | Nothing to build, and the first page the sign-in page links to stays outside the claim |
 
