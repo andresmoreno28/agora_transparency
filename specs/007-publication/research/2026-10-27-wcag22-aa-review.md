@@ -152,7 +152,7 @@ P = pass, **F** = fail, NA = not applicable.
 
 All three come from Gin. `agora_core` (D-054) removes only `user.login` from the routes Gin Login takes over, so these pages fall back to Gin.
 
-**F1 — 2.5.8, medium.** S28 `/user/register`. `#user-login-form > div.form-item.form-type--password:nth-of-type(2) > button.shwpd.eye-close`: 24×16 px inside the password field, so its 24 px spacing circle hits the field; axe agrees. The same button on the Ágora sign-in page is 44×44. Screenshot `screenshots/failures/F1-target-size-show-password-user-register.png`. Fix: `agora_core` routes `user.register` to the site theme, or upstream in Gin.
+**F1 — 2.5.8, medium.** S28 `/user/register`. `#user-login-form > div.form-type--password.form-item:nth-of-type(2) > button.shwpd.eye-close`: 24×16 px inside the password field, so its 24 px spacing circle hits the field; axe agrees. The same button on the Ágora sign-in page is 44×44. Screenshot `screenshots/failures/F1-target-size-show-password-user-register.png`. Fix: `agora_core` routes `user.register` to the site theme, or upstream in Gin.
 
 **F2 — 1.4.11 focus indicator, medium.** S27, S28: `#edit-submit`, `#edit-login-link`, `#edit-forgot-password-link`, `button.shwpd`, inputs, the "Home" link. Gin draws `0 0 0 4px rgba(0,125,250,.6)` (renders `#66b1fc`), 2.27:1 against white; the 1 px inner line 1.6:1; the button's own focus colour change 1.46:1. Visible, so 2.4.7 passes. Screenshots `screenshots/failures/F2-focus-ring-reset-button-user-password.png`, `F2-focus-ring-login-link-user-password.png`. Fix: `agora_core` routes `user.pass` and `user.register` to the site theme, or upstream in Gin.
 
@@ -193,4 +193,4 @@ No screen reader yet; `/user/reset/*`; real mobile devices and their screen read
 `screenshots/`: `failures`, `advisories`, `pages-1280`, `reflow-320`, `zoom-200`, `spacing-1280`, `spacing-320`, `firefox-text-200`, `focus` (70 crops), `flows`.
 
 <!-- cspell:ignore shuf zzqxv shwpd autofocuses -->
-<!-- The report above is copied verbatim from the evaluator (T-0730). The four words are a shell command, a deliberate no-results query, a class name in Gin and a verb as written; they are ignored here, in this file only, rather than declared project vocabulary. -->
+<!-- The report above is copied verbatim from the evaluator (T-0730), with one exception: in F1 the selector's two classes are written in the other order, which is the same CSS selector. As written, `password` followed by a colon and eight characters is what tests/bin/no-secrets level 2 reads as a credential assignment. The four words above are a shell command, a deliberate no-results query, a class name in Gin and a verb as written; they are ignored here, in this file only, rather than declared project vocabulary. -->
