@@ -58,8 +58,9 @@ D-035 and D-041 in `specs/000-project/DECISIONS.md` in this repository.
 
 ## Accessibility
 
-**Ágora targets WCAG 2.2 AA, and two automated gates now measure it — but neither of them is a
-conformance claim, and the difference is the point of this section.**
+**Ágora's public pages conform to WCAG 2.2 AA as a clean install ships them, by an evaluation made
+on 2026-10-28. Two automated gates also measure part of that on every push — but neither of them is
+a conformance claim, and the difference is the point of this section.**
 
 What actually runs, and what it covers:
 
@@ -91,8 +92,11 @@ page that gate scans has its links and controls measured against the criterion's
 spacing, except links inside a line of text, which the criterion exempts — at the single window
 size the gate runs at. What axe reports as undecided, and every other window size, is left to a
 person.
-**No conformance with any WCAG level is claimed.** The full account, with the denominators, is the
-author's attestation, [`ACCESSIBILITY.md`](ACCESSIBILITY.md), keyboard walkthrough included.
+**The conformance claim rests on that evaluation, not on these gates.** It covers every page an
+anonymous visitor can reach on a clean install with the demonstration content, and not the
+administrative interface or the pages that need an account. The full account, with the
+denominators, is the author's attestation, [`ACCESSIBILITY.md`](ACCESSIBILITY.md), keyboard
+walkthrough and evaluation included.
 
 ## Requirements
 
@@ -286,11 +290,12 @@ walked on a clean install, not written from memory of the code.
   account, or delete the ones that do not apply. The theme shows a brand mark for the network it
   recognises from the link's own domain; a network it does not carry a mark for, or any other link,
   renders as a plain text item in the same row.
-* **The accessibility statement and the legal pages.** `/accessibility-statement` carries four
-  sections marked "To be completed": what has been separately verified about this installation, how
-  to report a barrier, the enforcement procedure for this jurisdiction, and the date and method of
-  the last review. The Legal notice, Privacy notice and Cookies pages ship with this package; only
-  the Privacy policy page comes from Drupal CMS, shipped by its `drupal_cms_site_template_base`
+* **The accessibility statement and the legal pages.** `/accessibility-statement` carries five
+  sections marked "To be completed": the conformance status, which asks for the site to be evaluated
+  again once its own content replaces the demonstration content; what has been separately verified
+  about this installation; how to report a barrier; the enforcement procedure for this
+  jurisdiction; and the date and method of the last review. The Legal notice, Privacy notice and
+  Cookies pages ship with this package; only the Privacy policy page comes from Drupal CMS, shipped by its `drupal_cms_site_template_base`
   recipe (2.2.6). That page arrives unpublished, at `/privacy-policy`, with a "Privacy policy"
   link in Drupal's Footer menu, which this theme renders: a visitor sees neither, and a signed-in
   administrator sees the link. Either delete the page, which takes its link with it once Trash is

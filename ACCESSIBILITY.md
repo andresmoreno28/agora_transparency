@@ -1,9 +1,15 @@
 # Accessibility — WCAG 2.2 attestation
 
-Ágora Transparency targets WCAG 2.2 level AA; no conformance with any WCAG level is claimed. It is
-checked with axe on every push, and its keyboard behaviour was walked through — by machine on every
-public page the automated check reads, and by a person on 2026-09-25 where only a person can
-judge.
+As installed on a clean Drupal CMS site with its demonstration content and settings, every page of
+Ágora Transparency 1.0.1 that an anonymous visitor can reach conforms to WCAG 2.2 level AA. It was
+evaluated on 2026-10-28 with WCAG-EM 1.0 — automated checks with axe-core in Chromium and Firefox,
+keyboard, zoom, reflow and text-spacing checks, and the 34 demonstration PDFs — with agora_theme
+1.2.5 and agora_core 1.0.1, plus an informal screen-reader pass with NVDA and Firefox. The
+administrative interface and pages that need an account are outside this claim.
+
+The package is also checked with axe on every push, and its keyboard behaviour was walked through —
+by machine on every public page the automated check reads, and by a person on 2026-09-25 where only
+a person can judge.
 
 This file is the author's statement about the package, for whoever reviews it. It is not the
 accessibility statement a site publishes: that one ships with the demonstration content, speaks to a
@@ -71,6 +77,35 @@ Every job's whole log is public and opens without an account:
 * this package: <https://git.drupalcode.org/project/agora_transparency/-/pipelines>
 * the theme: <https://git.drupalcode.org/project/agora_theme/-/pipelines>
 
+## The evaluation of 2026-10-28
+
+The conformance claim at the top of this file rests on this evaluation, not on the checks above.
+It followed WCAG-EM 1.0 on a clean install of this package with released dependencies:
+`drupal/agora_theme` 1.2.5, `drupal/agora_core` 1.0.1, Config Guardian 1.1.0, Drupal CMS 2.2.7 and
+Drupal core 11.4.11.
+
+* **Sample.** 33 of the 94 addresses an anonymous visitor can reach, chosen to include every
+  register, every kind of record, the document library and its filtered and empty states, search
+  results, the prose and legal pages, the page-not-found screen, the sign-in page, the password
+  request page, the registration address and the one-time sign-in page; the sign-in and
+  registration pages again with registration opened to visitors; and every demonstration PDF.
+* **Checks.** axe-core 4.14.0 with every rule enabled, in Chromium at 1280 and 320 CSS pixels wide
+  and again in Firefox; keyboard walks; reflow at 320 pixels; 200 % zoom; the WCAG text-spacing
+  values; orientation; content shown on hover; the size of every target; contrast sampling; forms
+  and their error states; and each PDF's structure tags, language and title.
+* **Result.** Of the 55 success criteria at levels A and AA (4.1.1 Parsing is obsolete in WCAG 2.2
+  and is not counted), 40 pass, 0 fail and 15 do not apply. axe reports 0 violations at levels A
+  and AA. Every PDF is tagged.
+* **What it fixed on the way.** The review of 2026-10-27 found three failures, all on account pages
+  that the administration theme then served; `drupal/agora_core` 1.0.1 hands those pages to the
+  site's own theme. A first run on 2026-10-28, with `drupal/agora_theme` 1.2.4, found one more:
+  under 2.5.8, the links Gin Login adds beneath the account forms were 19 pixels tall.
+  `drupal/agora_theme` 1.2.5 makes them 44 pixels tall, the second run found no failure, and this
+  package requires 1.2.5 or later.
+* **Screen reader.** On 2026-10-28 a person used NVDA with Firefox on a build carrying these fixes,
+  and NVDA read all content wherever the cursor was placed. It was an informal pass: the scripted
+  guide prepared for it was not completed.
+
 ## The keyboard walkthrough
 
 A keyboard walkthrough answers what axe cannot: whether every control can be reached and left with
@@ -93,9 +128,10 @@ package at commit `acd2a51`, applied to a fresh Drupal site, with `drupal/agora_
 the site's own theme. It was walked by keyboard alone in a real browser at 1280 by 800 and at 320 by
 256. At both sizes every one of its 32 interactive elements was reached, focus never got stuck,
 every stop showed a visible focus indicator, none was hidden, the skip link worked, the page did not
-scroll sideways at 320 pixels wide, and no target was too small. The page opens with the cursor
-already in the Username field, as Drupal does on every site. From there, Tab carries on through the
-form and the footer, and Shift+Tab goes back through the header to the skip link. The
+scroll sideways at 320 pixels wide, and no target was too small. The page opened with the cursor
+already in the Username field, as Drupal does on every site. From there, Tab carried on through the
+form and the footer, and Shift+Tab went back through the header to the skip link; since
+`drupal/agora_theme` 1.2.4 the page no longer opens with the cursor in that field. The
 password-reset page and the other account pages, which used the administration theme on that date
 and have used the site's own theme since `drupal/agora_core` 1.0.1, were not part of this walk.
 The build was this package at commit `58d84b2`, applied to a fresh Drupal site,
@@ -147,10 +183,18 @@ small and forms too wide in Gin's interface. On the dashboard itself, the last T
 
 Named, so that silence is not read as a pass.
 
-* **Screen readers.** None was used. The machine recorded the role and name the browser computed for
-  every stop — what a screen reader is given — and not what a screen reader says.
-* **Browsers other than Chrome.** The automated check and the machine's walk both ran in Chrome.
-* **Widths other than 1280 and 320 CSS pixels.** The keyboard walk used those two and nothing
+* **A full screen-reader pass.** The one pass made, with NVDA and Firefox on 2026-10-28, was
+  informal, and the scripted guide prepared for it was not completed; no other screen reader was
+  used. The machine recorded the role and name the browser computed for every stop — what a screen
+  reader is given — and not what a screen reader says.
+* **Phones, tablets and their screen readers.** No real mobile device was used, and so no mobile
+  screen reader; narrow screens were simulated in a desktop browser.
+* **Forced colours.** No page was viewed in a forced-colours mode, such as Windows' contrast themes.
+* **Voice control.** No speech input was used. Whether each control's visible label is part of its
+  accessible name, which voice control relies on, was read from the markup only.
+* **Browsers other than Chrome and Firefox.** The automated check on every push and the machine's
+  walks ran in Chrome; the evaluation of 2026-10-28 also used Firefox.
+* **Widths other than 1280 and 320 CSS pixels.** The keyboard walks used those two and nothing
   between them, such as a tablet's.
 * **Administrative pages other than the dashboard.** No push checks any of them, and no conformance
   is claimed for any of them. Config Guardian's other pages that take no argument were walked once,
@@ -159,7 +203,8 @@ Named, so that silence is not read as a pass.
   rollback, delete and export. They need a snapshot to exist, and a measurement must not create
   one.
 * **The CSV distributions as tables.** The theme can draw a dataset's CSV file as a table on the
-  dataset's page; no check reads the tables drawn from the files this package ships.
+  dataset's page; no check run on every push reads the tables drawn from the files this package
+  ships. The evaluation of 2026-10-28 read one, on the dataset page in its sample.
 * **2.4.13 Focus Appearance.** It is a level AAA criterion, outside the target. The machine computed
   a figure for it, with a reading of its own where the criterion's text leaves a case open, and
   nothing here relies on that figure.
@@ -168,18 +213,16 @@ Named, so that silence is not read as a pass.
   covers the focused element was not measured.
 * **Content added after installation**: pages, files, embedded maps, video players and widgets a
   site adds itself. Nothing here reaches them.
-* **Two account pages.** On a Drupal CMS site Gin Login serves the account pages in the
+* **The sign-out confirmation.** On a Drupal CMS site Gin Login serves the account pages in the
   administration theme; since `drupal/agora_core` 1.0.1 the site's own theme serves the sign-in,
   password reset, registration and one-time sign-in pages instead, and only the sign-out
   confirmation, which needs an account, stays with Gin Login. The automated testing above covers
   the sign-in and password reset pages; registration is closed on a clean install, so its address
-  answers with the sign-in page. The one-time sign-in page and the sign-out confirmation are not
+  answers with the sign-in page. The evaluation of 2026-10-28 also read the one-time sign-in page,
+  and the sign-in and registration pages with registration open. The sign-out confirmation is not
   measured by any check here.
-* **The sign-in page, by a person.** No person has yet confirmed it by keyboard or with a screen
-  reader; only the machine has walked it. Whether two of its behaviours are acceptable is also a
-  person's judgement, and both come from Drupal core rather than from this package: the page opens
-  with focus already in the Username field, and the password-reset link is reached from there only
-  by Shift+Tab.
+* **The sign-in page, by a person.** No person has yet walked it by keyboard; the machine walked it
+  on 2026-10-09 and again in the evaluation of 2026-10-28.
 
 ## Method and date
 
@@ -192,12 +235,16 @@ Named, so that silence is not read as a pass.
   so a clean result is a measurement and not an absence of one.
 * **Keyboard, by a person.** A short list of questions covering only what the machine cannot
   settle, answered on the preview site described above.
+* **Evaluation.** WCAG-EM 1.0, as described under *The evaluation of 2026-10-28*.
 * **Record.** The machine's transcript — every stop, at both widths, in both directions — is
   `specs/006-hardening/research/2026-09-23-keyboard-measurability.md`; the person's answers are in
   `specs/006-hardening/tasks.md`, under *Keyboard walkthroughs, the person's half*; the sign-in
-  page's walk of 2026-10-09 is recorded in T-0542's row of `specs/005-ai-and-governance/tasks.md`.
-  All three are in the project's
+  page's walk of 2026-10-09 is recorded in T-0542's row of `specs/005-ai-and-governance/tasks.md`;
+  the evaluation's two runs are `specs/007-publication/research/2026-10-28-wcag22-aa-rereview.md`,
+  and the review of 2026-10-27 before it is `2026-10-27-wcag22-aa-review.md` beside it. All of them
+  are in the project's
   [public repository](https://git.drupalcode.org/project/agora_transparency/-/tree/1.x/specs), and
   none is part of this package.
 * **Date.** Written on 2026-09-25, about the package as it stood that day; amended 2026-10-09 for
-  the sign-in page, and 2026-10-28 for the password reset page and the other account pages.
+  the sign-in page, and 2026-10-28 for the password reset page, the other account pages and the
+  conformance claim of the evaluation made that day.

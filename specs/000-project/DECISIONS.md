@@ -6149,3 +6149,14 @@ declarations) are written by `tests/bin/generate-demo-media.py`.
 **Cost of being wrong.** Small: the files are demonstration content that a site owner deletes. What
 they teach is the cost: a template whose own sample documents are untagged shows an untagged PDF as
 the normal case.
+
+---
+
+## D-083 · Amended 2026-10-28 — its three conditions hold, and the statement makes the claim
+
+The fixes of T-0731 to T-0734 are on the `1.x` heads, and those in `agora_core` and `agora_theme`
+are released (1.0.1 and 1.2.5); [andres]'s screen-reader pass, with NVDA and Firefox, was made on
+2026-10-28, informally, the scripted guide not completed; and the second WCAG-EM run (T-0738) found
+**0 failures** of 55 criteria, after a first run the same day found one that `agora_theme` 1.2.5
+fixed. So the statement node now claims WCAG 2.2 AA for the public pages, in the words quoted in
+T-0738's row, and `ACCESSIBILITY.md` carries the claim and its method. The ruling is unchanged.
