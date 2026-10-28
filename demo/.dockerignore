@@ -1,0 +1,10 @@
+# The build needs only Dockerfile, nginx.conf, php/, drupal/ and bin/.
+# Above all, .env (secrets) must never reach the builder.
+.env
+.env.*
+.agora-demo.lock
+*.sh
+PLAN.md
+rehearsal/
+systemd/
+dist/

@@ -1,0 +1,238 @@
+# Agora Transparency live demo: one self-contained Compose project.
+#
+# Nothing here is shared with any other project on the host: its own
+# networks, its own database, its own volumes, its own images and its own
+# Cloudflare Tunnel. No port is published on the host.
+#
+#   Cloudflare --tunnel--> cloudflared --edge--> web (nginx) --app--> php --db--> db
+#
+#   egress  cloudflared only: the one container with a route out (to Cloudflare)
+#   edge    cloudflared and web, internal: the only way to reach web
+#   app     web and php, internal
+#   db      php and db, internal
+#
+# Secrets (database passwords, hash salt, tunnel token) come from .env next to
+# this file, which setup.sh creates with mode 600. They are never written here.
+
+name: ${COMPOSE_PROJECT_NAME:-agora-demo}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-app-build: &app-build
+  context: .
+  args:
+    PHP_IMAGE: ${PHP_IMAGE:-php:8.4.27-fpm-trixie}
+    NGINX_IMAGE: ${NGINX_IMAGE:-nginx:1.30.6-alpine}
+    COMPOSER_IMAGE: ${COMPOSER_IMAGE:-composer:2.10.3}
+    TEMPLATE_CONSTRAINT: ${TEMPLATE_CONSTRAINT:-^1.0}
+    CACHE_BUST: ${CACHE_BUST:-0}
+
+# What PHP needs to know. Only the php service and the two jobs get these.
+x-app-env: &app-env
+  DB_HOST: db
+  DB_NAME: drupal
+  DB_USER: drupal
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env - run setup.sh}
+  DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?DRUPAL_HASH_SALT is not set in .env - run setup.sh}
+  DEMO_HOSTNAME: ${DEMO_HOSTNAME:-agora-demo.andresmoreno.dev}
+  EDGE_SUBNET: ${EDGE_SUBNET:-10.213.47.0/28}
+  DRUSH_OPTIONS_URI: https://${DEMO_HOSTNAME:-agora-demo.andresmoreno.dev}
+  # Drupal CMS's own opt-out of its anonymous telemetry, read when the site
+  # template is installed.
+  DRUPAL_CMS_TELEMETRY: "0"
+
+# The snapshot and restore jobs: the php image, run once and removed.
+x-job: &job
+  image: ${IMAGE_REPO:-agora-demo}-php:${IMAGE_TAG:-live}
+  profiles: ["jobs"]
+  user: www-data
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  environment: *app-env
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=512m,mode=1777
+  networks: [db]
+  depends_on:
+    db:
+      condition: service_healthy
+  cpus: 1.0
+  mem_limit: 1g
+  memswap_limit: 1g
+  pids_limit: 128
+  restart: "no"
+  logging: *logging
+
+services:
+  db:
+    image: ${MARIADB_IMAGE:-mariadb:11.8.9}
+    user: mysql
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      MARIADB_DATABASE: drupal
+      MARIADB_USER: drupal
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env - run setup.sh}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is not set in .env - run setup.sh}
+      MARIADB_ROOT_HOST: localhost
+      MARIADB_AUTO_UPGRADE: "1"
+    command:
+      - --transaction-isolation=READ-COMMITTED
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=60
+      - --max-allowed-packet=64M
+      - --skip-name-resolve
+    volumes:
+      - db-data:/var/lib/mysql
+    tmpfs:
+      - /run/mysqld:rw,noexec,nosuid,nodev,size=16m,mode=1777
+      - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+    networks: [db]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    cpus: 1.0
+    mem_limit: 1g
+    memswap_limit: 1g
+    pids_limit: 256
+    restart: unless-stopped
+    logging: *logging
+
+  php:
+    image: ${IMAGE_REPO:-agora-demo}-php:${IMAGE_TAG:-live}
+    build:
+      <<: *app-build
+      target: php
+    user: www-data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment: *app-env
+    volumes:
+      - files:/opt/drupal/web/sites/default/files
+      - private:/opt/drupal/private
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=512m,mode=1777
+    networks: [db, app]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    cpus: 2.0
+    mem_limit: 2g
+    memswap_limit: 2g
+    pids_limit: 256
+    stop_grace_period: 20s
+    restart: unless-stopped
+    logging: *logging
+
+  web:
+    image: ${IMAGE_REPO:-agora-demo}-web:${IMAGE_TAG:-live}
+    build:
+      <<: *app-build
+      target: web
+    user: "101:101"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: "1"
+    volumes:
+      - files:/opt/drupal/web/sites/default/files:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777
+    networks: [app, edge]
+    depends_on:
+      php:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/fpm-ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    cpus: 1.0
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 64
+    restart: unless-stopped
+    logging: *logging
+
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:2026.10.4}
+    # The image's entrypoint is "cloudflared --no-autoupdate"; the token is
+    # read from TUNNEL_TOKEN.
+    command: ["tunnel", "--metrics", "127.0.0.1:20241", "run"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777
+    networks: [edge, egress]
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:20241", "ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    cpus: 0.5
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 64
+    restart: unless-stopped
+    logging: *logging
+
+  # Takes the baseline the nightly restore brings back (setup.sh, update.sh).
+  snapshot:
+    <<: *job
+    entrypoint: ["agora-snapshot"]
+    volumes:
+      - files:/opt/drupal/web/sites/default/files
+      - private:/opt/drupal/private
+      - snapshot:/var/lib/agora-snapshot
+
+  # Brings the baseline back (restore.sh, nightly). It can only READ the
+  # snapshot, so a restore can never damage the baseline it restores from.
+  restore:
+    <<: *job
+    entrypoint: ["agora-restore"]
+    volumes:
+      - files:/opt/drupal/web/sites/default/files
+      - private:/opt/drupal/private
+      - snapshot:/var/lib/agora-snapshot:ro
+
+networks:
+  db:
+    internal: true
+  app:
+    internal: true
+  edge:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${EDGE_SUBNET:-10.213.47.0/28}
+  egress: {}
+
+volumes:
+  db-data:
+  files:
+  private:
+  snapshot:

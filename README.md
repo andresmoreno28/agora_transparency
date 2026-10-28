@@ -628,20 +628,20 @@ repository, so the ones to trust are the ones the script just printed. The diffe
 them moves only when a file cspell does not open is added or removed, and it is accounted for
 below.
 
-**The 41 files not opened, all 41 of them.** The accounting is given in full because an enumeration
+**The 42 files not opened, all 42 of them.** The accounting is given in full because an enumeration
 that does not add up to its own denominator reads as an explanation rather than as a check.
 
 * **37 are binaries `cspell` does not open** — every file under `content/file/` that is neither a
   `*.yml` entity export nor one of the CSV distributions it reads happily, plus `screenshot.webp`
   and `logo.png` at the root. The per-format counts are stated once, in
   [`content/MEDIA-LICENCES.md`](content/MEDIA-LICENCES.md), and this bullet does not restate them.
-* **4 are matched by the upstream `.cspell.json` defaults, not by omission** — `.eslintrc.json` and
-  `.gitignore` match its dotfile and `*ignore` patterns; `LICENSE.txt` and `composer.json` match its
-  case-insensitive filename list regardless of extension.
+* **5 are matched by the upstream `.cspell.json` defaults, not by omission** — `.eslintrc.json`,
+  `.gitignore` and `demo/.dockerignore` match its dotfile and `*ignore` patterns; `LICENSE.txt` and
+  `composer.json` match its case-insensitive filename list regardless of extension.
 
-37 + 4 = 41, and the list was derived rather than recalled: run `cspell` without `--no-progress`
+37 + 5 = 42, and the list was derived rather than recalled: run `cspell` without `--no-progress`
 over the same `--file-list` the script builds, and the files it opens are printed one per line; the
-41 above are the set difference. **`cspell` reads `.gitattributes` and `.mailmap`**, which is easy
+42 above are the set difference. **`cspell` reads `.gitattributes` and `.mailmap`**, which is easy
 to guess wrong in either direction — the dotfile pattern is narrower than "every dotfile".
 
 `phpcs`, `phpstan` and `eslint` still print no file count at all unless asked. A passing check over

@@ -70,6 +70,12 @@
 /.claude export-ignore
 /specs export-ignore
 
+# --- The live demo's deployment package (T-0740) ---------------------------------------
+# Host operations for the demo at agora-demo.andresmoreno.dev: Docker Compose files, shell
+# scripts and a plan. Versioned so the demo can be rebuilt and audited, never part of the
+# template a site installs. Proved by: git archive HEAD | tar -t | grep -c '^demo/'  -> 0
+/demo export-ignore
+
 # --- Deliberately NOT export-ignored (D-015.1) ----------------------------------------
 # AGENTS.md is product, not process: it ships with the template and guides AI assistants
 # working on a site built WITH Ágora. Do not add it to this file.

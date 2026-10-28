@@ -1,0 +1,68 @@
+# Rehearsal only - never part of the real demo.
+#
+# Adds a TRAP for outbound calls. Inside the containers that run Drupal, the
+# host names Drupal and Drupal CMS would use to report usage resolve to a
+# recorder on an internal network. The recorder logs every connection it
+# receives (with the TLS server name it was asked for) and answers nothing.
+# So nothing can leave the machine, and every attempt is counted.
+#
+# Used through COMPOSE_FILE in the rehearsal's .env (see rehearse.sh).
+
+x-trap-hosts: &trap-hosts
+  - "updates.drupal.org:${TRAP_IP:-10.213.58.2}"
+  - "www.drupal.org:${TRAP_IP:-10.213.58.2}"
+  - "drupal.org:${TRAP_IP:-10.213.58.2}"
+  - "ftp.drupal.org:${TRAP_IP:-10.213.58.2}"
+  - "packages.drupal.org:${TRAP_IP:-10.213.58.2}"
+  - "api.eu.amplitude.com:${TRAP_IP:-10.213.58.2}"
+  - "api2.amplitude.com:${TRAP_IP:-10.213.58.2}"
+  - "api.amplitude.com:${TRAP_IP:-10.213.58.2}"
+
+services:
+  php:
+    extra_hosts: *trap-hosts
+    networks: [db, app, trap]
+    depends_on:
+      trap:
+        condition: service_started
+
+  snapshot:
+    extra_hosts: *trap-hosts
+    networks: [db, trap]
+    depends_on:
+      trap:
+        condition: service_started
+
+  restore:
+    extra_hosts: *trap-hosts
+    networks: [db, trap]
+    depends_on:
+      trap:
+        condition: service_started
+
+  trap:
+    image: ${NGINX_IMAGE:-nginx:1.30.6-alpine}
+    user: "101:101"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: "1"
+    volumes:
+      - ./rehearsal/trap-nginx.conf:/etc/nginx/nginx.conf:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=8m,mode=1777
+    networks:
+      trap:
+        ipv4_address: ${TRAP_IP:-10.213.58.2}
+    cpus: 0.25
+    mem_limit: 64m
+    pids_limit: 16
+    restart: "no"
+
+networks:
+  trap:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${TRAP_SUBNET:-10.213.58.0/28}

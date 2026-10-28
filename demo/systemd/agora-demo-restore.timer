@@ -1,0 +1,11 @@
+[Unit]
+Description=Agora demo: nightly restore of the baseline snapshot
+
+[Timer]
+OnCalendar=*-*-* 04:15:00 Europe/Madrid
+RandomizedDelaySec=5min
+Persistent=true
+Unit=agora-demo-restore.service
+
+[Install]
+WantedBy=timers.target

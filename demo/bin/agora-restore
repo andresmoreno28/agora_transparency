@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+# agora-restore - runs inside the "restore" job (docker compose run --rm restore).
+#
+# Brings the demo back to its baseline: the database, the public files and the
+# private files as they were right after install. The snapshot volume is
+# mounted read-only for this job, so a restore can never alter the baseline.
+#
+# Usage: agora-restore [--previous | --wipe]
+#   --previous   restore the baseline that was replaced by the last snapshot
+#   --wipe       only empty the database and the files (setup.sh --reinstall)
+
+set -euo pipefail
+
+readonly SNAP_ROOT=/var/lib/agora-snapshot
+readonly FILES_DIR=/opt/drupal/web/sites/default/files
+readonly PRIVATE_DIR=/opt/drupal/private
+
+log() { printf '[restore] %s\n' "$*"; }
+die() { printf '[restore] ERROR: %s\n' "$*" >&2; exit 1; }
+
+which=baseline
+wipe_only=0
+case "${1:-}" in
+  "") ;;
+  --previous) which=previous ;;
+  --wipe) wipe_only=1 ;;
+  *) die "unknown option: $1 (--previous or --wipe)" ;;
+esac
+snap="$SNAP_ROOT/$which"
+
+if [ "$wipe_only" = 0 ]; then
+  [ -f "$snap/manifest" ] || die "no $which snapshot in $SNAP_ROOT; run the snapshot job first"
+  ( cd "$snap" && sha256sum --check --quiet SHA256SUMS ) || die "the $which snapshot does not match its checksums"
+  expected_nodes=$(sed -n 's/^nodes=//p' "$snap/manifest")
+  log "restoring the $which snapshot: $(tr '\n' ' ' < "$snap/manifest")"
+fi
+
+umask 077
+defaults=$(mktemp /tmp/agora-db.XXXXXX.cnf)
+trap 'rm -f "$defaults"' EXIT
+printf '[client]\nhost=%s\nuser=%s\npassword=%s\n' "$DB_HOST" "$DB_USER" "$DB_PASSWORD" > "$defaults"
+db() { mariadb --defaults-extra-file="$defaults" "$@"; }
+
+# Database: drop every table.
+mapfile -t tables < <(db -N -B -e 'SHOW TABLES' "$DB_NAME")
+if [ "${#tables[@]}" -gt 0 ]; then
+  drop="SET FOREIGN_KEY_CHECKS=0; DROP TABLE"
+  sep=" "
+  for t in "${tables[@]}"; do drop+="$sep\`$t\`"; sep=", "; done
+  db -e "$drop;" "$DB_NAME"
+fi
+log "database: ${#tables[@]} tables dropped"
+
+# Files: empty the directories. Everything in them belongs to www-data, which
+# this job runs as.
+find "$FILES_DIR" -mindepth 1 -delete
+find "$PRIVATE_DIR" -mindepth 1 -delete
+mkdir -p "$PRIVATE_DIR/files" "$PRIVATE_DIR/sync"
+
+if [ "$wipe_only" = 1 ]; then
+  log "wiped: empty database, no files"
+  exit 0
+fi
+
+gunzip -c "$snap/db.sql.gz" | db "$DB_NAME"
+log "database: dump loaded"
+umask 022
+tar -xzf "$snap/files.tar.gz" -C "$FILES_DIR" --no-same-owner
+tar -xzf "$snap/private.tar.gz" -C "$PRIVATE_DIR" --no-same-owner
+log "files: public and private files unpacked"
+
+drush cache:rebuild --quiet
+drush core:cron --quiet
+
+nodes=$(db -N -B -e 'SELECT COUNT(*) FROM node_field_data' "$DB_NAME")
+[ "$nodes" = "$expected_nodes" ] \
+  || die "the site has $nodes nodes after the restore; the snapshot recorded $expected_nodes"
+log "done: $nodes nodes, as recorded in the snapshot"

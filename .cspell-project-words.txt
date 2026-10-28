@@ -404,3 +404,38 @@ automators
 # shared invariants was measured (+132/-4 and +54/-3). A git option name, not a word, and it
 # recurs in the plan and in the task row that quotes the command it came from.
 numstat
+# ---------------------------------------------------------------------------------------------
+# T-0740, 2026-10-27: the live demo's deployment package under demo/ (export-ignored). Every
+# entry is the real name of a directive, option, field, command, package or host used there.
+# Its tokens that are NOT real words - shell variables, printf labels, unpack() format keys and
+# the encoded-path test vector - are scoped in their own file by an ignore directive instead.
+# Docker and Compose: the `healthcheck` key, `memswap_limit`, the `ReadonlyRootfs` field.
+healthcheck
+memswap
+rootfs
+# Linux mount options of the read-only containers' tmpfs mounts.
+nosuid
+nodev
+# nginx directives and protocols: `tcp_nopush`, `ssl_preread`, the uwsgi and scgi temp paths.
+nopush
+preread
+uwsgi
+scgi
+# systemd: the `Type=oneshot` service of the nightly restore, and its log reader.
+oneshot
+journalctl
+# Daemons, flags and commands: MariaDB's server, `php-fpm --nodaemonize`,
+# `apt-mark showmanual`, `drush updatedb`.
+mysqld
+nodaemonize
+showmanual
+updatedb
+# Debian packages and the font library the PHP image's gd extension is built against.
+freetype
+libfreetype
+libjpeg
+libwebp
+# The Drupal module `mailsystem` (drupal.org/project/mailsystem), configured by machine name.
+mailsystem
+# Cloudflare Tunnel's DNS target host, `<id>.cfargotunnel.com`. A host name, not a word.
+cfargotunnel

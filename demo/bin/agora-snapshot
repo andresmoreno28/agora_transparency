@@ -1,0 +1,78 @@
+#!/bin/bash
+#
+# agora-snapshot - runs inside the "snapshot" job (docker compose run --rm snapshot).
+#
+# Takes the baseline that the nightly restore brings back: the database, the
+# public files and the private files, exactly as they are now. setup.sh runs it
+# right after installing; update.sh runs it after a security update.
+#
+# The new baseline is written next to the old one and swapped in only when it
+# is complete; the previous baseline is kept as "previous".
+
+set -euo pipefail
+
+readonly SNAP_ROOT=/var/lib/agora-snapshot
+readonly FILES_DIR=/opt/drupal/web/sites/default/files
+readonly PRIVATE_DIR=/opt/drupal/private
+
+log() { printf '[snapshot] %s\n' "$*"; }
+die() { printf '[snapshot] ERROR: %s\n' "$*" >&2; exit 1; }
+
+[ -w "$SNAP_ROOT" ] || die "$SNAP_ROOT is not writable"
+
+# Database credentials reach the client through a file only this process can
+# read, never through the command line.
+umask 077
+defaults=$(mktemp /tmp/agora-db.XXXXXX.cnf)
+incoming="$SNAP_ROOT/.incoming"
+trap 'rm -f "$defaults"; rm -rf "$incoming"' EXIT
+printf '[client]\nhost=%s\nuser=%s\npassword=%s\n' "$DB_HOST" "$DB_USER" "$DB_PASSWORD" > "$defaults"
+db() { mariadb --defaults-extra-file="$defaults" "$@"; }
+dump() { mariadb-dump --defaults-extra-file="$defaults" "$@"; }
+
+nodes=$(db -N -B -e 'SELECT COUNT(*) FROM node_field_data' "$DB_NAME") \
+  || die "cannot read the site's content; is Drupal installed?"
+[ "$nodes" -gt 0 ] || die "the site has no content; refusing to take an empty baseline"
+
+rm -rf "$incoming"
+mkdir -p "$incoming"
+
+# Cache, session and log tables are saved empty: Drupal rebuilds them.
+mapfile -t tables < <(db -N -B -e 'SHOW TABLES' "$DB_NAME")
+structure_only=()
+ignore=()
+for t in "${tables[@]}"; do
+  case "$t" in
+    cache|cache_*|sessions|watchdog|semaphore|flood)
+      structure_only+=("$t")
+      ignore+=("--ignore-table=$DB_NAME.$t")
+      ;;
+  esac
+done
+log "database: ${#tables[@]} tables, ${#structure_only[@]} of them saved without rows; $nodes nodes"
+{
+  if [ "${#structure_only[@]}" -gt 0 ]; then
+    dump --single-transaction --no-data "$DB_NAME" "${structure_only[@]}"
+  fi
+  dump --single-transaction --quick --hex-blob "${ignore[@]}" "$DB_NAME"
+} | gzip -6 > "$incoming/db.sql.gz"
+
+# Generated files (compiled templates, CSS/JS aggregates) are left out:
+# Drupal writes them again on demand.
+tar -C "$FILES_DIR" --exclude=./php --exclude=./css --exclude=./js -czf "$incoming/files.tar.gz" .
+tar -C "$PRIVATE_DIR" -czf "$incoming/private.tar.gz" .
+
+{
+  echo "taken_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "nodes=$nodes"
+  echo "build_id=$(cat /opt/drupal/BUILD-ID)"
+} > "$incoming/manifest"
+( cd "$incoming" && sha256sum db.sql.gz files.tar.gz private.tar.gz > SHA256SUMS )
+
+rm -rf "$SNAP_ROOT/previous"
+if [ -d "$SNAP_ROOT/baseline" ]; then
+  mv "$SNAP_ROOT/baseline" "$SNAP_ROOT/previous"
+fi
+mv "$incoming" "$SNAP_ROOT/baseline"
+
+log "baseline written: $(du -sh "$SNAP_ROOT/baseline" | cut -f1) ($(tr '\n' ' ' < "$SNAP_ROOT/baseline/manifest"))"

@@ -1,0 +1,15 @@
+[Unit]
+Description=Agora demo: restore the baseline snapshot taken right after install
+Documentation=file:///opt/agora-demo/PLAN.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/agora-demo
+ExecStart=/opt/agora-demo/restore.sh
+TimeoutStartSec=20min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
