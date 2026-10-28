@@ -49,13 +49,13 @@ require_once __DIR__ . '/../Traits/NoUsageReportingTrait.php';
  * AND ONE LOGGED-IN PAGE, DECLARED SEPARATELY (D-061, option B). Config
  * Guardian's dashboard is the one administrative surface this package chose,
  * installs and configures itself, and it ships a role whose whole purpose is
- * to read it. That page is scanned AFTER the ten, logged in as that role,
+ * to read it. That page is scanned AFTER the eleven, logged in as that role,
  * against an expectation set of its own - because on it almost every
  * violation sits in markup this package installed and did not write. The
  * criterion is zero violations in markup this package owns, with every other
  * violation matched by rule, selector and owner against a declared list, so
  * that a new one fails. ::scanTheGovernanceDashboard() carries the reasoning
- * and the measurement; the ten are untouched by it.
+ * and the measurement; the eleven are untouched by it.
  *
  * AND ONE RULE AXE SHIPS SWITCHED OFF, SWITCHED ON BY NAME (T-0634). WCAG
  * 2.2's criterion 2.5.8, Target Size (Minimum), is level AA, and the only
@@ -200,7 +200,7 @@ class AccessibilityTest extends WebDriverTestBase {
    * be green, and the statement would go on saying nine. A floor cannot fail
    * in the direction the product actually moves.
    *
-   * WHERE THE TEN COMES FROM. It is not a preference either; it is the sum
+   * WHERE THE ELEVEN COMES FROM. It is not a preference either; it is the sum
    * of what ::declarePages() derives from the package, and each term is a
    * different render path:
    *
@@ -211,10 +211,12 @@ class AccessibilityTest extends WebDriverTestBase {
    *   1  the not-found page
    *   1  the sign-in page, served by agora_theme because agora_core takes it
    *      from Gin Login
+   *   1  the password reset page, which agora_core takes from Gin Login too
+   *      from 1.0.1 (T-0737)
    *
    * THE CONSTANT IS READ FROM OUTSIDE THIS FILE, which is the other half of
    * why it is a named constant and not a literal. tests/bin/packaged-claims
-   * re-derives those six terms from the package - it counts the files in
+   * re-derives those seven terms from the package - it counts the files in
    * content/canvas_page/, parses VIEW_PAGES, counts the single-surface
    * entries - and compares the total against this constant AND against the
    * count the shipped statement quotes. So the number is bound three ways: to
@@ -222,7 +224,7 @@ class AccessibilityTest extends WebDriverTestBase {
    * scanned at runtime by the assertion below. Change any one of the three
    * and two checks fail rather than none.
    */
-  private const DECLARED_PAGES = 10;
+  private const DECLARED_PAGES = 11;
 
   /**
    * The floor, in characters of rendered text, below which a scan is empty.
@@ -248,7 +250,7 @@ class AccessibilityTest extends WebDriverTestBase {
   private const FOOTER_MENU_FLOOR = 5;
 
   /**
-   * How many LOGGED-IN surfaces this gate scans. An equality, like the ten.
+   * How many LOGGED-IN surfaces this gate scans. An equality, like the eleven.
    *
    * SEPARATE FROM DECLARED_PAGES ON PURPOSE (D-061, option B). That constant
    * counts the pages a member of the public reads, tests/bin/packaged-claims
@@ -453,7 +455,7 @@ class AccessibilityTest extends WebDriverTestBase {
    * public source. The theme's equivalent figure has always been public in
    * its `nightwatch` job. A reviewer could check one claim and not the other.
    *
-   * ONE LINE PER SURFACE (T-0615). The file carries the ten's line and,
+   * ONE LINE PER SURFACE (T-0615). The file carries the eleven's line and,
    * appended after it by ::scanTheGovernanceDashboard(), the logged-in
    * page's. Both are printed, in that order, and neither restates the
    * other: they count different pages, with the same definitions of rules
@@ -527,9 +529,9 @@ class AccessibilityTest extends WebDriverTestBase {
   /**
    * Scans the pages this template installs and reports what it covered.
    *
-   * ONE TEST METHOD, NOT TEN. Every method of a BrowserTestBase class
-   * installs its own Drupal, and this one also applies the recipe - so ten
-   * methods would mean ten installs to scan ten pages. The totals are
+   * ONE TEST METHOD, NOT ELEVEN. Every method of a BrowserTestBase class
+   * installs its own Drupal, and this one also applies the recipe - so eleven
+   * methods would mean eleven installs to scan eleven pages. The totals are
    * therefore accumulated across the loop and asserted at the end, which is
    * also the only way the denominator can be checked at all: a run that
    * scanned fewer pages than it declared satisfies every per-page assertion
@@ -716,7 +718,7 @@ class AccessibilityTest extends WebDriverTestBase {
     ));
 
     // Every page must be a DIFFERENT page. Without this, a site serving the
-    // same front page under ten paths would satisfy every assertion above.
+    // same front page under eleven paths would satisfy every assertion above.
     // The front page is excluded because it is the one surface that shares
     // its heading BY DESIGN - `page.front` points at a Canvas page that is
     // also scanned at its own alias - and its identity is pinned separately,
@@ -744,7 +746,7 @@ class AccessibilityTest extends WebDriverTestBase {
     ));
 
     // -- (6) the one logged-in page, declared separately (D-061, option B) --
-    // AFTER THE TEN, NEVER INTERLEAVED WITH THEM. Every assertion above was
+    // AFTER THE ELEVEN, NEVER INTERLEAVED WITH THEM. Every assertion above was
     // made anonymously, and the login inside this call changes what every
     // later request is served.
     $this->scanTheGovernanceDashboard($axe_source);
@@ -884,6 +886,20 @@ class AccessibilityTest extends WebDriverTestBase {
       'heading' => $title,
       'minRows' => 0,
       'why' => 'the sign-in page, which agora_core hands back to the site theme',
+    ];
+
+    // The password reset page (T-0737). From agora_core 1.0.1 (D-082) the
+    // module takes user.pass from Gin Login as well, so the page the sign-in
+    // form links to is served by this template's theme too. Read from the
+    // router the same way.
+    $title = (string) \Drupal::service('router.route_provider')->getRouteByName('user.pass')->getDefault('_title');
+    $this->assertNotSame('', $title, 'The route user.pass must declare a title, or the heading asserted for the password reset page is the empty string and proves nothing.');
+    $pages[] = [
+      'name' => 'password-reset',
+      'path' => Url::fromRoute('user.pass')->toString(),
+      'heading' => $title,
+      'minRows' => 0,
+      'why' => 'the password reset page, which agora_core hands back to the site theme',
     ];
 
     return $pages;
@@ -1159,9 +1175,10 @@ class AccessibilityTest extends WebDriverTestBase {
    * taken by the first cron run. Measured, not assumed: after the recipe is
    * applied `system.cron_last` is NULL; it is STILL NULL immediately after the
    * first request, because automated_cron runs after the response is sent;
-   * read again eight seconds later, it is set and the snapshot exists. The ten
-   * anonymous scans normally cover that gap many times over, but "normally" is
-   * timing, and a gate must not depend on timing. So the run waits for the
+   * read again eight seconds later, it is set and the snapshot exists. The
+   * eleven anonymous scans normally cover that gap many times over, but
+   * "normally" is timing, and a gate must not depend on timing. So the run
+   * waits for the
    * first cron run to finish, and then asserts the table has a row before axe
    * is asked about it (I-062). No declared entry is in that table, and that is
    * why the wait stays: its header cells are expected to pass, and they can be
@@ -1259,7 +1276,7 @@ class AccessibilityTest extends WebDriverTestBase {
         sprintf('%s: "%s" was never present at %s. If the page answered "Access denied", the %s role has lost the permission that reaches it.', $name, self::DASHBOARD_WRAPPER, $page['path'], self::LOGGED_IN_ROLE),
       );
 
-      // The structure first, before axe is injected, as for the ten: a page
+      // The structure first, before axe is injected, as for the eleven: a page
       // that failed to render is a page axe reports as clean (I-062).
       $structure = $this->getSession()->evaluateScript(str_replace('__WRAPPER__', self::DASHBOARD_WRAPPER, <<<'JS'
         (function () {
@@ -1471,7 +1488,7 @@ class AccessibilityTest extends WebDriverTestBase {
       $module_routes,
       $scanned_count,
     );
-    // Appended to the file ::tearDownAfterClass() prints, after the ten's
+    // Appended to the file ::tearDownAfterClass() prints, after the eleven's
     // line, so a green log carries both. Writing a file emits no output.
     @file_put_contents(self::summaryPath(), "\n" . $summary, FILE_APPEND);
 
@@ -1482,7 +1499,7 @@ class AccessibilityTest extends WebDriverTestBase {
       $this->assertGreaterThan(0, $result['rules'], "$name: $summary");
       $this->assertNotSame('absent', $result['bucket'], "$name: axe must have reported the heading-order rule; it landed in no bucket at all, which is not the same as passing. $summary");
       // And the rule switched on by name measured a target (T-0634), exactly
-      // as ::scanPage() requires of each of the ten.
+      // as ::scanPage() requires of each of the eleven.
       $this->assertGreaterThan(0, $result['targets']['measured'], sprintf('%s: %s was switched on by name for WCAG 2.5.8 and measured no target on this page (it landed in: %s). A rule that measured nothing cannot have passed. %s', $name, self::AXE_RULE_ENABLED_BY_NAME, $result['targets']['bucket'], $summary));
       // THE FIRST HALF OF THE CRITERION: nothing in markup this package owns.
       $this->assertSame([], $result['ours'], sprintf('%s: %d violation nodes are not inside any installed project\'s declared markup, so they are counted as this package\'s own: %s. %s', $name, count($result['ours']), implode(' | ', $result['ours']), $summary));

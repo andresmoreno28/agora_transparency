@@ -176,11 +176,11 @@ install:
   # what carries the theme's later releases into new installs, which is the only
   # update path a site template has: recipes apply once.
   - agora_theme
-  # Ágora's companion module, `drupal/agora_core` (D-054). It removes `user.login`
-  # from Gin Login's routes, so the sign-in page is served by the site's default
-  # theme rather than by the administration theme; the password reset and the
-  # other account pages stay with Gin Login. Declared in `composer.json`'s
-  # `require` and justified at D-080 (rule 2 of the project's SBOM policy).
+  # Ágora's companion module, `drupal/agora_core` (D-054), required at `^1.0.1`
+  # and justified at D-080. From 1.0.1 (D-082) it removes `user.login`,
+  # `user.pass`, `user.register` and `user.reset.form` from Gin Login's routes, so
+  # those account pages are served by the site's default theme; only the sign-out
+  # confirmation, which needs an account, stays with the administration theme.
   # Installed through this recipe ON PURPOSE: on an offline Drupal CMS site the
   # module installer, called directly, throws from Automatic Updates' status
   # checks (I-122, automatic_updates issue 3506894), and a recipe does not. It
@@ -478,10 +478,10 @@ config:
     # if the object is absent. `^1.1` still admitted 1.1.0, where the
     # component does not exist; `^1.2` does not admit it.
     #
-    # RAISED TO `^1.2.3` BY T-0710, the launch commit. 1.2.3 is the first
-    # release carrying the masthead's opening-line setting that README.md's
-    # "Make it yours" documents, and every earlier release of the theme is
-    # marked insecure in its Drupal.org release history.
+    # RAISED TO `^1.2.3` BY T-0710, the launch commit: the masthead's opening-line
+    # setting README.md's "Make it yours" documents, and every earlier release is
+    # marked insecure. RAISED TO `^1.2.5` BY T-0737: the 2026-10-27 review's fixes,
+    # the theme's own reset page (D-082), 44px links under Gin Login's forms.
     #
     # THE THROW IS A FEATURE, which is why `simpleConfigUpdate` is the right
     # action here and a create-if-missing one would be wrong. Should the
@@ -644,7 +644,7 @@ config:
     #
     # WHEN THEY ARE ABSENT, and it is a fact about release timing rather than
     # about the components. They live in `agora_theme`, a SEPARATE Drupal.org
-    # project (D-014), and `composer.json` requires `^1.2.3`. The components
+    # project (D-014), and `composer.json` requires `^1.2.5`. The components
     # first shipped in 1.2.0: `git ls-tree -r <tag> -- components/` in that
     # repository lists ZERO files at 1.1.0 and at every earlier tag, and twelve
     # at 1.2.0, at 1.2.1 and at 1.2.3 - four components, three files each. An

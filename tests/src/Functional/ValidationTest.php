@@ -16,6 +16,7 @@ use Drupal\media\Entity\Media;
 use Drupal\media\Entity\MediaType;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\Tests\BrowserTestBase;
+use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
 use Drupal\workflows\Entity\Workflow;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -3020,15 +3021,20 @@ class ValidationTest extends BrowserTestBase {
   }
 
   /**
-   * The sign-in page is served by the front theme; the reset page is not.
+   * The sign-in, password reset and closed registration pages are the theme's.
    *
    * T-0542. Drupal CMS installs Gin Login, whose theme negotiator hands the
    * sign-in page and its neighbouring account routes to the administration
-   * theme. The recipe installs `agora_core`, which removes `user.login`, and
-   * only that route, from Gin Login's list (D-052 option C, D-054, D-080). So
-   * the sign-in page must be rendered by `agora_theme`, and the password reset
-   * page must still be rendered by Gin: the second half is what says the
-   * module took one route and not the whole group.
+   * theme. The recipe installs `agora_core`, which removed `user.login`, and
+   * only that route, from Gin Login's list (D-052 option C, D-054, D-080), and
+   * this method asserted that the password reset page was still Gin's.
+   *
+   * T-0737. From 1.0.1 (D-082) the module also removes `user.pass`,
+   * `user.register` and `user.reset.form`, so the password reset page is
+   * rendered by `agora_theme` too, and the closed registration page answers
+   * 403 with the sign-in page in `agora_theme`. That only the sign-out
+   * confirmation stays with Gin is asserted in agora_core's own tests, which
+   * can sign a user in without this recipe.
    *
    * THE STYLESHEETS ARE THE WITNESS, ported from the rig test that proved
    * T-0526 on an Ágora install (run R6b). A theme's own CSS is served from its
@@ -3071,10 +3077,32 @@ class ValidationTest extends BrowserTestBase {
     $this->assertCount(1, $page->findAll('css', 'h1'), "Exactly one <h1>. $context");
     $this->assertCount(0, $page->findAll('css', '.gin-login'), "Nothing on the page may carry gin_login's class. $context");
 
-    // -- The password reset page: still Gin Login's -------------------------
+    // -- The password reset page: agora_theme's too, from agora_core 1.0.1 --
     $this->drupalGet('user/password');
     $this->assertSession()->statusCodeEquals(200);
-    $this->assertRenderedBy('gin', '/user/password');
+    $folders = $this->assertRenderedBy('agora_theme', '/user/password');
+    $page = $this->getSession()->getPage();
+    $context = sprintf('/user/password, stylesheet theme folders: %s.', implode(', ', $folders));
+    $this->assertCount(1, $page->findAll('css', 'main.agora-page__main'), "One main landmark of agora_theme's own page. $context");
+    $this->assertCount(1, $page->findAll('css', 'h1'), "Exactly one <h1>. $context");
+    $this->assertCount(0, $page->findAll('css', '.gin-login'), "Nothing on the page may carry gin_login's class. $context");
+
+    // -- Registration, closed: a 403 that shows the sign-in page ------------
+    // Drupal CMS closes registration and shows the sign-in page on a 403;
+    // both are asserted first, so a change upstream fails here by name.
+    $this->assertSame(UserInterface::REGISTER_ADMINISTRATORS_ONLY, $this->config('user.settings')->get('register'), 'Drupal CMS lets only administrators create accounts.');
+    $this->assertSame('/user/login', $this->config('system.site')->get('page.403'), 'Drupal CMS shows the sign-in page to a visitor who is denied access.');
+    $this->drupalGet('user/register');
+    $this->assertSession()->statusCodeEquals(403);
+    $folders = $this->assertRenderedBy('agora_theme', '/user/register');
+    $page = $this->getSession()->getPage();
+    $context = sprintf('/user/register, stylesheet theme folders: %s.', implode(', ', $folders));
+    $this->assertCount(1, $page->findAll('css', 'main.agora-page__main'), "One main landmark of agora_theme's own page. $context");
+    $h1 = $page->findAll('css', 'h1');
+    $this->assertCount(1, $h1, "Exactly one <h1>. $context");
+    $title = (string) \Drupal::service('router.route_provider')->getRouteByName('user.login')->getDefault('_title');
+    $this->assertSame($title, trim($h1[0]->getText()), "The page shown is the sign-in page. $context");
+    $this->assertCount(0, $page->findAll('css', '.gin-login'), "Nothing on the page may carry gin_login's class. $context");
   }
 
   /**

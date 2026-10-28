@@ -17,7 +17,7 @@ as a working portal, ready for a body to replace the demonstration content with 
 * Installs a working Drupal CMS site: administrative back end, media, basic SEO, basic privacy and
   consent, authentication tweaks and HTML email.
 * Installs Ágora's own front-end theme — `drupal/agora_theme`, a separate Drupal.org project that
-  this template requires at `^1.2.3` — and makes it the site's default theme.
+  this template requires at `^1.2.5` — and makes it the site's default theme.
 * Sets a Canvas landing page as the home page, carrying **five** blocks from the template's own
   views, with the service-area cards on `/publications` beside the register they filter.
 * Ships the demonstration corpus described in the next section: six registers of invented records
@@ -65,8 +65,9 @@ What actually runs, and what it covers:
 
 * **In this repository**, `tests/src/FunctionalJavascript/AccessibilityTest.php` runs axe-core over
   the pages of the site as the template installs it — the composed landing pages, the front page as
-  a visitor meets it, several listing routes, a published record, the page-not-found screen and the
-  sign-in page — **anonymously**, as a member of the public meets them. It is **blocking** in both
+  a visitor meets it, several listing routes, a published record, the page-not-found screen, the
+  sign-in page and the password reset page — **anonymously**, as a member of the public meets them.
+  It is **blocking** in both
   PHPUnit jobs.
   **The count, the breakdown and the result are stated once**, in
   [`ACCESSIBILITY.md`](ACCESSIBILITY.md); the accessibility statement this package ships at
@@ -420,7 +421,8 @@ recorded gap for a later unit rather than a regression. See the amendment to D-0
 
 It also installs `drupal_cms_helper`, the `stark` theme, `agora_theme` — Ágora's own theme, a
 separate Drupal.org project rather than code bundled here — `agora_core`, Ágora's companion module,
-which hands the sign-in page to that theme, and `config_guardian`, which audits the site's own
+which hands the sign-in page and the other account pages a visitor can reach to that theme, and
+`config_guardian`, which audits the site's own
 configuration; and it makes `agora_theme` the site's default. It points the front page at an empty
 Canvas landing page shipped in `content/`, and hides from the Canvas page builder a set of
 administrative components that are not useful for building pages.

@@ -21,11 +21,12 @@ the time this text was written. The shipped accessibility statement, at `/access
 ([`content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml`](content/node/542d60d9-f7b6-596c-9f15-7ee81964d139.yml)),
 points here for this account instead of repeating it.
 
-* **Automated accessibility testing of the pages this site serves.** axe-core runs over ten pages
+* **Automated accessibility testing of the pages this site serves.** axe-core runs over eleven pages
   of the site as it is installed: the two composed landing pages, the front page as a visitor meets
   it, four of the eight listing routes (two of the six registers, the cross-type listing and the
   document library), one published record rendered through its own page, the page-not-found
-  screen, and the sign-in page, which the site's own theme serves through `drupal/agora_core`. They
+  screen, and the sign-in and password reset pages, which the site's own theme serves through
+  `drupal/agora_core`. They
   are scanned **as an anonymous visitor**, because that is what a member of the public is served:
   the same pages scanned while signed in report findings in the administrative toolbar,
   which no visitor ever sees and which this site does not own. Result: **0 violations**. The number
@@ -41,12 +42,13 @@ points here for this account instead of repeating it.
   review instead of passing it, and those targets are left to a person. The measurement is taken at
   a single window size, so a target that shrinks only on a narrower screen is not measured.
 * **Automated accessibility testing of the theme on its own.** The theme this site uses is a
-  separate package with a gate of its own, and axe-core runs there over ten pages: a composed front
+  separate package with a gate of its own, and axe-core runs there over eleven pages: a composed front
   page, a hand-built data table with rows, a second one in its empty state, a view rendering a real
   register table, a register with an exposed filter, a prose page with links and a pager, a content
   record page, a page of nested layout components, a dataset record whose distributions are drawn as
-  tables, and the core sign-in form. Result: **90 rules applied per page, 0 violations**. **Those
-  pages are test fixtures, not pages of this site.** They exist so that a template can be made to
+  tables, the core sign-in form and the core password request form. Result:
+  **90 rules applied per page, 0 violations**. **Those pages are test fixtures, not pages of this
+  site.** They exist so that a template can be made to
   fail on its own, and a clean run over them says nothing about what a visitor here reads.
 * **Colour contrast.** Every foreground and background pair declared in the colour tokens of the
   theme is measured against the threshold that pair declares. Result: **68 pairs checked, 0 below
@@ -94,8 +96,9 @@ every stop showed a visible focus indicator, none was hidden, the skip link work
 scroll sideways at 320 pixels wide, and no target was too small. The page opens with the cursor
 already in the Username field, as Drupal does on every site. From there, Tab carries on through the
 form and the footer, and Shift+Tab goes back through the header to the skip link. The
-password-reset page and the other account pages still use the administration theme and were not
-part of this walk. The build was this package at commit `58d84b2`, applied to a fresh Drupal site,
+password-reset page and the other account pages, which used the administration theme on that date
+and have used the site's own theme since `drupal/agora_core` 1.0.1, were not part of this walk.
+The build was this package at commit `58d84b2`, applied to a fresh Drupal site,
 with `drupal/agora_theme` 1.2.1, `drupal/agora_core` 1.0.0 and Config Guardian 1.0.5.
 
 **By a person, on 2026-09-25**, on what a machine cannot settle: whether an indicator that is there
@@ -120,7 +123,8 @@ table to follow keyboard focus, and two later changes that keep all four sides o
 screen, inside tables and outside them; no release carried those two on 2026-09-25. On
 `agora_theme` 1.2.0 the machine had found both table links the person confirmed only partly in view
 when they received focus. Neither build is `agora_theme` 1.2.1, the newest release of the theme on
-that date. Both later changes are in `agora_theme` 1.2.3, the lowest release this package admits.
+that date. Both later changes are in `agora_theme` 1.2.3 and every later release; the lowest this
+package admits is 1.2.5.
 
 ## The administrative interface
 
@@ -164,10 +168,13 @@ Named, so that silence is not read as a pass.
   covers the focused element was not measured.
 * **Content added after installation**: pages, files, embedded maps, video players and widgets a
   site adds itself. Nothing here reaches them.
-* **The password reset page and the other account pages.** On a Drupal CMS site Gin Login serves
-  them in the administration theme, not in `drupal/agora_theme`: `drupal/agora_core` hands only the
-  sign-in page to the site's own theme. The password reset, registration, one-time sign-in and
-  sign-out confirmation pages stay with Gin Login, and no check measures them.
+* **Two account pages.** On a Drupal CMS site Gin Login serves the account pages in the
+  administration theme; since `drupal/agora_core` 1.0.1 the site's own theme serves the sign-in,
+  password reset, registration and one-time sign-in pages instead, and only the sign-out
+  confirmation, which needs an account, stays with Gin Login. The automated testing above covers
+  the sign-in and password reset pages; registration is closed on a clean install, so its address
+  answers with the sign-in page. The one-time sign-in page and the sign-out confirmation are not
+  measured by any check here.
 * **The sign-in page, by a person.** No person has yet confirmed it by keyboard or with a screen
   reader; only the machine has walked it. Whether two of its behaviours are acceptable is also a
   person's judgement, and both come from Drupal core rather than from this package: the page opens
@@ -193,4 +200,4 @@ Named, so that silence is not read as a pass.
   [public repository](https://git.drupalcode.org/project/agora_transparency/-/tree/1.x/specs), and
   none is part of this package.
 * **Date.** Written on 2026-09-25, about the package as it stood that day; amended 2026-10-09 for
-  the sign-in page.
+  the sign-in page, and 2026-10-28 for the password reset page and the other account pages.
